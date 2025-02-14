@@ -15,6 +15,7 @@
   <!-- PapaParse for CSV parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <style>
+    /* Global styling */
     html, body {
       margin: 0;
       padding: 0;
@@ -49,14 +50,20 @@
     .logo img {
       max-height: 40px;
     }
-    /* Swiper container with extra top margin */
+    /* Swiper container – force slides to align to top */
     .swiper {
       width: 100%;
       height: 100%;
       min-height: 100vh;
-      margin-top: 60px;
+      margin-top: 60px; /* space for toolbar */
     }
     .swiper-slide {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      padding-top: 20px;
+      box-sizing: border-box;
       animation: fadeIn 0.5s ease-in-out;
     }
     @keyframes fadeIn {
@@ -71,12 +78,13 @@
       margin: 15px auto;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       max-width: 600px;
-      text-align: center;
+      width: 100%;
       max-height: 80vh;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      text-align: center;
     }
-    /* Reduced font sizes for long questions */
+    /* Reduced font sizes for long text */
     .question {
       font-size: 1.2rem;
       font-weight: 500;
@@ -122,6 +130,12 @@
     }
     .option-btn:disabled {
       cursor: not-allowed;
+    }
+    /* Swipe hint styling */
+    .swipe-hint {
+      font-size: 0.9rem;
+      margin-top: 10px;
+      color: #666;
     }
     /* Mobile-specific adjustments */
     @media (max-width: 600px) {
@@ -174,10 +188,12 @@
     // Replace with your Google Sheets published CSV URL
     const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
 
+    // Simple shuffle function
     function shuffleArray(array) {
       return array.sort(() => Math.random() - 0.5);
     }
 
+    // Generate slides: each question produces a question slide and an answer slide.
     function initializeQuiz(questions) {
       const quizSlides = document.getElementById("quizSlides");
       quizSlides.innerHTML = "";
@@ -186,10 +202,13 @@
         // Create question slide
         const questionSlide = document.createElement("div");
         questionSlide.className = "swiper-slide";
+        // Store correct answer and explanation in dataset for later use
+        questionSlide.dataset.correctAnswer = question["Correct Answer"].trim();
+        questionSlide.dataset.explanation = question["Explanation"];
         questionSlide.innerHTML = `
-          <div class="card" data-correct="${question["Correct Answer"].trim()}">
+          <div class="card">
             <div class="question">${question["Question"]}</div>
-            ${question["Image URL"] ? `<img src="${question["Image URL"].trim()}" class="question-image">` : ""}
+            ${question["Image URL"] && question["Image URL"].trim() !== "" ? `<img src="${question["Image URL"].trim()}" class="question-image">` : ""}
             <ul class="options">
               ${question["Option A"] && question["Option A"].trim() !== "" ? `<li><button class="option-btn" data-option="A">A. ${question["Option A"]}</button></li>` : ""}
               ${question["Option B"] && question["Option B"].trim() !== "" ? `<li><button class="option-btn" data-option="B">B. ${question["Option B"]}</button></li>` : ""}
@@ -201,53 +220,79 @@
         `;
         quizSlides.appendChild(questionSlide);
 
-        // Create answer slide
+        // Create answer slide with a placeholder (will be updated when an option is selected)
         const answerSlide = document.createElement("div");
         answerSlide.className = "swiper-slide";
         answerSlide.innerHTML = `
           <div class="card">
             <div class="answer">
-              <strong>Correct Answer: ${question["Correct Answer"]}</strong><br>
-              ${question["Explanation"]}
+              <!-- Answer feedback will appear here -->
+              Swipe down to return to the question.
             </div>
           </div>
         `;
         quizSlides.appendChild(answerSlide);
       });
 
-      // Initialize Swiper and assign to global variable mySwiper
+      // Initialize Swiper
       window.mySwiper = new Swiper('.swiper', {
         direction: 'vertical',
         loop: false,
         mousewheel: true,
-        pagination: { el: '.swiper-pagination', clickable: true },
-        nested: true
+        pagination: { el: '.swiper-pagination', clickable: true }
       });
-
       addOptionListeners();
     }
 
+    // Add event listeners to answer buttons
     function addOptionListeners() {
       document.querySelectorAll('.option-btn').forEach(btn => {
         btn.addEventListener('click', function() {
           const card = this.closest('.card');
+          // Prevent multiple selections
           if (card.classList.contains('answered')) return;
           card.classList.add('answered');
-          const correctAnswer = card.getAttribute('data-correct').trim();
+
+          const questionSlide = card.closest('.swiper-slide');
+          const correctAnswer = questionSlide.dataset.correctAnswer;
+          const explanation = questionSlide.dataset.explanation;
           const options = card.querySelectorAll('.option-btn');
+          let isCorrect = (this.getAttribute('data-option') === correctAnswer);
+
+          // Disable all options and mark correct/incorrect
           options.forEach(option => {
             option.disabled = true;
             if (option.getAttribute('data-option') === correctAnswer) {
               option.classList.add('correct');
             }
           });
-          if (this.getAttribute('data-option') !== correctAnswer) {
+          if (!isCorrect) {
             this.classList.add('incorrect');
           }
-          // Advance to the answer slide after a brief delay
-          setTimeout(() => {
-            mySwiper.slideNext();
-          }, 1000);
+
+          // Show the swipe hint on the question slide
+          let swipeHint = questionSlide.querySelector('.swipe-hint');
+          if (!swipeHint) {
+            swipeHint = document.createElement('div');
+            swipeHint.className = 'swipe-hint';
+            swipeHint.textContent = 'Swipe up for answer';
+            questionSlide.appendChild(swipeHint);
+          } else {
+            swipeHint.style.display = 'block';
+          }
+
+          // Update the answer slide content based on user selection
+          const answerSlide = questionSlide.nextElementSibling;
+          if (answerSlide) {
+            answerSlide.querySelector('.card').innerHTML = `
+              <div class="answer">
+                <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
+                Correct Answer: ${correctAnswer}<br>
+                ${explanation}
+              </div>
+            `;
+          }
+          // Do not auto-advance; let the user swipe manually
         });
       });
     }
