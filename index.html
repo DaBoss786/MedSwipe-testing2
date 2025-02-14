@@ -15,7 +15,6 @@
   <!-- PapaParse for CSV parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <style>
-    /* Global styling */
     html, body {
       margin: 0;
       padding: 0;
@@ -24,7 +23,6 @@
       background-color: #f5f5f5;
       color: #333;
     }
-
     /* Fixed toolbar */
     .toolbar {
       position: fixed;
@@ -51,13 +49,12 @@
     .logo img {
       max-height: 40px;
     }
-
-    /* Swiper container (with extra top margin to add space below the toolbar) */
+    /* Swiper container with extra top margin */
     .swiper {
       width: 100%;
       height: 100%;
       min-height: 100vh;
-      margin-top: 60px; /* Increased space for toolbar */
+      margin-top: 60px;
     }
     .swiper-slide {
       animation: fadeIn 0.5s ease-in-out;
@@ -66,44 +63,49 @@
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
     /* Card styling */
     .card {
       background: #fff;
       border-radius: 10px;
-      padding: 30px;
-      margin: 20px auto;
+      padding: 20px;
+      margin: 15px auto;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       max-width: 600px;
       text-align: center;
       max-height: 80vh;
       overflow-y: auto;
-      -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+      -webkit-overflow-scrolling: touch;
     }
+    /* Reduced font sizes for long questions */
     .question {
-      font-size: 1.4rem;
+      font-size: 1.2rem;
       font-weight: 500;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
-
-    /* Multiple-choice options */
+    .answer {
+      font-size: 1.1rem;
+      color: #333;
+      margin-top: 15px;
+      text-align: left;
+    }
+    /* Options styling */
     .options {
       list-style: none;
       padding: 0;
       margin: 0;
     }
     .options li {
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
     .option-btn {
       width: 100%;
-      padding: 12px;
+      padding: 10px;
       border: 1px solid #007BFF;
       background: #fff;
       color: #007BFF;
       border-radius: 5px;
       cursor: pointer;
-      font-size: 1.1rem;
+      font-size: 1rem;
       transition: background 0.3s ease;
     }
     .option-btn:hover {
@@ -121,24 +123,6 @@
     .option-btn:disabled {
       cursor: not-allowed;
     }
-
-    /* Answer explanation */
-    .answer {
-      font-size: 1.1rem;
-      color: #333;
-      margin-top: 20px;
-      display: none;
-      text-align: left;
-    }
-
-    /* Images within the card */
-    .question-image {
-      max-width: 100%;
-      height: auto;
-      margin-bottom: 20px;
-      border-radius: 5px;
-    }
-
     /* Mobile-specific adjustments */
     @media (max-width: 600px) {
       .toolbar {
@@ -151,32 +135,19 @@
         max-height: 45px;
       }
       .swiper {
-        margin-top: 70px; /* Adjust for taller toolbar */
+        margin-top: 70px;
       }
       .card {
         max-width: 90%;
-        padding: 20px;
-        margin: 15px auto;
+        padding: 15px;
+        margin: 10px auto;
       }
       .question {
-        font-size: 1.3rem;
+        font-size: 1.1rem;
       }
       .option-btn {
-        font-size: 1rem;
-        padding: 10px;
-      }
-      .answer {
-        font-size: 1rem;
-      }
-    }
-
-    /* Responsive adjustments for devices with shorter height */
-    @media (max-height: 600px) {
-      .question {
-        font-size: 1.2rem;
-      }
-      .option-btn {
-        font-size: 1rem;
+        font-size: 0.9rem;
+        padding: 8px;
       }
       .answer {
         font-size: 1rem;
@@ -192,17 +163,15 @@
       <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
     </div>
   </div>
-
   <!-- Swiper Container -->
   <div class="swiper">
     <div class="swiper-wrapper" id="quizSlides"></div>
     <div class="swiper-pagination"></div>
   </div>
-
   <!-- Swiper JS -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
   <script>
-    // Replace this CSV URL with your Google Sheets published URL
+    // Replace with your Google Sheets published CSV URL
     const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
 
     function shuffleArray(array) {
@@ -214,10 +183,10 @@
       quizSlides.innerHTML = "";
 
       questions.forEach(question => {
-        const slide = document.createElement("div");
-        slide.className = "swiper-slide";
-
-        slide.innerHTML = `
+        // Create question slide
+        const questionSlide = document.createElement("div");
+        questionSlide.className = "swiper-slide";
+        questionSlide.innerHTML = `
           <div class="card" data-correct="${question["Correct Answer"].trim()}">
             <div class="question">${question["Question"]}</div>
             ${question["Image URL"] ? `<img src="${question["Image URL"].trim()}" class="question-image">` : ""}
@@ -228,21 +197,31 @@
               ${question["Option D"] && question["Option D"].trim() !== "" ? `<li><button class="option-btn" data-option="D">D. ${question["Option D"]}</button></li>` : ""}
               ${question["Option E"] && question["Option E"].trim() !== "" ? `<li><button class="option-btn" data-option="E">E. ${question["Option E"]}</button></li>` : ""}
             </ul>
-            <div class="answer">Correct Answer: ${question["Correct Answer"]}. ${question["Explanation"]}</div>
           </div>
         `;
+        quizSlides.appendChild(questionSlide);
 
-        quizSlides.appendChild(slide);
+        // Create answer slide
+        const answerSlide = document.createElement("div");
+        answerSlide.className = "swiper-slide";
+        answerSlide.innerHTML = `
+          <div class="card">
+            <div class="answer">
+              <strong>Correct Answer: ${question["Correct Answer"]}</strong><br>
+              ${question["Explanation"]}
+            </div>
+          </div>
+        `;
+        quizSlides.appendChild(answerSlide);
       });
 
-      new Swiper('.swiper', {
+      // Initialize Swiper and assign to global variable mySwiper
+      window.mySwiper = new Swiper('.swiper', {
         direction: 'vertical',
         loop: false,
         mousewheel: true,
         pagination: { el: '.swiper-pagination', clickable: true },
-        touchReleaseOnEdges: true, // allows inner scrolling when at the edge of the slide
-        nested: true,             // enables nested scrolling for inner elements
-        touchStartPreventDefault: false // allows default touch behavior on inner scrollable elements
+        nested: true
       });
 
       addOptionListeners();
@@ -254,25 +233,21 @@
           const card = this.closest('.card');
           if (card.classList.contains('answered')) return;
           card.classList.add('answered');
-
           const correctAnswer = card.getAttribute('data-correct').trim();
           const options = card.querySelectorAll('.option-btn');
-
           options.forEach(option => {
             option.disabled = true;
             if (option.getAttribute('data-option') === correctAnswer) {
               option.classList.add('correct');
             }
           });
-
           if (this.getAttribute('data-option') !== correctAnswer) {
             this.classList.add('incorrect');
           }
-
-          const answerDiv = card.querySelector('.answer');
-          if (answerDiv) {
-            answerDiv.style.display = 'block';
-          }
+          // Advance to the answer slide after a brief delay
+          setTimeout(() => {
+            mySwiper.slideNext();
+          }, 1000);
         });
       });
     }
