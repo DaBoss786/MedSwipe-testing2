@@ -239,7 +239,8 @@
         direction: 'vertical',
         loop: false,
         mousewheel: true,
-        pagination: { el: '.swiper-pagination', clickable: true }
+        pagination: { el: '.swiper-pagination', clickable: true },
+        touchReleaseOnEdges: true // allows inner scrolling when at the edge of the slide
       });
 
       addOptionListeners();
