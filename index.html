@@ -83,8 +83,9 @@
       -webkit-overflow-scrolling: touch;
       text-align: center;
     }
-    /* Smaller font sizes */
+    /* Smaller font sizes with preserved whitespace */
     .question {
+      white-space: pre-line;
       font-size: 1.2rem;
       font-weight: 500;
       margin-bottom: 15px;
@@ -126,6 +127,7 @@
       display: none;
     }
     .answer {
+      white-space: pre-line;
       font-size: 1rem;
       color: #333;
       margin-top: 15px;
@@ -201,16 +203,14 @@
       quizSlides.innerHTML = "";
 
       questions.forEach(question => {
-        // Create question slide (slide 1)
-        const questionSlide = document.createElement("div");
-        questionSlide.className = "swiper-slide";
-        // Store correct answer and explanation for later use
-        questionSlide.dataset.correct = question["Correct Answer"].trim();
-        questionSlide.dataset.explanation = question["Explanation"];
-        questionSlide.innerHTML = `
-          <div class="card">
+        // Create question slide
+        const slide = document.createElement("div");
+        slide.className = "swiper-slide";
+
+        slide.innerHTML = `
+          <div class="card" data-correct="${question["Correct Answer"].trim()}">
             <div class="question">${question["Question"]}</div>
-            ${question["Image URL"] && question["Image URL"].trim() !== "" ? `<img src="${question["Image URL"].trim()}" class="question-image">` : ""}
+            ${question["Image URL"] ? `<img src="${question["Image URL"].trim()}" class="question-image">` : ""}
             <div class="options">
               ${question["Option A"] && question["Option A"].trim() !== "" ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>` : ""}
               ${question["Option B"] && question["Option B"].trim() !== "" ? `<button class="option-btn" data-option="B">B. ${question["Option B"]}</button>` : ""}
@@ -218,27 +218,19 @@
               ${question["Option D"] && question["Option D"].trim() !== "" ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>` : ""}
               ${question["Option E"] && question["Option E"].trim() !== "" ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>` : ""}
             </div>
-            <div class="swipe-hint">Swipe up for explanation</div>
+            <div class="answer">Correct Answer: ${question["Correct Answer"]}. ${question["Explanation"]}</div>
           </div>
         `;
-        quizSlides.appendChild(questionSlide);
 
-        // Create answer slide (slide 2)
-        const answerSlide = document.createElement("div");
-        answerSlide.className = "swiper-slide";
-        answerSlide.innerHTML = `
-          <div class="card">
-            <div class="answer"></div>
-          </div>
-        `;
-        quizSlides.appendChild(answerSlide);
+        quizSlides.appendChild(slide);
       });
 
-      window.mySwiper = new Swiper('.swiper', {
+      new Swiper('.swiper', {
         direction: 'vertical',
         loop: false,
         mousewheel: true,
-        pagination: { el: '.swiper-pagination', clickable: true }
+        pagination: { el: '.swiper-pagination', clickable: true },
+        touchReleaseOnEdges: true
       });
 
       addOptionListeners();
@@ -248,42 +240,26 @@
       document.querySelectorAll('.option-btn').forEach(btn => {
         btn.addEventListener('click', function() {
           const card = this.closest('.card');
-          // Prevent multiple selections
           if (card.classList.contains('answered')) return;
           card.classList.add('answered');
 
-          const questionSlide = card.closest('.swiper-slide');
-          const correct = questionSlide.dataset.correct;
-          const explanation = questionSlide.dataset.explanation;
+          const correctAnswer = card.getAttribute('data-correct').trim();
           const options = card.querySelectorAll('.option-btn');
-          const selected = this.getAttribute('data-option');
-          const isCorrect = (selected === correct);
 
-          // Disable all options and mark them
           options.forEach(option => {
             option.disabled = true;
-            if (option.getAttribute('data-option') === correct) {
+            if (option.getAttribute('data-option') === correctAnswer) {
               option.classList.add('correct');
             }
           });
-          if (!isCorrect) {
+
+          if (this.getAttribute('data-option') !== correctAnswer) {
             this.classList.add('incorrect');
           }
-          // Show the swipe hint
-          let swipeHint = card.querySelector('.swipe-hint');
-          if (swipeHint) {
-            swipeHint.style.display = 'block';
-          }
-          // Update the answer slide (next slide)
-          const answerSlide = questionSlide.nextElementSibling;
-          if (answerSlide) {
-            answerSlide.querySelector('.card').innerHTML = `
-              <div class="answer">
-                <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
-                Correct Answer: ${correct}<br>
-                ${explanation}
-              </div>
-            `;
+
+          const answerDiv = card.querySelector('.answer');
+          if (answerDiv) {
+            answerDiv.style.display = 'block';
           }
         });
       });
