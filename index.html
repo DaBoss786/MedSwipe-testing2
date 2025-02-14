@@ -50,20 +50,14 @@
     .logo img {
       max-height: 40px;
     }
-    /* Swiper container – force slides to align to top */
+    /* Swiper container */
     .swiper {
       width: 100%;
       height: 100%;
       min-height: 100vh;
-      margin-top: 60px; /* space for toolbar */
+      margin-top: 60px; /* Space for toolbar */
     }
     .swiper-slide {
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      align-items: center;
-      padding-top: 20px;
-      box-sizing: border-box;
       animation: fadeIn 0.5s ease-in-out;
     }
     @keyframes fadeIn {
@@ -78,36 +72,20 @@
       margin: 15px auto;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       max-width: 600px;
-      width: 100%;
+      text-align: center;
       max-height: 80vh;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      text-align: center;
     }
-    /* Reduced font sizes for long text */
+    /* Reduced font sizes */
     .question {
       font-size: 1.2rem;
       font-weight: 500;
       margin-bottom: 15px;
     }
-    .answer {
-      font-size: 1.1rem;
-      color: #333;
-      margin-top: 15px;
-      text-align: left;
-    }
-    /* Options styling */
-    .options {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    .options li {
-      margin-bottom: 10px;
-    }
     .option-btn {
       width: 100%;
-      padding: 10px;
+      padding: 8px;
       border: 1px solid #007BFF;
       background: #fff;
       color: #007BFF;
@@ -115,6 +93,7 @@
       cursor: pointer;
       font-size: 1rem;
       transition: background 0.3s ease;
+      margin-bottom: 10px;
     }
     .option-btn:hover {
       background: #007BFF;
@@ -131,13 +110,20 @@
     .option-btn:disabled {
       cursor: not-allowed;
     }
-    /* Swipe hint styling */
-    .swipe-hint {
-      font-size: 0.9rem;
-      margin-top: 10px;
-      color: #666;
+    .answer {
+      font-size: 1rem;
+      color: #333;
+      margin-top: 15px;
+      display: none;
+      text-align: left;
     }
-    /* Mobile-specific adjustments */
+    .question-image {
+      max-width: 100%;
+      height: auto;
+      margin-bottom: 15px;
+      border-radius: 5px;
+    }
+    /* Mobile adjustments */
     @media (max-width: 600px) {
       .toolbar {
         height: 60px;
@@ -161,16 +147,16 @@
       }
       .option-btn {
         font-size: 0.9rem;
-        padding: 8px;
+        padding: 7px;
       }
       .answer {
-        font-size: 1rem;
+        font-size: 0.9rem;
       }
     }
   </style>
 </head>
 <body>
-  <!-- Toolbar with menu button and logo -->
+  <!-- Toolbar -->
   <div class="toolbar">
     <button class="menu-button">&#9776;</button>
     <div class="logo">
@@ -188,25 +174,20 @@
     // Replace with your Google Sheets published CSV URL
     const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
 
-    // Simple shuffle function
     function shuffleArray(array) {
       return array.sort(() => Math.random() - 0.5);
     }
 
-    // Generate slides: each question produces a question slide and an answer slide.
     function initializeQuiz(questions) {
       const quizSlides = document.getElementById("quizSlides");
       quizSlides.innerHTML = "";
 
       questions.forEach(question => {
-        // Create question slide
-        const questionSlide = document.createElement("div");
-        questionSlide.className = "swiper-slide";
-        // Store correct answer and explanation in dataset for later use
-        questionSlide.dataset.correctAnswer = question["Correct Answer"].trim();
-        questionSlide.dataset.explanation = question["Explanation"];
-        questionSlide.innerHTML = `
-          <div class="card">
+        const slide = document.createElement("div");
+        slide.className = "swiper-slide";
+
+        slide.innerHTML = `
+          <div class="card" data-correct="${question["Correct Answer"].trim()}">
             <div class="question">${question["Question"]}</div>
             ${question["Image URL"] && question["Image URL"].trim() !== "" ? `<img src="${question["Image URL"].trim()}" class="question-image">` : ""}
             <ul class="options">
@@ -216,83 +197,48 @@
               ${question["Option D"] && question["Option D"].trim() !== "" ? `<li><button class="option-btn" data-option="D">D. ${question["Option D"]}</button></li>` : ""}
               ${question["Option E"] && question["Option E"].trim() !== "" ? `<li><button class="option-btn" data-option="E">E. ${question["Option E"]}</button></li>` : ""}
             </ul>
+            <div class="answer">Correct Answer: ${question["Correct Answer"]}. ${question["Explanation"]}</div>
           </div>
         `;
-        quizSlides.appendChild(questionSlide);
 
-        // Create answer slide with a placeholder (will be updated when an option is selected)
-        const answerSlide = document.createElement("div");
-        answerSlide.className = "swiper-slide";
-        answerSlide.innerHTML = `
-          <div class="card">
-            <div class="answer">
-              <!-- Answer feedback will appear here -->
-              Swipe down to return to the question.
-            </div>
-          </div>
-        `;
-        quizSlides.appendChild(answerSlide);
+        quizSlides.appendChild(slide);
       });
 
-      // Initialize Swiper
-      window.mySwiper = new Swiper('.swiper', {
+      new Swiper('.swiper', {
         direction: 'vertical',
         loop: false,
         mousewheel: true,
         pagination: { el: '.swiper-pagination', clickable: true }
       });
+
       addOptionListeners();
     }
 
-    // Add event listeners to answer buttons
     function addOptionListeners() {
       document.querySelectorAll('.option-btn').forEach(btn => {
         btn.addEventListener('click', function() {
           const card = this.closest('.card');
-          // Prevent multiple selections
           if (card.classList.contains('answered')) return;
           card.classList.add('answered');
 
-          const questionSlide = card.closest('.swiper-slide');
-          const correctAnswer = questionSlide.dataset.correctAnswer;
-          const explanation = questionSlide.dataset.explanation;
+          const correctAnswer = card.getAttribute('data-correct').trim();
           const options = card.querySelectorAll('.option-btn');
-          let isCorrect = (this.getAttribute('data-option') === correctAnswer);
 
-          // Disable all options and mark correct/incorrect
           options.forEach(option => {
             option.disabled = true;
             if (option.getAttribute('data-option') === correctAnswer) {
               option.classList.add('correct');
             }
           });
-          if (!isCorrect) {
+
+          if (this.getAttribute('data-option') !== correctAnswer) {
             this.classList.add('incorrect');
           }
 
-          // Show the swipe hint on the question slide
-          let swipeHint = questionSlide.querySelector('.swipe-hint');
-          if (!swipeHint) {
-            swipeHint = document.createElement('div');
-            swipeHint.className = 'swipe-hint';
-            swipeHint.textContent = 'Swipe up for answer';
-            questionSlide.appendChild(swipeHint);
-          } else {
-            swipeHint.style.display = 'block';
+          const answerDiv = card.querySelector('.answer');
+          if (answerDiv) {
+            answerDiv.style.display = 'block';
           }
-
-          // Update the answer slide content based on user selection
-          const answerSlide = questionSlide.nextElementSibling;
-          if (answerSlide) {
-            answerSlide.querySelector('.card').innerHTML = `
-              <div class="answer">
-                <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
-                Correct Answer: ${correctAnswer}<br>
-                ${explanation}
-              </div>
-            `;
-          }
-          // Do not auto-advance; let the user swipe manually
         });
       });
     }
