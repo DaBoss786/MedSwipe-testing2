@@ -240,7 +240,9 @@
         loop: false,
         mousewheel: true,
         pagination: { el: '.swiper-pagination', clickable: true },
-        touchReleaseOnEdges: true // allows inner scrolling when at the edge of the slide
+        touchReleaseOnEdges: true, // allows inner scrolling when at the edge of the slide
+        nested: true,             // enables nested scrolling for inner elements
+        touchStartPreventDefault: false // allows default touch behavior on inner scrollable elements
       });
 
       addOptionListeners();
