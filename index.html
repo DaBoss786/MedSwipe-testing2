@@ -79,8 +79,7 @@
       max-height: 80vh;
       overflow-y: auto;
     }
-
-    .question, .fact {
+    .question {
       font-size: 1.4rem;
       font-weight: 500;
       margin-bottom: 20px;
@@ -158,7 +157,7 @@
         padding: 20px;
         margin: 15px auto;
       }
-      .question, .fact {
+      .question {
         font-size: 1.3rem;
       }
       .option-btn {
@@ -172,7 +171,7 @@
 
     /* Responsive adjustments for devices with shorter height */
     @media (max-height: 600px) {
-      .question, .fact {
+      .question {
         font-size: 1.2rem;
       }
       .option-btn {
@@ -202,6 +201,7 @@
   <!-- Swiper JS -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
   <script>
+    // Replace this CSV URL with your Google Sheets published URL
     const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
 
     function shuffleArray(array) {
@@ -216,26 +216,20 @@
         const slide = document.createElement("div");
         slide.className = "swiper-slide";
 
-        if (question["Content Type"].trim() === "MCQ") {
-          slide.innerHTML = `
-            <div class="card" data-correct="${question["Correct Answer"].trim()}">
-              <div class="question">${question["Question/Fact"]}</div>
-              ${question["Image URL"] ? `<img src="${question["Image URL"].trim()}" class="question-image">` : ""}
-              <ul class="options">
-                <li><button class="option-btn" data-option="A">A. ${question["Option A"]}</button></li>
-                <li><button class="option-btn" data-option="B">B. ${question["Option B"]}</button></li>
-                <li><button class="option-btn" data-option="C">C. ${question["Option C"]}</button></li>
-                <li><button class="option-btn" data-option="D">D. ${question["Option D"]}</button></li>
-              </ul>
-              <div class="answer">Correct Answer: ${question["Correct Answer"]}. ${question["Explanation"]}</div>
-            </div>`;
-        } else {
-          slide.innerHTML = `
-            <div class="card">
-              <div class="fact">${question["Question/Fact"]}</div>
-              ${question["Image URL"] ? `<img src="${question["Image URL"].trim()}" class="question-image">` : ""}
-            </div>`;
-        }
+        slide.innerHTML = `
+          <div class="card" data-correct="${question["Correct Answer"].trim()}">
+            <div class="question">${question["Question"]}</div>
+            ${question["Image URL"] ? `<img src="${question["Image URL"].trim()}" class="question-image">` : ""}
+            <ul class="options">
+              <li><button class="option-btn" data-option="A">A. ${question["Option A"]}</button></li>
+              <li><button class="option-btn" data-option="B">B. ${question["Option B"]}</button></li>
+              <li><button class="option-btn" data-option="C">C. ${question["Option C"]}</button></li>
+              <li><button class="option-btn" data-option="D">D. ${question["Option D"]}</button></li>
+              ${question["Option E"] && question["Option E"].trim() !== "" ? `<li><button class="option-btn" data-option="E">E. ${question["Option E"]}</button></li>` : ""}
+            </ul>
+            <div class="answer">Correct Answer: ${question["Correct Answer"]}. ${question["Explanation"]}</div>
+          </div>
+        `;
 
         quizSlides.appendChild(slide);
       });
