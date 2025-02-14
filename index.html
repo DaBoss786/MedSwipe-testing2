@@ -221,10 +221,10 @@
             <div class="question">${question["Question"]}</div>
             ${question["Image URL"] ? `<img src="${question["Image URL"].trim()}" class="question-image">` : ""}
             <ul class="options">
-              <li><button class="option-btn" data-option="A">A. ${question["Option A"]}</button></li>
-              <li><button class="option-btn" data-option="B">B. ${question["Option B"]}</button></li>
-              <li><button class="option-btn" data-option="C">C. ${question["Option C"]}</button></li>
-              <li><button class="option-btn" data-option="D">D. ${question["Option D"]}</button></li>
+              ${question["Option A"] && question["Option A"].trim() !== "" ? `<li><button class="option-btn" data-option="A">A. ${question["Option A"]}</button></li>` : ""}
+              ${question["Option B"] && question["Option B"].trim() !== "" ? `<li><button class="option-btn" data-option="B">B. ${question["Option B"]}</button></li>` : ""}
+              ${question["Option C"] && question["Option C"].trim() !== "" ? `<li><button class="option-btn" data-option="C">C. ${question["Option C"]}</button></li>` : ""}
+              ${question["Option D"] && question["Option D"].trim() !== "" ? `<li><button class="option-btn" data-option="D">D. ${question["Option D"]}</button></li>` : ""}
               ${question["Option E"] && question["Option E"].trim() !== "" ? `<li><button class="option-btn" data-option="E">E. ${question["Option E"]}</button></li>` : ""}
             </ul>
             <div class="answer">Correct Answer: ${question["Correct Answer"]}. ${question["Explanation"]}</div>
