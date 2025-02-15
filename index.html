@@ -24,7 +24,7 @@
       background-color: #E6F0FA;
       color: #333;
     }
-    /* Fixed toolbar */
+    /* Toolbar styling */
     .toolbar {
       position: fixed;
       top: 0;
@@ -38,6 +38,7 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       z-index: 1500;
     }
+    /* On desktop, keep the menu button absolute and progress indicator absolute */
     .menu-button {
       position: absolute;
       left: 10px;
@@ -50,7 +51,6 @@
     .logo img {
       max-height: 40px;
     }
-    /* Progress indicator in toolbar */
     #progressIndicator {
       position: absolute;
       right: 10px;
@@ -74,30 +74,26 @@
     #sideMenu.open {
       transform: translateX(0);
     }
-    /* Categories submenu */
-    #categoriesToggle {
-      cursor: pointer;
+    #sideMenu h3 {
+      margin-top: 0;
       font-size: 1.2rem;
       color: #0056b3;
-      margin: 0;
     }
-    #categoryList {
+    #sideMenu ul {
       list-style: none;
       padding: 0;
       margin: 10px 0;
-      display: none;
     }
-    #categoryList li {
+    #sideMenu ul li {
       margin-bottom: 10px;
     }
-    #categoryList li a {
+    #sideMenu ul li a {
       text-decoration: none;
       color: #0056b3;
       font-size: 1rem;
     }
-    /* Other side menu links */
-    #bookmarksFilter,
-    #resetFilter {
+    #sideMenu a#resetFilter, 
+    #sideMenu a#bookmarksFilter {
       display: block;
       margin-top: 20px;
       text-decoration: none;
@@ -109,7 +105,7 @@
       width: 100%;
       height: 100%;
       min-height: 100vh;
-      margin-top: 60px; /* space for toolbar */
+      margin-top: 60px;
     }
     .swiper-slide {
       animation: fadeIn 0.5s ease-in-out;
@@ -152,7 +148,7 @@
     .bookmark-btn.bookmarked {
       color: #FFD700;
     }
-    /* Text styling with preserved whitespace */
+    /* Text styling */
     .question {
       white-space: pre-line;
       font-size: 1.1rem;
@@ -210,10 +206,22 @@
     }
     /* Mobile adjustments */
     @media (max-width: 600px) {
-      .toolbar { height: 60px; }
-      .menu-button { font-size: 28px; }
+      .toolbar {
+        height: 60px;
+        justify-content: space-between;
+        padding: 0 10px;
+      }
+      /* Remove absolute positioning on mobile for progress indicator */
+      .menu-button, #progressIndicator {
+        width: 40px;
+        text-align: center;
+      }
+      /* Set progress indicator as static so it doesn't overlap the logo */
+      #progressIndicator {
+        position: static;
+        font-size: 0.9rem;
+      }
       .logo img { max-height: 45px; }
-      #progressIndicator { font-size: 0.9rem; }
       .swiper { margin-top: 70px; }
       .card { max-width: 90%; padding: 18px 12px 12px 12px; margin: 8px auto; }
       .question { font-size: 1rem; }
@@ -266,7 +274,7 @@
     
     // Update progress indicator in the toolbar
     function updateProgress() {
-      document.getElementById("progressIndicator").textContent = `Question ${currentQuestion} of ${totalQuestions} | Score: ${score}`;
+      document.getElementById("progressIndicator").textContent = `Q: ${currentQuestion} / ${totalQuestions} | S: ${score}`;
     }
     
     // Retrieve bookmarks from localStorage (stored as an array of question IDs)
@@ -297,7 +305,7 @@
       return array.sort(() => Math.random() - 0.5);
     }
     
-    // Initialize quiz slides from given questions and reset progress tracking
+    // Initialize quiz slides from given questions and reset progress
     function initializeQuiz(questions) {
       currentQuestion = 0;
       score = 0;
@@ -311,7 +319,6 @@
         // Create question slide
         const questionSlide = document.createElement("div");
         questionSlide.className = "swiper-slide";
-        // Use question text as ID (assumed unique)
         const qId = question["Question"].trim();
         questionSlide.dataset.correct = question["Correct Answer"].trim();
         questionSlide.dataset.explanation = question["Explanation"];
@@ -369,11 +376,6 @@
           const selected = this.getAttribute('data-option');
           const isCorrect = (selected === correct);
     
-          // Update progress if this is the first time answering this question
-          currentQuestion++;
-          if (isCorrect) score++;
-          updateProgress();
-    
           options.forEach(option => {
             option.disabled = true;
             if (option.getAttribute('data-option') === correct) {
@@ -399,7 +401,12 @@
               </div>
             `;
           }
-          // If this was the last question, add a final summary slide
+          // Update progress
+          currentQuestion++;
+          if (isCorrect) score++;
+          updateProgress();
+    
+          // If last question, append final summary slide
           if (currentQuestion === totalQuestions) {
             setTimeout(() => {
               const summarySlide = document.createElement("div");
@@ -439,7 +446,7 @@
         header: true,
         complete: function(results) {
           allQuestions = results.data;
-          // Static categories from menu; attach event listeners if needed
+          // Attach event listeners to static category links
           document.querySelectorAll("#categoryList a").forEach(link => {
             link.addEventListener("click", function(e) {
               e.preventDefault();
@@ -474,7 +481,7 @@
       sideMenu.classList.toggle("open");
     });
     
-    // Toggle Categories submenu (if needed)
+    // Toggle Categories submenu
     document.getElementById("categoriesToggle").addEventListener("click", function(e) {
       e.preventDefault();
       const catList = document.getElementById("categoryList");
