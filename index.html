@@ -136,7 +136,8 @@
       font-size: 1rem;
     }
     #bookmarksFilter,
-    #resetFilter {
+    #resetFilter,
+    #reviewUnanswered {
       display: block;
       margin-top: 20px;
       text-decoration: none;
@@ -177,7 +178,7 @@
       -webkit-overflow-scrolling: touch;
       text-align: center;
     }
-    /* Bookmark button positioned at top-right above the card */
+    /* Bookmark button positioned above the card */
     .bookmark-btn {
       position: absolute;
       top: 2px;
@@ -191,7 +192,7 @@
     .bookmark-btn.bookmarked {
       color: #FFD700;
     }
-    /* Text styling with preserved whitespace */
+    /* Text styling */
     .question {
       white-space: pre-line;
       font-size: 1.1rem;
@@ -277,6 +278,7 @@
       <li><a href="#" data-category="Rhinology">Rhinology</a></li>
     </ul>
     <a href="#" id="bookmarksFilter">Bookmarks</a>
+    <a href="#" id="reviewUnanswered">Review Unanswered</a>
     <a href="#" id="resetFilter">Show All Questions</a>
   </div>
   <!-- Top Toolbar -->
@@ -310,8 +312,9 @@
     const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
     
     let allQuestions = []; // full question set
-    let filterMode = "all"; // "all", "category", or "bookmarks"
+    let filterMode = "all"; // "all", "category", "bookmarks", or "unanswered"
     let selectedCategory = "";
+    let answeredIds = [];  // to track answered question IDs
     
     // Progress tracking variables
     let currentQuestion = 0;
@@ -364,11 +367,17 @@
       const quizSlides = document.getElementById("quizSlides");
       quizSlides.innerHTML = "";
       
+      // Reset answeredIds when reinitializing quiz (unless reviewing unanswered)
+      if (filterMode !== "unanswered") {
+        answeredIds = [];
+      }
+      
       questions.forEach(question => {
         // Create question slide
         const questionSlide = document.createElement("div");
         questionSlide.className = "swiper-slide";
         const qId = question["Question"].trim();
+        questionSlide.dataset.id = qId;
         questionSlide.dataset.correct = question["Correct Answer"].trim();
         questionSlide.dataset.explanation = question["Explanation"];
         questionSlide.innerHTML = `
@@ -406,14 +415,12 @@
         touchReleaseOnEdges: true
       });
       
-      // If the user swipes to an answer slide without answering, skip to next question
+      // If user swipes to an answer slide without answering, skip to next question
       window.mySwiper.on('slideChangeTransitionEnd', function() {
         const activeIndex = window.mySwiper.activeIndex;
-        // If on an answer slide (odd index)...
-        if (activeIndex % 2 === 1) {
+        if (activeIndex % 2 === 1) {  // on an answer slide
           const prevSlide = window.mySwiper.slides[activeIndex - 1];
           const card = prevSlide.querySelector('.card');
-          // If the question hasn't been answered, skip to next slide
           if (!card.classList.contains('answered')) {
             window.mySwiper.slideNext();
           }
@@ -431,14 +438,19 @@
           const card = this.closest('.card');
           if (card.classList.contains('answered')) return;
           card.classList.add('answered');
-          
+    
           const questionSlide = card.closest('.swiper-slide');
+          const qId = questionSlide.dataset.id;
+          if (!answeredIds.includes(qId)) {
+            answeredIds.push(qId);
+          }
+    
           const correct = questionSlide.dataset.correct;
           const explanation = questionSlide.dataset.explanation;
           const options = card.querySelectorAll('.option-btn');
           const selected = this.getAttribute('data-option');
           const isCorrect = (selected === correct);
-          
+    
           options.forEach(option => {
             option.disabled = true;
             if (option.getAttribute('data-option') === correct) {
@@ -468,7 +480,7 @@
           currentQuestion++;
           if (isCorrect) score++;
           updateProgress();
-          
+    
           // If last question, append final summary slide
           if (currentQuestion === totalQuestions) {
             setTimeout(() => {
@@ -526,6 +538,8 @@
           } else if (filterMode === "bookmarks") {
             const bookmarks = getBookmarks();
             filtered = allQuestions.filter(q => bookmarks.includes(q["Question"].trim()));
+          } else if (filterMode === "unanswered") {
+            filtered = allQuestions.filter(q => !answeredIds.includes(q["Question"].trim()));
           }
           initializeQuiz(shuffleArray(filtered));
         },
@@ -564,6 +578,14 @@
     document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
       e.preventDefault();
       filterMode = "bookmarks";
+      loadQuestions();
+      sideMenu.classList.remove("open");
+    });
+    
+    // Review Unanswered functionality
+    document.getElementById("reviewUnanswered").addEventListener("click", function(e) {
+      e.preventDefault();
+      filterMode = "unanswered";
       loadQuestions();
       sideMenu.classList.remove("open");
     });
