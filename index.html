@@ -24,7 +24,7 @@
       background-color: #E6F0FA;
       color: #333;
     }
-    /* Top Toolbar (menu + logo) */
+    /* Top Toolbar */
     .toolbar {
       position: fixed;
       top: 0;
@@ -42,15 +42,9 @@
     .toolbar-left, .toolbar-center, .toolbar-right {
       flex: 1;
     }
-    .toolbar-left {
-      text-align: left;
-    }
-    .toolbar-center {
-      text-align: center;
-    }
-    .toolbar-right {
-      text-align: right;
-    }
+    .toolbar-left { text-align: left; }
+    .toolbar-center { text-align: center; }
+    .toolbar-right { text-align: right; }
     .menu-button {
       font-size: 24px;
       background: none;
@@ -121,7 +115,6 @@
     #sideMenu.open {
       transform: translateX(0);
     }
-    /* Categories submenu */
     #categoriesToggle {
       cursor: pointer;
       font-size: 1.2rem;
@@ -142,7 +135,6 @@
       color: #0056b3;
       font-size: 1rem;
     }
-    /* Other side menu links */
     #bookmarksFilter,
     #resetFilter {
       display: block;
@@ -154,7 +146,7 @@
     /* Swiper container */
     .swiper {
       width: 100%;
-      height: calc(100% - 50px - 50px); /* subtract top and bottom toolbars */
+      height: calc(100% - 50px - 50px); /* top + bottom toolbar */
       min-height: calc(100vh - 100px);
       margin-top: 50px;
     }
@@ -185,7 +177,7 @@
       -webkit-overflow-scrolling: touch;
       text-align: center;
     }
-    /* Bookmark button positioned at top-right above the card */
+    /* Bookmark button (positioned in top-right above card) */
     .bookmark-btn {
       position: absolute;
       top: 2px;
@@ -199,7 +191,7 @@
     .bookmark-btn.bookmarked {
       color: #FFD700;
     }
-    /* Text styling with preserved whitespace */
+    /* Text styling */
     .question {
       white-space: pre-line;
       font-size: 1.1rem;
@@ -326,7 +318,7 @@
     let totalQuestions = 0;
     let score = 0;
     
-    // Update progress bar, question progress, and score in the bottom toolbar
+    // Update progress bar and score/ progress text in the bottom toolbar
     function updateProgress() {
       const progressPercent = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
       document.getElementById("progressBar").style.width = progressPercent + "%";
@@ -362,7 +354,7 @@
       return array.sort(() => Math.random() - 0.5);
     }
     
-    // Initialize quiz slides from given questions and reset progress
+    // Initialize quiz slides from given questions and reset progress tracking
     function initializeQuiz(questions) {
       currentQuestion = 0;
       score = 0;
@@ -371,7 +363,7 @@
       
       const quizSlides = document.getElementById("quizSlides");
       quizSlides.innerHTML = "";
-    
+      
       questions.forEach(question => {
         // Create question slide
         const questionSlide = document.createElement("div");
@@ -395,7 +387,7 @@
           </div>
         `;
         quizSlides.appendChild(questionSlide);
-    
+        
         // Create answer slide
         const answerSlide = document.createElement("div");
         answerSlide.className = "swiper-slide";
@@ -406,14 +398,14 @@
         `;
         quizSlides.appendChild(answerSlide);
       });
-    
+      
       window.mySwiper = new Swiper('.swiper', {
         direction: 'vertical',
         loop: false,
         mousewheel: true,
         touchReleaseOnEdges: true
       });
-    
+      
       addOptionListeners();
       addBookmarkListeners();
     }
