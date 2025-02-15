@@ -114,6 +114,7 @@
     }
     /* Card styling */
     .card {
+      position: relative;  /* Enable absolute positioning for bookmark button */
       background: #fff;
       border-radius: 10px;
       padding: 15px;
@@ -125,22 +126,12 @@
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       text-align: center;
-      position: relative;
     }
-    /* Question container with bookmark */
-    .question-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .question {
-      white-space: pre-line;
-      font-size: 1.1rem;
-      font-weight: 500;
-      margin: 0;
-    }
+    /* Bookmark button styling - positioned at top-right of card */
     .bookmark-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
       background: none;
       border: none;
       font-size: 1.5rem;
@@ -148,13 +139,19 @@
       color: #0056b3;
     }
     .bookmark-btn.bookmarked {
-      color: #FFD700; /* Gold for bookmarked */
+      color: #FFD700; /* Gold color for bookmarked */
+    }
+    /* Text styling with preserved whitespace */
+    .question {
+      white-space: pre-line;
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-bottom: 10px;
     }
     .options {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      margin-top: 10px;
     }
     .option-btn {
       padding: 6px;
@@ -244,7 +241,7 @@
     let filterMode = "all"; // "all", "category", or "bookmarks"
     let selectedCategory = "";
 
-    // Retrieve bookmarks from localStorage (stored as array of question IDs)
+    // Retrieve bookmarks from localStorage (stored as an array of question IDs)
     function getBookmarks() {
       const bm = localStorage.getItem("bookmarks");
       return bm ? JSON.parse(bm) : [];
@@ -321,10 +318,8 @@
         questionSlide.dataset.explanation = question["Explanation"];
         questionSlide.innerHTML = `
           <div class="card">
-            <div class="question-container" style="display:flex; justify-content:space-between; align-items:center;">
-              <div class="question">${question["Question"]}</div>
-              <button class="bookmark-btn" data-id="${qId}">${getBookmarks().includes(qId) ? "★" : "☆"}</button>
-            </div>
+            <button class="bookmark-btn" data-id="${qId}">${getBookmarks().includes(qId) ? "★" : "☆"}</button>
+            <div class="question">${question["Question"]}</div>
             ${question["Image URL"] && question["Image URL"].trim() !== "" ? `<img src="${question["Image URL"].trim()}" class="question-image">` : ""}
             <div class="options">
               ${question["Option A"] && question["Option A"].trim() !== "" ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>` : ""}
@@ -408,16 +403,15 @@
     function addBookmarkListeners() {
       document.querySelectorAll('.bookmark-btn').forEach(btn => {
         btn.addEventListener('click', function(e) {
-          e.stopPropagation(); // prevent triggering question click events
+          e.stopPropagation();
           const qId = this.getAttribute('data-id');
           const isNowBookmarked = toggleBookmark(qId);
-          // Update the button appearance
           this.textContent = isNowBookmarked ? "★" : "☆";
         });
       });
     }
 
-    // Load questions from CSV and apply filtering based on current mode
+    // Load questions and apply filtering
     function loadQuestions() {
       Papa.parse(csvUrl, {
         download: true,
