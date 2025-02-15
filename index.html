@@ -24,7 +24,7 @@
       background-color: #E6F0FA;
       color: #333;
     }
-    /* Toolbar styling */
+    /* Fixed toolbar */
     .toolbar {
       position: fixed;
       top: 0;
@@ -38,7 +38,6 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       z-index: 1500;
     }
-    /* On desktop, keep the menu button absolute and progress indicator absolute */
     .menu-button {
       position: absolute;
       left: 10px;
@@ -50,12 +49,6 @@
     }
     .logo img {
       max-height: 40px;
-    }
-    #progressIndicator {
-      position: absolute;
-      right: 10px;
-      font-size: 1rem;
-      color: #0056b3;
     }
     /* Side Menu */
     #sideMenu {
@@ -148,7 +141,7 @@
     .bookmark-btn.bookmarked {
       color: #FFD700;
     }
-    /* Text styling */
+    /* Text styling with preserved whitespace */
     .question {
       white-space: pre-line;
       font-size: 1.1rem;
@@ -206,21 +199,8 @@
     }
     /* Mobile adjustments */
     @media (max-width: 600px) {
-      .toolbar {
-        height: 60px;
-        justify-content: space-between;
-        padding: 0 10px;
-      }
-      /* Remove absolute positioning on mobile for progress indicator */
-      .menu-button, #progressIndicator {
-        width: 40px;
-        text-align: center;
-      }
-      /* Set progress indicator as static so it doesn't overlap the logo */
-      #progressIndicator {
-        position: static;
-        font-size: 0.9rem;
-      }
+      .toolbar { height: 60px; }
+      .menu-button { font-size: 28px; }
       .logo img { max-height: 45px; }
       .swiper { margin-top: 70px; }
       .card { max-width: 90%; padding: 18px 12px 12px 12px; margin: 8px auto; }
@@ -251,7 +231,6 @@
     <div class="logo">
       <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
     </div>
-    <div id="progressIndicator"></div>
   </div>
   <!-- Swiper Container -->
   <div class="swiper">
@@ -266,16 +245,6 @@
     let allQuestions = []; // full question set
     let filterMode = "all"; // "all", "category", or "bookmarks"
     let selectedCategory = "";
-    
-    // Progress tracking variables
-    let currentQuestion = 0;
-    let totalQuestions = 0;
-    let score = 0;
-    
-    // Update progress indicator in the toolbar
-    function updateProgress() {
-      document.getElementById("progressIndicator").textContent = `Q: ${currentQuestion} / ${totalQuestions} | S: ${score}`;
-    }
     
     // Retrieve bookmarks from localStorage (stored as an array of question IDs)
     function getBookmarks() {
@@ -305,13 +274,8 @@
       return array.sort(() => Math.random() - 0.5);
     }
     
-    // Initialize quiz slides from given questions and reset progress
+    // Initialize quiz slides from given questions
     function initializeQuiz(questions) {
-      currentQuestion = 0;
-      score = 0;
-      totalQuestions = questions.length;
-      updateProgress();
-      
       const quizSlides = document.getElementById("quizSlides");
       quizSlides.innerHTML = "";
     
@@ -319,6 +283,7 @@
         // Create question slide
         const questionSlide = document.createElement("div");
         questionSlide.className = "swiper-slide";
+        // Use question text as ID (assumed unique)
         const qId = question["Question"].trim();
         questionSlide.dataset.correct = question["Correct Answer"].trim();
         questionSlide.dataset.explanation = question["Explanation"];
@@ -400,28 +365,6 @@
                 ${explanation}
               </div>
             `;
-          }
-          // Update progress
-          currentQuestion++;
-          if (isCorrect) score++;
-          updateProgress();
-    
-          // If last question, append final summary slide
-          if (currentQuestion === totalQuestions) {
-            setTimeout(() => {
-              const summarySlide = document.createElement("div");
-              summarySlide.className = "swiper-slide";
-              summarySlide.innerHTML = `
-                <div class="card">
-                  <div class="answer">
-                    <strong>Final Score: ${score} out of ${totalQuestions}</strong><br>
-                    ${score/totalQuestions >= 0.8 ? "Great job!" : "Keep practicing!"}
-                  </div>
-                </div>
-              `;
-              document.getElementById("quizSlides").appendChild(summarySlide);
-              mySwiper.update();
-            }, 1000);
           }
         });
       });
