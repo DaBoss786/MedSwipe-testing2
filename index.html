@@ -21,10 +21,10 @@
       padding: 0;
       height: 100%;
       font-family: 'Roboto', sans-serif;
-      background-color: #E6F0FA; /* Light blue background */
+      background-color: #E6F0FA;
       color: #333;
     }
-    /* Fixed toolbar */
+    /* Toolbar */
     .toolbar {
       position: fixed;
       top: 0;
@@ -36,7 +36,7 @@
       align-items: center;
       justify-content: center;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      z-index: 1000;
+      z-index: 1500;
     }
     .menu-button {
       position: absolute;
@@ -49,6 +49,29 @@
     }
     .logo img {
       max-height: 40px;
+    }
+    /* Side Menu */
+    #sideMenu {
+      position: fixed;
+      top: 0;
+      left: -250px;
+      width: 250px;
+      height: 100vh;
+      background-color: #fff;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      transition: left 0.3s ease;
+      z-index: 1400;
+      padding: 60px 20px 20px; /* leave space for toolbar */
+    }
+    #sideMenu.open {
+      left: 0;
+    }
+    #sideMenu a {
+      display: block;
+      margin-bottom: 15px;
+      color: #0056b3;
+      text-decoration: none;
+      font-size: 1.1rem;
     }
     /* Swiper container */
     .swiper {
@@ -83,7 +106,7 @@
       -webkit-overflow-scrolling: touch;
       text-align: center;
     }
-    /* Reduced font sizes with preserved whitespace */
+    /* Text styling */
     .question {
       white-space: pre-line;
       font-size: 1.1rem;
@@ -97,9 +120,9 @@
     }
     .option-btn {
       padding: 6px;
-      border: 1px solid #0056b3; /* Deep blue border */
+      border: 1px solid #0056b3;
       background: #fff;
-      color: #0056b3; /* Deep blue text */
+      color: #0056b3;
       border-radius: 5px;
       cursor: pointer;
       font-size: 0.95rem;
@@ -154,9 +177,16 @@
   </style>
 </head>
 <body>
-  <!-- Toolbar with menu button and logo -->
+  <!-- Side Menu -->
+  <div id="sideMenu">
+    <a href="#">Home</a>
+    <a href="#">About</a>
+    <a href="#">Contact</a>
+    <!-- Add more menu links as needed -->
+  </div>
+  <!-- Toolbar -->
   <div class="toolbar">
-    <button class="menu-button">&#9776;</button>
+    <button class="menu-button" id="menuToggle">&#9776;</button>
     <div class="logo">
       <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
     </div>
@@ -176,7 +206,7 @@
       return array.sort(() => Math.random() - 0.5);
     }
 
-    // Create two slides per question: one for the question, one for the answer/explanation.
+    // Initialize quiz with two slides per question (question & answer)
     function initializeQuiz(questions) {
       const quizSlides = document.getElementById("quizSlides");
       quizSlides.innerHTML = "";
@@ -283,6 +313,13 @@
     }
 
     loadQuestions();
+
+    // Menu toggle functionality
+    const menuButton = document.getElementById("menuToggle");
+    const sideMenu = document.getElementById("sideMenu");
+    menuButton.addEventListener("click", function() {
+      sideMenu.classList.toggle("open");
+    });
   </script>
 </body>
 </html>
