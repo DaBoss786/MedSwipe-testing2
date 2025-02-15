@@ -50,7 +50,7 @@
     .logo img {
       max-height: 40px;
     }
-    /* Side Menu - hidden off-screen using transform */
+    /* Side Menu - hidden until toggled */
     #sideMenu {
       position: fixed;
       top: 0;
@@ -62,17 +62,35 @@
       transform: translateX(-100%);
       transition: transform 0.3s ease;
       z-index: 1400;
-      padding: 60px 20px 20px; /* space for toolbar */
+      padding: 60px 20px 20px;
     }
     #sideMenu.open {
       transform: translateX(0);
     }
-    #sideMenu a {
-      display: block;
-      margin-bottom: 15px;
+    #sideMenu h3 {
+      margin-top: 0;
+      font-size: 1.2rem;
       color: #0056b3;
+    }
+    #sideMenu ul {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0;
+    }
+    #sideMenu ul li {
+      margin-bottom: 10px;
+    }
+    #sideMenu ul li a {
       text-decoration: none;
-      font-size: 1.1rem;
+      color: #0056b3;
+      font-size: 1rem;
+    }
+    #resetFilter {
+      display: block;
+      margin-top: 20px;
+      text-decoration: none;
+      color: #0056b3;
+      font-size: 1rem;
     }
     /* Swiper container */
     .swiper {
@@ -107,7 +125,7 @@
       -webkit-overflow-scrolling: touch;
       text-align: center;
     }
-    /* Reduced font sizes with preserved whitespace */
+    /* Text styling with preserved whitespace */
     .question {
       white-space: pre-line;
       font-size: 1.1rem;
@@ -180,10 +198,9 @@
 <body>
   <!-- Side Menu -->
   <div id="sideMenu">
-    <a href="#">Home</a>
-    <a href="#">Categories</a>
-    <a href="#">About</a>
-    <a href="#">Contact</a>
+    <h3>Categories</h3>
+    <ul id="categoryList"></ul>
+    <a href="#" id="resetFilter">Show All Questions</a>
   </div>
   <!-- Toolbar -->
   <div class="toolbar">
@@ -201,10 +218,46 @@
   <script>
     // Replace with your Google Sheets published CSV URL
     const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
+    
+    let allQuestions = []; // store full list of questions
+    let selectedCategory = ""; // current filter
 
     // Simple shuffle function
     function shuffleArray(array) {
       return array.sort(() => Math.random() - 0.5);
+    }
+
+    // Extract unique categories from the questions
+    function extractCategories(questions) {
+      const categories = new Set();
+      questions.forEach(q => {
+        if (q["Category"] && q["Category"].trim() !== "") {
+          categories.add(q["Category"].trim());
+        }
+      });
+      return Array.from(categories).sort();
+    }
+
+    // Populate the side menu with category links
+    function populateCategoryMenu(questions) {
+      const categoryList = document.getElementById("categoryList");
+      categoryList.innerHTML = "";
+      const categories = extractCategories(questions);
+      categories.forEach(cat => {
+        const li = document.createElement("li");
+        li.innerHTML = `<a href="#" data-category="${cat}">${cat}</a>`;
+        categoryList.appendChild(li);
+      });
+      // Add event listeners to filter by category
+      document.querySelectorAll("#categoryList a").forEach(link => {
+        link.addEventListener("click", function(e) {
+          e.preventDefault();
+          selectedCategory = this.getAttribute("data-category");
+          const filtered = allQuestions.filter(q => q["Category"] && q["Category"].trim() === selectedCategory);
+          initializeQuiz(shuffleArray(filtered));
+          document.getElementById("sideMenu").classList.remove("open");
+        });
+      });
     }
 
     // Create two slides per question: one for the question, one for the answer/explanation.
@@ -216,7 +269,7 @@
         // Create question slide
         const questionSlide = document.createElement("div");
         questionSlide.className = "swiper-slide";
-        // Store correct answer and explanation for later use
+        // Store correct answer and explanation
         questionSlide.dataset.correct = question["Correct Answer"].trim();
         questionSlide.dataset.explanation = question["Explanation"];
         questionSlide.innerHTML = `
@@ -304,8 +357,13 @@
         download: true,
         header: true,
         complete: function(results) {
-          const questions = shuffleArray(results.data);
-          initializeQuiz(questions);
+          allQuestions = results.data;
+          populateCategoryMenu(allQuestions);
+          let filtered = allQuestions;
+          if (selectedCategory) {
+            filtered = allQuestions.filter(q => q["Category"] && q["Category"].trim() === selectedCategory);
+          }
+          initializeQuiz(shuffleArray(filtered));
         },
         error: function(error) {
           console.error("Error parsing CSV:", error);
@@ -320,6 +378,14 @@
     const sideMenu = document.getElementById("sideMenu");
     menuButton.addEventListener("click", function() {
       sideMenu.classList.toggle("open");
+    });
+
+    // Reset filter functionality
+    document.getElementById("resetFilter").addEventListener("click", function(e) {
+      e.preventDefault();
+      selectedCategory = "";
+      initializeQuiz(shuffleArray(allQuestions));
+      sideMenu.classList.remove("open");
     });
   </script>
 </body>
