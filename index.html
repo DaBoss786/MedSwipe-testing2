@@ -83,7 +83,7 @@
       -webkit-overflow-scrolling: touch;
       text-align: center;
     }
-    /* Reduced font sizes and preserved whitespace */
+    /* Reduced font sizes with preserved whitespace */
     .question {
       white-space: pre-line;
       font-size: 1.1rem;
@@ -164,7 +164,6 @@
   <!-- Swiper Container -->
   <div class="swiper">
     <div class="swiper-wrapper" id="quizSlides"></div>
-    <div class="swiper-pagination"></div>
   </div>
   <!-- Swiper JS -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
@@ -220,7 +219,7 @@
         direction: 'vertical',
         loop: false,
         mousewheel: true,
-        pagination: { el: '.swiper-pagination', clickable: true }
+        touchReleaseOnEdges: true
       });
 
       addOptionListeners();
