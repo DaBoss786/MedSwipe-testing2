@@ -24,7 +24,7 @@
       background-color: #E6F0FA;
       color: #333;
     }
-    /* Toolbar */
+    /* Fixed toolbar */
     .toolbar {
       position: fixed;
       top: 0;
@@ -50,21 +50,22 @@
     .logo img {
       max-height: 40px;
     }
-    /* Side Menu */
+    /* Side Menu - hidden off-screen using transform */
     #sideMenu {
       position: fixed;
       top: 0;
-      left: -250px;
+      left: 0;
       width: 250px;
       height: 100vh;
       background-color: #fff;
       box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-      transition: left 0.3s ease;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
       z-index: 1400;
-      padding: 60px 20px 20px; /* leave space for toolbar */
+      padding: 60px 20px 20px; /* space for toolbar */
     }
     #sideMenu.open {
-      left: 0;
+      transform: translateX(0);
     }
     #sideMenu a {
       display: block;
@@ -106,7 +107,7 @@
       -webkit-overflow-scrolling: touch;
       text-align: center;
     }
-    /* Text styling */
+    /* Reduced font sizes with preserved whitespace */
     .question {
       white-space: pre-line;
       font-size: 1.1rem;
@@ -180,9 +181,9 @@
   <!-- Side Menu -->
   <div id="sideMenu">
     <a href="#">Home</a>
+    <a href="#">Categories</a>
     <a href="#">About</a>
     <a href="#">Contact</a>
-    <!-- Add more menu links as needed -->
   </div>
   <!-- Toolbar -->
   <div class="toolbar">
@@ -206,7 +207,7 @@
       return array.sort(() => Math.random() - 0.5);
     }
 
-    // Initialize quiz with two slides per question (question & answer)
+    // Create two slides per question: one for the question, one for the answer/explanation.
     function initializeQuiz(questions) {
       const quizSlides = document.getElementById("quizSlides");
       quizSlides.innerHTML = "";
