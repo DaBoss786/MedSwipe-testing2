@@ -50,7 +50,7 @@
     .logo img {
       max-height: 40px;
     }
-    /* Side Menu - hidden until toggled */
+    /* Side Menu */
     #sideMenu {
       position: fixed;
       top: 0;
@@ -67,26 +67,30 @@
     #sideMenu.open {
       transform: translateX(0);
     }
-    #sideMenu h3 {
-      margin-top: 0;
+    /* Categories submenu */
+    #categoriesToggle {
+      cursor: pointer;
       font-size: 1.2rem;
       color: #0056b3;
+      margin: 0;
     }
-    #sideMenu ul {
+    #categoryList {
       list-style: none;
       padding: 0;
       margin: 10px 0;
+      display: none;
     }
-    #sideMenu ul li {
+    #categoryList li {
       margin-bottom: 10px;
     }
-    #sideMenu ul li a {
+    #categoryList li a {
       text-decoration: none;
       color: #0056b3;
       font-size: 1rem;
     }
-    #sideMenu a#resetFilter, 
-    #sideMenu a#bookmarksFilter {
+    /* Other side menu links */
+    #bookmarksFilter,
+    #resetFilter {
       display: block;
       margin-top: 20px;
       text-decoration: none;
@@ -98,7 +102,7 @@
       width: 100%;
       height: 100%;
       min-height: 100vh;
-      margin-top: 60px; /* space for toolbar */
+      margin-top: 60px;
     }
     .swiper-slide {
       animation: fadeIn 0.5s ease-in-out;
@@ -114,10 +118,10 @@
     }
     /* Card styling */
     .card {
-      position: relative;  /* For positioning the bookmark button */
+      position: relative;
       background: #fff;
       border-radius: 10px;
-      padding: 20px 15px 15px 15px; /* Reduced top padding to accommodate bookmark */
+      padding: 20px 15px 15px 15px;
       margin: 10px auto;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       max-width: 600px;
@@ -127,10 +131,10 @@
       -webkit-overflow-scrolling: touch;
       text-align: center;
     }
-    /* Bookmark button - positioned above the card content, top-right */
+    /* Bookmark button positioned at top-right above the card */
     .bookmark-btn {
       position: absolute;
-      top: 2px;  /* Moved a bit higher */
+      top: 2px;
       right: 10px;
       background: none;
       border: none;
@@ -139,9 +143,9 @@
       color: #0056b3;
     }
     .bookmark-btn.bookmarked {
-      color: #FFD700; /* Gold for bookmarked */
+      color: #FFD700;
     }
-    /* Text styling with preserved whitespace */
+    /* Text styling */
     .question {
       white-space: pre-line;
       font-size: 1.1rem;
@@ -215,8 +219,13 @@
 <body>
   <!-- Side Menu -->
   <div id="sideMenu">
-    <h3>Categories</h3>
-    <ul id="categoryList"></ul>
+    <h3 id="categoriesToggle">Categories</h3>
+    <ul id="categoryList">
+      <li><a href="#" data-category="Head & Neck Surgery">Head & Neck Surgery</a></li>
+      <li><a href="#" data-category="Otology">Otology</a></li>
+      <li><a href="#" data-category="Laryngology">Laryngology</a></li>
+      <li><a href="#" data-category="Rhinology">Rhinology</a></li>
+    </ul>
     <a href="#" id="bookmarksFilter">Bookmarks</a>
     <a href="#" id="resetFilter">Show All Questions</a>
   </div>
@@ -267,40 +276,6 @@
     // Simple shuffle function
     function shuffleArray(array) {
       return array.sort(() => Math.random() - 0.5);
-    }
-
-    // Extract unique categories from questions
-    function extractCategories(questions) {
-      const categories = new Set();
-      questions.forEach(q => {
-        if (q["Category"] && q["Category"].trim() !== "") {
-          categories.add(q["Category"].trim());
-        }
-      });
-      return Array.from(categories).sort();
-    }
-
-    // Populate the side menu with category links
-    function populateCategoryMenu(questions) {
-      const categoryList = document.getElementById("categoryList");
-      categoryList.innerHTML = "";
-      const categories = extractCategories(questions);
-      categories.forEach(cat => {
-        const li = document.createElement("li");
-        li.innerHTML = `<a href="#" data-category="${cat}">${cat}</a>`;
-        categoryList.appendChild(li);
-      });
-      // Add event listeners to category links
-      document.querySelectorAll("#categoryList a").forEach(link => {
-        link.addEventListener("click", function(e) {
-          e.preventDefault();
-          filterMode = "category";
-          selectedCategory = this.getAttribute("data-category");
-          const filtered = allQuestions.filter(q => q["Category"] && q["Category"].trim() === selectedCategory);
-          initializeQuiz(shuffleArray(filtered));
-          document.getElementById("sideMenu").classList.remove("open");
-        });
-      });
     }
 
     // Initialize quiz slides from given questions
@@ -418,7 +393,18 @@
         header: true,
         complete: function(results) {
           allQuestions = results.data;
-          populateCategoryMenu(allQuestions);
+          // Since categories are now fixed, we don't call populateCategoryMenu()
+          // Instead, attach event listeners to static category links
+          document.querySelectorAll("#categoryList a").forEach(link => {
+            link.addEventListener("click", function(e) {
+              e.preventDefault();
+              filterMode = "category";
+              selectedCategory = this.getAttribute("data-category");
+              const filtered = allQuestions.filter(q => q["Category"] && q["Category"].trim() === selectedCategory);
+              initializeQuiz(shuffleArray(filtered));
+              document.getElementById("sideMenu").classList.remove("open");
+            });
+          });
           let filtered = allQuestions;
           if (filterMode === "category" && selectedCategory) {
             filtered = allQuestions.filter(q => q["Category"] && q["Category"].trim() === selectedCategory);
@@ -441,6 +427,17 @@
     const sideMenu = document.getElementById("sideMenu");
     menuButton.addEventListener("click", function() {
       sideMenu.classList.toggle("open");
+    });
+
+    // Toggle Categories submenu
+    document.getElementById("categoriesToggle").addEventListener("click", function(e) {
+      e.preventDefault();
+      const catList = document.getElementById("categoryList");
+      if (catList.style.display === "none" || catList.style.display === "") {
+        catList.style.display = "block";
+      } else {
+        catList.style.display = "none";
+      }
     });
 
     // Reset filter functionality
