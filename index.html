@@ -146,7 +146,7 @@
     /* Swiper container */
     .swiper {
       width: 100%;
-      height: calc(100% - 50px - 50px); /* top + bottom toolbar */
+      height: calc(100% - 50px - 50px);
       min-height: calc(100vh - 100px);
       margin-top: 50px;
     }
@@ -177,7 +177,7 @@
       -webkit-overflow-scrolling: touch;
       text-align: center;
     }
-    /* Bookmark button (positioned in top-right above card) */
+    /* Bookmark button positioned at top-right above the card */
     .bookmark-btn {
       position: absolute;
       top: 2px;
@@ -191,7 +191,7 @@
     .bookmark-btn.bookmarked {
       color: #FFD700;
     }
-    /* Text styling */
+    /* Text styling with preserved whitespace */
     .question {
       white-space: pre-line;
       font-size: 1.1rem;
@@ -318,7 +318,7 @@
     let totalQuestions = 0;
     let score = 0;
     
-    // Update progress bar and score/ progress text in the bottom toolbar
+    // Update progress bar, question progress, and score in the bottom toolbar
     function updateProgress() {
       const progressPercent = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
       document.getElementById("progressBar").style.width = progressPercent + "%";
@@ -406,6 +406,20 @@
         touchReleaseOnEdges: true
       });
       
+      // If the user swipes to an answer slide without answering, skip to next question
+      window.mySwiper.on('slideChangeTransitionEnd', function() {
+        const activeIndex = window.mySwiper.activeIndex;
+        // If on an answer slide (odd index)...
+        if (activeIndex % 2 === 1) {
+          const prevSlide = window.mySwiper.slides[activeIndex - 1];
+          const card = prevSlide.querySelector('.card');
+          // If the question hasn't been answered, skip to next slide
+          if (!card.classList.contains('answered')) {
+            window.mySwiper.slideNext();
+          }
+        }
+      });
+      
       addOptionListeners();
       addBookmarkListeners();
     }
@@ -417,14 +431,14 @@
           const card = this.closest('.card');
           if (card.classList.contains('answered')) return;
           card.classList.add('answered');
-    
+          
           const questionSlide = card.closest('.swiper-slide');
           const correct = questionSlide.dataset.correct;
           const explanation = questionSlide.dataset.explanation;
           const options = card.querySelectorAll('.option-btn');
           const selected = this.getAttribute('data-option');
           const isCorrect = (selected === correct);
-    
+          
           options.forEach(option => {
             option.disabled = true;
             if (option.getAttribute('data-option') === correct) {
@@ -454,7 +468,7 @@
           currentQuestion++;
           if (isCorrect) score++;
           updateProgress();
-    
+          
           // If last question, append final summary slide
           if (currentQuestion === totalQuestions) {
             setTimeout(() => {
@@ -469,7 +483,7 @@
                 </div>
               `;
               document.getElementById("quizSlides").appendChild(summarySlide);
-              mySwiper.update();
+              window.mySwiper.update();
             }, 1000);
           }
         });
