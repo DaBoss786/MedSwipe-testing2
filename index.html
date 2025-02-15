@@ -137,6 +137,7 @@
     }
     #bookmarksFilter,
     #resetFilter,
+    #resetProgress,
     #reviewUnanswered {
       display: block;
       margin-top: 20px;
@@ -178,7 +179,7 @@
       -webkit-overflow-scrolling: touch;
       text-align: center;
     }
-    /* Bookmark button positioned above the card */
+    /* Bookmark button positioned at top-right above the card */
     .bookmark-btn {
       position: absolute;
       top: 2px;
@@ -280,6 +281,7 @@
     <a href="#" id="bookmarksFilter">Bookmarks</a>
     <a href="#" id="reviewUnanswered">Review Unanswered</a>
     <a href="#" id="resetFilter">Show All Questions</a>
+    <a href="#" id="resetProgress">Reset Progress</a>
   </div>
   <!-- Top Toolbar -->
   <div class="toolbar">
@@ -327,6 +329,22 @@
       document.getElementById("progressBar").style.width = progressPercent + "%";
       document.getElementById("questionProgress").textContent = `${currentQuestion} / ${totalQuestions}`;
       document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
+      
+      // Save progress to localStorage
+      localStorage.setItem("quizProgress", JSON.stringify({
+        quizData: allQuestions,
+        currentQuestion: currentQuestion,
+        score: score,
+        answeredIds: answeredIds,
+        filterMode: filterMode,
+        selectedCategory: selectedCategory
+      }));
+    }
+    
+    // Retrieve saved progress from localStorage (if available)
+    function loadProgress() {
+      const saved = localStorage.getItem("quizProgress");
+      return saved ? JSON.parse(saved) : null;
     }
     
     // Retrieve bookmarks from localStorage (stored as an array of question IDs)
@@ -362,15 +380,11 @@
       currentQuestion = 0;
       score = 0;
       totalQuestions = questions.length;
+      answeredIds = [];
       updateProgress();
       
       const quizSlides = document.getElementById("quizSlides");
       quizSlides.innerHTML = "";
-      
-      // Reset answeredIds when reinitializing quiz (unless reviewing unanswered)
-      if (filterMode !== "unanswered") {
-        answeredIds = [];
-      }
       
       questions.forEach(question => {
         // Create question slide
@@ -438,19 +452,19 @@
           const card = this.closest('.card');
           if (card.classList.contains('answered')) return;
           card.classList.add('answered');
-    
+          
           const questionSlide = card.closest('.swiper-slide');
           const qId = questionSlide.dataset.id;
           if (!answeredIds.includes(qId)) {
             answeredIds.push(qId);
           }
-    
+          
           const correct = questionSlide.dataset.correct;
           const explanation = questionSlide.dataset.explanation;
           const options = card.querySelectorAll('.option-btn');
           const selected = this.getAttribute('data-option');
           const isCorrect = (selected === correct);
-    
+          
           options.forEach(option => {
             option.disabled = true;
             if (option.getAttribute('data-option') === correct) {
@@ -480,7 +494,7 @@
           currentQuestion++;
           if (isCorrect) score++;
           updateProgress();
-    
+          
           // If last question, append final summary slide
           if (currentQuestion === totalQuestions) {
             setTimeout(() => {
@@ -514,34 +528,40 @@
       });
     }
     
-    // Load questions from CSV and apply filtering
+    // Load questions from CSV and apply filtering or resume progress if available
     function loadQuestions() {
       Papa.parse(csvUrl, {
         download: true,
         header: true,
         complete: function(results) {
-          allQuestions = results.data;
-          // Attach event listeners to static category links
-          document.querySelectorAll("#categoryList a").forEach(link => {
-            link.addEventListener("click", function(e) {
-              e.preventDefault();
-              filterMode = "category";
-              selectedCategory = this.getAttribute("data-category");
-              const filtered = allQuestions.filter(q => q["Category"] && q["Category"].trim() === selectedCategory);
-              initializeQuiz(shuffleArray(filtered));
-              document.getElementById("sideMenu").classList.remove("open");
-            });
-          });
-          let filtered = allQuestions;
-          if (filterMode === "category" && selectedCategory) {
-            filtered = allQuestions.filter(q => q["Category"] && q["Category"].trim() === selectedCategory);
-          } else if (filterMode === "bookmarks") {
-            const bookmarks = getBookmarks();
-            filtered = allQuestions.filter(q => bookmarks.includes(q["Question"].trim()));
-          } else if (filterMode === "unanswered") {
-            filtered = allQuestions.filter(q => !answeredIds.includes(q["Question"].trim()));
+          // Check if there is saved progress and if filter mode is "all"
+          const savedProgress = localStorage.getItem("quizProgress");
+          if (savedProgress && filterMode === "all") {
+            const progress = JSON.parse(savedProgress);
+            allQuestions = progress.quizData;
+            currentQuestion = progress.currentQuestion;
+            score = progress.score;
+            answeredIds = progress.answeredIds;
+            totalQuestions = allQuestions.length;
+            updateProgress();
+            initializeQuiz(allQuestions);
+            // Navigate to the correct slide after initializing
+            setTimeout(() => {
+              window.mySwiper.slideTo(currentQuestion * 2, 0); // each question is 2 slides
+            }, 500);
+          } else {
+            allQuestions = results.data;
+            let filtered = allQuestions;
+            if (filterMode === "category" && selectedCategory) {
+              filtered = allQuestions.filter(q => q["Category"] && q["Category"].trim() === selectedCategory);
+            } else if (filterMode === "bookmarks") {
+              const bookmarks = getBookmarks();
+              filtered = allQuestions.filter(q => bookmarks.includes(q["Question"].trim()));
+            } else if (filterMode === "unanswered") {
+              filtered = allQuestions.filter(q => !answeredIds.includes(q["Question"].trim()));
+            }
+            initializeQuiz(shuffleArray(filtered));
           }
-          initializeQuiz(shuffleArray(filtered));
         },
         error: function(error) {
           console.error("Error parsing CSV:", error);
@@ -586,6 +606,14 @@
     document.getElementById("reviewUnanswered").addEventListener("click", function(e) {
       e.preventDefault();
       filterMode = "unanswered";
+      loadQuestions();
+      sideMenu.classList.remove("open");
+    });
+    
+    // Reset Progress functionality
+    document.getElementById("resetProgress").addEventListener("click", function(e) {
+      e.preventDefault();
+      localStorage.removeItem("quizProgress");
       loadQuestions();
       sideMenu.classList.remove("open");
     });
