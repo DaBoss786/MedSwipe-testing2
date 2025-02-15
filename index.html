@@ -50,6 +50,13 @@
     .logo img {
       max-height: 40px;
     }
+    /* Progress indicator in toolbar */
+    #progressIndicator {
+      position: absolute;
+      right: 10px;
+      font-size: 1rem;
+      color: #0056b3;
+    }
     /* Side Menu */
     #sideMenu {
       position: fixed;
@@ -102,7 +109,7 @@
       width: 100%;
       height: 100%;
       min-height: 100vh;
-      margin-top: 60px;
+      margin-top: 60px; /* space for toolbar */
     }
     .swiper-slide {
       animation: fadeIn 0.5s ease-in-out;
@@ -145,7 +152,7 @@
     .bookmark-btn.bookmarked {
       color: #FFD700;
     }
-    /* Text styling */
+    /* Text styling with preserved whitespace */
     .question {
       white-space: pre-line;
       font-size: 1.1rem;
@@ -206,6 +213,7 @@
       .toolbar { height: 60px; }
       .menu-button { font-size: 28px; }
       .logo img { max-height: 45px; }
+      #progressIndicator { font-size: 0.9rem; }
       .swiper { margin-top: 70px; }
       .card { max-width: 90%; padding: 18px 12px 12px 12px; margin: 8px auto; }
       .question { font-size: 1rem; }
@@ -235,6 +243,7 @@
     <div class="logo">
       <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
     </div>
+    <div id="progressIndicator"></div>
   </div>
   <!-- Swiper Container -->
   <div class="swiper">
@@ -249,18 +258,28 @@
     let allQuestions = []; // full question set
     let filterMode = "all"; // "all", "category", or "bookmarks"
     let selectedCategory = "";
-
+    
+    // Progress tracking variables
+    let currentQuestion = 0;
+    let totalQuestions = 0;
+    let score = 0;
+    
+    // Update progress indicator in the toolbar
+    function updateProgress() {
+      document.getElementById("progressIndicator").textContent = `Question ${currentQuestion} of ${totalQuestions} | Score: ${score}`;
+    }
+    
     // Retrieve bookmarks from localStorage (stored as an array of question IDs)
     function getBookmarks() {
       const bm = localStorage.getItem("bookmarks");
       return bm ? JSON.parse(bm) : [];
     }
-
+    
     // Save bookmarks to localStorage
     function saveBookmarks(bookmarks) {
       localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
     }
-
+    
     // Toggle bookmark for a given question ID
     function toggleBookmark(questionId) {
       let bookmarks = getBookmarks();
@@ -272,17 +291,22 @@
       saveBookmarks(bookmarks);
       return bookmarks.includes(questionId);
     }
-
+    
     // Simple shuffle function
     function shuffleArray(array) {
       return array.sort(() => Math.random() - 0.5);
     }
-
-    // Initialize quiz slides from given questions
+    
+    // Initialize quiz slides from given questions and reset progress tracking
     function initializeQuiz(questions) {
+      currentQuestion = 0;
+      score = 0;
+      totalQuestions = questions.length;
+      updateProgress();
+      
       const quizSlides = document.getElementById("quizSlides");
       quizSlides.innerHTML = "";
-
+    
       questions.forEach(question => {
         // Create question slide
         const questionSlide = document.createElement("div");
@@ -307,7 +331,7 @@
           </div>
         `;
         quizSlides.appendChild(questionSlide);
-
+    
         // Create answer slide
         const answerSlide = document.createElement("div");
         answerSlide.className = "swiper-slide";
@@ -318,18 +342,18 @@
         `;
         quizSlides.appendChild(answerSlide);
       });
-
+    
       window.mySwiper = new Swiper('.swiper', {
         direction: 'vertical',
         loop: false,
         mousewheel: true,
         touchReleaseOnEdges: true
       });
-
+    
       addOptionListeners();
       addBookmarkListeners();
     }
-
+    
     // Add event listeners to answer buttons
     function addOptionListeners() {
       document.querySelectorAll('.option-btn').forEach(btn => {
@@ -337,14 +361,19 @@
           const card = this.closest('.card');
           if (card.classList.contains('answered')) return;
           card.classList.add('answered');
-
+    
           const questionSlide = card.closest('.swiper-slide');
           const correct = questionSlide.dataset.correct;
           const explanation = questionSlide.dataset.explanation;
           const options = card.querySelectorAll('.option-btn');
           const selected = this.getAttribute('data-option');
           const isCorrect = (selected === correct);
-
+    
+          // Update progress if this is the first time answering this question
+          currentQuestion++;
+          if (isCorrect) score++;
+          updateProgress();
+    
           options.forEach(option => {
             option.disabled = true;
             if (option.getAttribute('data-option') === correct) {
@@ -370,10 +399,27 @@
               </div>
             `;
           }
+          // If this was the last question, add a final summary slide
+          if (currentQuestion === totalQuestions) {
+            setTimeout(() => {
+              const summarySlide = document.createElement("div");
+              summarySlide.className = "swiper-slide";
+              summarySlide.innerHTML = `
+                <div class="card">
+                  <div class="answer">
+                    <strong>Final Score: ${score} out of ${totalQuestions}</strong><br>
+                    ${score/totalQuestions >= 0.8 ? "Great job!" : "Keep practicing!"}
+                  </div>
+                </div>
+              `;
+              document.getElementById("quizSlides").appendChild(summarySlide);
+              mySwiper.update();
+            }, 1000);
+          }
         });
       });
     }
-
+    
     // Add event listeners to bookmark buttons
     function addBookmarkListeners() {
       document.querySelectorAll('.bookmark-btn').forEach(btn => {
@@ -385,7 +431,7 @@
         });
       });
     }
-
+    
     // Load questions from CSV and apply filtering
     function loadQuestions() {
       Papa.parse(csvUrl, {
@@ -393,8 +439,7 @@
         header: true,
         complete: function(results) {
           allQuestions = results.data;
-          // Since categories are now fixed, we don't call populateCategoryMenu()
-          // Instead, attach event listeners to static category links
+          // Static categories from menu; attach event listeners if needed
           document.querySelectorAll("#categoryList a").forEach(link => {
             link.addEventListener("click", function(e) {
               e.preventDefault();
@@ -419,27 +464,23 @@
         }
       });
     }
-
+    
     loadQuestions();
-
+    
     // Menu toggle functionality
     const menuButton = document.getElementById("menuToggle");
     const sideMenu = document.getElementById("sideMenu");
     menuButton.addEventListener("click", function() {
       sideMenu.classList.toggle("open");
     });
-
-    // Toggle Categories submenu
+    
+    // Toggle Categories submenu (if needed)
     document.getElementById("categoriesToggle").addEventListener("click", function(e) {
       e.preventDefault();
       const catList = document.getElementById("categoryList");
-      if (catList.style.display === "none" || catList.style.display === "") {
-        catList.style.display = "block";
-      } else {
-        catList.style.display = "none";
-      }
+      catList.style.display = (catList.style.display === "block") ? "none" : "block";
     });
-
+    
     // Reset filter functionality
     document.getElementById("resetFilter").addEventListener("click", function(e) {
       e.preventDefault();
@@ -448,7 +489,7 @@
       loadQuestions();
       sideMenu.classList.remove("open");
     });
-
+    
     // Bookmarks filter functionality
     document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
       e.preventDefault();
