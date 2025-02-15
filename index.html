@@ -24,6 +24,7 @@
       background-color: #f5f5f5;
       color: #333;
     }
+
     /* Fixed toolbar */
     .toolbar {
       position: fixed;
@@ -50,59 +51,59 @@
     .logo img {
       max-height: 40px;
     }
-    /* Swiper container */
+
+    /* Swiper container (with extra top margin to add space below the toolbar) */
     .swiper {
       width: 100%;
       height: 100%;
       min-height: 100vh;
-      margin-top: 60px; /* space for toolbar */
+      margin-top: 60px; /* Increased space for toolbar */
     }
     .swiper-slide {
       animation: fadeIn 0.5s ease-in-out;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      box-sizing: border-box;
-      padding-top: 20px;
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
     /* Card styling */
     .card {
       background: #fff;
       border-radius: 10px;
-      padding: 20px;
-      margin: 15px auto;
+      padding: 30px;
+      margin: 20px auto;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       max-width: 600px;
-      width: 100%;
+      text-align: center;
       max-height: 80vh;
       overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      text-align: center;
+      -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
     }
-    /* Smaller font sizes with preserved whitespace */
     .question {
-      white-space: pre-line;
-      font-size: 1.2rem;
+      font-size: 1.4rem;
       font-weight: 500;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
     }
+
+    /* Multiple-choice options */
     .options {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .options li {
+      margin-bottom: 12px;
     }
     .option-btn {
-      padding: 8px;
+      width: 100%;
+      padding: 12px;
       border: 1px solid #007BFF;
       background: #fff;
       color: #007BFF;
       border-radius: 5px;
       cursor: pointer;
-      font-size: 1rem;
+      font-size: 1.1rem;
       transition: background 0.3s ease;
     }
     .option-btn:hover {
@@ -120,26 +121,25 @@
     .option-btn:disabled {
       cursor: not-allowed;
     }
-    .swipe-hint {
-      font-size: 0.9rem;
-      margin-top: 10px;
-      color: #666;
-      display: none;
-    }
+
+    /* Answer explanation */
     .answer {
-      white-space: pre-line;
-      font-size: 1rem;
+      font-size: 1.1rem;
       color: #333;
-      margin-top: 15px;
+      margin-top: 20px;
+      display: none;
       text-align: left;
     }
+
+    /* Images within the card */
     .question-image {
       max-width: 100%;
       height: auto;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
       border-radius: 5px;
     }
-    /* Mobile adjustments */
+
+    /* Mobile-specific adjustments */
     @media (max-width: 600px) {
       .toolbar {
         height: 60px;
@@ -151,49 +151,60 @@
         max-height: 45px;
       }
       .swiper {
-        margin-top: 70px;
+        margin-top: 70px; /* Adjust for taller toolbar */
       }
       .card {
         max-width: 90%;
-        padding: 15px;
-        margin: 10px auto;
+        padding: 20px;
+        margin: 15px auto;
       }
       .question {
-        font-size: 1.1rem;
+        font-size: 1.3rem;
       }
       .option-btn {
-        font-size: 0.9rem;
-        padding: 7px;
+        font-size: 1rem;
+        padding: 10px;
       }
       .answer {
-        font-size: 0.9rem;
+        font-size: 1rem;
       }
-      .swipe-hint {
-        font-size: 0.8rem;
+    }
+
+    /* Responsive adjustments for devices with shorter height */
+    @media (max-height: 600px) {
+      .question {
+        font-size: 1.2rem;
+      }
+      .option-btn {
+        font-size: 1rem;
+      }
+      .answer {
+        font-size: 1rem;
       }
     }
   </style>
 </head>
 <body>
-  <!-- Toolbar -->
+  <!-- Toolbar with menu button and logo -->
   <div class="toolbar">
     <button class="menu-button">&#9776;</button>
     <div class="logo">
       <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
     </div>
   </div>
+
   <!-- Swiper Container -->
   <div class="swiper">
     <div class="swiper-wrapper" id="quizSlides"></div>
     <div class="swiper-pagination"></div>
   </div>
+
   <!-- Swiper JS -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
   <script>
-    // Replace with your Google Sheets published CSV URL
+    // Replace this CSV URL with your Google Sheets published URL
     const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
 
-    // Shuffle function
     function shuffleArray(array) {
       return array.sort(() => Math.random() - 0.5);
     }
@@ -203,7 +214,6 @@
       quizSlides.innerHTML = "";
 
       questions.forEach(question => {
-        // Create question slide
         const slide = document.createElement("div");
         slide.className = "swiper-slide";
 
@@ -211,13 +221,13 @@
           <div class="card" data-correct="${question["Correct Answer"].trim()}">
             <div class="question">${question["Question"]}</div>
             ${question["Image URL"] ? `<img src="${question["Image URL"].trim()}" class="question-image">` : ""}
-            <div class="options">
-              ${question["Option A"] && question["Option A"].trim() !== "" ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>` : ""}
-              ${question["Option B"] && question["Option B"].trim() !== "" ? `<button class="option-btn" data-option="B">B. ${question["Option B"]}</button>` : ""}
-              ${question["Option C"] && question["Option C"].trim() !== "" ? `<button class="option-btn" data-option="C">C. ${question["Option C"]}</button>` : ""}
-              ${question["Option D"] && question["Option D"].trim() !== "" ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>` : ""}
-              ${question["Option E"] && question["Option E"].trim() !== "" ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>` : ""}
-            </div>
+            <ul class="options">
+              ${question["Option A"] && question["Option A"].trim() !== "" ? `<li><button class="option-btn" data-option="A">A. ${question["Option A"]}</button></li>` : ""}
+              ${question["Option B"] && question["Option B"].trim() !== "" ? `<li><button class="option-btn" data-option="B">B. ${question["Option B"]}</button></li>` : ""}
+              ${question["Option C"] && question["Option C"].trim() !== "" ? `<li><button class="option-btn" data-option="C">C. ${question["Option C"]}</button></li>` : ""}
+              ${question["Option D"] && question["Option D"].trim() !== "" ? `<li><button class="option-btn" data-option="D">D. ${question["Option D"]}</button></li>` : ""}
+              ${question["Option E"] && question["Option E"].trim() !== "" ? `<li><button class="option-btn" data-option="E">E. ${question["Option E"]}</button></li>` : ""}
+            </ul>
             <div class="answer">Correct Answer: ${question["Correct Answer"]}. ${question["Explanation"]}</div>
           </div>
         `;
@@ -230,7 +240,7 @@
         loop: false,
         mousewheel: true,
         pagination: { el: '.swiper-pagination', clickable: true },
-        touchReleaseOnEdges: true
+        touchReleaseOnEdges: true // allows inner scrolling when at the edge of the slide
       });
 
       addOptionListeners();
