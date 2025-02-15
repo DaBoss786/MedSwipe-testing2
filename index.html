@@ -24,7 +24,7 @@
       background-color: #E6F0FA;
       color: #333;
     }
-    /* Fixed toolbar at top */
+    /* Top Toolbar (menu + logo) */
     .toolbar {
       position: fixed;
       top: 0;
@@ -34,23 +34,34 @@
       background-color: #fff;
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
+      padding: 0 10px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       z-index: 1500;
     }
+    .toolbar-left, .toolbar-center, .toolbar-right {
+      flex: 1;
+    }
+    .toolbar-left {
+      text-align: left;
+    }
+    .toolbar-center {
+      text-align: center;
+    }
+    .toolbar-right {
+      text-align: right;
+    }
     .menu-button {
-      position: absolute;
-      left: 10px;
+      font-size: 24px;
       background: none;
       border: none;
-      font-size: 24px;
       cursor: pointer;
       color: #333;
     }
     .logo img {
       max-height: 40px;
     }
-    /* Bottom toolbar for progress & score */
+    /* Bottom Toolbar for progress & score */
     #bottomToolbar {
       position: fixed;
       bottom: 0;
@@ -60,10 +71,10 @@
       background-color: #fff;
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
+      padding: 0 10px;
       box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
       z-index: 1500;
-      padding: 0 10px;
     }
     #progressBarContainer {
       flex: 1;
@@ -80,10 +91,17 @@
       border-radius: 5px;
       transition: width 0.3s ease;
     }
-    #scoreDisplay {
-      font-size: 1rem;
+    #questionProgress {
+      font-size: 0.9rem;
       color: #0056b3;
-      min-width: 80px;
+      margin-right: 10px;
+      min-width: 50px;
+      text-align: center;
+    }
+    #scoreDisplay {
+      font-size: 0.9rem;
+      color: #0056b3;
+      min-width: 60px;
       text-align: right;
     }
     /* Side Menu */
@@ -103,11 +121,12 @@
     #sideMenu.open {
       transform: translateX(0);
     }
-    #sideMenu h3 {
-      margin-top: 0;
+    /* Categories submenu */
+    #categoriesToggle {
+      cursor: pointer;
       font-size: 1.2rem;
       color: #0056b3;
-      cursor: pointer;
+      margin: 0;
     }
     #categoryList {
       list-style: none;
@@ -123,6 +142,7 @@
       color: #0056b3;
       font-size: 1rem;
     }
+    /* Other side menu links */
     #bookmarksFilter,
     #resetFilter {
       display: block;
@@ -134,8 +154,8 @@
     /* Swiper container */
     .swiper {
       width: 100%;
-      height: calc(100% - 50px); /* leave space for top toolbar */
-      min-height: calc(100vh - 50px);
+      height: calc(100% - 50px - 50px); /* subtract top and bottom toolbars */
+      min-height: calc(100vh - 100px);
       margin-top: 50px;
     }
     .swiper-slide {
@@ -165,7 +185,7 @@
       -webkit-overflow-scrolling: touch;
       text-align: center;
     }
-    /* Bookmark button positioned above the card */
+    /* Bookmark button positioned at top-right above the card */
     .bookmark-btn {
       position: absolute;
       top: 2px;
@@ -179,7 +199,7 @@
     .bookmark-btn.bookmarked {
       color: #FFD700;
     }
-    /* Text styling */
+    /* Text styling with preserved whitespace */
     .question {
       white-space: pre-line;
       font-size: 1.1rem;
@@ -237,12 +257,14 @@
     }
     /* Mobile adjustments */
     @media (max-width: 600px) {
-      .toolbar { height: 60px; padding: 0 10px; justify-content: space-between; }
+      .toolbar { height: 60px; padding: 0 10px; }
       .menu-button { font-size: 28px; width: 40px; text-align: center; }
       .logo img { max-height: 45px; }
-      #progressIndicator { font-size: 0.9rem; }
       #bottomToolbar { height: 50px; }
-      .swiper { margin-top: 60px; height: calc(100% - 110px); min-height: calc(100vh - 110px); } /* top toolbar + bottom toolbar */
+      #progressBarContainer { margin-right: 5px; }
+      #progressBar { transition: width 0.3s ease; }
+      #questionProgress, #scoreDisplay { font-size: 0.9rem; }
+      .swiper { margin-top: 60px; height: calc(100% - 60px - 50px); min-height: calc(100vh - 110px); }
       .card { max-width: 90%; padding: 18px 12px 12px 12px; margin: 8px auto; }
       .question { font-size: 1rem; }
       .option-btn { font-size: 0.9rem; padding: 5px; }
@@ -265,22 +287,28 @@
     <a href="#" id="bookmarksFilter">Bookmarks</a>
     <a href="#" id="resetFilter">Show All Questions</a>
   </div>
-  <!-- Toolbar -->
+  <!-- Top Toolbar -->
   <div class="toolbar">
-    <button class="menu-button" id="menuToggle">&#9776;</button>
-    <div class="logo">
-      <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
+    <div class="toolbar-left">
+      <button class="menu-button" id="menuToggle">&#9776;</button>
     </div>
+    <div class="toolbar-center">
+      <div class="logo">
+        <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
+      </div>
+    </div>
+    <div class="toolbar-right"></div>
   </div>
   <!-- Swiper Container -->
   <div class="swiper">
     <div class="swiper-wrapper" id="quizSlides"></div>
   </div>
-  <!-- Bottom Toolbar for progress -->
+  <!-- Bottom Toolbar for progress & score -->
   <div id="bottomToolbar">
     <div id="progressBarContainer">
       <div id="progressBar"></div>
     </div>
+    <div id="questionProgress">0 / 0</div>
     <div id="scoreDisplay">Score: 0</div>
   </div>
   <!-- Swiper JS -->
@@ -298,10 +326,11 @@
     let totalQuestions = 0;
     let score = 0;
     
-    // Update progress bar and score in the bottom toolbar
+    // Update progress bar, question progress, and score in the bottom toolbar
     function updateProgress() {
       const progressPercent = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
       document.getElementById("progressBar").style.width = progressPercent + "%";
+      document.getElementById("questionProgress").textContent = `${currentQuestion} / ${totalQuestions}`;
       document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
     }
     
@@ -333,7 +362,7 @@
       return array.sort(() => Math.random() - 0.5);
     }
     
-    // Initialize quiz slides from given questions and reset progress tracking
+    // Initialize quiz slides from given questions and reset progress
     function initializeQuiz(questions) {
       currentQuestion = 0;
       score = 0;
