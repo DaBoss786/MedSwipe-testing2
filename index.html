@@ -114,10 +114,10 @@
     }
     /* Card styling */
     .card {
-      position: relative;  /* Enable absolute positioning for bookmark button */
+      position: relative;  /* For positioning the bookmark button */
       background: #fff;
       border-radius: 10px;
-      padding: 15px;
+      padding: 30px 15px 15px 15px; /* extra top padding for bookmark */
       margin: 10px auto;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       max-width: 600px;
@@ -127,11 +127,11 @@
       -webkit-overflow-scrolling: touch;
       text-align: center;
     }
-    /* Bookmark button styling - positioned at top-right of card */
+    /* Bookmark button - positioned above the card content, top-right */
     .bookmark-btn {
       position: absolute;
-      top: 5px;
-      right: 5px;
+      top: -20px; /* move it above the card */
+      right: 10px;
       background: none;
       border: none;
       font-size: 1.5rem;
@@ -139,7 +139,7 @@
       color: #0056b3;
     }
     .bookmark-btn.bookmarked {
-      color: #FFD700; /* Gold color for bookmarked */
+      color: #FFD700; /* Gold for bookmarked */
     }
     /* Text styling with preserved whitespace */
     .question {
@@ -203,12 +203,12 @@
       .menu-button { font-size: 28px; }
       .logo img { max-height: 45px; }
       .swiper { margin-top: 70px; }
-      .card { max-width: 90%; padding: 12px; margin: 8px auto; }
+      .card { max-width: 90%; padding: 20px 12px 12px 12px; margin: 8px auto; }
       .question { font-size: 1rem; }
       .option-btn { font-size: 0.9rem; padding: 5px; }
       .answer { font-size: 0.9rem; }
       .swipe-hint { font-size: 0.8rem; }
-      .bookmark-btn { font-size: 1.3rem; }
+      .bookmark-btn { font-size: 1.3rem; top: -18px; right: 8px; }
     }
   </style>
 </head>
@@ -411,7 +411,7 @@
       });
     }
 
-    // Load questions and apply filtering
+    // Load questions from CSV and apply filtering
     function loadQuestions() {
       Papa.parse(csvUrl, {
         download: true,
