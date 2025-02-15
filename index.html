@@ -17,10 +17,8 @@
   
   <!-- Firebase Initialization -->
   <script type="module">
-    // Import the functions you need from the SDKs you need
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
-    // Your web app's Firebase configuration
+    import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
     const firebaseConfig = {
       apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
       authDomain: "medswipe-648ee.firebaseapp.com",
@@ -30,9 +28,10 @@
       appId: "1:288366122490:web:1c150c48c8aed4e27f0043",
       measurementId: "G-748P8P634B"
     };
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
+    // Expose analytics to the global scope for use in our non-module script below
+    window.analytics = analytics;
   </script>
   
   <style>
@@ -450,11 +449,10 @@
         touchReleaseOnEdges: true
       });
       
-      // If user swipes to an answer slide without answering, auto-skip only when swiping forward
+      // Auto-skip unanswered answer slides only when swiping forward
       window.mySwiper.on('slideChangeTransitionEnd', function() {
         const activeIndex = window.mySwiper.activeIndex;
         const previousIndex = window.mySwiper.previousIndex;
-        // If swiped forward and on an answer slide
         if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
           const prevSlide = window.mySwiper.slides[activeIndex - 1];
           const card = prevSlide.querySelector('.card');
@@ -487,6 +485,11 @@
           const options = card.querySelectorAll('.option-btn');
           const selected = this.getAttribute('data-option');
           const isCorrect = (selected === correct);
+          
+          // Log Firebase event for question answered
+          if (window.analytics) {
+            logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect: isCorrect });
+          }
           
           options.forEach(option => {
             option.disabled = true;
