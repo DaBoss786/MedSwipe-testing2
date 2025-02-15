@@ -85,7 +85,8 @@
       color: #0056b3;
       font-size: 1rem;
     }
-    #resetFilter {
+    #sideMenu a#resetFilter, 
+    #sideMenu a#bookmarksFilter {
       display: block;
       margin-top: 20px;
       text-decoration: none;
@@ -124,18 +125,36 @@
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       text-align: center;
+      position: relative;
     }
-    /* Text styling with preserved whitespace */
+    /* Question container with bookmark */
+    .question-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
     .question {
       white-space: pre-line;
       font-size: 1.1rem;
       font-weight: 500;
-      margin-bottom: 10px;
+      margin: 0;
+    }
+    .bookmark-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #0056b3;
+    }
+    .bookmark-btn.bookmarked {
+      color: #FFD700; /* Gold for bookmarked */
     }
     .options {
       display: flex;
       flex-direction: column;
       gap: 8px;
+      margin-top: 10px;
     }
     .option-btn {
       padding: 6px;
@@ -192,6 +211,7 @@
       .option-btn { font-size: 0.9rem; padding: 5px; }
       .answer { font-size: 0.9rem; }
       .swipe-hint { font-size: 0.8rem; }
+      .bookmark-btn { font-size: 1.3rem; }
     }
   </style>
 </head>
@@ -200,6 +220,7 @@
   <div id="sideMenu">
     <h3>Categories</h3>
     <ul id="categoryList"></ul>
+    <a href="#" id="bookmarksFilter">Bookmarks</a>
     <a href="#" id="resetFilter">Show All Questions</a>
   </div>
   <!-- Toolbar -->
@@ -219,15 +240,39 @@
     // Replace with your Google Sheets published CSV URL
     const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
     
-    let allQuestions = []; // store full list of questions
-    let selectedCategory = ""; // current filter
+    let allQuestions = []; // full question set
+    let filterMode = "all"; // "all", "category", or "bookmarks"
+    let selectedCategory = "";
+
+    // Retrieve bookmarks from localStorage (stored as array of question IDs)
+    function getBookmarks() {
+      const bm = localStorage.getItem("bookmarks");
+      return bm ? JSON.parse(bm) : [];
+    }
+
+    // Save bookmarks to localStorage
+    function saveBookmarks(bookmarks) {
+      localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
+    }
+
+    // Toggle bookmark for a given question ID
+    function toggleBookmark(questionId) {
+      let bookmarks = getBookmarks();
+      if (bookmarks.includes(questionId)) {
+        bookmarks = bookmarks.filter(id => id !== questionId);
+      } else {
+        bookmarks.push(questionId);
+      }
+      saveBookmarks(bookmarks);
+      return bookmarks.includes(questionId);
+    }
 
     // Simple shuffle function
     function shuffleArray(array) {
       return array.sort(() => Math.random() - 0.5);
     }
 
-    // Extract unique categories from the questions
+    // Extract unique categories from questions
     function extractCategories(questions) {
       const categories = new Set();
       questions.forEach(q => {
@@ -248,10 +293,11 @@
         li.innerHTML = `<a href="#" data-category="${cat}">${cat}</a>`;
         categoryList.appendChild(li);
       });
-      // Add event listeners to filter by category
+      // Add event listeners to category links
       document.querySelectorAll("#categoryList a").forEach(link => {
         link.addEventListener("click", function(e) {
           e.preventDefault();
+          filterMode = "category";
           selectedCategory = this.getAttribute("data-category");
           const filtered = allQuestions.filter(q => q["Category"] && q["Category"].trim() === selectedCategory);
           initializeQuiz(shuffleArray(filtered));
@@ -260,7 +306,7 @@
       });
     }
 
-    // Create two slides per question: one for the question, one for the answer/explanation.
+    // Initialize quiz slides from given questions
     function initializeQuiz(questions) {
       const quizSlides = document.getElementById("quizSlides");
       quizSlides.innerHTML = "";
@@ -269,12 +315,16 @@
         // Create question slide
         const questionSlide = document.createElement("div");
         questionSlide.className = "swiper-slide";
-        // Store correct answer and explanation
+        // Use question text as ID (assumed unique)
+        const qId = question["Question"].trim();
         questionSlide.dataset.correct = question["Correct Answer"].trim();
         questionSlide.dataset.explanation = question["Explanation"];
         questionSlide.innerHTML = `
           <div class="card">
-            <div class="question">${question["Question"]}</div>
+            <div class="question-container" style="display:flex; justify-content:space-between; align-items:center;">
+              <div class="question">${question["Question"]}</div>
+              <button class="bookmark-btn" data-id="${qId}">${getBookmarks().includes(qId) ? "★" : "☆"}</button>
+            </div>
             ${question["Image URL"] && question["Image URL"].trim() !== "" ? `<img src="${question["Image URL"].trim()}" class="question-image">` : ""}
             <div class="options">
               ${question["Option A"] && question["Option A"].trim() !== "" ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>` : ""}
@@ -307,8 +357,10 @@
       });
 
       addOptionListeners();
+      addBookmarkListeners();
     }
 
+    // Add event listeners to answer buttons
     function addOptionListeners() {
       document.querySelectorAll('.option-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -352,6 +404,20 @@
       });
     }
 
+    // Add event listeners to bookmark buttons
+    function addBookmarkListeners() {
+      document.querySelectorAll('.bookmark-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation(); // prevent triggering question click events
+          const qId = this.getAttribute('data-id');
+          const isNowBookmarked = toggleBookmark(qId);
+          // Update the button appearance
+          this.textContent = isNowBookmarked ? "★" : "☆";
+        });
+      });
+    }
+
+    // Load questions from CSV and apply filtering based on current mode
     function loadQuestions() {
       Papa.parse(csvUrl, {
         download: true,
@@ -360,8 +426,11 @@
           allQuestions = results.data;
           populateCategoryMenu(allQuestions);
           let filtered = allQuestions;
-          if (selectedCategory) {
+          if (filterMode === "category" && selectedCategory) {
             filtered = allQuestions.filter(q => q["Category"] && q["Category"].trim() === selectedCategory);
+          } else if (filterMode === "bookmarks") {
+            const bookmarks = getBookmarks();
+            filtered = allQuestions.filter(q => bookmarks.includes(q["Question"].trim()));
           }
           initializeQuiz(shuffleArray(filtered));
         },
@@ -383,8 +452,17 @@
     // Reset filter functionality
     document.getElementById("resetFilter").addEventListener("click", function(e) {
       e.preventDefault();
+      filterMode = "all";
       selectedCategory = "";
-      initializeQuiz(shuffleArray(allQuestions));
+      loadQuestions();
+      sideMenu.classList.remove("open");
+    });
+
+    // Bookmarks filter functionality
+    document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
+      e.preventDefault();
+      filterMode = "bookmarks";
+      loadQuestions();
       sideMenu.classList.remove("open");
     });
   </script>
