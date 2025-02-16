@@ -14,11 +14,14 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css" />
   <!-- PapaParse for CSV parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <!-- Firebase Firestore SDK -->
+  <script src="https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js"></script>
   
   <!-- Firebase Initialization -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
+    // Your web app's Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
       authDomain: "medswipe-648ee.firebaseapp.com",
@@ -31,6 +34,9 @@
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     window.analytics = analytics;
+    // Initialize Firestore
+    const db = firebase.firestore();
+    window.db = db;
   </script>
   
   <style>
@@ -332,6 +338,16 @@
     </div>
     <div id="questionProgress">0 / 0</div>
     <div id="scoreDisplay">Score: 0</div>
+  </div>
+  <!-- Feedback Modal -->
+  <div id="feedbackModal" style="display:none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1700; justify-content: center; align-items: center;">
+    <div style="background: #fff; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px;">
+      <h3>Feedback</h3>
+      <textarea id="feedbackText" placeholder="Enter your feedback here" style="width:100%; height:100px;"></textarea>
+      <br>
+      <button id="submitFeedback">Submit Feedback</button>
+      <button id="closeFeedbackModal">Close</button>
+    </div>
   </div>
   <!-- Swiper JS -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
@@ -681,8 +697,8 @@
     });
     
     feedbackButton.addEventListener("click", function() {
-      const qId = getCurrentQuestionId();
-      alert("Feedback for question: " + (qId ? qId : "unknown"));
+      // Open feedback modal instead of alert
+      document.getElementById("feedbackModal").style.display = "flex";
     });
     
     // Update favorite icon on slide change
@@ -707,6 +723,35 @@
       if (touchendX - touchstartX < -swipeThreshold) {
         sideMenu.classList.remove("open");
       }
+    });
+    
+    // Feedback Modal functionality
+    const feedbackModal = document.getElementById("feedbackModal");
+    const closeFeedbackModal = document.getElementById("closeFeedbackModal");
+    const submitFeedback = document.getElementById("submitFeedback");
+    
+    document.getElementById("closeFeedbackModal").addEventListener("click", function() {
+      feedbackModal.style.display = "none";
+    });
+    
+    document.getElementById("submitFeedback").addEventListener("click", function() {
+      const feedbackText = document.getElementById("feedbackText").value;
+      if (!feedbackText.trim()) {
+        alert("Please enter your feedback.");
+        return;
+      }
+      // Save feedback to Firestore
+      db.collection("feedback").add({
+        feedback: feedbackText,
+        timestamp: new Date()
+      }).then(() => {
+        alert("Thank you for your feedback!");
+        document.getElementById("feedbackText").value = "";
+        feedbackModal.style.display = "none";
+      }).catch((error) => {
+        console.error("Error submitting feedback: ", error);
+        alert("There was an error submitting your feedback. Please try again later.");
+      });
     });
   </script>
 </body>
