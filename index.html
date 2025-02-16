@@ -95,12 +95,12 @@
       margin: 0 15px;
       color: #0056b3;
     }
-    /* Swiper container: account for top toolbar (50px) + icon bar (40px) + bottom toolbar (50px) */
+    /* Swiper container: account for top toolbar + icon bar + bottom toolbar */
     .swiper {
       width: 100%;
       height: calc(100% - 50px - 40px - 50px);
       min-height: calc(100vh - 140px);
-      margin-top: 90px;
+      margin-top: 90px; /* 50px + 40px */
     }
     .swiper-slide {
       animation: fadeIn 0.5s ease-in-out;
@@ -239,17 +239,19 @@
       box-shadow: 2px 0 5px rgba(0,0,0,0.1);
       transform: translateX(-100%);
       transition: transform 0.3s ease;
-      z-index: 1400;
+      z-index: 1600; /* increased z-index so side menu appears on top */
       padding: 60px 20px 20px;
     }
     #sideMenu.open {
       transform: translateX(0);
     }
+    /* Override h3 to not be bold for Categories */
     #categoriesToggle {
-      cursor: pointer;
       font-size: 1.2rem;
       color: #0056b3;
       margin: 0;
+      font-weight: normal;
+      cursor: pointer;
     }
     #categoryList {
       list-style: none;
