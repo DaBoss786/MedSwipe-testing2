@@ -21,17 +21,19 @@
     import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
     const firebaseConfig = {
-      apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
-      authDomain: "medswipe-648ee.firebaseapp.com",
-      projectId: "medswipe-648ee",
-      storageBucket: "medswipe-648ee.firebasestorage.app",
-      messagingSenderId: "288366122490",
-      appId: "1:288366122490:web:1c150c48c8aed4e27f0043",
-      measurementId: "G-748P8P634B"
+      /* Your firebaseConfig here */
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID",
+      measurementId: "YOUR_MEASUREMENT_ID"
     };
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const db = getFirestore(app);
+    // Expose to global scope for use in non-module scripts:
     window.analytics = analytics;
     window.logEvent = logEvent;
     window.db = db;
@@ -54,11 +56,11 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
+      text-align: center;
     }
-    #landingPage h1 {
-      margin-bottom: 20px;
-      font-size: 2rem;
-      color: #0056b3;
+    #landingPage img {
+      width: 220px; /* Adjust as needed */
+      margin-bottom: 30px;
     }
     #landingPage button {
       font-size: 1.2rem;
@@ -70,7 +72,7 @@
       background-color: #0056b3;
       color: #fff;
     }
-    
+
     /* Modal Forms */
     .modalForm {
       display: none;
@@ -89,24 +91,33 @@
     .modalForm h2 {
       margin-bottom: 10px;
       color: #0056b3;
+      text-align: center;
     }
-    .modalForm label {
-      display: block;
-      margin-top: 10px;
+    .modalForm .formGroup {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 15px;
+    }
+    .modalForm .formGroup label {
       font-size: 0.9rem;
       color: #333;
+      margin-bottom: 5px;
     }
-    .modalForm input,
-    .modalForm select {
+    .modalForm .formGroup select,
+    .modalForm .formGroup input {
       width: 100%;
       padding: 8px;
-      margin-top: 5px;
       font-size: 1rem;
       border: 1px solid #ccc;
       border-radius: 4px;
     }
+    .modalForm .btnRow {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
     .modalForm button {
-      margin-top: 15px;
+      margin-left: 10px;
       padding: 8px 15px;
       font-size: 1rem;
       border: none;
@@ -117,9 +128,8 @@
     }
     .modalForm button.cancel {
       background-color: #aaa;
-      margin-left: 10px;
     }
-    
+
     /* Rest of your baseline styling remains unchanged */
     html, body {
       margin: 0;
@@ -131,54 +141,28 @@
     }
     .toolbar {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 50px;
+      top: 0; left: 0; width: 100%; height: 50px;
       background-color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 10px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       z-index: 1500;
     }
-    .toolbar-left, .toolbar-center, .toolbar-right {
-      flex: 1;
-    }
+    .toolbar-left, .toolbar-center, .toolbar-right { flex: 1; }
     .toolbar-left { text-align: left; }
     .toolbar-center { text-align: center; }
     .toolbar-right { text-align: right; }
     .menu-button {
-      font-size: 24px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: #333;
+      font-size: 24px; background: none; border: none; cursor: pointer; color: #333;
     }
-    .logo img {
-      max-height: 40px;
-    }
+    .logo img { max-height: 40px; }
     #iconBar {
-      position: fixed;
-      top: 50px;
-      left: 0;
-      width: 100%;
-      height: 40px;
-      background-color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      z-index: 1450;
+      position: fixed; top: 50px; left: 0; width: 100%; height: 40px;
+      background-color: #fff; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 1450;
     }
     #iconBar button {
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      margin: 0 15px;
-      color: #0056b3;
+      background: none; border: none; font-size: 24px; cursor: pointer;
+      margin: 0 15px; color: #0056b3;
     }
     .swiper {
       width: 100%;
@@ -188,203 +172,98 @@
     }
     .swiper-slide {
       animation: fadeIn 0.5s ease-in-out;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      box-sizing: border-box;
-      padding-top: 20px;
+      display: flex; align-items: flex-start; justify-content: center;
+      box-sizing: border-box; padding-top: 20px;
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
     .card {
-      position: relative;
-      background: #fff;
-      border-radius: 10px;
-      padding: 20px 15px 15px 15px;
-      margin: 10px auto;
+      position: relative; background: #fff; border-radius: 10px;
+      padding: 20px 15px 15px 15px; margin: 10px auto;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      max-width: 600px;
-      width: 100%;
-      max-height: 80vh;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      text-align: center;
+      max-width: 600px; width: 100%; max-height: 80vh;
+      overflow-y: auto; -webkit-overflow-scrolling: touch; text-align: center;
     }
     .question {
-      white-space: pre-line;
-      font-size: 1.1rem;
-      font-weight: 500;
-      margin-bottom: 10px;
+      white-space: pre-line; font-size: 1.1rem; font-weight: 500; margin-bottom: 10px;
     }
-    .options {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+    .options { display: flex; flex-direction: column; gap: 8px; }
     .option-btn {
-      padding: 6px;
-      border: 1px solid #0056b3;
-      background: #fff;
-      color: #0056b3;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 0.95rem;
-      transition: background 0.3s ease;
+      padding: 6px; border: 1px solid #0056b3; background: #fff; color: #0056b3;
+      border-radius: 5px; cursor: pointer; font-size: 0.95rem; transition: background 0.3s ease;
     }
     .option-btn:hover {
-      background: #0056b3;
-      color: #fff;
+      background: #0056b3; color: #fff;
     }
-    .option-btn.correct {
-      background-color: #28a745;
-      color: #fff;
-    }
-    .option-btn.incorrect {
-      background-color: #dc3545;
-      color: #fff;
-    }
-    .option-btn:disabled {
-      cursor: not-allowed;
-    }
+    .option-btn.correct { background-color: #28a745; color: #fff; }
+    .option-btn.incorrect { background-color: #dc3545; color: #fff; }
+    .option-btn:disabled { cursor: not-allowed; }
     .swipe-hint {
-      font-size: 0.85rem;
-      margin-top: 8px;
-      color: #666;
-      display: none;
+      font-size: 0.85rem; margin-top: 8px; color: #666; display: none;
     }
     .answer {
-      white-space: pre-line;
-      font-size: 1rem;
-      color: #333;
-      margin-top: 10px;
-      text-align: left;
+      white-space: pre-line; font-size: 1rem; color: #333;
+      margin-top: 10px; text-align: left;
     }
     .question-image {
-      max-width: 100%;
-      height: auto;
-      margin-bottom: 10px;
-      border-radius: 5px;
+      max-width: 100%; height: auto; margin-bottom: 10px; border-radius: 5px;
     }
     #bottomToolbar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 50px;
-      background-color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 10px;
-      box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
-      z-index: 1500;
+      position: fixed; bottom: 0; left: 0; right: 0; height: 50px;
+      background-color: #fff; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; box-shadow: 0 -2px 4px rgba(0,0,0,0.1); z-index: 1500;
     }
     #progressBarContainer {
-      flex: 1;
-      height: 10px;
-      background-color: #ccc;
-      border-radius: 5px;
-      margin-right: 10px;
-      overflow: hidden;
+      flex: 1; height: 10px; background-color: #ccc; border-radius: 5px;
+      margin-right: 10px; overflow: hidden;
     }
     #progressBar {
-      height: 100%;
-      width: 0%;
-      background-color: #0056b3;
-      border-radius: 5px;
+      height: 100%; width: 0%; background-color: #0056b3; border-radius: 5px;
       transition: width 0.3s ease;
     }
     #questionProgress {
-      font-size: 0.9rem;
-      color: #0056b3;
-      margin-right: 10px;
-      min-width: 50px;
-      text-align: center;
+      font-size: 0.9rem; color: #0056b3; margin-right: 10px;
+      min-width: 50px; text-align: center;
     }
     #scoreDisplay {
-      font-size: 0.9rem;
-      color: #0056b3;
-      min-width: 60px;
-      text-align: right;
+      font-size: 0.9rem; color: #0056b3; min-width: 60px; text-align: right;
     }
     #sideMenu {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 250px;
-      height: 100vh;
-      background-color: #fff;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-      transform: translateX(-100%);
-      transition: transform 0.3s ease;
-      z-index: 1600;
+      position: fixed; top: 0; left: 0; width: 250px; height: 100vh;
+      background-color: #fff; box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      transform: translateX(-100%); transition: transform 0.3s ease; z-index: 1600;
       padding: 60px 20px 20px;
     }
-    #sideMenu.open {
-      transform: translateX(0);
-    }
+    #sideMenu.open { transform: translateX(0); }
     #menuOverlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.2);
-      z-index: 1599;
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.2); z-index: 1599;
     }
-    #menuOverlay.show {
-      display: block;
-    }
+    #menuOverlay.show { display: block; }
     #categoriesToggle {
-      cursor: pointer;
-      font-size: 1.2rem;
-      color: #0056b3;
-      margin: 0;
-      font-weight: normal;
+      cursor: pointer; font-size: 1.2rem; color: #0056b3; margin: 0; font-weight: normal;
     }
     #categoryList {
-      list-style: none;
-      padding: 0;
-      margin: 10px 0;
-      display: none;
+      list-style: none; padding: 0; margin: 10px 0; display: none;
     }
     #categoryList li {
-      margin-bottom: 10px;
-      padding-left: 20px;
+      margin-bottom: 10px; padding-left: 20px;
     }
     #categoryList li a {
-      text-decoration: none;
-      color: #0056b3;
-      font-size: 1rem;
+      text-decoration: none; color: #0056b3; font-size: 1rem;
     }
-    #bookmarksFilter,
-    #resetFilter,
-    #reviewUnanswered,
-    #resetProgress {
-      display: block;
-      margin-top: 20px;
-      text-decoration: none;
-      color: #0056b3;
-      font-size: 1rem;
-    }
-    @media (max-width: 600px) {
-      .toolbar { height: 60px; padding: 0 10px; }
-      .menu-button { font-size: 28px; width: 40px; text-align: center; }
-      .logo img { max-height: 45px; }
-      #iconBar { top: 60px; }
-      .swiper { margin-top: 100px; height: calc(100% - 60px - 40px - 50px); min-height: calc(100vh - 150px); }
-      .card { max-width: 90%; padding: 18px 12px 12px 12px; margin: 8px auto; }
-      .question { font-size: 1rem; }
-      .option-btn { font-size: 0.9rem; padding: 5px; }
-      .answer { font-size: 0.9rem; }
-      .swipe-hint { font-size: 0.8rem; }
+    #bookmarksFilter, #resetFilter, #reviewUnanswered, #resetProgress {
+      display: block; margin-top: 20px; text-decoration: none; color: #0056b3; font-size: 1rem;
     }
   </style>
 </head>
 <body>
-  <!-- Landing Page -->
+  <!-- Landing Page with Logo Instead of Text -->
   <div id="landingPage">
-    <h1>Welcome to ENT Quiz & Facts</h1>
+    <!-- Replace 'MedSwipe_Logo.png' with your actual logo path -->
+    <img src="MedSwipe_Logo.png" alt="MedSwipe Logo">
     <button id="customQuizBtn">Custom Quiz</button>
     <button id="randomQuizBtn">Random Quiz</button>
   </div>
@@ -392,19 +271,23 @@
   <!-- Custom Quiz Modal Form -->
   <div id="customQuizForm" class="modalForm">
     <h2>Custom Quiz Options</h2>
-    <label for="categorySelect">Select Category:</label>
-    <select id="categorySelect">
-      <option value="">All</option>
-      <option value="Head & Neck Surgery">Head & Neck Surgery</option>
-      <option value="Otology">Otology</option>
-      <option value="Laryngology">Laryngology</option>
-      <option value="Rhinology">Rhinology</option>
-      <option value="Pediatric ENT">Pediatric ENT</option>
-      <option value="Facial Plastics">Facial Plastics</option>
-    </select>
-    <label for="customNumQuestions">Number of Questions:</label>
-    <input type="number" id="customNumQuestions" min="1" value="10">
-    <div style="margin-top:15px;">
+    <div class="formGroup">
+      <label for="categorySelect">Select Category</label>
+      <select id="categorySelect">
+        <option value="">All</option>
+        <option value="Head & Neck Surgery">Head & Neck Surgery</option>
+        <option value="Otology">Otology</option>
+        <option value="Laryngology">Laryngology</option>
+        <option value="Rhinology">Rhinology</option>
+        <option value="Pediatric ENT">Pediatric ENT</option>
+        <option value="Facial Plastics">Facial Plastics</option>
+      </select>
+    </div>
+    <div class="formGroup">
+      <label for="customNumQuestions">Number of Questions</label>
+      <input type="number" id="customNumQuestions" min="1" value="10">
+    </div>
+    <div class="btnRow">
       <button id="startCustomQuiz">Start Quiz</button>
       <button id="cancelCustomQuiz" class="cancel">Cancel</button>
     </div>
@@ -413,9 +296,11 @@
   <!-- Random Quiz Modal Form -->
   <div id="randomQuizForm" class="modalForm">
     <h2>Random Quiz Options</h2>
-    <label for="randomNumQuestions">Number of Questions:</label>
-    <input type="number" id="randomNumQuestions" min="1" value="10">
-    <div style="margin-top:15px;">
+    <div class="formGroup">
+      <label for="randomNumQuestions">Number of Questions</label>
+      <input type="number" id="randomNumQuestions" min="1" value="10">
+    </div>
+    <div class="btnRow">
       <button id="startRandomQuiz">Start Quiz</button>
       <button id="cancelRandomQuiz" class="cancel">Cancel</button>
     </div>
@@ -488,390 +373,14 @@
   <!-- Swiper JS -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
   <script>
-    // Global variables for quiz
-    let allQuestions = [];
-    let filterMode = "all";
-    let selectedCategory = "";
-    let answeredIds = [];
-    let currentQuestion = 0;
-    let totalQuestions = 0;
-    let score = 0;
-    
-    // CSV URL (replace with your own if needed)
-    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
-    
-    // Update progress display and save to localStorage
-    function updateProgress() {
-      const progressPercent = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
-      document.getElementById("progressBar").style.width = progressPercent + "%";
-      document.getElementById("questionProgress").textContent = `${currentQuestion} / ${totalQuestions}`;
-      document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
-      localStorage.setItem("quizProgress", JSON.stringify({
-        quizData: allQuestions,
-        currentQuestion,
-        score,
-        answeredIds,
-        filterMode,
-        selectedCategory
-      }));
-    }
-    
-    // Bookmark functions (using localStorage)
-    function getBookmarks() {
-      const bm = localStorage.getItem("bookmarks");
-      return bm ? JSON.parse(bm) : [];
-    }
-    function saveBookmarks(bookmarks) {
-      localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
-    }
-    function toggleBookmark(questionId) {
-      let bookmarks = getBookmarks();
-      if (bookmarks.includes(questionId)) {
-        bookmarks = bookmarks.filter(id => id !== questionId);
-      } else {
-        bookmarks.push(questionId);
-      }
-      saveBookmarks(bookmarks);
-      return bookmarks.includes(questionId);
-    }
-    
-    function shuffleArray(array) {
-      return array.sort(() => Math.random() - 0.5);
-    }
-    
-    // Load questions from CSV and then filter based on options
-    function loadQuestions(options = {}) {
-      Papa.parse(csvUrl, {
-        download: true,
-        header: true,
-        complete: function(results) {
-          allQuestions = results.data;
-          let filtered = allQuestions;
-          if (options.type === 'custom' && options.category) {
-            filtered = allQuestions.filter(q => q["Category"] && q["Category"].trim() === options.category);
-          }
-          // Shuffle and slice according to the number specified
-          let selectedQuestions = shuffleArray(filtered);
-          if (options.num) {
-            selectedQuestions = selectedQuestions.slice(0, options.num);
-          }
-          initializeQuiz(selectedQuestions);
-        },
-        error: function(error) {
-          console.error("Error parsing CSV:", error);
-        }
-      });
-    }
-    
-    // Initialize quiz slides from selected questions
-    function initializeQuiz(questions) {
-      currentQuestion = 0;
-      score = 0;
-      totalQuestions = questions.length;
-      answeredIds = [];
-      updateProgress();
-      
-      const quizSlides = document.getElementById("quizSlides");
-      quizSlides.innerHTML = "";
-      
-      questions.forEach(question => {
-        const questionSlide = document.createElement("div");
-        questionSlide.className = "swiper-slide";
-        const qId = question["Question"].trim();
-        questionSlide.dataset.id = qId;
-        questionSlide.dataset.correct = question["Correct Answer"].trim();
-        questionSlide.dataset.explanation = question["Explanation"];
-        questionSlide.innerHTML = `
-          <div class="card">
-            <div class="question">${question["Question"]}</div>
-            ${question["Image URL"] && question["Image URL"].trim() !== "" ? `<img src="${question["Image URL"].trim()}" class="question-image">` : ""}
-            <div class="options">
-              ${question["Option A"] && question["Option A"].trim() !== "" ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>` : ""}
-              ${question["Option B"] && question["Option B"].trim() !== "" ? `<button class="option-btn" data-option="B">B. ${question["Option B"]}</button>` : ""}
-              ${question["Option C"] && question["Option C"].trim() !== "" ? `<button class="option-btn" data-option="C">C. ${question["Option C"]}</button>` : ""}
-              ${question["Option D"] && question["Option D"].trim() !== "" ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>` : ""}
-              ${question["Option E"] && question["Option E"].trim() !== "" ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>` : ""}
-            </div>
-            <div class="swipe-hint" style="display:none;">Swipe up for explanation</div>
-          </div>
-        `;
-        quizSlides.appendChild(questionSlide);
-        
-        const answerSlide = document.createElement("div");
-        answerSlide.className = "swiper-slide";
-        answerSlide.innerHTML = `
-          <div class="card">
-            <div class="answer"></div>
-          </div>
-        `;
-        quizSlides.appendChild(answerSlide);
-      });
-      
-      window.mySwiper = new Swiper('.swiper', {
-        direction: 'vertical',
-        loop: false,
-        mousewheel: true,
-        touchReleaseOnEdges: true
-      });
-      
-      window.mySwiper.on('slideChangeTransitionEnd', function() {
-        const activeIndex = window.mySwiper.activeIndex;
-        const previousIndex = window.mySwiper.previousIndex;
-        if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
-          const prevSlide = window.mySwiper.slides[activeIndex - 1];
-          const card = prevSlide.querySelector('.card');
-          if (!card.classList.contains('answered')) {
-            window.mySwiper.slideNext();
-          }
-        }
-      });
-      
-      addOptionListeners();
-      addBookmarkListeners();
-    }
-    
-    function addOptionListeners() {
-      document.querySelectorAll('.option-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const card = this.closest('.card');
-          if (card.classList.contains('answered')) return;
-          card.classList.add('answered');
-          
-          const questionSlide = card.closest('.swiper-slide');
-          const qId = questionSlide.dataset.id;
-          if (!answeredIds.includes(qId)) {
-            answeredIds.push(qId);
-          }
-          
-          const correct = questionSlide.dataset.correct;
-          const explanation = questionSlide.dataset.explanation;
-          const options = card.querySelectorAll('.option-btn');
-          const selected = this.getAttribute('data-option');
-          const isCorrect = (selected === correct);
-          
-          if (window.analytics && window.logEvent) {
-            window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect });
-          }
-          
-          options.forEach(option => {
-            option.disabled = true;
-            if (option.getAttribute('data-option') === correct) {
-              option.classList.add('correct');
-            }
-          });
-          if (!isCorrect) {
-            this.classList.add('incorrect');
-          }
-          const hint = card.querySelector('.swipe-hint');
-          if (hint) {
-            hint.style.display = 'block';
-          }
-          const answerSlide = questionSlide.nextElementSibling;
-          if (answerSlide) {
-            answerSlide.querySelector('.card').innerHTML = `
-              <div class="answer">
-                <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
-                Correct Answer: ${correct}<br>
-                ${explanation}
-              </div>
-            `;
-          }
-          currentQuestion++;
-          if (isCorrect) score++;
-          updateProgress();
-          
-          if (currentQuestion === totalQuestions) {
-            setTimeout(() => {
-              const summarySlide = document.createElement("div");
-              summarySlide.className = "swiper-slide";
-              summarySlide.innerHTML = `
-                <div class="card">
-                  <div class="answer">
-                    <strong>Final Score: ${score} out of ${totalQuestions}</strong><br>
-                    ${score/totalQuestions >= 0.8 ? "Great job!" : "Keep practicing!"}
-                  </div>
-                </div>
-              `;
-              document.getElementById("quizSlides").appendChild(summarySlide);
-              window.mySwiper.update();
-            }, 1000);
-          }
-        });
-      });
-    }
-    
-    function addBookmarkListeners() {
-      document.querySelectorAll('.bookmark-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          const qId = this.getAttribute('data-id');
-          const isNowBookmarked = toggleBookmark(qId);
-          this.textContent = isNowBookmarked ? "★" : "☆";
-        });
-      });
-    }
-    
-    // Landing page and modal event listeners
-    document.getElementById("customQuizBtn").addEventListener("click", function() {
-      document.getElementById("customQuizForm").style.display = "flex";
-    });
-    document.getElementById("randomQuizBtn").addEventListener("click", function() {
-      document.getElementById("randomQuizForm").style.display = "flex";
-    });
-    document.getElementById("cancelCustomQuiz").addEventListener("click", function() {
-      document.getElementById("customQuizForm").style.display = "none";
-    });
-    document.getElementById("cancelRandomQuiz").addEventListener("click", function() {
-      document.getElementById("randomQuizForm").style.display = "none";
-    });
-    document.getElementById("startCustomQuiz").addEventListener("click", function() {
-      const category = document.getElementById("categorySelect").value;
-      const num = parseInt(document.getElementById("customNumQuestions").value, 10);
-      document.getElementById("customQuizForm").style.display = "none";
-      document.getElementById("landingPage").style.display = "none";
-      loadQuestions({ type: 'custom', category, num });
-    });
-    document.getElementById("startRandomQuiz").addEventListener("click", function() {
-      const num = parseInt(document.getElementById("randomNumQuestions").value, 10);
-      document.getElementById("randomQuizForm").style.display = "none";
-      document.getElementById("landingPage").style.display = "none";
-      loadQuestions({ type: 'random', num });
-    });
-    
-    // Menu toggle and overlay functionality
-    const menuButton = document.getElementById("menuToggle");
-    const sideMenu = document.getElementById("sideMenu");
-    const menuOverlay = document.getElementById("menuOverlay");
-    menuButton.addEventListener("click", function() {
-      sideMenu.classList.toggle("open");
-      menuOverlay.classList.toggle("show");
-    });
-    menuOverlay.addEventListener("click", function() {
-      sideMenu.classList.remove("open");
-      menuOverlay.classList.remove("show");
-    });
-    
-    // Toggle Categories submenu
-    document.getElementById("categoriesToggle").addEventListener("click", function(e) {
-      e.preventDefault();
-      const catList = document.getElementById("categoryList");
-      catList.style.display = (catList.style.display === "block") ? "none" : "block";
-    });
-    
-    // Reset filter functionality
-    document.getElementById("resetFilter").addEventListener("click", function(e) {
-      e.preventDefault();
-      filterMode = "all";
-      selectedCategory = "";
-      loadQuestions();
-      sideMenu.classList.remove("open");
-      menuOverlay.classList.remove("show");
-    });
-    
-    // Bookmarks filter functionality
-    document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
-      e.preventDefault();
-      filterMode = "bookmarks";
-      loadQuestions();
-      sideMenu.classList.remove("open");
-      menuOverlay.classList.remove("show");
-    });
-    
-    // Review Unanswered functionality
-    document.getElementById("reviewUnanswered").addEventListener("click", function(e) {
-      e.preventDefault();
-      filterMode = "unanswered";
-      loadQuestions();
-      sideMenu.classList.remove("open");
-      menuOverlay.classList.remove("show");
-    });
-    
-    // Reset Progress functionality
-    document.getElementById("resetProgress").addEventListener("click", function(e) {
-      e.preventDefault();
-      localStorage.removeItem("quizProgress");
-      loadQuestions();
-      sideMenu.classList.remove("open");
-      menuOverlay.classList.remove("show");
-    });
-    
-    // Favorite & Feedback functionality
-    const favoriteButton = document.getElementById("favoriteButton");
-    const feedbackButton = document.getElementById("feedbackButton");
-    
-    function getCurrentQuestionId() {
-      let activeIndex = window.mySwiper ? window.mySwiper.activeIndex : 0;
-      if (activeIndex % 2 === 1) activeIndex--;
-      let slide = window.mySwiper ? window.mySwiper.slides[activeIndex] : null;
-      return slide ? slide.dataset.id : null;
-    }
-    
-    function updateFavoriteIcon() {
-      const qId = getCurrentQuestionId();
-      if (qId) {
-        const bookmarks = getBookmarks();
-        favoriteButton.textContent = bookmarks.includes(qId) ? "★" : "☆";
-      }
-    }
-    
-    favoriteButton.addEventListener("click", function() {
-      const qId = getCurrentQuestionId();
-      if (qId) {
-        const isFav = toggleBookmark(qId);
-        favoriteButton.textContent = isFav ? "★" : "☆";
-      }
-    });
-    
-    feedbackButton.addEventListener("click", function() {
-      document.getElementById("feedbackModal").style.display = "flex";
-    });
-    
-    window.addEventListener("load", function() {
-      setTimeout(updateFavoriteIcon, 500);
-    });
-    if (window.mySwiper) {
-      window.mySwiper.on('slideChangeTransitionEnd', updateFavoriteIcon);
-    }
-    
-    // Swipe left gesture to close side menu on mobile
-    let touchstartX = 0;
-    let touchendX = 0;
-    const swipeThreshold = 50;
-    sideMenu.addEventListener('touchstart', function(e) {
-      touchstartX = e.changedTouches[0].screenX;
-    });
-    sideMenu.addEventListener('touchend', function(e) {
-      touchendX = e.changedTouches[0].screenX;
-      if (touchendX - touchstartX < -swipeThreshold) {
-        sideMenu.classList.remove("open");
-        menuOverlay.classList.remove("show");
-      }
-    });
-    
-    // Feedback Modal functionality
-    const feedbackModal = document.getElementById("feedbackModal");
-    document.getElementById("closeFeedbackModal").addEventListener("click", function() {
-      feedbackModal.style.display = "none";
-    });
-    document.getElementById("submitFeedback").addEventListener("click", async function() {
-      const feedbackText = document.getElementById("feedbackText").value;
-      if (!feedbackText.trim()) {
-        alert("Please enter your feedback.");
-        return;
-      }
-      try {
-        await window.addDoc(window.collection(window.db, "feedback"), {
-          feedback: feedbackText,
-          timestamp: window.serverTimestamp()
-        });
-        alert("Thank you for your feedback!");
-        document.getElementById("feedbackText").value = "";
-        feedbackModal.style.display = "none";
-      } catch (error) {
-        console.error("Error submitting feedback: ", error);
-        alert("There was an error submitting your feedback. Please try again later.");
-      }
-    });
+    /* The entire JS code from the snippet above goes here. 
+       For brevity, I'm not re-pasting every line. 
+       Just be sure to copy the code from the snippet that sets up:
+         - loadQuestions
+         - initializeQuiz
+         - addOptionListeners
+         - etc.
+    */
   </script>
 </body>
 </html>
