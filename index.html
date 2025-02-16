@@ -17,8 +17,10 @@
   
   <!-- Firebase Initialization -->
   <script type="module">
+    // Import the functions you need from the SDKs you need
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
+    // Your web app's Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
       authDomain: "medswipe-648ee.firebaseapp.com",
@@ -28,9 +30,9 @@
       appId: "1:288366122490:web:1c150c48c8aed4e27f0043",
       measurementId: "G-748P8P634B"
     };
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
-    window.analytics = analytics;
   </script>
   
   <style>
@@ -348,6 +350,22 @@
       document.getElementById("progressBar").style.width = progressPercent + "%";
       document.getElementById("questionProgress").textContent = `${currentQuestion} / ${totalQuestions}`;
       document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
+      
+      // Save progress to localStorage
+      localStorage.setItem("quizProgress", JSON.stringify({
+        quizData: allQuestions,
+        currentQuestion: currentQuestion,
+        score: score,
+        answeredIds: answeredIds,
+        filterMode: filterMode,
+        selectedCategory: selectedCategory
+      }));
+    }
+    
+    // Retrieve saved progress from localStorage (if available)
+    function loadProgress() {
+      const saved = localStorage.getItem("quizProgress");
+      return saved ? JSON.parse(saved) : null;
     }
     
     // Retrieve bookmarks from localStorage (stored as an array of question IDs)
@@ -432,10 +450,11 @@
         touchReleaseOnEdges: true
       });
       
-      // Auto-skip: if swiping forward to an answer slide and the question hasn't been answered, skip to next question.
+      // If user swipes to an answer slide without answering, auto-skip only when swiping forward
       window.mySwiper.on('slideChangeTransitionEnd', function() {
         const activeIndex = window.mySwiper.activeIndex;
         const previousIndex = window.mySwiper.previousIndex;
+        // If swiped forward and on an answer slide
         if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
           const prevSlide = window.mySwiper.slides[activeIndex - 1];
           const card = prevSlide.querySelector('.card');
@@ -468,11 +487,6 @@
           const options = card.querySelectorAll('.option-btn');
           const selected = this.getAttribute('data-option');
           const isCorrect = (selected === correct);
-          
-          // Log Firebase event for question answered
-          if (window.analytics) {
-            logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect: isCorrect });
-          }
           
           options.forEach(option => {
             option.disabled = true;
@@ -537,7 +551,7 @@
       });
     }
     
-    // Load questions from CSV and apply filtering (no progress restoration)
+    // Load questions from CSV and apply filtering or resume progress if available
     function loadQuestions() {
       Papa.parse(csvUrl, {
         download: true,
