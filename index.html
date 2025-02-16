@@ -18,7 +18,7 @@
   <!-- Firebase App, Analytics & Firestore (Modular) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
+    import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
     const firebaseConfig = {
       apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
@@ -32,8 +32,13 @@
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const db = getFirestore(app);
+    // Expose to global scope for non-module scripts:
     window.analytics = analytics;
+    window.logEvent = logEvent;
     window.db = db;
+    window.addDoc = addDoc;
+    window.collection = collection;
+    window.serverTimestamp = serverTimestamp;
   </script>
   
   <style>
@@ -170,11 +175,12 @@
     .option-btn:disabled {
       cursor: not-allowed;
     }
+    /* Hide swipe hint by default */
     .swipe-hint {
       font-size: 0.85rem;
       margin-top: 8px;
       color: #666;
-      display: block;
+      display: none;
     }
     .answer {
       white-space: pre-line;
@@ -438,7 +444,8 @@
               ${question["Option D"] && question["Option D"].trim() !== "" ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>` : ""}
               ${question["Option E"] && question["Option E"].trim() !== "" ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>` : ""}
             </div>
-            <div class="swipe-hint">Swipe up for explanation</div>
+            <!-- Hint hidden by default -->
+            <div class="swipe-hint" style="display:none;">Swipe up for explanation</div>
           </div>
         `;
         quizSlides.appendChild(questionSlide);
@@ -499,25 +506,27 @@
           const isCorrect = (selected === correct);
           
           // Log Firebase event for question answered
-          if (window.analytics) {
-            logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect: isCorrect });
+          if (window.analytics && window.logEvent) {
+            window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect: isCorrect });
           }
           
+          // Disable all options and mark correct one green
           options.forEach(option => {
             option.disabled = true;
             if (option.getAttribute('data-option') === correct) {
               option.classList.add('correct');
             }
           });
+          // If selected option is incorrect, mark it red
           if (!isCorrect) {
             this.classList.add('incorrect');
           }
-          // Show the swipe hint
+          // Reveal the swipe hint
           const hint = card.querySelector('.swipe-hint');
           if (hint) {
             hint.style.display = 'block';
           }
-          // Update the answer slide (next slide)
+          // Update the answer slide (next slide) with explanation
           const answerSlide = questionSlide.nextElementSibling;
           if (answerSlide) {
             answerSlide.querySelector('.card').innerHTML = `
@@ -665,11 +674,11 @@
       sideMenu.classList.remove("open");
     });
     
-    // Icon Bar functionality: Update favorite icon and add feedback alert.
+    // Icon Bar functionality: Update favorite icon and open feedback modal.
     const favoriteButton = document.getElementById("favoriteButton");
     const feedbackButton = document.getElementById("feedbackButton");
     
-    // Get current question ID from the active slide
+    // Get current question ID from active slide
     function getCurrentQuestionId() {
       let activeIndex = window.mySwiper ? window.mySwiper.activeIndex : 0;
       if (activeIndex % 2 === 1) activeIndex--;
@@ -706,10 +715,10 @@
       window.mySwiper.on('slideChangeTransitionEnd', updateFavoriteIcon);
     }
     
-    // Add swipe left gesture to close the side menu on mobile
+    // Add swipe left gesture to close side menu on mobile
     let touchstartX = 0;
     let touchendX = 0;
-    const swipeThreshold = 50; // Minimum distance for swipe
+    const swipeThreshold = 50;
     
     sideMenu.addEventListener('touchstart', function(e) {
       touchstartX = e.changedTouches[0].screenX;
@@ -738,9 +747,9 @@
         return;
       }
       try {
-        await addDoc(collection(db, "feedback"), {
+        await window.addDoc(window.collection(window.db, "feedback"), {
           feedback: feedbackText,
-          timestamp: serverTimestamp()
+          timestamp: window.serverTimestamp()
         });
         alert("Thank you for your feedback!");
         document.getElementById("feedbackText").value = "";
