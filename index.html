@@ -255,6 +255,17 @@
     #sideMenu.open {
       transform: translateX(0);
     }
+    /* Menu Overlay - covers the rest of the page when the menu is open */
+    #menuOverlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.2);
+      z-index: 1599; /* Just behind the side menu */
+    }
+    #menuOverlay.show {
+      display: block;
+    }
     /* Categories header: not bold */
     #categoriesToggle {
       cursor: pointer;
@@ -264,6 +275,12 @@
       font-weight: normal;
     }
     /* Indent submenu items */
+    #categoryList {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0;
+      display: none;
+    }
     #categoryList li {
       margin-bottom: 10px;
       padding-left: 20px;
@@ -273,21 +290,16 @@
       color: #0056b3;
       font-size: 1rem;
     }
-    <!-- Additional Categories -->
-    <!-- These new list items have been added below -->
-    <ul id="categoryList">
-      <li><a href="#" data-category="Head & Neck Surgery">Head & Neck Surgery</a></li>
-      <li><a href="#" data-category="Otology">Otology</a></li>
-      <li><a href="#" data-category="Laryngology">Laryngology</a></li>
-      <li><a href="#" data-category="Rhinology">Rhinology</a></li>
-      <li><a href="#" data-category="Pediatric ENT">Pediatric ENT</a></li>
-      <li><a href="#" data-category="Facial Plastics">Facial Plastics</a></li>
-    </ul>
-    <a href="#" id="bookmarksFilter">Bookmarks</a>
-    <a href="#" id="reviewUnanswered">Review Unanswered</a>
-    <a href="#" id="resetFilter">Show All Questions</a>
-    <a href="#" id="resetProgress">Reset Progress</a>
-    <!-- End additional categories -->
+    #bookmarksFilter,
+    #resetFilter,
+    #reviewUnanswered,
+    #resetProgress {
+      display: block;
+      margin-top: 20px;
+      text-decoration: none;
+      color: #0056b3;
+      font-size: 1rem;
+    }
     /* Mobile adjustments */
     @media (max-width: 600px) {
       .toolbar { height: 60px; padding: 0 10px; }
@@ -304,6 +316,9 @@
   </style>
 </head>
 <body>
+  <!-- Menu Overlay (clicking it closes the menu) -->
+  <div id="menuOverlay"></div>
+  
   <!-- Side Menu -->
   <div id="sideMenu">
     <h3 id="categoriesToggle">Categories</h3>
@@ -320,6 +335,7 @@
     <a href="#" id="resetFilter">Show All Questions</a>
     <a href="#" id="resetProgress">Reset Progress</a>
   </div>
+  
   <!-- Top Toolbar -->
   <div class="toolbar">
     <div class="toolbar-left">
@@ -332,15 +348,18 @@
     </div>
     <div class="toolbar-right"></div>
   </div>
+  
   <!-- Icon Bar (Favorite & Feedback) -->
   <div id="iconBar">
     <button id="favoriteButton">☆</button>
     <button id="feedbackButton">💬</button>
   </div>
+  
   <!-- Swiper Container -->
   <div class="swiper">
     <div class="swiper-wrapper" id="quizSlides"></div>
   </div>
+  
   <!-- Bottom Toolbar for progress & score -->
   <div id="bottomToolbar">
     <div id="progressBarContainer">
@@ -349,6 +368,7 @@
     <div id="questionProgress">0 / 0</div>
     <div id="scoreDisplay">Score: 0</div>
   </div>
+  
   <!-- Feedback Modal -->
   <div id="feedbackModal" style="display:none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1700; justify-content: center; align-items: center;">
     <div style="background: #fff; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px;">
@@ -359,52 +379,45 @@
       <button id="closeFeedbackModal">Close</button>
     </div>
   </div>
+  
   <!-- Swiper JS -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
   <script>
     // Replace with your Google Sheets published CSV URL
     const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
     
-    let allQuestions = []; // full question set
-    let filterMode = "all"; // "all", "category", "bookmarks", or "unanswered"
+    let allQuestions = [];
+    let filterMode = "all";
     let selectedCategory = "";
-    let answeredIds = [];  // to track answered question IDs
+    let answeredIds = [];
     
-    // Progress tracking variables
     let currentQuestion = 0;
     let totalQuestions = 0;
     let score = 0;
     
-    // Update progress bar, question progress, and score in the bottom toolbar
     function updateProgress() {
       const progressPercent = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
       document.getElementById("progressBar").style.width = progressPercent + "%";
       document.getElementById("questionProgress").textContent = `${currentQuestion} / ${totalQuestions}`;
       document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
       
-      // Save progress to localStorage (for bookmarks and progress reset)
       localStorage.setItem("quizProgress", JSON.stringify({
         quizData: allQuestions,
-        currentQuestion: currentQuestion,
-        score: score,
-        answeredIds: answeredIds,
-        filterMode: filterMode,
-        selectedCategory: selectedCategory
+        currentQuestion,
+        score,
+        answeredIds,
+        filterMode,
+        selectedCategory
       }));
     }
     
-    // Retrieve bookmarks from localStorage (for bookmarks only)
     function getBookmarks() {
       const bm = localStorage.getItem("bookmarks");
       return bm ? JSON.parse(bm) : [];
     }
-    
-    // Save bookmarks to localStorage
     function saveBookmarks(bookmarks) {
       localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
     }
-    
-    // Toggle bookmark for a given question ID
     function toggleBookmark(questionId) {
       let bookmarks = getBookmarks();
       if (bookmarks.includes(questionId)) {
@@ -416,12 +429,10 @@
       return bookmarks.includes(questionId);
     }
     
-    // Simple shuffle function
     function shuffleArray(array) {
       return array.sort(() => Math.random() - 0.5);
     }
     
-    // Initialize quiz slides from given questions and reset progress tracking
     function initializeQuiz(questions) {
       currentQuestion = 0;
       score = 0;
@@ -433,7 +444,6 @@
       quizSlides.innerHTML = "";
       
       questions.forEach(question => {
-        // Create question slide
         const questionSlide = document.createElement("div");
         questionSlide.className = "swiper-slide";
         const qId = question["Question"].trim();
@@ -451,13 +461,11 @@
               ${question["Option D"] && question["Option D"].trim() !== "" ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>` : ""}
               ${question["Option E"] && question["Option E"].trim() !== "" ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>` : ""}
             </div>
-            <!-- Swipe hint hidden by default -->
-            <div class="swipe-hint" style="display: none;">Swipe up for explanation</div>
+            <div class="swipe-hint" style="display:none;">Swipe up for explanation</div>
           </div>
         `;
         quizSlides.appendChild(questionSlide);
         
-        // Create answer slide
         const answerSlide = document.createElement("div");
         answerSlide.className = "swiper-slide";
         answerSlide.innerHTML = `
@@ -475,7 +483,6 @@
         touchReleaseOnEdges: true
       });
       
-      // Auto-skip: if swiping forward to an answer slide and the question hasn't been answered, skip to next question.
       window.mySwiper.on('slideChangeTransitionEnd', function() {
         const activeIndex = window.mySwiper.activeIndex;
         const previousIndex = window.mySwiper.previousIndex;
@@ -492,7 +499,6 @@
       addBookmarkListeners();
     }
     
-    // Add event listeners to answer buttons
     function addOptionListeners() {
       document.querySelectorAll('.option-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -512,28 +518,23 @@
           const selected = this.getAttribute('data-option');
           const isCorrect = (selected === correct);
           
-          // Log Firebase event for question answered
           if (window.analytics && window.logEvent) {
-            window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect: isCorrect });
+            window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect });
           }
           
-          // Disable all options and mark the correct option green
           options.forEach(option => {
             option.disabled = true;
             if (option.getAttribute('data-option') === correct) {
               option.classList.add('correct');
             }
           });
-          // If the selected option is incorrect, mark it red
           if (!isCorrect) {
             this.classList.add('incorrect');
           }
-          // Reveal the swipe hint after selection
           const hint = card.querySelector('.swipe-hint');
           if (hint) {
             hint.style.display = 'block';
           }
-          // Update the answer slide (next slide) with explanation
           const answerSlide = questionSlide.nextElementSibling;
           if (answerSlide) {
             answerSlide.querySelector('.card').innerHTML = `
@@ -544,12 +545,10 @@
               </div>
             `;
           }
-          // Update progress
           currentQuestion++;
           if (isCorrect) score++;
           updateProgress();
           
-          // If last question, append final summary slide
           if (currentQuestion === totalQuestions) {
             setTimeout(() => {
               const summarySlide = document.createElement("div");
@@ -570,7 +569,6 @@
       });
     }
     
-    // Add event listeners to bookmark buttons
     function addBookmarkListeners() {
       document.querySelectorAll('.bookmark-btn').forEach(btn => {
         btn.addEventListener('click', function(e) {
@@ -582,14 +580,12 @@
       });
     }
     
-    // Load questions from CSV and apply filtering
     function loadQuestions() {
       Papa.parse(csvUrl, {
         download: true,
         header: true,
         complete: function(results) {
           allQuestions = results.data;
-          // Attach event listeners to static category links
           document.querySelectorAll("#categoryList a").forEach(link => {
             link.addEventListener("click", function(e) {
               e.preventDefault();
@@ -597,7 +593,8 @@
               selectedCategory = this.getAttribute("data-category");
               const filtered = allQuestions.filter(q => q["Category"] && q["Category"].trim() === selectedCategory);
               initializeQuiz(shuffleArray(filtered));
-              document.getElementById("sideMenu").classList.remove("open");
+              sideMenu.classList.remove("open");
+              menuOverlay.classList.remove("show");
             });
           });
           let filtered = allQuestions;
@@ -631,14 +628,22 @@
         }
       });
     }
-    
     loadQuestions();
     
-    // Menu toggle functionality
     const menuButton = document.getElementById("menuToggle");
     const sideMenu = document.getElementById("sideMenu");
+    const menuOverlay = document.getElementById("menuOverlay");
+    
+    // Open/close menu on button click
     menuButton.addEventListener("click", function() {
       sideMenu.classList.toggle("open");
+      menuOverlay.classList.toggle("show");
+    });
+    
+    // Close menu by clicking the overlay
+    menuOverlay.addEventListener("click", function() {
+      sideMenu.classList.remove("open");
+      menuOverlay.classList.remove("show");
     });
     
     // Toggle Categories submenu
@@ -655,6 +660,7 @@
       selectedCategory = "";
       loadQuestions();
       sideMenu.classList.remove("open");
+      menuOverlay.classList.remove("show");
     });
     
     // Bookmarks filter functionality
@@ -663,6 +669,7 @@
       filterMode = "bookmarks";
       loadQuestions();
       sideMenu.classList.remove("open");
+      menuOverlay.classList.remove("show");
     });
     
     // Review Unanswered functionality
@@ -671,6 +678,7 @@
       filterMode = "unanswered";
       loadQuestions();
       sideMenu.classList.remove("open");
+      menuOverlay.classList.remove("show");
     });
     
     // Reset Progress functionality
@@ -679,13 +687,13 @@
       localStorage.removeItem("quizProgress");
       loadQuestions();
       sideMenu.classList.remove("open");
+      menuOverlay.classList.remove("show");
     });
     
-    // Icon Bar functionality: Update favorite icon and open feedback modal.
+    // Favorite & Feedback
     const favoriteButton = document.getElementById("favoriteButton");
     const feedbackButton = document.getElementById("feedbackButton");
     
-    // Get current question ID from active slide
     function getCurrentQuestionId() {
       let activeIndex = window.mySwiper ? window.mySwiper.activeIndex : 0;
       if (activeIndex % 2 === 1) activeIndex--;
@@ -722,7 +730,7 @@
       window.mySwiper.on('slideChangeTransitionEnd', updateFavoriteIcon);
     }
     
-    // Add swipe left gesture to close side menu on mobile
+    // Add swipe left gesture to close the side menu on mobile
     let touchstartX = 0;
     let touchendX = 0;
     const swipeThreshold = 50;
@@ -735,19 +743,20 @@
       touchendX = e.changedTouches[0].screenX;
       if (touchendX - touchstartX < -swipeThreshold) {
         sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
       }
     });
     
-    // Feedback Modal functionality
+    // Feedback Modal
     const feedbackModal = document.getElementById("feedbackModal");
     const closeFeedbackModal = document.getElementById("closeFeedbackModal");
     const submitFeedback = document.getElementById("submitFeedback");
     
-    document.getElementById("closeFeedbackModal").addEventListener("click", function() {
+    closeFeedbackModal.addEventListener("click", function() {
       feedbackModal.style.display = "none";
     });
     
-    document.getElementById("submitFeedback").addEventListener("click", async function() {
+    submitFeedback.addEventListener("click", async function() {
       const feedbackText = document.getElementById("feedbackText").value;
       if (!feedbackText.trim()) {
         alert("Please enter your feedback.");
