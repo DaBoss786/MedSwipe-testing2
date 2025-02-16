@@ -74,10 +74,10 @@
     .logo img {
       max-height: 40px;
     }
-    /* New Icon Bar (for favorite and feedback icons) */
+    /* Icon Bar: Favorite & Feedback icons */
     #iconBar {
       position: fixed;
-      top: 50px; /* below the top toolbar */
+      top: 50px; /* directly below top toolbar (50px tall) */
       left: 0;
       width: 100%;
       height: 40px;
@@ -96,12 +96,12 @@
       margin: 0 15px;
       color: #0056b3;
     }
-    /* Adjust Swiper container margin to accommodate icon bar */
+    /* Swiper container: adjust margin-top to account for top toolbar + icon bar */
     .swiper {
       width: 100%;
       height: calc(100% - 50px - 40px - 50px); /* top toolbar + icon bar + bottom toolbar */
       min-height: calc(100vh - 140px);
-      margin-top: 90px; /* 50px + 40px */
+      margin-top: 90px; /* 50 + 40 */
     }
     .swiper-slide {
       animation: fadeIn 0.5s ease-in-out;
@@ -109,7 +109,7 @@
       align-items: flex-start;
       justify-content: center;
       box-sizing: border-box;
-      padding-top: 20px;
+      padding-top: 30px; /* increased padding so content isn't under the icon bar */
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
@@ -130,8 +130,7 @@
       -webkit-overflow-scrolling: touch;
       text-align: center;
     }
-    /* (Bookmark button removed from card) */
-    /* Text styling with preserved whitespace */
+    /* Text styling */
     .question {
       white-space: pre-line;
       font-size: 1.1rem;
@@ -282,8 +281,8 @@
       .toolbar { height: 60px; padding: 0 10px; }
       .menu-button { font-size: 28px; width: 40px; text-align: center; }
       .logo img { max-height: 45px; }
-      #iconBar { height: 40px; }
-      .swiper { margin-top: 90px; height: calc(100% - 60px - 50px); min-height: calc(100vh - 110px); }
+      #iconBar { top: 60px; } /* shift icon bar down to align below 60px toolbar */
+      .swiper { margin-top: 100px; height: calc(100% - 60px - 40px - 50px); min-height: calc(100vh - 150px); }
       .card { max-width: 90%; padding: 18px 12px 12px 12px; margin: 8px auto; }
       .question { font-size: 1rem; }
       .option-btn { font-size: 0.9rem; padding: 5px; }
@@ -410,7 +409,7 @@
       quizSlides.innerHTML = "";
       
       questions.forEach(question => {
-        // Create question slide (without bookmark button inside the card)
+        // Create question slide
         const questionSlide = document.createElement("div");
         questionSlide.className = "swiper-slide";
         const qId = question["Question"].trim();
@@ -465,7 +464,7 @@
       });
       
       addOptionListeners();
-      // The bookmark icon is now in the icon bar, so we don't attach listeners here.
+      addBookmarkListeners();
     }
     
     // Add event listeners to answer buttons
@@ -540,6 +539,18 @@
               window.mySwiper.update();
             }, 1000);
           }
+        });
+      });
+    }
+    
+    // Add event listeners to bookmark buttons
+    function addBookmarkListeners() {
+      document.querySelectorAll('.bookmark-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const qId = this.getAttribute('data-id');
+          const isNowBookmarked = toggleBookmark(qId);
+          this.textContent = isNowBookmarked ? "★" : "☆";
         });
       });
     }
@@ -643,22 +654,19 @@
       sideMenu.classList.remove("open");
     });
     
-    // Icon Bar functionality: update favorite icon based on active slide,
-    // and add click events for the favorite and feedback buttons.
+    // Icon Bar functionality: Update favorite icon and add feedback alert.
     const favoriteButton = document.getElementById("favoriteButton");
     const feedbackButton = document.getElementById("feedbackButton");
     
-    // Function to get current question's id from active slide
+    // Get current question ID from the active slide
     function getCurrentQuestionId() {
-      // The active slide should be a question slide (even index)
       let activeIndex = window.mySwiper ? window.mySwiper.activeIndex : 0;
-      // If activeIndex is odd, subtract 1
+      // Ensure we're on a question slide (even index)
       if (activeIndex % 2 === 1) activeIndex--;
       let slide = window.mySwiper ? window.mySwiper.slides[activeIndex] : null;
       return slide ? slide.dataset.id : null;
     }
     
-    // Update the favorite button based on current question's bookmark status
     function updateFavoriteIcon() {
       const qId = getCurrentQuestionId();
       if (qId) {
@@ -667,7 +675,6 @@
       }
     }
     
-    // When the favorite button is clicked, toggle the bookmark for the current question
     favoriteButton.addEventListener("click", function() {
       const qId = getCurrentQuestionId();
       if (qId) {
@@ -676,15 +683,13 @@
       }
     });
     
-    // When the feedback button is clicked, for now show an alert (replace with your desired functionality)
     feedbackButton.addEventListener("click", function() {
       const qId = getCurrentQuestionId();
       alert("Feedback for question: " + (qId ? qId : "unknown"));
     });
     
-    // Update the favorite icon when slide changes
+    // Update favorite icon on slide change
     window.addEventListener("load", function() {
-      // Give Swiper some time to initialize
       setTimeout(updateFavoriteIcon, 500);
     });
     if (window.mySwiper) {
