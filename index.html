@@ -15,7 +15,7 @@
   <!-- PapaParse for CSV parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   
- <!-- Firebase App, Analytics & Firestore (Modular) -->
+  <!-- Firebase App, Analytics & Firestore (Modular) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
     import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
@@ -56,7 +56,8 @@
       align-items: center;
       text-align: center;
     }
-    #landingPage img {MedSwipe Logo.jpg
+    /* Fixed the CSS rule by removing stray text */
+    #landingPage img {
       width: 220px; /* Adjust as needed */
       margin-bottom: 30px;
     }
@@ -139,28 +140,54 @@
     }
     .toolbar {
       position: fixed;
-      top: 0; left: 0; width: 100%; height: 50px;
+      top: 0; 
+      left: 0; 
+      width: 100%; 
+      height: 50px;
       background-color: #fff;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between;
+      padding: 0 10px; 
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       z-index: 1500;
     }
-    .toolbar-left, .toolbar-center, .toolbar-right { flex: 1; }
+    .toolbar-left, .toolbar-center, .toolbar-right { 
+      flex: 1; 
+    }
     .toolbar-left { text-align: left; }
     .toolbar-center { text-align: center; }
     .toolbar-right { text-align: right; }
     .menu-button {
-      font-size: 24px; background: none; border: none; cursor: pointer; color: #333;
+      font-size: 24px; 
+      background: none; 
+      border: none; 
+      cursor: pointer; 
+      color: #333;
     }
-    .logo img { max-height: 40px; }
+    .logo img { 
+      max-height: 40px; 
+    }
     #iconBar {
-      position: fixed; top: 50px; left: 0; width: 100%; height: 40px;
-      background-color: #fff; display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 1450;
+      position: fixed; 
+      top: 50px; 
+      left: 0; 
+      width: 100%; 
+      height: 40px;
+      background-color: #fff; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+      z-index: 1450;
     }
     #iconBar button {
-      background: none; border: none; font-size: 24px; cursor: pointer;
-      margin: 0 15px; color: #0056b3;
+      background: none; 
+      border: none; 
+      font-size: 24px; 
+      cursor: pointer;
+      margin: 0 15px; 
+      color: #0056b3;
     }
     .swiper {
       width: 100%;
@@ -170,90 +197,184 @@
     }
     .swiper-slide {
       animation: fadeIn 0.5s ease-in-out;
-      display: flex; align-items: flex-start; justify-content: center;
-      box-sizing: border-box; padding-top: 20px;
+      display: flex; 
+      align-items: flex-start; 
+      justify-content: center;
+      box-sizing: border-box; 
+      padding-top: 20px;
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
     .card {
-      position: relative; background: #fff; border-radius: 10px;
-      padding: 20px 15px 15px 15px; margin: 10px auto;
+      position: relative; 
+      background: #fff; 
+      border-radius: 10px;
+      padding: 20px 15px 15px 15px; 
+      margin: 10px auto;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      max-width: 600px; width: 100%; max-height: 80vh;
-      overflow-y: auto; -webkit-overflow-scrolling: touch; text-align: center;
+      max-width: 600px; 
+      width: 100%; 
+      max-height: 80vh;
+      overflow-y: auto; 
+      -webkit-overflow-scrolling: touch; 
+      text-align: center;
     }
     .question {
-      white-space: pre-line; font-size: 1.1rem; font-weight: 500; margin-bottom: 10px;
+      white-space: pre-line; 
+      font-size: 1.1rem; 
+      font-weight: 500; 
+      margin-bottom: 10px;
     }
-    .options { display: flex; flex-direction: column; gap: 8px; }
+    .options { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 8px; 
+    }
     .option-btn {
-      padding: 6px; border: 1px solid #0056b3; background: #fff; color: #0056b3;
-      border-radius: 5px; cursor: pointer; font-size: 0.95rem; transition: background 0.3s ease;
+      padding: 6px; 
+      border: 1px solid #0056b3; 
+      background: #fff; 
+      color: #0056b3;
+      border-radius: 5px; 
+      cursor: pointer; 
+      font-size: 0.95rem; 
+      transition: background 0.3s ease;
     }
     .option-btn:hover {
-      background: #0056b3; color: #fff;
+      background: #0056b3; 
+      color: #fff;
     }
-    .option-btn.correct { background-color: #28a745; color: #fff; }
-    .option-btn.incorrect { background-color: #dc3545; color: #fff; }
-    .option-btn:disabled { cursor: not-allowed; }
+    .option-btn.correct { 
+      background-color: #28a745; 
+      color: #fff; 
+    }
+    .option-btn.incorrect { 
+      background-color: #dc3545; 
+      color: #fff; 
+    }
+    .option-btn:disabled { 
+      cursor: not-allowed; 
+    }
     .swipe-hint {
-      font-size: 0.85rem; margin-top: 8px; color: #666; display: none;
+      font-size: 0.85rem; 
+      margin-top: 8px; 
+      color: #666; 
+      display: none;
     }
     .answer {
-      white-space: pre-line; font-size: 1rem; color: #333;
-      margin-top: 10px; text-align: left;
+      white-space: pre-line; 
+      font-size: 1rem; 
+      color: #333;
+      margin-top: 10px; 
+      text-align: left;
     }
     .question-image {
-      max-width: 100%; height: auto; margin-bottom: 10px; border-radius: 5px;
+      max-width: 100%; 
+      height: auto; 
+      margin-bottom: 10px; 
+      border-radius: 5px;
     }
     #bottomToolbar {
-      position: fixed; bottom: 0; left: 0; right: 0; height: 50px;
-      background-color: #fff; display: flex; align-items: center; justify-content: space-between;
-      padding: 0 10px; box-shadow: 0 -2px 4px rgba(0,0,0,0.1); z-index: 1500;
+      position: fixed; 
+      bottom: 0; 
+      left: 0; 
+      right: 0; 
+      height: 50px;
+      background-color: #fff; 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between;
+      padding: 0 10px; 
+      box-shadow: 0 -2px 4px rgba(0,0,0,0.1); 
+      z-index: 1500;
     }
     #progressBarContainer {
-      flex: 1; height: 10px; background-color: #ccc; border-radius: 5px;
-      margin-right: 10px; overflow: hidden;
+      flex: 1; 
+      height: 10px; 
+      background-color: #ccc; 
+      border-radius: 5px;
+      margin-right: 10px; 
+      overflow: hidden;
     }
     #progressBar {
-      height: 100%; width: 0%; background-color: #0056b3; border-radius: 5px;
+      height: 100%; 
+      width: 0%; 
+      background-color: #0056b3; 
+      border-radius: 5px;
       transition: width 0.3s ease;
     }
     #questionProgress {
-      font-size: 0.9rem; color: #0056b3; margin-right: 10px;
-      min-width: 50px; text-align: center;
+      font-size: 0.9rem; 
+      color: #0056b3; 
+      margin-right: 10px;
+      min-width: 50px; 
+      text-align: center;
     }
     #scoreDisplay {
-      font-size: 0.9rem; color: #0056b3; min-width: 60px; text-align: right;
+      font-size: 0.9rem; 
+      color: #0056b3; 
+      min-width: 60px; 
+      text-align: right;
     }
     #sideMenu {
-      position: fixed; top: 0; left: 0; width: 250px; height: 100vh;
-      background-color: #fff; box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-      transform: translateX(-100%); transition: transform 0.3s ease; z-index: 1600;
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 250px; 
+      height: 100vh;
+      background-color: #fff; 
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      transform: translateX(-100%); 
+      transition: transform 0.3s ease; 
+      z-index: 1600;
       padding: 60px 20px 20px;
     }
-    #sideMenu.open { transform: translateX(0); }
-    #menuOverlay {
-      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.2); z-index: 1599;
+    #sideMenu.open { 
+      transform: translateX(0); 
     }
-    #menuOverlay.show { display: block; }
+    #menuOverlay {
+      display: none; 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      right: 0; 
+      bottom: 0;
+      background: rgba(0,0,0,0.2); 
+      z-index: 1599;
+    }
+    #menuOverlay.show { 
+      display: block; 
+    }
     #categoriesToggle {
-      cursor: pointer; font-size: 1.2rem; color: #0056b3; margin: 0; font-weight: normal;
+      cursor: pointer; 
+      font-size: 1.2rem; 
+      color: #0056b3; 
+      margin: 0; 
+      font-weight: normal;
     }
     #categoryList {
-      list-style: none; padding: 0; margin: 10px 0; display: none;
+      list-style: none; 
+      padding: 0; 
+      margin: 10px 0; 
+      display: none;
     }
     #categoryList li {
-      margin-bottom: 10px; padding-left: 20px;
+      margin-bottom: 10px; 
+      padding-left: 20px;
     }
     #categoryList li a {
-      text-decoration: none; color: #0056b3; font-size: 1rem;
+      text-decoration: none; 
+      color: #0056b3; 
+      font-size: 1rem;
     }
     #bookmarksFilter, #resetFilter, #reviewUnanswered, #resetProgress {
-      display: block; margin-top: 20px; text-decoration: none; color: #0056b3; font-size: 1rem;
+      display: block; 
+      margin-top: 20px; 
+      text-decoration: none; 
+      color: #0056b3; 
+      font-size: 1rem;
     }
     
     @media (max-width: 600px) {
@@ -282,8 +403,8 @@
 <body>
   <!-- Landing Page with Logo -->
   <div id="landingPage">
-    <!-- Replace with your actual logo file name: "MedSwipe_Logo.png" -->
-    <img src="MedSwipe_Logo.jpg" alt="MedSwipe Logo">
+    <!-- Update the src to reflect the correct file name with space -->
+    <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
     <button id="customQuizBtn">Custom Quiz</button>
     <button id="randomQuizBtn">Random Quiz</button>
   </div>
@@ -353,8 +474,8 @@
     </div>
     <div class="toolbar-center">
       <div class="logo">
-        <!-- This can be a smaller version or the same logo. Adjust as needed. -->
-        <img src="MedSwipe_Logo.png" alt="MedSwipe Logo">
+        <!-- Update the src for the top toolbar logo as well -->
+        <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
       </div>
     </div>
     <div class="toolbar-right"></div>
@@ -394,21 +515,7 @@
   <!-- Swiper JS -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
   <script>
-    /* 
-      Put the entire JavaScript logic for your quiz, 
-      including loadQuestions, initializeQuiz, event listeners for 
-      customQuizBtn / randomQuizBtn, etc. 
-      The version from the snippet we provided that references:
-        #customQuizBtn
-        #randomQuizBtn
-        #customQuizForm
-        #randomQuizForm
-        #startCustomQuiz
-        #startRandomQuiz
-      Make sure you include that code exactly so the modals appear. 
-    */
-
-    // 1) Global variables
+    // Global variables
     let allQuestions = [];
     let filterMode = "all";
     let selectedCategory = "";
@@ -417,16 +524,15 @@
     let totalQuestions = 0;
     let score = 0;
 
-    // 2) CSV URL
+    // CSV URL
     const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
 
-    // 3) Utility: updateProgress
+    // Update progress
     function updateProgress() {
       const progressPercent = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
       document.getElementById("progressBar").style.width = progressPercent + "%";
       document.getElementById("questionProgress").textContent = `${currentQuestion} / ${totalQuestions}`;
       document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
-
       localStorage.setItem("quizProgress", JSON.stringify({
         quizData: allQuestions,
         currentQuestion,
@@ -437,7 +543,7 @@
       }));
     }
 
-    // 4) Bookmarks in localStorage
+    // Bookmarks functions
     function getBookmarks() {
       const bm = localStorage.getItem("bookmarks");
       return bm ? JSON.parse(bm) : [];
@@ -456,12 +562,12 @@
       return bookmarks.includes(questionId);
     }
 
-    // 5) Shuffling
+    // Shuffle
     function shuffleArray(array) {
       return array.sort(() => Math.random() - 0.5);
     }
 
-    // 6) loadQuestions with parameters
+    // Load questions with options
     function loadQuestions(options = {}) {
       Papa.parse(csvUrl, {
         download: true,
@@ -469,21 +575,13 @@
         complete: function(results) {
           allQuestions = results.data;
           let filtered = allQuestions;
-
           if (options.type === 'custom' && options.category) {
-            // Filter by category if provided
             filtered = filtered.filter(q => q["Category"] && q["Category"].trim() === options.category);
           }
-
-          // Shuffle the filtered set
           let selectedQuestions = shuffleArray(filtered);
-
-          // If a number is specified, slice it
           if (options.num) {
             selectedQuestions = selectedQuestions.slice(0, options.num);
           }
-
-          // Initialize the quiz with that subset
           initializeQuiz(selectedQuestions);
         },
         error: function(error) {
@@ -492,7 +590,7 @@
       });
     }
 
-    // 7) initializeQuiz
+    // Initialize quiz
     function initializeQuiz(questions) {
       currentQuestion = 0;
       score = 0;
@@ -555,7 +653,6 @@
         touchReleaseOnEdges: true
       });
 
-      // Auto-skip if question not answered
       window.mySwiper.on('slideChangeTransitionEnd', function() {
         const activeIndex = window.mySwiper.activeIndex;
         const previousIndex = window.mySwiper.previousIndex;
@@ -572,7 +669,7 @@
       addBookmarkListeners();
     }
 
-    // 8) addOptionListeners
+    // Add option listeners
     function addOptionListeners() {
       document.querySelectorAll('.option-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -596,7 +693,6 @@
             window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect });
           }
 
-          // Mark correct as green, incorrect as red
           options.forEach(option => {
             option.disabled = true;
             if (option.getAttribute('data-option') === correct) {
@@ -645,7 +741,7 @@
       });
     }
 
-    // 9) addBookmarkListeners
+    // Add bookmark listeners
     function addBookmarkListeners() {
       document.querySelectorAll('.bookmark-btn').forEach(btn => {
         btn.addEventListener('click', function(e) {
@@ -657,12 +753,12 @@
       });
     }
 
-    // 10) Landing page and modals
+    // Landing page and modal event listeners
     document.getElementById("customQuizBtn").addEventListener("click", function() {
-      document.getElementById("customQuizForm").style.display = "block"; /* show as block/flex */
+      document.getElementById("customQuizForm").style.display = "block";
     });
     document.getElementById("randomQuizBtn").addEventListener("click", function() {
-      document.getElementById("randomQuizForm").style.display = "block"; /* show as block/flex */
+      document.getElementById("randomQuizForm").style.display = "block";
     });
     document.getElementById("cancelCustomQuiz").addEventListener("click", function() {
       document.getElementById("customQuizForm").style.display = "none";
@@ -684,7 +780,7 @@
       loadQuestions({ type: 'random', num });
     });
 
-    // 11) Side menu and overlay
+    // Side menu and overlay
     const menuButton = document.getElementById("menuToggle");
     const sideMenu = document.getElementById("sideMenu");
     const menuOverlay = document.getElementById("menuOverlay");
@@ -697,19 +793,19 @@
       menuOverlay.classList.remove("show");
     });
 
-    // Toggle categories
+    // Toggle Categories submenu
     document.getElementById("categoriesToggle").addEventListener("click", function(e) {
       e.preventDefault();
       const catList = document.getElementById("categoryList");
       catList.style.display = (catList.style.display === "block") ? "none" : "block";
     });
 
-    // 12) Filter links
+    // Filter links
     document.getElementById("resetFilter").addEventListener("click", function(e) {
       e.preventDefault();
       filterMode = "all";
       selectedCategory = "";
-      loadQuestions(); // loads entire CSV
+      loadQuestions();
       sideMenu.classList.remove("open");
       menuOverlay.classList.remove("show");
     });
@@ -735,7 +831,7 @@
       menuOverlay.classList.remove("show");
     });
 
-    // 13) Favorite & feedback
+    // Favorite & Feedback
     const favoriteButton = document.getElementById("favoriteButton");
     const feedbackButton = document.getElementById("feedbackButton");
 
@@ -773,7 +869,7 @@
       window.mySwiper.on('slideChangeTransitionEnd', updateFavoriteIcon);
     }
 
-    // 14) Swipe left gesture to close side menu on mobile
+    // Swipe left gesture for side menu on mobile
     let touchstartX = 0;
     let touchendX = 0;
     const swipeThreshold = 50;
@@ -788,7 +884,7 @@
       }
     });
 
-    // 15) Feedback Modal
+    // Feedback Modal functionality
     const feedbackModal = document.getElementById("feedbackModal");
     document.getElementById("closeFeedbackModal").addEventListener("click", function() {
       feedbackModal.style.display = "none";
