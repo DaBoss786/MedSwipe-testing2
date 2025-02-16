@@ -15,25 +15,23 @@
   <!-- PapaParse for CSV parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   
-  <!-- Firebase App, Analytics & Firestore (Modular) -->
+ <!-- Firebase App, Analytics & Firestore (Modular) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
     import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
     const firebaseConfig = {
-      /* Your firebaseConfig here */
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID",
-      measurementId: "YOUR_MEASUREMENT_ID"
+      apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
+      authDomain: "medswipe-648ee.firebaseapp.com",
+      projectId: "medswipe-648ee",
+      storageBucket: "medswipe-648ee.firebasestorage.app",
+      messagingSenderId: "288366122490",
+      appId: "1:288366122490:web:1c150c48c8aed4e27f0043",
+      measurementId: "G-748P8P634B"
     };
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const db = getFirestore(app);
-    // Expose to global scope for use in non-module scripts:
     window.analytics = analytics;
     window.logEvent = logEvent;
     window.db = db;
@@ -58,7 +56,7 @@
       align-items: center;
       text-align: center;
     }
-    #landingPage img {MedSwipe_Logo.png
+    #landingPage img {
       width: 220px; /* Adjust as needed */
       margin-bottom: 30px;
     }
@@ -257,12 +255,34 @@
     #bookmarksFilter, #resetFilter, #reviewUnanswered, #resetProgress {
       display: block; margin-top: 20px; text-decoration: none; color: #0056b3; font-size: 1rem;
     }
+    
+    @media (max-width: 600px) {
+      #landingPage img { width: 180px; }
+      .toolbar { height: 60px; padding: 0 10px; }
+      .menu-button { font-size: 28px; width: 40px; text-align: center; }
+      .logo img { max-height: 45px; }
+      #iconBar { top: 60px; }
+      .swiper {
+        margin-top: 100px;
+        height: calc(100% - 60px - 40px - 50px);
+        min-height: calc(100vh - 150px);
+      }
+      .card {
+        max-width: 90%;
+        padding: 18px 12px 12px 12px;
+        margin: 8px auto;
+      }
+      .question { font-size: 1rem; }
+      .option-btn { font-size: 0.9rem; padding: 5px; }
+      .answer { font-size: 0.9rem; }
+      .swipe-hint { font-size: 0.8rem; }
+    }
   </style>
 </head>
 <body>
-  <!-- Landing Page with Logo Instead of Text -->
+  <!-- Landing Page with Logo -->
   <div id="landingPage">
-    <!-- Replace 'MedSwipe_Logo.png' with your actual logo path -->
+    <!-- Replace with your actual logo file name: "MedSwipe_Logo.png" -->
     <img src="MedSwipe_Logo.png" alt="MedSwipe Logo">
     <button id="customQuizBtn">Custom Quiz</button>
     <button id="randomQuizBtn">Random Quiz</button>
@@ -333,7 +353,8 @@
     </div>
     <div class="toolbar-center">
       <div class="logo">
-        <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
+        <!-- This can be a smaller version or the same logo. Adjust as needed. -->
+        <img src="MedSwipe_Logo.png" alt="MedSwipe Logo">
       </div>
     </div>
     <div class="toolbar-right"></div>
@@ -373,14 +394,424 @@
   <!-- Swiper JS -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
   <script>
-    /* The entire JS code from the snippet above goes here. 
-       For brevity, I'm not re-pasting every line. 
-       Just be sure to copy the code from the snippet that sets up:
-         - loadQuestions
-         - initializeQuiz
-         - addOptionListeners
-         - etc.
+    /* 
+      Put the entire JavaScript logic for your quiz, 
+      including loadQuestions, initializeQuiz, event listeners for 
+      customQuizBtn / randomQuizBtn, etc. 
+      The version from the snippet we provided that references:
+        #customQuizBtn
+        #randomQuizBtn
+        #customQuizForm
+        #randomQuizForm
+        #startCustomQuiz
+        #startRandomQuiz
+      Make sure you include that code exactly so the modals appear. 
     */
+
+    // 1) Global variables
+    let allQuestions = [];
+    let filterMode = "all";
+    let selectedCategory = "";
+    let answeredIds = [];
+    let currentQuestion = 0;
+    let totalQuestions = 0;
+    let score = 0;
+
+    // 2) CSV URL
+    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
+
+    // 3) Utility: updateProgress
+    function updateProgress() {
+      const progressPercent = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
+      document.getElementById("progressBar").style.width = progressPercent + "%";
+      document.getElementById("questionProgress").textContent = `${currentQuestion} / ${totalQuestions}`;
+      document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
+
+      localStorage.setItem("quizProgress", JSON.stringify({
+        quizData: allQuestions,
+        currentQuestion,
+        score,
+        answeredIds,
+        filterMode,
+        selectedCategory
+      }));
+    }
+
+    // 4) Bookmarks in localStorage
+    function getBookmarks() {
+      const bm = localStorage.getItem("bookmarks");
+      return bm ? JSON.parse(bm) : [];
+    }
+    function saveBookmarks(bookmarks) {
+      localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
+    }
+    function toggleBookmark(questionId) {
+      let bookmarks = getBookmarks();
+      if (bookmarks.includes(questionId)) {
+        bookmarks = bookmarks.filter(id => id !== questionId);
+      } else {
+        bookmarks.push(questionId);
+      }
+      saveBookmarks(bookmarks);
+      return bookmarks.includes(questionId);
+    }
+
+    // 5) Shuffling
+    function shuffleArray(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    // 6) loadQuestions with parameters
+    function loadQuestions(options = {}) {
+      Papa.parse(csvUrl, {
+        download: true,
+        header: true,
+        complete: function(results) {
+          allQuestions = results.data;
+          let filtered = allQuestions;
+
+          if (options.type === 'custom' && options.category) {
+            // Filter by category if provided
+            filtered = filtered.filter(q => q["Category"] && q["Category"].trim() === options.category);
+          }
+
+          // Shuffle the filtered set
+          let selectedQuestions = shuffleArray(filtered);
+
+          // If a number is specified, slice it
+          if (options.num) {
+            selectedQuestions = selectedQuestions.slice(0, options.num);
+          }
+
+          // Initialize the quiz with that subset
+          initializeQuiz(selectedQuestions);
+        },
+        error: function(error) {
+          console.error("Error parsing CSV:", error);
+        }
+      });
+    }
+
+    // 7) initializeQuiz
+    function initializeQuiz(questions) {
+      currentQuestion = 0;
+      score = 0;
+      totalQuestions = questions.length;
+      answeredIds = [];
+      updateProgress();
+
+      const quizSlides = document.getElementById("quizSlides");
+      quizSlides.innerHTML = "";
+
+      questions.forEach(question => {
+        const questionSlide = document.createElement("div");
+        questionSlide.className = "swiper-slide";
+        const qId = question["Question"].trim();
+        questionSlide.dataset.id = qId;
+        questionSlide.dataset.correct = question["Correct Answer"].trim();
+        questionSlide.dataset.explanation = question["Explanation"];
+        questionSlide.innerHTML = `
+          <div class="card">
+            <div class="question">${question["Question"]}</div>
+            ${question["Image URL"] && question["Image URL"].trim() !== "" 
+               ? `<img src="${question["Image URL"].trim()}" class="question-image">` 
+               : ""}
+            <div class="options">
+              ${question["Option A"] && question["Option A"].trim() !== "" 
+                 ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>` 
+                 : ""}
+              ${question["Option B"] && question["Option B"].trim() !== "" 
+                 ? `<button class="option-btn" data-option="B">B. ${question["Option B"]}</button>` 
+                 : ""}
+              ${question["Option C"] && question["Option C"].trim() !== "" 
+                 ? `<button class="option-btn" data-option="C">C. ${question["Option C"]}</button>` 
+                 : ""}
+              ${question["Option D"] && question["Option D"].trim() !== "" 
+                 ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>` 
+                 : ""}
+              ${question["Option E"] && question["Option E"].trim() !== "" 
+                 ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>` 
+                 : ""}
+            </div>
+            <div class="swipe-hint" style="display:none;">Swipe up for explanation</div>
+          </div>
+        `;
+        quizSlides.appendChild(questionSlide);
+
+        const answerSlide = document.createElement("div");
+        answerSlide.className = "swiper-slide";
+        answerSlide.innerHTML = `
+          <div class="card">
+            <div class="answer"></div>
+          </div>
+        `;
+        quizSlides.appendChild(answerSlide);
+      });
+
+      window.mySwiper = new Swiper('.swiper', {
+        direction: 'vertical',
+        loop: false,
+        mousewheel: true,
+        touchReleaseOnEdges: true
+      });
+
+      // Auto-skip if question not answered
+      window.mySwiper.on('slideChangeTransitionEnd', function() {
+        const activeIndex = window.mySwiper.activeIndex;
+        const previousIndex = window.mySwiper.previousIndex;
+        if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
+          const prevSlide = window.mySwiper.slides[activeIndex - 1];
+          const card = prevSlide.querySelector('.card');
+          if (!card.classList.contains('answered')) {
+            window.mySwiper.slideNext();
+          }
+        }
+      });
+
+      addOptionListeners();
+      addBookmarkListeners();
+    }
+
+    // 8) addOptionListeners
+    function addOptionListeners() {
+      document.querySelectorAll('.option-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const card = this.closest('.card');
+          if (card.classList.contains('answered')) return;
+          card.classList.add('answered');
+
+          const questionSlide = card.closest('.swiper-slide');
+          const qId = questionSlide.dataset.id;
+          if (!answeredIds.includes(qId)) {
+            answeredIds.push(qId);
+          }
+
+          const correct = questionSlide.dataset.correct;
+          const explanation = questionSlide.dataset.explanation;
+          const options = card.querySelectorAll('.option-btn');
+          const selected = this.getAttribute('data-option');
+          const isCorrect = (selected === correct);
+
+          if (window.analytics && window.logEvent) {
+            window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect });
+          }
+
+          // Mark correct as green, incorrect as red
+          options.forEach(option => {
+            option.disabled = true;
+            if (option.getAttribute('data-option') === correct) {
+              option.classList.add('correct');
+            }
+          });
+          if (!isCorrect) {
+            this.classList.add('incorrect');
+          }
+
+          const hint = card.querySelector('.swipe-hint');
+          if (hint) hint.style.display = 'block';
+
+          const answerSlide = questionSlide.nextElementSibling;
+          if (answerSlide) {
+            answerSlide.querySelector('.card').innerHTML = `
+              <div class="answer">
+                <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
+                Correct Answer: ${correct}<br>
+                ${explanation}
+              </div>
+            `;
+          }
+
+          currentQuestion++;
+          if (isCorrect) score++;
+          updateProgress();
+
+          if (currentQuestion === totalQuestions) {
+            setTimeout(() => {
+              const summarySlide = document.createElement("div");
+              summarySlide.className = "swiper-slide";
+              summarySlide.innerHTML = `
+                <div class="card">
+                  <div class="answer">
+                    <strong>Final Score: ${score} out of ${totalQuestions}</strong><br>
+                    ${score/totalQuestions >= 0.8 ? "Great job!" : "Keep practicing!"}
+                  </div>
+                </div>
+              `;
+              document.getElementById("quizSlides").appendChild(summarySlide);
+              window.mySwiper.update();
+            }, 1000);
+          }
+        });
+      });
+    }
+
+    // 9) addBookmarkListeners
+    function addBookmarkListeners() {
+      document.querySelectorAll('.bookmark-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const qId = this.getAttribute('data-id');
+          const isNowBookmarked = toggleBookmark(qId);
+          this.textContent = isNowBookmarked ? "★" : "☆";
+        });
+      });
+    }
+
+    // 10) Landing page and modals
+    document.getElementById("customQuizBtn").addEventListener("click", function() {
+      document.getElementById("customQuizForm").style.display = "block"; /* show as block/flex */
+    });
+    document.getElementById("randomQuizBtn").addEventListener("click", function() {
+      document.getElementById("randomQuizForm").style.display = "block"; /* show as block/flex */
+    });
+    document.getElementById("cancelCustomQuiz").addEventListener("click", function() {
+      document.getElementById("customQuizForm").style.display = "none";
+    });
+    document.getElementById("cancelRandomQuiz").addEventListener("click", function() {
+      document.getElementById("randomQuizForm").style.display = "none";
+    });
+    document.getElementById("startCustomQuiz").addEventListener("click", function() {
+      const category = document.getElementById("categorySelect").value;
+      const num = parseInt(document.getElementById("customNumQuestions").value, 10);
+      document.getElementById("customQuizForm").style.display = "none";
+      document.getElementById("landingPage").style.display = "none";
+      loadQuestions({ type: 'custom', category, num });
+    });
+    document.getElementById("startRandomQuiz").addEventListener("click", function() {
+      const num = parseInt(document.getElementById("randomNumQuestions").value, 10);
+      document.getElementById("randomQuizForm").style.display = "none";
+      document.getElementById("landingPage").style.display = "none";
+      loadQuestions({ type: 'random', num });
+    });
+
+    // 11) Side menu and overlay
+    const menuButton = document.getElementById("menuToggle");
+    const sideMenu = document.getElementById("sideMenu");
+    const menuOverlay = document.getElementById("menuOverlay");
+    menuButton.addEventListener("click", function() {
+      sideMenu.classList.toggle("open");
+      menuOverlay.classList.toggle("show");
+    });
+    menuOverlay.addEventListener("click", function() {
+      sideMenu.classList.remove("open");
+      menuOverlay.classList.remove("show");
+    });
+
+    // Toggle categories
+    document.getElementById("categoriesToggle").addEventListener("click", function(e) {
+      e.preventDefault();
+      const catList = document.getElementById("categoryList");
+      catList.style.display = (catList.style.display === "block") ? "none" : "block";
+    });
+
+    // 12) Filter links
+    document.getElementById("resetFilter").addEventListener("click", function(e) {
+      e.preventDefault();
+      filterMode = "all";
+      selectedCategory = "";
+      loadQuestions(); // loads entire CSV
+      sideMenu.classList.remove("open");
+      menuOverlay.classList.remove("show");
+    });
+    document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
+      e.preventDefault();
+      filterMode = "bookmarks";
+      loadQuestions();
+      sideMenu.classList.remove("open");
+      menuOverlay.classList.remove("show");
+    });
+    document.getElementById("reviewUnanswered").addEventListener("click", function(e) {
+      e.preventDefault();
+      filterMode = "unanswered";
+      loadQuestions();
+      sideMenu.classList.remove("open");
+      menuOverlay.classList.remove("show");
+    });
+    document.getElementById("resetProgress").addEventListener("click", function(e) {
+      e.preventDefault();
+      localStorage.removeItem("quizProgress");
+      loadQuestions();
+      sideMenu.classList.remove("open");
+      menuOverlay.classList.remove("show");
+    });
+
+    // 13) Favorite & feedback
+    const favoriteButton = document.getElementById("favoriteButton");
+    const feedbackButton = document.getElementById("feedbackButton");
+
+    function getCurrentQuestionId() {
+      let activeIndex = window.mySwiper ? window.mySwiper.activeIndex : 0;
+      if (activeIndex % 2 === 1) activeIndex--;
+      let slide = window.mySwiper ? window.mySwiper.slides[activeIndex] : null;
+      return slide ? slide.dataset.id : null;
+    }
+
+    function updateFavoriteIcon() {
+      const qId = getCurrentQuestionId();
+      if (qId) {
+        const bookmarks = getBookmarks();
+        favoriteButton.textContent = bookmarks.includes(qId) ? "★" : "☆";
+      }
+    }
+
+    favoriteButton.addEventListener("click", function() {
+      const qId = getCurrentQuestionId();
+      if (qId) {
+        const isFav = toggleBookmark(qId);
+        favoriteButton.textContent = isFav ? "★" : "☆";
+      }
+    });
+
+    feedbackButton.addEventListener("click", function() {
+      document.getElementById("feedbackModal").style.display = "flex";
+    });
+
+    window.addEventListener("load", function() {
+      setTimeout(updateFavoriteIcon, 500);
+    });
+    if (window.mySwiper) {
+      window.mySwiper.on('slideChangeTransitionEnd', updateFavoriteIcon);
+    }
+
+    // 14) Swipe left gesture to close side menu on mobile
+    let touchstartX = 0;
+    let touchendX = 0;
+    const swipeThreshold = 50;
+    sideMenu.addEventListener('touchstart', function(e) {
+      touchstartX = e.changedTouches[0].screenX;
+    });
+    sideMenu.addEventListener('touchend', function(e) {
+      touchendX = e.changedTouches[0].screenX;
+      if (touchendX - touchstartX < -swipeThreshold) {
+        sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
+      }
+    });
+
+    // 15) Feedback Modal
+    const feedbackModal = document.getElementById("feedbackModal");
+    document.getElementById("closeFeedbackModal").addEventListener("click", function() {
+      feedbackModal.style.display = "none";
+    });
+    document.getElementById("submitFeedback").addEventListener("click", async function() {
+      const feedbackText = document.getElementById("feedbackText").value;
+      if (!feedbackText.trim()) {
+        alert("Please enter your feedback.");
+        return;
+      }
+      try {
+        await window.addDoc(window.collection(window.db, "feedback"), {
+          feedback: feedbackText,
+          timestamp: window.serverTimestamp()
+        });
+        alert("Thank you for your feedback!");
+        document.getElementById("feedbackText").value = "";
+        feedbackModal.style.display = "none";
+      } catch (error) {
+        console.error("Error submitting feedback: ", error);
+        alert("There was an error submitting your feedback. Please try again later.");
+      }
+    });
   </script>
 </body>
 </html>
