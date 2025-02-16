@@ -30,7 +30,6 @@
     };
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
-    // Expose analytics globally for our non-module script below
     window.analytics = analytics;
   </script>
   
@@ -395,12 +394,15 @@
       return array.sort(() => Math.random() - 0.5);
     }
     
-    // Initialize quiz slides from given questions and reset progress tracking
-    function initializeQuiz(questions) {
-      currentQuestion = 0;
-      score = 0;
+    // Initialize quiz slides from given questions and reset progress tracking.
+    // If 'restore' is true, we do NOT reset currentQuestion, score, or answeredIds.
+    function initializeQuiz(questions, restore = false) {
+      if (!restore) {
+        currentQuestion = 0;
+        score = 0;
+        answeredIds = [];
+      }
       totalQuestions = questions.length;
-      answeredIds = [];
       updateProgress();
       
       const quizSlides = document.getElementById("quizSlides");
@@ -449,15 +451,17 @@
         touchReleaseOnEdges: true
       });
       
-      // If user swipes to an answer slide without answering, auto-skip only when swiping forward
+      // Auto-skip: if swiping forward to an answer slide and the question hasn't been answered, skip to next question.
       window.mySwiper.on('slideChangeTransitionEnd', function() {
         const activeIndex = window.mySwiper.activeIndex;
         const previousIndex = window.mySwiper.previousIndex;
-        if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
+        if (activeIndex % 2 === 1 && activeIndex > previousIndex && filterMode !== "unanswered") {
           const prevSlide = window.mySwiper.slides[activeIndex - 1];
           const card = prevSlide.querySelector('.card');
           if (!card.classList.contains('answered')) {
-            window.mySwiper.slideNext();
+            setTimeout(() => {
+              window.mySwiper.slideNext();
+            }, 300);
           }
         }
       });
@@ -557,7 +561,7 @@
     // Load questions from CSV and apply filtering or resume progress if available
     function loadQuestions() {
       const savedProgress = loadProgress();
-      // Restore progress only if there's saved progress and no filter is active
+      // If there is saved progress and no filter is active, restore it.
       if (savedProgress && savedProgress.filterMode === "all") {
         allQuestions = savedProgress.quizData;
         currentQuestion = savedProgress.currentQuestion;
@@ -565,8 +569,8 @@
         answeredIds = savedProgress.answeredIds;
         totalQuestions = allQuestions.length;
         updateProgress();
-        initializeQuiz(allQuestions);
-        // Jump directly to the saved slide (each question uses 2 slides)
+        initializeQuiz(allQuestions, true);
+        // Jump directly to the saved slide (each question is 2 slides)
         setTimeout(() => {
           window.mySwiper.slideTo(currentQuestion * 2, 0);
         }, 500);
