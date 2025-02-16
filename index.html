@@ -17,10 +17,8 @@
   
   <!-- Firebase Initialization -->
   <script type="module">
-    // Import the functions you need from the SDKs you need
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
-    // Your web app's Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
       authDomain: "medswipe-648ee.firebaseapp.com",
@@ -30,9 +28,9 @@
       appId: "1:288366122490:web:1c150c48c8aed4e27f0043",
       measurementId: "G-748P8P634B"
     };
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
+    window.analytics = analytics;
   </script>
   
   <style>
@@ -76,102 +74,34 @@
     .logo img {
       max-height: 40px;
     }
-    /* Bottom Toolbar for progress & score */
-    #bottomToolbar {
+    /* New Icon Bar (for favorite and feedback icons) */
+    #iconBar {
       position: fixed;
-      bottom: 0;
+      top: 50px; /* below the top toolbar */
       left: 0;
-      right: 0;
-      height: 50px;
+      width: 100%;
+      height: 40px;
       background-color: #fff;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 0 10px;
-      box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
-      z-index: 1500;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      z-index: 1450;
     }
-    #progressBarContainer {
-      flex: 1;
-      height: 10px;
-      background-color: #ccc;
-      border-radius: 5px;
-      margin-right: 10px;
-      overflow: hidden;
-    }
-    #progressBar {
-      height: 100%;
-      width: 0%;
-      background-color: #0056b3;
-      border-radius: 5px;
-      transition: width 0.3s ease;
-    }
-    #questionProgress {
-      font-size: 0.9rem;
-      color: #0056b3;
-      margin-right: 10px;
-      min-width: 50px;
-      text-align: center;
-    }
-    #scoreDisplay {
-      font-size: 0.9rem;
-      color: #0056b3;
-      min-width: 60px;
-      text-align: right;
-    }
-    /* Side Menu */
-    #sideMenu {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 250px;
-      height: 100vh;
-      background-color: #fff;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-      transform: translateX(-100%);
-      transition: transform 0.3s ease;
-      z-index: 1400;
-      padding: 60px 20px 20px;
-    }
-    #sideMenu.open {
-      transform: translateX(0);
-    }
-    #categoriesToggle {
+    #iconBar button {
+      background: none;
+      border: none;
+      font-size: 24px;
       cursor: pointer;
-      font-size: 1.2rem;
+      margin: 0 15px;
       color: #0056b3;
-      margin: 0;
     }
-    #categoryList {
-      list-style: none;
-      padding: 0;
-      margin: 10px 0;
-      display: none;
-    }
-    #categoryList li {
-      margin-bottom: 10px;
-    }
-    #categoryList li a {
-      text-decoration: none;
-      color: #0056b3;
-      font-size: 1rem;
-    }
-    #bookmarksFilter,
-    #resetFilter,
-    #reviewUnanswered,
-    #resetProgress {
-      display: block;
-      margin-top: 20px;
-      text-decoration: none;
-      color: #0056b3;
-      font-size: 1rem;
-    }
-    /* Swiper container */
+    /* Adjust Swiper container margin to accommodate icon bar */
     .swiper {
       width: 100%;
-      height: calc(100% - 50px - 50px);
-      min-height: calc(100vh - 100px);
-      margin-top: 50px;
+      height: calc(100% - 50px - 40px - 50px); /* top toolbar + icon bar + bottom toolbar */
+      min-height: calc(100vh - 140px);
+      margin-top: 90px; /* 50px + 40px */
     }
     .swiper-slide {
       animation: fadeIn 0.5s ease-in-out;
@@ -200,20 +130,7 @@
       -webkit-overflow-scrolling: touch;
       text-align: center;
     }
-    /* Bookmark button positioned at top-right above the card */
-    .bookmark-btn {
-      position: absolute;
-      top: 2px;
-      right: 10px;
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: #0056b3;
-    }
-    .bookmark-btn.bookmarked {
-      color: #FFD700;
-    }
+    /* (Bookmark button removed from card) */
     /* Text styling with preserved whitespace */
     .question {
       white-space: pre-line;
@@ -270,22 +187,108 @@
       margin-bottom: 10px;
       border-radius: 5px;
     }
+    /* Bottom Toolbar (unchanged) */
+    #bottomToolbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background-color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+      z-index: 1500;
+    }
+    #progressBarContainer {
+      flex: 1;
+      height: 10px;
+      background-color: #ccc;
+      border-radius: 5px;
+      margin-right: 10px;
+      overflow: hidden;
+    }
+    #progressBar {
+      height: 100%;
+      width: 0%;
+      background-color: #0056b3;
+      border-radius: 5px;
+      transition: width 0.3s ease;
+    }
+    #questionProgress {
+      font-size: 0.9rem;
+      color: #0056b3;
+      margin-right: 10px;
+      min-width: 50px;
+      text-align: center;
+    }
+    #scoreDisplay {
+      font-size: 0.9rem;
+      color: #0056b3;
+      min-width: 60px;
+      text-align: right;
+    }
+    /* Side Menu (unchanged) */
+    #sideMenu {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 250px;
+      height: 100vh;
+      background-color: #fff;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      z-index: 1400;
+      padding: 60px 20px 20px;
+    }
+    #sideMenu.open {
+      transform: translateX(0);
+    }
+    #categoriesToggle {
+      cursor: pointer;
+      font-size: 1.2rem;
+      color: #0056b3;
+      margin: 0;
+    }
+    #categoryList {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0;
+      display: none;
+    }
+    #categoryList li {
+      margin-bottom: 10px;
+    }
+    #categoryList li a {
+      text-decoration: none;
+      color: #0056b3;
+      font-size: 1rem;
+    }
+    #bookmarksFilter,
+    #resetFilter,
+    #reviewUnanswered,
+    #resetProgress {
+      display: block;
+      margin-top: 20px;
+      text-decoration: none;
+      color: #0056b3;
+      font-size: 1rem;
+    }
     /* Mobile adjustments */
     @media (max-width: 600px) {
       .toolbar { height: 60px; padding: 0 10px; }
       .menu-button { font-size: 28px; width: 40px; text-align: center; }
       .logo img { max-height: 45px; }
-      #bottomToolbar { height: 50px; }
-      #progressBarContainer { margin-right: 5px; }
-      #progressBar { transition: width 0.3s ease; }
-      #questionProgress, #scoreDisplay { font-size: 0.9rem; }
-      .swiper { margin-top: 60px; height: calc(100% - 60px - 50px); min-height: calc(100vh - 110px); }
+      #iconBar { height: 40px; }
+      .swiper { margin-top: 90px; height: calc(100% - 60px - 50px); min-height: calc(100vh - 110px); }
       .card { max-width: 90%; padding: 18px 12px 12px 12px; margin: 8px auto; }
       .question { font-size: 1rem; }
       .option-btn { font-size: 0.9rem; padding: 5px; }
       .answer { font-size: 0.9rem; }
       .swipe-hint { font-size: 0.8rem; }
-      .bookmark-btn { font-size: 1.3rem; top: 2px; right: 8px; }
     }
   </style>
 </head>
@@ -315,6 +318,11 @@
       </div>
     </div>
     <div class="toolbar-right"></div>
+  </div>
+  <!-- Icon Bar (Favorite & Feedback) -->
+  <div id="iconBar">
+    <button id="favoriteButton">☆</button>
+    <button id="feedbackButton">💬</button>
   </div>
   <!-- Swiper Container -->
   <div class="swiper">
@@ -351,7 +359,7 @@
       document.getElementById("questionProgress").textContent = `${currentQuestion} / ${totalQuestions}`;
       document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
       
-      // Save progress to localStorage
+      // Save progress to localStorage (for bookmarks and progress reset)
       localStorage.setItem("quizProgress", JSON.stringify({
         quizData: allQuestions,
         currentQuestion: currentQuestion,
@@ -362,13 +370,7 @@
       }));
     }
     
-    // Retrieve saved progress from localStorage (if available)
-    function loadProgress() {
-      const saved = localStorage.getItem("quizProgress");
-      return saved ? JSON.parse(saved) : null;
-    }
-    
-    // Retrieve bookmarks from localStorage (stored as an array of question IDs)
+    // Retrieve bookmarks from localStorage (for bookmarks only)
     function getBookmarks() {
       const bm = localStorage.getItem("bookmarks");
       return bm ? JSON.parse(bm) : [];
@@ -408,7 +410,7 @@
       quizSlides.innerHTML = "";
       
       questions.forEach(question => {
-        // Create question slide
+        // Create question slide (without bookmark button inside the card)
         const questionSlide = document.createElement("div");
         questionSlide.className = "swiper-slide";
         const qId = question["Question"].trim();
@@ -417,7 +419,6 @@
         questionSlide.dataset.explanation = question["Explanation"];
         questionSlide.innerHTML = `
           <div class="card">
-            <button class="bookmark-btn" data-id="${qId}">${getBookmarks().includes(qId) ? "★" : "☆"}</button>
             <div class="question">${question["Question"]}</div>
             ${question["Image URL"] && question["Image URL"].trim() !== "" ? `<img src="${question["Image URL"].trim()}" class="question-image">` : ""}
             <div class="options">
@@ -450,11 +451,10 @@
         touchReleaseOnEdges: true
       });
       
-      // If user swipes to an answer slide without answering, auto-skip only when swiping forward
+      // Auto-skip: if swiping forward to an answer slide and the question hasn't been answered, skip to next question.
       window.mySwiper.on('slideChangeTransitionEnd', function() {
         const activeIndex = window.mySwiper.activeIndex;
         const previousIndex = window.mySwiper.previousIndex;
-        // If swiped forward and on an answer slide
         if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
           const prevSlide = window.mySwiper.slides[activeIndex - 1];
           const card = prevSlide.querySelector('.card');
@@ -465,7 +465,7 @@
       });
       
       addOptionListeners();
-      addBookmarkListeners();
+      // The bookmark icon is now in the icon bar, so we don't attach listeners here.
     }
     
     // Add event listeners to answer buttons
@@ -487,6 +487,11 @@
           const options = card.querySelectorAll('.option-btn');
           const selected = this.getAttribute('data-option');
           const isCorrect = (selected === correct);
+          
+          // Log Firebase event for question answered
+          if (window.analytics) {
+            logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect: isCorrect });
+          }
           
           options.forEach(option => {
             option.disabled = true;
@@ -539,19 +544,7 @@
       });
     }
     
-    // Add event listeners to bookmark buttons
-    function addBookmarkListeners() {
-      document.querySelectorAll('.bookmark-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          const qId = this.getAttribute('data-id');
-          const isNowBookmarked = toggleBookmark(qId);
-          this.textContent = isNowBookmarked ? "★" : "☆";
-        });
-      });
-    }
-    
-    // Load questions from CSV and apply filtering or resume progress if available
+    // Load questions from CSV and apply filtering
     function loadQuestions() {
       Papa.parse(csvUrl, {
         download: true,
@@ -649,6 +642,54 @@
       loadQuestions();
       sideMenu.classList.remove("open");
     });
+    
+    // Icon Bar functionality: update favorite icon based on active slide,
+    // and add click events for the favorite and feedback buttons.
+    const favoriteButton = document.getElementById("favoriteButton");
+    const feedbackButton = document.getElementById("feedbackButton");
+    
+    // Function to get current question's id from active slide
+    function getCurrentQuestionId() {
+      // The active slide should be a question slide (even index)
+      let activeIndex = window.mySwiper ? window.mySwiper.activeIndex : 0;
+      // If activeIndex is odd, subtract 1
+      if (activeIndex % 2 === 1) activeIndex--;
+      let slide = window.mySwiper ? window.mySwiper.slides[activeIndex] : null;
+      return slide ? slide.dataset.id : null;
+    }
+    
+    // Update the favorite button based on current question's bookmark status
+    function updateFavoriteIcon() {
+      const qId = getCurrentQuestionId();
+      if (qId) {
+        const bookmarks = getBookmarks();
+        favoriteButton.textContent = bookmarks.includes(qId) ? "★" : "☆";
+      }
+    }
+    
+    // When the favorite button is clicked, toggle the bookmark for the current question
+    favoriteButton.addEventListener("click", function() {
+      const qId = getCurrentQuestionId();
+      if (qId) {
+        const isFav = toggleBookmark(qId);
+        favoriteButton.textContent = isFav ? "★" : "☆";
+      }
+    });
+    
+    // When the feedback button is clicked, for now show an alert (replace with your desired functionality)
+    feedbackButton.addEventListener("click", function() {
+      const qId = getCurrentQuestionId();
+      alert("Feedback for question: " + (qId ? qId : "unknown"));
+    });
+    
+    // Update the favorite icon when slide changes
+    window.addEventListener("load", function() {
+      // Give Swiper some time to initialize
+      setTimeout(updateFavoriteIcon, 500);
+    });
+    if (window.mySwiper) {
+      window.mySwiper.on('slideChangeTransitionEnd', updateFavoriteIcon);
+    }
   </script>
 </body>
 </html>
