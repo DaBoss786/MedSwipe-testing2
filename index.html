@@ -30,6 +30,7 @@
     };
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
+    window.analytics = analytics;
   </script>
   
   <style>
@@ -691,6 +692,22 @@
     if (window.mySwiper) {
       window.mySwiper.on('slideChangeTransitionEnd', updateFavoriteIcon);
     }
+    
+    // Add swipe left gesture to close the side menu on mobile
+    let touchstartX = 0;
+    let touchendX = 0;
+    const swipeThreshold = 50; // Minimum distance for swipe
+    
+    sideMenu.addEventListener('touchstart', function(e) {
+      touchstartX = e.changedTouches[0].screenX;
+    });
+    
+    sideMenu.addEventListener('touchend', function(e) {
+      touchendX = e.changedTouches[0].screenX;
+      if (touchendX - touchstartX < -swipeThreshold) {
+        sideMenu.classList.remove("open");
+      }
+    });
   </script>
 </body>
 </html>
