@@ -17,8 +17,10 @@
   
   <!-- Firebase Initialization -->
   <script type="module">
+    // Import the functions you need from the SDKs you need
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
+    // Your web app's Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
       authDomain: "medswipe-648ee.firebaseapp.com",
@@ -28,9 +30,9 @@
       appId: "1:288366122490:web:1c150c48c8aed4e27f0043",
       measurementId: "G-748P8P634B"
     };
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
-    window.analytics = analytics;
   </script>
   
   <style>
@@ -346,8 +348,24 @@
     function updateProgress() {
       const progressPercent = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
       document.getElementById("progressBar").style.width = progressPercent + "%";
-      document.getElementById("questionProgress").textContent = `${currentQuestion} / ${totalQuestions}`;
-      document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
+      document.getElementById("questionProgress").textContent = ${currentQuestion} / ${totalQuestions};
+      document.getElementById("scoreDisplay").textContent = Score: ${score};
+      
+      // Save progress to localStorage
+      localStorage.setItem("quizProgress", JSON.stringify({
+        quizData: allQuestions,
+        currentQuestion: currentQuestion,
+        score: score,
+        answeredIds: answeredIds,
+        filterMode: filterMode,
+        selectedCategory: selectedCategory
+      }));
+    }
+    
+    // Retrieve saved progress from localStorage (if available)
+    function loadProgress() {
+      const saved = localStorage.getItem("quizProgress");
+      return saved ? JSON.parse(saved) : null;
     }
     
     // Retrieve bookmarks from localStorage (stored as an array of question IDs)
@@ -397,31 +415,31 @@
         questionSlide.dataset.id = qId;
         questionSlide.dataset.correct = question["Correct Answer"].trim();
         questionSlide.dataset.explanation = question["Explanation"];
-        questionSlide.innerHTML = `
+        questionSlide.innerHTML = 
           <div class="card">
             <button class="bookmark-btn" data-id="${qId}">${getBookmarks().includes(qId) ? "★" : "☆"}</button>
             <div class="question">${question["Question"]}</div>
-            ${question["Image URL"] && question["Image URL"].trim() !== "" ? `<img src="${question["Image URL"].trim()}" class="question-image">` : ""}
+            ${question["Image URL"] && question["Image URL"].trim() !== "" ? <img src="${question["Image URL"].trim()}" class="question-image"> : ""}
             <div class="options">
-              ${question["Option A"] && question["Option A"].trim() !== "" ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>` : ""}
-              ${question["Option B"] && question["Option B"].trim() !== "" ? `<button class="option-btn" data-option="B">B. ${question["Option B"]}</button>` : ""}
-              ${question["Option C"] && question["Option C"].trim() !== "" ? `<button class="option-btn" data-option="C">C. ${question["Option C"]}</button>` : ""}
-              ${question["Option D"] && question["Option D"].trim() !== "" ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>` : ""}
-              ${question["Option E"] && question["Option E"].trim() !== "" ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>` : ""}
+              ${question["Option A"] && question["Option A"].trim() !== "" ? <button class="option-btn" data-option="A">A. ${question["Option A"]}</button> : ""}
+              ${question["Option B"] && question["Option B"].trim() !== "" ? <button class="option-btn" data-option="B">B. ${question["Option B"]}</button> : ""}
+              ${question["Option C"] && question["Option C"].trim() !== "" ? <button class="option-btn" data-option="C">C. ${question["Option C"]}</button> : ""}
+              ${question["Option D"] && question["Option D"].trim() !== "" ? <button class="option-btn" data-option="D">D. ${question["Option D"]}</button> : ""}
+              ${question["Option E"] && question["Option E"].trim() !== "" ? <button class="option-btn" data-option="E">E. ${question["Option E"]}</button> : ""}
             </div>
             <div class="swipe-hint">Swipe up for explanation</div>
           </div>
-        `;
+        ;
         quizSlides.appendChild(questionSlide);
         
         // Create answer slide
         const answerSlide = document.createElement("div");
         answerSlide.className = "swiper-slide";
-        answerSlide.innerHTML = `
+        answerSlide.innerHTML = 
           <div class="card">
             <div class="answer"></div>
           </div>
-        `;
+        ;
         quizSlides.appendChild(answerSlide);
       });
       
@@ -432,10 +450,11 @@
         touchReleaseOnEdges: true
       });
       
-      // Auto-skip: if swiping forward to an answer slide and the question hasn't been answered, skip to next question.
+      // If user swipes to an answer slide without answering, auto-skip only when swiping forward
       window.mySwiper.on('slideChangeTransitionEnd', function() {
         const activeIndex = window.mySwiper.activeIndex;
         const previousIndex = window.mySwiper.previousIndex;
+        // If swiped forward and on an answer slide
         if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
           const prevSlide = window.mySwiper.slides[activeIndex - 1];
           const card = prevSlide.querySelector('.card');
@@ -469,11 +488,6 @@
           const selected = this.getAttribute('data-option');
           const isCorrect = (selected === correct);
           
-          // Log Firebase event for question answered
-          if (window.analytics) {
-            logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect: isCorrect });
-          }
-          
           options.forEach(option => {
             option.disabled = true;
             if (option.getAttribute('data-option') === correct) {
@@ -491,13 +505,13 @@
           // Update the answer slide (next slide)
           const answerSlide = questionSlide.nextElementSibling;
           if (answerSlide) {
-            answerSlide.querySelector('.card').innerHTML = `
+            answerSlide.querySelector('.card').innerHTML = 
               <div class="answer">
                 <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
                 Correct Answer: ${correct}<br>
                 ${explanation}
               </div>
-            `;
+            ;
           }
           // Update progress
           currentQuestion++;
@@ -509,14 +523,14 @@
             setTimeout(() => {
               const summarySlide = document.createElement("div");
               summarySlide.className = "swiper-slide";
-              summarySlide.innerHTML = `
+              summarySlide.innerHTML = 
                 <div class="card">
                   <div class="answer">
                     <strong>Final Score: ${score} out of ${totalQuestions}</strong><br>
                     ${score/totalQuestions >= 0.8 ? "Great job!" : "Keep practicing!"}
                   </div>
                 </div>
-              `;
+              ;
               document.getElementById("quizSlides").appendChild(summarySlide);
               window.mySwiper.update();
             }, 1000);
@@ -537,7 +551,7 @@
       });
     }
     
-    // Load questions from CSV and apply filtering (no progress restoration)
+    // Load questions from CSV and apply filtering or resume progress if available
     function loadQuestions() {
       Papa.parse(csvUrl, {
         download: true,
@@ -568,7 +582,7 @@
               quizSlides.innerHTML = "";
               const messageSlide = document.createElement("div");
               messageSlide.className = "swiper-slide";
-              messageSlide.innerHTML = `<div class="card"><div class="answer"><strong>All questions have been answered.</strong></div></div>`;
+              messageSlide.innerHTML = <div class="card"><div class="answer"><strong>All questions have been answered.</strong></div></div>;
               quizSlides.appendChild(messageSlide);
               window.mySwiper = new Swiper('.swiper', {
                 direction: 'vertical',
