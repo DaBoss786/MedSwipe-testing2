@@ -32,7 +32,7 @@
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const db = getFirestore(app);
-    // Expose to global scope for non-module scripts:
+    // Expose to global scope for use in non-module scripts:
     window.analytics = analytics;
     window.logEvent = logEvent;
     window.db = db;
@@ -85,7 +85,7 @@
     /* Icon Bar (Favorite & Feedback) */
     #iconBar {
       position: fixed;
-      top: 50px; /* directly below top toolbar */
+      top: 50px; /* directly below the top toolbar */
       left: 0;
       width: 100%;
       height: 40px;
@@ -273,16 +273,21 @@
       color: #0056b3;
       font-size: 1rem;
     }
-    #bookmarksFilter,
-    #resetFilter,
-    #reviewUnanswered,
-    #resetProgress {
-      display: block;
-      margin-top: 20px;
-      text-decoration: none;
-      color: #0056b3;
-      font-size: 1rem;
-    }
+    <!-- Additional Categories -->
+    <!-- These new list items have been added below -->
+    <ul id="categoryList">
+      <li><a href="#" data-category="Head & Neck Surgery">Head & Neck Surgery</a></li>
+      <li><a href="#" data-category="Otology">Otology</a></li>
+      <li><a href="#" data-category="Laryngology">Laryngology</a></li>
+      <li><a href="#" data-category="Rhinology">Rhinology</a></li>
+      <li><a href="#" data-category="Pediatric ENT">Pediatric ENT</a></li>
+      <li><a href="#" data-category="Facial Plastics">Facial Plastics</a></li>
+    </ul>
+    <a href="#" id="bookmarksFilter">Bookmarks</a>
+    <a href="#" id="reviewUnanswered">Review Unanswered</a>
+    <a href="#" id="resetFilter">Show All Questions</a>
+    <a href="#" id="resetProgress">Reset Progress</a>
+    <!-- End additional categories -->
     /* Mobile adjustments */
     @media (max-width: 600px) {
       .toolbar { height: 60px; padding: 0 10px; }
@@ -307,6 +312,8 @@
       <li><a href="#" data-category="Otology">Otology</a></li>
       <li><a href="#" data-category="Laryngology">Laryngology</a></li>
       <li><a href="#" data-category="Rhinology">Rhinology</a></li>
+      <li><a href="#" data-category="Pediatric ENT">Pediatric ENT</a></li>
+      <li><a href="#" data-category="Facial Plastics">Facial Plastics</a></li>
     </ul>
     <a href="#" id="bookmarksFilter">Bookmarks</a>
     <a href="#" id="reviewUnanswered">Review Unanswered</a>
@@ -444,8 +451,8 @@
               ${question["Option D"] && question["Option D"].trim() !== "" ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>` : ""}
               ${question["Option E"] && question["Option E"].trim() !== "" ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>` : ""}
             </div>
-            <!-- Hint hidden by default -->
-            <div class="swipe-hint" style="display:none;">Swipe up for explanation</div>
+            <!-- Swipe hint hidden by default -->
+            <div class="swipe-hint" style="display: none;">Swipe up for explanation</div>
           </div>
         `;
         quizSlides.appendChild(questionSlide);
@@ -510,18 +517,18 @@
             window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect: isCorrect });
           }
           
-          // Disable all options and mark correct one green
+          // Disable all options and mark the correct option green
           options.forEach(option => {
             option.disabled = true;
             if (option.getAttribute('data-option') === correct) {
               option.classList.add('correct');
             }
           });
-          // If selected option is incorrect, mark it red
+          // If the selected option is incorrect, mark it red
           if (!isCorrect) {
             this.classList.add('incorrect');
           }
-          // Reveal the swipe hint
+          // Reveal the swipe hint after selection
           const hint = card.querySelector('.swipe-hint');
           if (hint) {
             hint.style.display = 'block';
