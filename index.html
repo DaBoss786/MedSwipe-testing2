@@ -369,7 +369,15 @@
       color: #0056b3;
       font-size: 1rem;
     }
-    /* New menu links in a separate list for consistent styling */
+    /* New header for separate options */
+    #optionsHeader {
+      margin-top: 20px;
+      padding-left: 20px;
+      font-size: 1.2rem;
+      color: #0056b3;
+      font-weight: normal;
+    }
+    /* Menu links styled similarly to categories */
     #menuLinks {
       list-style: none;
       padding: 0;
@@ -411,7 +419,6 @@
 <body>
   <!-- Landing Page with Logo -->
   <div id="landingPage">
-    <!-- Updated src to use "MedSwipe Logo.jpg" -->
     <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
     <button id="customQuizBtn">Custom Quiz</button>
     <button id="randomQuizBtn">Random Quiz</button>
@@ -469,6 +476,8 @@
       <li><a href="#" data-category="Pediatric ENT">Pediatric ENT</a></li>
       <li><a href="#" data-category="Facial Plastics">Facial Plastics</a></li>
     </ul>
+    <!-- Separate header for Options -->
+    <h3 id="optionsHeader">Options</h3>
     <ul id="menuLinks">
       <li><a href="#" id="bookmarksFilter">Bookmarks</a></li>
       <li><a href="#" id="resetProgress">Reset Progress</a></li>
@@ -482,7 +491,6 @@
     </div>
     <div class="toolbar-center">
       <div class="logo">
-        <!-- Updated src to use "MedSwipe Logo.jpg" -->
         <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
       </div>
     </div>
@@ -809,7 +817,7 @@
       catList.style.display = (catList.style.display === "block") ? "none" : "block";
     });
 
-    // Filter links (simplified)
+    // Filter links
     document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
       e.preventDefault();
       filterMode = "bookmarks";
@@ -863,7 +871,7 @@
       window.mySwiper.on('slideChangeTransitionEnd', updateFavoriteIcon);
     }
 
-    // Swipe left gesture to close side menu on mobile
+    // Swipe left gesture for side menu on mobile
     let touchstartX = 0;
     let touchendX = 0;
     const swipeThreshold = 50;
