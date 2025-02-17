@@ -318,6 +318,7 @@
       min-width: 60px;
       text-align: right;
     }
+    /* Side Menu */
     #sideMenu {
       position: fixed;
       top: 0;
@@ -347,50 +348,38 @@
     #menuOverlay.show {
       display: block;
     }
-    #categoriesToggle {
-      cursor: pointer;
-      font-size: 1.2rem;
-      color: #0056b3;
+    /* Single list for the entire menu */
+    #menuList {
+      list-style: none;
+      padding: 0;
       margin: 0;
-      font-weight: normal;
     }
+    #menuList > li {
+      margin-bottom: 10px;
+      padding-left: 20px;
+      font-size: 1rem;
+      color: #0056b3;
+      cursor: pointer;
+    }
+    #menuList > li a {
+      text-decoration: none;
+      color: #0056b3;
+      font-size: 1rem;
+    }
+    /* Sub-list for categories (toggled by clicking "Categories") */
     #categoryList {
       list-style: none;
       padding: 0;
-      margin: 10px 0;
+      margin: 5px 0 10px 20px;
       display: none;
     }
     #categoryList li {
-      margin-bottom: 10px;
-      padding-left: 20px;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
     }
     #categoryList li a {
       text-decoration: none;
       color: #0056b3;
-      font-size: 1rem;
-    }
-    /* New header for separate options */
-    #optionsHeader {
-      margin-top: 20px;
-      padding-left: 20px;
-      font-size: 1.2rem;
-      color: #0056b3;
-      font-weight: normal;
-    }
-    /* Menu links styled similarly to categories */
-    #menuLinks {
-      list-style: none;
-      padding: 0;
-      margin: 10px 0;
-    }
-    #menuLinks li {
-      margin-bottom: 10px;
-      padding-left: 20px;
-    }
-    #menuLinks li a {
-      text-decoration: none;
-      color: #0056b3;
-      font-size: 1rem;
     }
     
     @media (max-width: 600px) {
@@ -467,18 +456,16 @@
   
   <!-- Side Menu -->
   <div id="sideMenu">
-    <h3 id="categoriesToggle">Categories</h3>
-    <ul id="categoryList">
-      <li><a href="#" data-category="Head & Neck Surgery">Head & Neck Surgery</a></li>
-      <li><a href="#" data-category="Otology">Otology</a></li>
-      <li><a href="#" data-category="Laryngology">Laryngology</a></li>
-      <li><a href="#" data-category="Rhinology">Rhinology</a></li>
-      <li><a href="#" data-category="Pediatric ENT">Pediatric ENT</a></li>
-      <li><a href="#" data-category="Facial Plastics">Facial Plastics</a></li>
-    </ul>
-    <!-- Separate header for Options -->
-    <h3 id="optionsHeader">Options</h3>
-    <ul id="menuLinks">
+    <ul id="menuList">
+      <li id="categoriesToggle">Categories</li>
+      <ul id="categoryList">
+        <li><a href="#" data-category="Head & Neck Surgery">Head & Neck Surgery</a></li>
+        <li><a href="#" data-category="Otology">Otology</a></li>
+        <li><a href="#" data-category="Laryngology">Laryngology</a></li>
+        <li><a href="#" data-category="Rhinology">Rhinology</a></li>
+        <li><a href="#" data-category="Pediatric ENT">Pediatric ENT</a></li>
+        <li><a href="#" data-category="Facial Plastics">Facial Plastics</a></li>
+      </ul>
       <li><a href="#" id="bookmarksFilter">Bookmarks</a></li>
       <li><a href="#" id="resetProgress">Reset Progress</a></li>
     </ul>
@@ -871,7 +858,7 @@
       window.mySwiper.on('slideChangeTransitionEnd', updateFavoriteIcon);
     }
 
-    // Swipe left gesture for side menu on mobile
+    // Swipe left gesture to close side menu on mobile
     let touchstartX = 0;
     let touchendX = 0;
     const swipeThreshold = 50;
