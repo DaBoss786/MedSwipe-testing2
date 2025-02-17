@@ -58,7 +58,7 @@
     }
     /* Fixed the CSS rule by removing stray text */
     #landingPage img {
-      width: 220px; /* Adjust as needed */
+      width: 220px;
       margin-bottom: 30px;
     }
     #landingPage button {
@@ -129,7 +129,7 @@
       background-color: #aaa;
     }
 
-    /* Rest of your baseline styling remains unchanged */
+    /* General styling */
     html, body {
       margin: 0;
       padding: 0;
@@ -369,9 +369,21 @@
       color: #0056b3;
       font-size: 1rem;
     }
-    <!-- Simplified menu: Removed "Review Unanswered" and "Show All Questions" -->
-    <a href="#" id="bookmarksFilter">Bookmarks</a>
-    <a href="#" id="resetProgress">Reset Progress</a>
+    /* New menu links in a separate list for consistent styling */
+    #menuLinks {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0;
+    }
+    #menuLinks li {
+      margin-bottom: 10px;
+      padding-left: 20px;
+    }
+    #menuLinks li a {
+      text-decoration: none;
+      color: #0056b3;
+      font-size: 1rem;
+    }
     
     @media (max-width: 600px) {
       #landingPage img { width: 180px; }
@@ -399,7 +411,7 @@
 <body>
   <!-- Landing Page with Logo -->
   <div id="landingPage">
-    <!-- Update the src to the correct file name with a space -->
+    <!-- Updated src to use "MedSwipe Logo.jpg" -->
     <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
     <button id="customQuizBtn">Custom Quiz</button>
     <button id="randomQuizBtn">Random Quiz</button>
@@ -457,8 +469,10 @@
       <li><a href="#" data-category="Pediatric ENT">Pediatric ENT</a></li>
       <li><a href="#" data-category="Facial Plastics">Facial Plastics</a></li>
     </ul>
-    <a href="#" id="bookmarksFilter">Bookmarks</a>
-    <a href="#" id="resetProgress">Reset Progress</a>
+    <ul id="menuLinks">
+      <li><a href="#" id="bookmarksFilter">Bookmarks</a></li>
+      <li><a href="#" id="resetProgress">Reset Progress</a></li>
+    </ul>
   </div>
   
   <!-- Top Toolbar -->
@@ -468,7 +482,7 @@
     </div>
     <div class="toolbar-center">
       <div class="logo">
-        <!-- Update the src for the top toolbar logo -->
+        <!-- Updated src to use "MedSwipe Logo.jpg" -->
         <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
       </div>
     </div>
@@ -795,7 +809,7 @@
       catList.style.display = (catList.style.display === "block") ? "none" : "block";
     });
 
-    // Filter links (simplified: only Bookmarks and Reset Progress remain)
+    // Filter links (simplified)
     document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
       e.preventDefault();
       filterMode = "bookmarks";
