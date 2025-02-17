@@ -660,20 +660,21 @@
         touchReleaseOnEdges: true
       });
 
-      // Use slideChange to auto-skip unanswered answer slides and update the bookmark icon.
+      // On slide change, update the favorite icon.
+      // Only auto-skip the answer slide if the corresponding question's card is not answered.
       window.mySwiper.on('slideChange', function() {
         const activeIndex = window.mySwiper.activeIndex;
-        // If active slide is an answer slide
         if (activeIndex % 2 === 1) {
           const questionSlide = window.mySwiper.slides[activeIndex - 1];
-          if (questionSlide && !questionSlide.classList.contains('answered')) {
-            // Skip to the next question if unanswered
-            setTimeout(() => {
-              window.mySwiper.slideNext();
-            }, 200);
+          if (questionSlide) {
+            const card = questionSlide.querySelector('.card');
+            if (card && !card.classList.contains('answered')) {
+              setTimeout(() => {
+                window.mySwiper.slideNext();
+              }, 200);
+            }
           }
         }
-        // Update the bookmark icon for the currently displayed question
         updateFavoriteIcon();
       });
 
@@ -755,6 +756,9 @@
 
     // Bookmark listeners
     function addBookmarkListeners() {
+      // In our current implementation, the bookmark icon in the top bar
+      // is updated via updateFavoriteIcon() on slide change.
+      // If you have separate bookmark buttons on question slides, attach listeners here.
       document.querySelectorAll('.bookmark-btn').forEach(btn => {
         btn.addEventListener('click', function(e) {
           e.stopPropagation();
@@ -765,7 +769,7 @@
       });
     }
 
-    // Landing page and modal event listeners
+    // Landing page and modals
     document.getElementById("customQuizBtn").addEventListener("click", function() {
       document.getElementById("customQuizForm").style.display = "block";
     });
