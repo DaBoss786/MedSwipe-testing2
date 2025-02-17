@@ -348,7 +348,7 @@
     #menuOverlay.show {
       display: block;
     }
-    /* Use a single list for the entire side menu */
+    /* Single list for the side menu */
     #menuList {
       list-style: none;
       padding: 0;
@@ -660,16 +660,21 @@
         touchReleaseOnEdges: true
       });
 
-      window.mySwiper.on('slideChangeTransitionEnd', function() {
+      // Use slideChange to auto-skip unanswered answer slides and update the bookmark icon.
+      window.mySwiper.on('slideChange', function() {
         const activeIndex = window.mySwiper.activeIndex;
-        const previousIndex = window.mySwiper.previousIndex;
-        if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
-          const prevSlide = window.mySwiper.slides[activeIndex - 1];
-          const card = prevSlide.querySelector('.card');
-          if (!card.classList.contains('answered')) {
-            window.mySwiper.slideNext();
+        // If active slide is an answer slide
+        if (activeIndex % 2 === 1) {
+          const questionSlide = window.mySwiper.slides[activeIndex - 1];
+          if (questionSlide && !questionSlide.classList.contains('answered')) {
+            // Skip to the next question if unanswered
+            setTimeout(() => {
+              window.mySwiper.slideNext();
+            }, 200);
           }
         }
+        // Update the bookmark icon for the currently displayed question
+        updateFavoriteIcon();
       });
 
       addOptionListeners();
@@ -760,7 +765,7 @@
       });
     }
 
-    // Landing page and modals
+    // Landing page and modal event listeners
     document.getElementById("customQuizBtn").addEventListener("click", function() {
       document.getElementById("customQuizForm").style.display = "block";
     });
@@ -807,7 +812,7 @@
       catList.style.display = (catList.style.display === "block") ? "none" : "block";
     });
 
-    // Filter links for Bookmarks and Reset Progress
+    // Filter links
     document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
       e.preventDefault();
       filterMode = "bookmarks";
@@ -839,6 +844,8 @@
       if (qId) {
         const bookmarks = getBookmarks();
         favoriteButton.textContent = bookmarks.includes(qId) ? "★" : "☆";
+      } else {
+        favoriteButton.textContent = "☆";
       }
     }
 
@@ -857,9 +864,6 @@
     window.addEventListener("load", function() {
       setTimeout(updateFavoriteIcon, 500);
     });
-    if (window.mySwiper) {
-      window.mySwiper.on('slideChangeTransitionEnd', updateFavoriteIcon);
-    }
 
     // Swipe left gesture for side menu on mobile
     let touchstartX = 0;
