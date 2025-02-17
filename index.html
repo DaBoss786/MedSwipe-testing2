@@ -348,7 +348,7 @@
     #menuOverlay.show {
       display: block;
     }
-    /* Single list for the entire menu */
+    /* Use a single list for the entire side menu */
     #menuList {
       list-style: none;
       padding: 0;
@@ -579,7 +579,10 @@
         complete: function(results) {
           allQuestions = results.data;
           let filtered = allQuestions;
-          if (options.type === 'custom' && options.category) {
+          if (filterMode === 'bookmarks') {
+            let bookmarks = getBookmarks();
+            filtered = filtered.filter(q => bookmarks.includes(q["Question"].trim()));
+          } else if (options.type === 'custom' && options.category) {
             filtered = filtered.filter(q => q["Category"] && q["Category"].trim() === options.category);
           }
           let selectedQuestions = shuffleArray(filtered);
@@ -804,7 +807,7 @@
       catList.style.display = (catList.style.display === "block") ? "none" : "block";
     });
 
-    // Filter links
+    // Filter links for Bookmarks and Reset Progress
     document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
       e.preventDefault();
       filterMode = "bookmarks";
@@ -858,7 +861,7 @@
       window.mySwiper.on('slideChangeTransitionEnd', updateFavoriteIcon);
     }
 
-    // Swipe left gesture to close side menu on mobile
+    // Swipe left gesture for side menu on mobile
     let touchstartX = 0;
     let touchendX = 0;
     const swipeThreshold = 50;
