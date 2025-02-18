@@ -41,7 +41,7 @@
   </script>
   
   <style>
-    /* Top Toolbar remains always visible */
+    /* Top Toolbar (always visible) */
     .toolbar {
       position: fixed;
       top: 0;
@@ -73,32 +73,9 @@
       max-height: 40px;
     }
     
-    /* Icon Bar (Favorite & Feedback) */
-    #iconBar {
-      position: fixed;
-      top: 50px;
-      left: 0;
-      width: 100%;
-      height: 40px;
-      background-color: #fff;
-      display: none; /* Hidden initially */
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      z-index: 1450;
-    }
-    #iconBar button {
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      margin: 0 15px;
-      color: #0056b3;
-    }
-    
     /* Main Options (Quiz buttons) */
     #mainOptions {
-      margin-top: 90px; /* Below toolbar and (hidden) icon bar */
+      margin-top: 90px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -122,18 +99,6 @@
       height: calc(100% - 50px - 40px - 50px);
       min-height: calc(100vh - 140px);
       margin-top: 90px;
-    }
-    .swiper-slide {
-      animation: fadeIn 0.5s ease-in-out;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      box-sizing: border-box;
-      padding-top: 20px;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
     }
     
     /* Bottom Toolbar for Quiz - Hidden initially */
@@ -238,7 +203,7 @@
       background-color: #aaa;
     }
     
-    /* Quiz Card Styles (remain unchanged) */
+    /* Quiz Card Styles */
     .card {
       position: relative;
       background: #fff;
@@ -357,7 +322,7 @@
       color: #0056b3;
       font-size: 1rem;
     }
-    /* Sub-list for categories (toggled by clicking "Categories") */
+    /* Sub-list for categories */
     #categoryList {
       list-style: none;
       padding: 0;
@@ -470,389 +435,351 @@
   <!-- Swiper JS -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
   <script>
-    // Global variables
-    let allQuestions = [];
-    let filterMode = "all";
-    let selectedCategory = "";
-    let answeredIds = [];
-    let currentQuestion = 0;
-    let totalQuestions = 0;
-    let score = 0;
+    document.addEventListener("DOMContentLoaded", function() {
+      // Global variables
+      let allQuestions = [];
+      let filterMode = "all";
+      let selectedCategory = "";
+      let answeredIds = [];
+      let currentQuestion = 0;
+      let totalQuestions = 0;
+      let score = 0;
 
-    // CSV URL
-    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
+      // CSV URL
+      const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
 
-    // Update progress
-    function updateProgress() {
-      const progressPercent = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
-      document.getElementById("progressBar").style.width = progressPercent + "%";
-      document.getElementById("questionProgress").textContent = `${currentQuestion} / ${totalQuestions}`;
-      document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
+      // Update progress
+      function updateProgress() {
+        const progressPercent = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
+        document.getElementById("progressBar").style.width = progressPercent + "%";
+        document.getElementById("questionProgress").textContent = `${currentQuestion} / ${totalQuestions}`;
+        document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
 
-      localStorage.setItem("quizProgress", JSON.stringify({
-        quizData: allQuestions,
-        currentQuestion,
-        score,
-        answeredIds,
-        filterMode,
-        selectedCategory
-      }));
-    }
-
-    // Bookmarks functions
-    function getBookmarks() {
-      const bm = localStorage.getItem("bookmarks");
-      return bm ? JSON.parse(bm) : [];
-    }
-    function saveBookmarks(bookmarks) {
-      localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
-    }
-    function toggleBookmark(questionId) {
-      let bookmarks = getBookmarks();
-      if (bookmarks.includes(questionId)) {
-        bookmarks = bookmarks.filter(id => id !== questionId);
-      } else {
-        bookmarks.push(questionId);
+        localStorage.setItem("quizProgress", JSON.stringify({
+          quizData: allQuestions,
+          currentQuestion,
+          score,
+          answeredIds,
+          filterMode,
+          selectedCategory
+        }));
       }
-      saveBookmarks(bookmarks);
-      return bookmarks.includes(questionId);
-    }
 
-    // Shuffle
-    function shuffleArray(array) {
-      return array.sort(() => Math.random() - 0.5);
-    }
-
-    // Load questions with options
-    function loadQuestions(options = {}) {
-      Papa.parse(csvUrl, {
-        download: true,
-        header: true,
-        complete: function(results) {
-          allQuestions = results.data;
-          let filtered = allQuestions;
-          if (filterMode === 'bookmarks') {
-            let bookmarks = getBookmarks();
-            filtered = filtered.filter(q => bookmarks.includes(q["Question"].trim()));
-          } else if (options.type === 'custom' && options.category) {
-            filtered = filtered.filter(q => q["Category"] && q["Category"].trim() === options.category);
-          }
-          let selectedQuestions = shuffleArray(filtered);
-          if (options.num) {
-            selectedQuestions = selectedQuestions.slice(0, options.num);
-          }
-          initializeQuiz(selectedQuestions);
-        },
-        error: function(error) {
-          console.error("Error parsing CSV:", error);
+      // Bookmarks functions
+      function getBookmarks() {
+        const bm = localStorage.getItem("bookmarks");
+        return bm ? JSON.parse(bm) : [];
+      }
+      function saveBookmarks(bookmarks) {
+        localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
+      }
+      function toggleBookmark(questionId) {
+        let bookmarks = getBookmarks();
+        if (bookmarks.includes(questionId)) {
+          bookmarks = bookmarks.filter(id => id !== questionId);
+        } else {
+          bookmarks.push(questionId);
         }
-      });
-    }
+        saveBookmarks(bookmarks);
+        return bookmarks.includes(questionId);
+      }
 
-    // Initialize quiz
-    function initializeQuiz(questions) {
-      currentQuestion = 0;
-      score = 0;
-      totalQuestions = questions.length;
-      answeredIds = [];
-      updateProgress();
+      // Shuffle
+      function shuffleArray(array) {
+        return array.sort(() => Math.random() - 0.5);
+      }
 
-      const quizSlides = document.getElementById("quizSlides");
-      quizSlides.innerHTML = "";
-
-      questions.forEach(question => {
-        const questionSlide = document.createElement("div");
-        questionSlide.className = "swiper-slide";
-        const qId = question["Question"].trim();
-        questionSlide.dataset.id = qId;
-        questionSlide.dataset.correct = question["Correct Answer"].trim();
-        questionSlide.dataset.explanation = question["Explanation"];
-        questionSlide.innerHTML = `
-          <div class="card">
-            <div class="question">${question["Question"]}</div>
-            ${question["Image URL"] && question["Image URL"].trim() !== "" 
-               ? `<img src="${question["Image URL"].trim()}" class="question-image">` 
-               : ""}
-            <div class="options">
-              ${question["Option A"] && question["Option A"].trim() !== "" 
-                 ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>` 
-                 : ""}
-              ${question["Option B"] && question["Option B"].trim() !== "" 
-                 ? `<button class="option-btn" data-option="B">B. ${question["Option B"]}</button>` 
-                 : ""}
-              ${question["Option C"] && question["Option C"].trim() !== "" 
-                 ? `<button class="option-btn" data-option="C">C. ${question["Option C"]}</button>` 
-                 : ""}
-              ${question["Option D"] && question["Option D"].trim() !== "" 
-                 ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>` 
-                 : ""}
-              ${question["Option E"] && question["Option E"].trim() !== "" 
-                 ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>` 
-                 : ""}
-            </div>
-            <div class="swipe-hint" style="display:none;">Swipe up for explanation</div>
-          </div>
-        `;
-        quizSlides.appendChild(questionSlide);
-
-        const answerSlide = document.createElement("div");
-        answerSlide.className = "swiper-slide";
-        answerSlide.innerHTML = `
-          <div class="card">
-            <div class="answer"></div>
-          </div>
-        `;
-        quizSlides.appendChild(answerSlide);
-      });
-
-      window.mySwiper = new Swiper('.swiper', {
-        direction: 'vertical',
-        loop: false,
-        mousewheel: true,
-        touchReleaseOnEdges: true
-      });
-
-      // On slide change, only auto-skip the answer slide if the corresponding question's card is not answered.
-      window.mySwiper.on('slideChange', function() {
-        const activeIndex = window.mySwiper.activeIndex;
-        if (activeIndex % 2 === 1) {
-          const questionSlide = window.mySwiper.slides[activeIndex - 1];
-          if (questionSlide) {
-            const card = questionSlide.querySelector('.card');
-            if (card && !card.classList.contains('answered')) {
-              setTimeout(() => {
-                window.mySwiper.slideNext();
-              }, 200);
+      // Load questions with options
+      function loadQuestions(options = {}) {
+        Papa.parse(csvUrl, {
+          download: true,
+          header: true,
+          complete: function(results) {
+            allQuestions = results.data;
+            let filtered = allQuestions;
+            if (filterMode === 'bookmarks') {
+              let bookmarks = getBookmarks();
+              filtered = filtered.filter(q => bookmarks.includes(q["Question"].trim()));
+            } else if (options.type === 'custom' && options.category) {
+              filtered = filtered.filter(q => q["Category"] && q["Category"].trim() === options.category);
             }
-          }
-        }
-        updateFavoriteIcon();
-      });
-
-      addOptionListeners();
-      addBookmarkListeners();
-
-      // Show the quiz container and bottom toolbar; hide the main options
-      document.querySelector(".swiper").style.display = "block";
-      document.getElementById("bottomToolbar").style.display = "flex";
-      document.getElementById("mainOptions").style.display = "none";
-      document.getElementById("iconBar").style.display = "flex";
-    }
-
-    // Option listeners
-    function addOptionListeners() {
-      document.querySelectorAll('.option-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const card = this.closest('.card');
-          if (card.classList.contains('answered')) return;
-          card.classList.add('answered');
-
-          const questionSlide = card.closest('.swiper-slide');
-          const qId = questionSlide.dataset.id;
-          if (!answeredIds.includes(qId)) {
-            answeredIds.push(qId);
-          }
-
-          const correct = questionSlide.dataset.correct;
-          const explanation = questionSlide.dataset.explanation;
-          const options = card.querySelectorAll('.option-btn');
-          const selected = this.getAttribute('data-option');
-          const isCorrect = (selected === correct);
-
-          if (window.analytics && window.logEvent) {
-            window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect });
-          }
-
-          options.forEach(option => {
-            option.disabled = true;
-            if (option.getAttribute('data-option') === correct) {
-              option.classList.add('correct');
+            let selectedQuestions = shuffleArray(filtered);
+            if (options.num) {
+              selectedQuestions = selectedQuestions.slice(0, options.num);
             }
-          });
-          if (!isCorrect) {
-            this.classList.add('incorrect');
+            initializeQuiz(selectedQuestions);
+          },
+          error: function(error) {
+            console.error("Error parsing CSV:", error);
           }
+        });
+      }
 
-          const hint = card.querySelector('.swipe-hint');
-          if (hint) hint.style.display = 'block';
+      // Initialize quiz
+      function initializeQuiz(questions) {
+        currentQuestion = 0;
+        score = 0;
+        totalQuestions = questions.length;
+        answeredIds = [];
+        updateProgress();
 
-          const answerSlide = questionSlide.nextElementSibling;
-          if (answerSlide) {
-            answerSlide.querySelector('.card').innerHTML = `
-              <div class="answer">
-                <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
-                Correct Answer: ${correct}<br>
-                ${explanation}
+        const quizSlides = document.getElementById("quizSlides");
+        quizSlides.innerHTML = "";
+
+        questions.forEach(question => {
+          const questionSlide = document.createElement("div");
+          questionSlide.className = "swiper-slide";
+          const qId = question["Question"].trim();
+          questionSlide.dataset.id = qId;
+          questionSlide.dataset.correct = question["Correct Answer"].trim();
+          questionSlide.dataset.explanation = question["Explanation"];
+          questionSlide.innerHTML = `
+            <div class="card">
+              <div class="question">${question["Question"]}</div>
+              ${question["Image URL"] && question["Image URL"].trim() !== "" 
+                 ? `<img src="${question["Image URL"].trim()}" class="question-image">` 
+                 : ""}
+              <div class="options">
+                ${question["Option A"] && question["Option A"].trim() !== "" 
+                   ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>` 
+                   : ""}
+                ${question["Option B"] && question["Option B"].trim() !== "" 
+                   ? `<button class="option-btn" data-option="B">B. ${question["Option B"]}</button>` 
+                   : ""}
+                ${question["Option C"] && question["Option C"].trim() !== "" 
+                   ? `<button class="option-btn" data-option="C">C. ${question["Option C"]}</button>` 
+                   : ""}
+                ${question["Option D"] && question["Option D"].trim() !== "" 
+                   ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>` 
+                   : ""}
+                ${question["Option E"] && question["Option E"].trim() !== "" 
+                   ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>` 
+                   : ""}
               </div>
-            `;
+              <div class="swipe-hint" style="display:none;">Swipe up for explanation</div>
+            </div>
+          `;
+          quizSlides.appendChild(questionSlide);
+
+          const answerSlide = document.createElement("div");
+          answerSlide.className = "swiper-slide";
+          answerSlide.innerHTML = `
+            <div class="card">
+              <div class="answer"></div>
+            </div>
+          `;
+          quizSlides.appendChild(answerSlide);
+        });
+
+        window.mySwiper = new Swiper('.swiper', {
+          direction: 'vertical',
+          loop: false,
+          mousewheel: true,
+          touchReleaseOnEdges: true
+        });
+
+        // On slide change, only auto-skip the answer slide if the corresponding question's card is not answered.
+        window.mySwiper.on('slideChange', function() {
+          const activeIndex = window.mySwiper.activeIndex;
+          if (activeIndex % 2 === 1) {
+            const questionSlide = window.mySwiper.slides[activeIndex - 1];
+            if (questionSlide) {
+              const card = questionSlide.querySelector('.card');
+              if (card && !card.classList.contains('answered')) {
+                setTimeout(() => {
+                  window.mySwiper.slideNext();
+                }, 200);
+              }
+            }
           }
+          updateFavoriteIcon();
+        });
 
-          currentQuestion++;
-          if (isCorrect) score++;
-          updateProgress();
+        addOptionListeners();
+        addBookmarkListeners();
 
-          if (currentQuestion === totalQuestions) {
-            setTimeout(() => {
-              const summarySlide = document.createElement("div");
-              summarySlide.className = "swiper-slide";
-              summarySlide.innerHTML = `
-                <div class="card">
-                  <div class="answer">
-                    <strong>Final Score: ${score} out of ${totalQuestions}</strong><br>
-                    ${score/totalQuestions >= 0.8 ? "Great job!" : "Keep practicing!"}
-                  </div>
+        // Show the quiz container and bottom toolbar; hide the main options
+        document.querySelector(".swiper").style.display = "block";
+        document.getElementById("bottomToolbar").style.display = "flex";
+        document.getElementById("mainOptions").style.display = "none";
+        document.getElementById("iconBar").style.display = "flex";
+      }
+
+      // Option listeners
+      function addOptionListeners() {
+        document.querySelectorAll('.option-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const card = this.closest('.card');
+            if (card.classList.contains('answered')) return;
+            card.classList.add('answered');
+
+            const questionSlide = card.closest('.swiper-slide');
+            const qId = questionSlide.dataset.id;
+            if (!answeredIds.includes(qId)) {
+              answeredIds.push(qId);
+            }
+
+            const correct = questionSlide.dataset.correct;
+            const explanation = questionSlide.dataset.explanation;
+            const options = card.querySelectorAll('.option-btn');
+            const selected = this.getAttribute('data-option');
+            const isCorrect = (selected === correct);
+
+            if (window.analytics && window.logEvent) {
+              window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect });
+            }
+
+            options.forEach(option => {
+              option.disabled = true;
+              if (option.getAttribute('data-option') === correct) {
+                option.classList.add('correct');
+              }
+            });
+            if (!isCorrect) {
+              this.classList.add('incorrect');
+            }
+
+            const hint = card.querySelector('.swipe-hint');
+            if (hint) hint.style.display = 'block';
+
+            const answerSlide = questionSlide.nextElementSibling;
+            if (answerSlide) {
+              answerSlide.querySelector('.card').innerHTML = `
+                <div class="answer">
+                  <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
+                  Correct Answer: ${correct}<br>
+                  ${explanation}
                 </div>
               `;
-              document.getElementById("quizSlides").appendChild(summarySlide);
-              window.mySwiper.update();
-            }, 1000);
-          }
+            }
+
+            currentQuestion++;
+            if (isCorrect) score++;
+            updateProgress();
+
+            if (currentQuestion === totalQuestions) {
+              setTimeout(() => {
+                const summarySlide = document.createElement("div");
+                summarySlide.className = "swiper-slide";
+                summarySlide.innerHTML = `
+                  <div class="card">
+                    <div class="answer">
+                      <strong>Final Score: ${score} out of ${totalQuestions}</strong><br>
+                      ${score/totalQuestions >= 0.8 ? "Great job!" : "Keep practicing!"}
+                    </div>
+                  </div>
+                `;
+                document.getElementById("quizSlides").appendChild(summarySlide);
+                window.mySwiper.update();
+              }, 1000);
+            }
+          });
         });
+      }
+
+      // Bookmark listeners
+      function addBookmarkListeners() {
+        // If you add individual bookmark buttons on cards, attach listeners here.
+        // Currently, the top icon handles bookmarking.
+      }
+
+      // Main Options event listeners
+      document.getElementById("customQuizBtn").addEventListener("click", function() {
+        document.getElementById("customQuizForm").style.display = "block";
       });
-    }
+      document.getElementById("randomQuizBtn").addEventListener("click", function() {
+        document.getElementById("randomQuizForm").style.display = "block";
+      });
+      document.getElementById("cancelCustomQuiz").addEventListener("click", function() {
+        document.getElementById("customQuizForm").style.display = "none";
+      });
+      document.getElementById("cancelRandomQuiz").addEventListener("click", function() {
+        document.getElementById("randomQuizForm").style.display = "none";
+      });
+      document.getElementById("startCustomQuiz").addEventListener("click", function() {
+        const category = document.getElementById("categorySelect").value;
+        const num = parseInt(document.getElementById("customNumQuestions").value, 10);
+        document.getElementById("customQuizForm").style.display = "none";
+        loadQuestions({ type: 'custom', category, num });
+      });
+      document.getElementById("startRandomQuiz").addEventListener("click", function() {
+        const num = parseInt(document.getElementById("randomNumQuestions").value, 10);
+        document.getElementById("randomQuizForm").style.display = "none";
+        loadQuestions({ type: 'random', num });
+      });
 
-    // Bookmark listeners
-    function addBookmarkListeners() {
-      // If you later add bookmark buttons inside each card, attach their listeners here.
-      // Currently, the top icon handles bookmarking.
-    }
-
-    // Landing page and modal event listeners (now main options)
-    document.getElementById("customQuizBtn").addEventListener("click", function() {
-      document.getElementById("customQuizForm").style.display = "block";
-    });
-    document.getElementById("randomQuizBtn").addEventListener("click", function() {
-      document.getElementById("randomQuizForm").style.display = "block";
-    });
-    document.getElementById("cancelCustomQuiz").addEventListener("click", function() {
-      document.getElementById("customQuizForm").style.display = "none";
-    });
-    document.getElementById("cancelRandomQuiz").addEventListener("click", function() {
-      document.getElementById("randomQuizForm").style.display = "none";
-    });
-    document.getElementById("startCustomQuiz").addEventListener("click", function() {
-      const category = document.getElementById("categorySelect").value;
-      const num = parseInt(document.getElementById("customNumQuestions").value, 10);
-      document.getElementById("customQuizForm").style.display = "none";
-      loadQuestions({ type: 'custom', category, num });
-    });
-    document.getElementById("startRandomQuiz").addEventListener("click", function() {
-      const num = parseInt(document.getElementById("randomNumQuestions").value, 10);
-      document.getElementById("randomQuizForm").style.display = "none";
-      loadQuestions({ type: 'random', num });
-    });
-
-    // Side menu and overlay
-    const menuButton = document.getElementById("menuToggle");
-    const sideMenu = document.getElementById("sideMenu");
-    const menuOverlay = document.getElementById("menuOverlay");
-    menuButton.addEventListener("click", function() {
-      sideMenu.classList.toggle("open");
-      menuOverlay.classList.toggle("show");
-    });
-    menuOverlay.addEventListener("click", function() {
-      sideMenu.classList.remove("open");
-      menuOverlay.classList.remove("show");
-    });
-
-    // Toggle Categories submenu
-    document.getElementById("categoriesToggle").addEventListener("click", function(e) {
-      e.preventDefault();
-      const catList = document.getElementById("categoryList");
-      catList.style.display = (catList.style.display === "block") ? "none" : "block";
-    });
-
-    // Filter links
-    document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
-      e.preventDefault();
-      filterMode = "bookmarks";
-      loadQuestions();
-      sideMenu.classList.remove("open");
-      menuOverlay.classList.remove("show");
-    });
-    document.getElementById("resetProgress").addEventListener("click", function(e) {
-      e.preventDefault();
-      localStorage.removeItem("quizProgress");
-      loadQuestions();
-      sideMenu.classList.remove("open");
-      menuOverlay.classList.remove("show");
-    });
-
-    // Favorite & Feedback (Top Icon)
-    const favoriteButton = document.getElementById("favoriteButton");
-    const feedbackButton = document.getElementById("feedbackButton");
-
-    function getCurrentQuestionId() {
-      let activeIndex = window.mySwiper ? window.mySwiper.activeIndex : 0;
-      if (activeIndex % 2 === 1) activeIndex--;
-      let slide = window.mySwiper ? window.mySwiper.slides[activeIndex] : null;
-      return slide ? slide.dataset.id : null;
-    }
-
-    function updateFavoriteIcon() {
-      const qId = getCurrentQuestionId();
-      if (qId) {
-        const bookmarks = getBookmarks();
-        favoriteButton.textContent = bookmarks.includes(qId) ? "★" : "☆";
-      } else {
-        favoriteButton.textContent = "☆";
-      }
-    }
-
-    favoriteButton.addEventListener("click", function() {
-      const qId = getCurrentQuestionId();
-      if (qId) {
-        const isFav = toggleBookmark(qId);
-        favoriteButton.textContent = isFav ? "★" : "☆";
-      }
-    });
-
-    feedbackButton.addEventListener("click", function() {
-      document.getElementById("feedbackModal").style.display = "flex";
-    });
-
-    window.addEventListener("load", function() {
-      setTimeout(updateFavoriteIcon, 500);
-    });
-    
-    // Swipe left gesture for side menu on mobile
-    let touchstartX = 0;
-    let touchendX = 0;
-    const swipeThreshold = 50;
-    sideMenu.addEventListener('touchstart', function(e) {
-      touchstartX = e.changedTouches[0].screenX;
-    });
-    sideMenu.addEventListener('touchend', function(e) {
-      touchendX = e.changedTouches[0].screenX;
-      if (touchendX - touchstartX < -swipeThreshold) {
+      // Side menu and overlay
+      const menuButton = document.getElementById("menuToggle");
+      const sideMenu = document.getElementById("sideMenu");
+      const menuOverlay = document.getElementById("menuOverlay");
+      menuButton.addEventListener("click", function() {
+        sideMenu.classList.toggle("open");
+        menuOverlay.classList.toggle("show");
+      });
+      menuOverlay.addEventListener("click", function() {
         sideMenu.classList.remove("open");
         menuOverlay.classList.remove("show");
-      }
-    });
+      });
 
-    // Feedback Modal functionality
-    const feedbackModal = document.getElementById("feedbackModal");
-    document.getElementById("closeFeedbackModal").addEventListener("click", function() {
-      feedbackModal.style.display = "none";
-    });
-    document.getElementById("submitFeedback").addEventListener("click", async function() {
-      const feedbackText = document.getElementById("feedbackText").value;
-      if (!feedbackText.trim()) {
-        alert("Please enter your feedback.");
-        return;
+      // Toggle Categories submenu
+      document.getElementById("categoriesToggle").addEventListener("click", function(e) {
+        e.preventDefault();
+        const catList = document.getElementById("categoryList");
+        catList.style.display = (catList.style.display === "block") ? "none" : "block";
+      });
+
+      // Filter links
+      document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
+        e.preventDefault();
+        filterMode = "bookmarks";
+        loadQuestions();
+        sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
+      });
+      document.getElementById("resetProgress").addEventListener("click", function(e) {
+        e.preventDefault();
+        localStorage.removeItem("quizProgress");
+        loadQuestions();
+        sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
+      });
+
+      // Favorite & Feedback (Top Icon)
+      const favoriteButton = document.getElementById("favoriteButton");
+      const feedbackButton = document.getElementById("feedbackButton");
+
+      function getCurrentQuestionId() {
+        let activeIndex = window.mySwiper ? window.mySwiper.activeIndex : 0;
+        if (activeIndex % 2 === 1) activeIndex--;
+        let slide = window.mySwiper ? window.mySwiper.slides[activeIndex] : null;
+        return slide ? slide.dataset.id : null;
       }
-      try {
-        await window.addDoc(window.collection(window.db, "feedback"), {
-          feedback: feedbackText,
-          timestamp: window.serverTimestamp()
-        });
-        alert("Thank you for your feedback!");
-        document.getElementById("feedbackText").value = "";
-        feedbackModal.style.display = "none";
-      } catch (error) {
-        console.error("Error submitting feedback: ", error);
-        alert("There was an error submitting your feedback. Please try again later.");
+
+      function updateFavoriteIcon() {
+        const qId = getCurrentQuestionId();
+        if (qId) {
+          const bookmarks = getBookmarks();
+          favoriteButton.textContent = bookmarks.includes(qId) ? "★" : "☆";
+        } else {
+          favoriteButton.textContent = "☆";
+        }
       }
+
+      favoriteButton.addEventListener("click", function() {
+        const qId = getCurrentQuestionId();
+        if (qId) {
+          const isFav = toggleBookmark(qId);
+          favoriteButton.textContent = isFav ? "★" : "☆";
+        }
+      });
+
+      feedbackButton.addEventListener("click", function() {
+        document.getElementById("feedbackModal").style.display = "flex";
+      });
+
+      window.addEventListener("load", function() {
+        setTimeout(updateFavoriteIcon, 500);
+      });
     });
   </script>
 </body>
