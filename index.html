@@ -8,18 +8,22 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#E6F0FA">
   <title>ENT Quiz & Facts</title>
+
   <!-- Google Fonts: Roboto -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" rel="stylesheet">
+
   <!-- Swiper CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css" />
+
   <!-- PapaParse for CSV parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-  
+
   <!-- Firebase App, Analytics & Firestore (Modular) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
     import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
       authDomain: "medswipe-648ee.firebaseapp.com",
@@ -29,9 +33,12 @@
       appId: "1:288366122490:web:1c150c48c8aed4e27f0043",
       measurementId: "G-748P8P634B"
     };
+
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const db = getFirestore(app);
+
+    // Make them available globally if needed
     window.analytics = analytics;
     window.logEvent = logEvent;
     window.db = db;
@@ -39,21 +46,14 @@
     window.collection = collection;
     window.serverTimestamp = serverTimestamp;
   </script>
-  
+
   <style>
     /* Top Toolbar (always visible) */
     .toolbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 50px;
-      background-color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 10px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 50px; background-color: #fff;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       z-index: 1500;
     }
     .toolbar-left, .toolbar-center, .toolbar-right {
@@ -63,281 +63,189 @@
     .toolbar-center { text-align: center; }
     .toolbar-right { text-align: right; }
     .menu-button {
-      font-size: 24px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: #333;
+      font-size: 24px; background: none; border: none; cursor: pointer; color: #333;
     }
-    .logo img {
-      max-height: 40px;
+    .logo img { max-height: 40px; }
+
+    /* Icon Bar (Favorite & Feedback) - hidden initially */
+    #iconBar {
+      position: fixed; top: 50px; left: 0;
+      width: 100%; height: 40px; background-color: #fff;
+      display: none; /* hidden by default */
+      align-items: center; justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      z-index: 1450;
     }
-    
+    #iconBar button {
+      background: none; border: none; font-size: 24px; cursor: pointer;
+      margin: 0 15px; color: #0056b3;
+    }
+
     /* Main Options (Quiz buttons) */
     #mainOptions {
       margin-top: 90px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      display: flex; flex-direction: column; align-items: center;
     }
     #mainOptions button {
-      font-size: 1.2rem;
-      padding: 10px 20px;
-      margin: 10px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      background-color: #0056b3;
-      color: #fff;
-      width: 200px;
+      font-size: 1.2rem; padding: 10px 20px; margin: 10px;
+      border: none; border-radius: 5px; cursor: pointer;
+      background-color: #0056b3; color: #fff; width: 200px;
     }
-    
+
     /* Swiper Container for Quiz - Hidden initially */
     .swiper {
-      display: none;
+      display: none; /* hidden by default */
       width: 100%;
       height: calc(100% - 50px - 40px - 50px);
       min-height: calc(100vh - 140px);
       margin-top: 90px;
     }
-    
+    .swiper-slide {
+      animation: fadeIn 0.5s ease-in-out;
+      display: flex; align-items: flex-start; justify-content: center;
+      box-sizing: border-box; padding-top: 20px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     /* Bottom Toolbar for Quiz - Hidden initially */
     #bottomToolbar {
-      display: none;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 50px;
-      background-color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 10px;
-      box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+      display: none; /* hidden by default */
+      position: fixed; bottom: 0; left: 0; right: 0; height: 50px;
+      background-color: #fff; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
       z-index: 1500;
     }
     #progressBarContainer {
-      flex: 1;
-      height: 10px;
-      background-color: #ccc;
-      border-radius: 5px;
-      margin-right: 10px;
-      overflow: hidden;
+      flex: 1; height: 10px; background-color: #ccc;
+      border-radius: 5px; margin-right: 10px; overflow: hidden;
     }
     #progressBar {
-      height: 100%;
-      width: 0%;
-      background-color: #0056b3;
-      border-radius: 5px;
-      transition: width 0.3s ease;
+      height: 100%; width: 0%; background-color: #0056b3;
+      border-radius: 5px; transition: width 0.3s ease;
     }
     #questionProgress {
-      font-size: 0.9rem;
-      color: #0056b3;
-      margin-right: 10px;
-      min-width: 50px;
-      text-align: center;
+      font-size: 0.9rem; color: #0056b3; margin-right: 10px;
+      min-width: 50px; text-align: center;
     }
     #scoreDisplay {
-      font-size: 0.9rem;
-      color: #0056b3;
-      min-width: 60px;
-      text-align: right;
+      font-size: 0.9rem; color: #0056b3;
+      min-width: 60px; text-align: right;
     }
-    
+
     /* Modal Forms */
     .modalForm {
       display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
+      position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      background: #fff;
-      padding: 20px;
-      z-index: 2100;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      width: 90%;
-      max-width: 400px;
+      background: #fff; padding: 20px; z-index: 2100;
+      border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      width: 90%; max-width: 400px;
     }
     .modalForm h2 {
-      margin-bottom: 10px;
-      color: #0056b3;
-      text-align: center;
+      margin-bottom: 10px; color: #0056b3; text-align: center;
     }
     .modalForm .formGroup {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 15px;
+      display: flex; flex-direction: column; margin-bottom: 15px;
     }
     .modalForm .formGroup label {
-      font-size: 0.9rem;
-      color: #333;
-      margin-bottom: 5px;
+      font-size: 0.9rem; color: #333; margin-bottom: 5px;
     }
     .modalForm .formGroup select,
     .modalForm .formGroup input {
-      width: 100%;
-      padding: 8px;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      width: 100%; padding: 8px; font-size: 1rem;
+      border: 1px solid #ccc; border-radius: 4px;
     }
     .modalForm .btnRow {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 10px;
+      display: flex; justify-content: flex-end; margin-top: 10px;
     }
     .modalForm button {
-      margin-left: 10px;
-      padding: 8px 15px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      background-color: #0056b3;
-      color: #fff;
+      margin-left: 10px; padding: 8px 15px; font-size: 1rem;
+      border: none; border-radius: 4px; cursor: pointer;
+      background-color: #0056b3; color: #fff;
     }
     .modalForm button.cancel {
       background-color: #aaa;
     }
-    
+
     /* Quiz Card Styles */
     .card {
-      position: relative;
-      background: #fff;
-      border-radius: 10px;
-      padding: 20px 15px 15px 15px;
-      margin: 10px auto;
+      position: relative; background: #fff; border-radius: 10px;
+      padding: 20px 15px 15px 15px; margin: 10px auto;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      max-width: 600px;
-      width: 100%;
-      max-height: 80vh;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      text-align: center;
+      max-width: 600px; width: 100%; max-height: 80vh;
+      overflow-y: auto; -webkit-overflow-scrolling: touch; text-align: center;
     }
     .question {
-      white-space: pre-line;
-      font-size: 1.1rem;
-      font-weight: 500;
-      margin-bottom: 10px;
+      white-space: pre-line; font-size: 1.1rem; font-weight: 500; margin-bottom: 10px;
     }
-    .options {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+    .options { display: flex; flex-direction: column; gap: 8px; }
     .option-btn {
-      padding: 6px;
-      border: 1px solid #0056b3;
-      background: #fff;
-      color: #0056b3;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 0.95rem;
-      transition: background 0.3s ease;
+      padding: 6px; border: 1px solid #0056b3; background: #fff;
+      color: #0056b3; border-radius: 5px; cursor: pointer;
+      font-size: 0.95rem; transition: background 0.3s ease;
     }
     .option-btn:hover {
-      background: #0056b3;
-      color: #fff;
+      background: #0056b3; color: #fff;
     }
     .option-btn.correct {
-      background-color: #28a745;
-      color: #fff;
+      background-color: #28a745; color: #fff;
     }
     .option-btn.incorrect {
-      background-color: #dc3545;
-      color: #fff;
+      background-color: #dc3545; color: #fff;
     }
     .option-btn:disabled {
       cursor: not-allowed;
     }
     .swipe-hint {
-      font-size: 0.85rem;
-      margin-top: 8px;
-      color: #666;
-      display: none;
+      font-size: 0.85rem; margin-top: 8px; color: #666; display: none;
     }
     .answer {
-      white-space: pre-line;
-      font-size: 1rem;
-      color: #333;
-      margin-top: 10px;
-      text-align: left;
+      white-space: pre-line; font-size: 1rem; color: #333;
+      margin-top: 10px; text-align: left;
     }
     .question-image {
-      max-width: 100%;
-      height: auto;
-      margin-bottom: 10px;
-      border-radius: 5px;
+      max-width: 100%; height: auto; margin-bottom: 10px; border-radius: 5px;
     }
-    
+
     /* Side Menu */
     #sideMenu {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 250px;
-      height: 100vh;
-      background-color: #fff;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-      transform: translateX(-100%);
-      transition: transform 0.3s ease;
-      z-index: 1600;
-      padding: 60px 20px 20px;
+      position: fixed; top: 0; left: 0; width: 250px; height: 100vh;
+      background-color: #fff; box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      transform: translateX(-100%); transition: transform 0.3s ease;
+      z-index: 1600; padding: 60px 20px 20px;
     }
-    #sideMenu.open {
-      transform: translateX(0);
-    }
+    #sideMenu.open { transform: translateX(0); }
     #menuOverlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.2);
-      z-index: 1599;
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.2); z-index: 1599;
     }
-    #menuOverlay.show {
-      display: block;
-    }
+    #menuOverlay.show { display: block; }
     /* Single list for the side menu */
     #menuList {
-      list-style: none;
-      padding: 0;
-      margin: 0;
+      list-style: none; padding: 0; margin: 0;
     }
     #menuList > li {
-      margin-bottom: 10px;
-      padding-left: 20px;
-      font-size: 1rem;
-      color: #0056b3;
-      cursor: pointer;
+      margin-bottom: 10px; padding-left: 20px;
+      font-size: 1rem; color: #0056b3; cursor: pointer;
     }
     #menuList > li a {
-      text-decoration: none;
-      color: #0056b3;
-      font-size: 1rem;
+      text-decoration: none; color: #0056b3; font-size: 1rem;
     }
-    /* Sub-list for categories */
+    /* Sub-list for categories (toggled by clicking "Categories") */
     #categoryList {
-      list-style: none;
-      padding: 0;
-      margin: 5px 0 10px 20px;
+      list-style: none; padding: 0; margin: 5px 0 10px 20px;
       display: none;
     }
     #categoryList li {
-      margin-bottom: 8px;
-      font-size: 0.9rem;
+      margin-bottom: 8px; font-size: 0.9rem;
     }
     #categoryList li a {
-      text-decoration: none;
-      color: #0056b3;
+      text-decoration: none; color: #0056b3;
     }
-    
+
     @media (max-width: 600px) {
       #mainOptions button { width: 180px; }
       .toolbar { height: 60px; padding: 0 10px; }
@@ -376,18 +284,18 @@
   </div>
   
   <!-- Main Options: Displayed when no quiz is running -->
-  <div id="mainOptions" style="margin-top: 90px; display: flex; flex-direction: column; align-items: center;">
+  <div id="mainOptions">
     <button id="customQuizBtn">Custom Quiz</button>
     <button id="randomQuizBtn">Random Quiz</button>
   </div>
   
   <!-- Swiper Container for Quiz: Hidden initially -->
-  <div class="swiper" style="display: none;">
+  <div class="swiper">
     <div class="swiper-wrapper" id="quizSlides"></div>
   </div>
   
   <!-- Bottom Toolbar for Quiz: Hidden initially -->
-  <div id="bottomToolbar" style="display: none;">
+  <div id="bottomToolbar">
     <div id="progressBarContainer">
       <div id="progressBar"></div>
     </div>
@@ -415,10 +323,48 @@
   <!-- Menu Overlay -->
   <div id="menuOverlay"></div>
   
-  <!-- Icon Bar (Favorite & Feedback) -->
-  <div id="iconBar">
+  <!-- Icon Bar (Favorite & Feedback) - hidden initially -->
+  <div id="iconBar" style="display: none;">
     <button id="favoriteButton">☆</button>
     <button id="feedbackButton">💬</button>
+  </div>
+  
+  <!-- Custom Quiz Modal Form -->
+  <div id="customQuizForm" class="modalForm">
+    <h2>Custom Quiz Options</h2>
+    <div class="formGroup">
+      <label for="categorySelect">Select Category</label>
+      <select id="categorySelect">
+        <option value="">All</option>
+        <option value="Head & Neck Surgery">Head & Neck Surgery</option>
+        <option value="Otology">Otology</option>
+        <option value="Laryngology">Laryngology</option>
+        <option value="Rhinology">Rhinology</option>
+        <option value="Pediatric ENT">Pediatric ENT</option>
+        <option value="Facial Plastics">Facial Plastics</option>
+      </select>
+    </div>
+    <div class="formGroup">
+      <label for="customNumQuestions">Number of Questions</label>
+      <input type="number" id="customNumQuestions" min="1" value="10">
+    </div>
+    <div class="btnRow">
+      <button id="startCustomQuiz">Start Quiz</button>
+      <button id="cancelCustomQuiz" class="cancel">Cancel</button>
+    </div>
+  </div>
+  
+  <!-- Random Quiz Modal Form -->
+  <div id="randomQuizForm" class="modalForm">
+    <h2>Random Quiz Options</h2>
+    <div class="formGroup">
+      <label for="randomNumQuestions">Number of Questions</label>
+      <input type="number" id="randomNumQuestions" min="1" value="10">
+    </div>
+    <div class="btnRow">
+      <button id="startRandomQuiz">Start Quiz</button>
+      <button id="cancelRandomQuiz" class="cancel">Cancel</button>
+    </div>
   </div>
   
   <!-- Feedback Modal -->
@@ -432,11 +378,15 @@
     </div>
   </div>
   
-  <!-- Swiper JS -->
+  <!-- Swiper JS (placed at bottom so DOM elements exist) -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
+
+  <!-- Main Script: attach event listeners at bottom -->
   <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      // Global variables
+    // Wait until the entire page (HTML + above scripts) has loaded
+    window.addEventListener('load', function() {
+
+      /********** Global Variables **********/
       let allQuestions = [];
       let filterMode = "all";
       let selectedCategory = "";
@@ -445,27 +395,9 @@
       let totalQuestions = 0;
       let score = 0;
 
-      // CSV URL
       const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
 
-      // Update progress
-      function updateProgress() {
-        const progressPercent = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
-        document.getElementById("progressBar").style.width = progressPercent + "%";
-        document.getElementById("questionProgress").textContent = `${currentQuestion} / ${totalQuestions}`;
-        document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
-
-        localStorage.setItem("quizProgress", JSON.stringify({
-          quizData: allQuestions,
-          currentQuestion,
-          score,
-          answeredIds,
-          filterMode,
-          selectedCategory
-        }));
-      }
-
-      // Bookmarks functions
+      /********** Utility Functions **********/
       function getBookmarks() {
         const bm = localStorage.getItem("bookmarks");
         return bm ? JSON.parse(bm) : [];
@@ -483,13 +415,43 @@
         saveBookmarks(bookmarks);
         return bookmarks.includes(questionId);
       }
-
-      // Shuffle
       function shuffleArray(array) {
         return array.sort(() => Math.random() - 0.5);
       }
+      function updateFavoriteIcon() {
+        const qId = getCurrentQuestionId();
+        if (qId) {
+          const bookmarks = getBookmarks();
+          favoriteButton.textContent = bookmarks.includes(qId) ? "★" : "☆";
+        } else {
+          favoriteButton.textContent = "☆";
+        }
+      }
 
-      // Load questions with options
+      function getCurrentQuestionId() {
+        let activeIndex = window.mySwiper ? window.mySwiper.activeIndex : 0;
+        if (activeIndex % 2 === 1) activeIndex--;
+        let slide = window.mySwiper ? window.mySwiper.slides[activeIndex] : null;
+        return slide ? slide.dataset.id : null;
+      }
+
+      function updateProgress() {
+        const progressPercent = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
+        document.getElementById("progressBar").style.width = progressPercent + "%";
+        document.getElementById("questionProgress").textContent = `${currentQuestion} / ${totalQuestions}`;
+        document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
+
+        localStorage.setItem("quizProgress", JSON.stringify({
+          quizData: allQuestions,
+          currentQuestion,
+          score,
+          answeredIds,
+          filterMode,
+          selectedCategory
+        }));
+      }
+
+      /********** loadQuestions **********/
       function loadQuestions(options = {}) {
         Papa.parse(csvUrl, {
           download: true,
@@ -497,12 +459,14 @@
           complete: function(results) {
             allQuestions = results.data;
             let filtered = allQuestions;
+
             if (filterMode === 'bookmarks') {
               let bookmarks = getBookmarks();
               filtered = filtered.filter(q => bookmarks.includes(q["Question"].trim()));
             } else if (options.type === 'custom' && options.category) {
               filtered = filtered.filter(q => q["Category"] && q["Category"].trim() === options.category);
             }
+
             let selectedQuestions = shuffleArray(filtered);
             if (options.num) {
               selectedQuestions = selectedQuestions.slice(0, options.num);
@@ -515,7 +479,7 @@
         });
       }
 
-      // Initialize quiz
+      /********** initializeQuiz **********/
       function initializeQuiz(questions) {
         currentQuestion = 0;
         score = 0;
@@ -578,7 +542,7 @@
           touchReleaseOnEdges: true
         });
 
-        // On slide change, only auto-skip the answer slide if the corresponding question's card is not answered.
+        // On slide change, auto-skip if the question wasn't answered
         window.mySwiper.on('slideChange', function() {
           const activeIndex = window.mySwiper.activeIndex;
           if (activeIndex % 2 === 1) {
@@ -596,16 +560,15 @@
         });
 
         addOptionListeners();
-        addBookmarkListeners();
 
-        // Show the quiz container and bottom toolbar; hide the main options
+        // Show the quiz container & bottom toolbar, hide the main options, show icon bar
         document.querySelector(".swiper").style.display = "block";
         document.getElementById("bottomToolbar").style.display = "flex";
         document.getElementById("mainOptions").style.display = "none";
         document.getElementById("iconBar").style.display = "flex";
       }
 
-      // Option listeners
+      /********** addOptionListeners **********/
       function addOptionListeners() {
         document.querySelectorAll('.option-btn').forEach(btn => {
           btn.addEventListener('click', function() {
@@ -629,6 +592,7 @@
               window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect });
             }
 
+            // Mark correct as green, incorrect as red
             options.forEach(option => {
               option.disabled = true;
               if (option.getAttribute('data-option') === correct) {
@@ -657,6 +621,7 @@
             if (isCorrect) score++;
             updateProgress();
 
+            // If this was the last question, add final summary
             if (currentQuestion === totalQuestions) {
               setTimeout(() => {
                 const summarySlide = document.createElement("div");
@@ -677,13 +642,45 @@
         });
       }
 
-      // Bookmark listeners
-      function addBookmarkListeners() {
-        // If you add individual bookmark buttons on cards, attach listeners here.
-        // Currently, the top icon handles bookmarking.
-      }
+      /********** Menu and Overlay **********/
+      const menuButton = document.getElementById("menuToggle");
+      const sideMenu = document.getElementById("sideMenu");
+      const menuOverlay = document.getElementById("menuOverlay");
+      menuButton.addEventListener("click", function() {
+        sideMenu.classList.toggle("open");
+        menuOverlay.classList.toggle("show");
+      });
+      menuOverlay.addEventListener("click", function() {
+        sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
+      });
 
-      // Main Options event listeners
+      // Toggle Categories
+      document.getElementById("categoriesToggle").addEventListener("click", function(e) {
+        e.preventDefault();
+        const catList = document.getElementById("categoryList");
+        catList.style.display = (catList.style.display === "block") ? "none" : "block";
+      });
+
+      // Bookmarks filter
+      document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
+        e.preventDefault();
+        filterMode = "bookmarks";
+        loadQuestions();
+        sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
+      });
+
+      // Reset Progress
+      document.getElementById("resetProgress").addEventListener("click", function(e) {
+        e.preventDefault();
+        localStorage.removeItem("quizProgress");
+        loadQuestions();
+        sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
+      });
+
+      /********** Quiz Option Buttons **********/
       document.getElementById("customQuizBtn").addEventListener("click", function() {
         document.getElementById("customQuizForm").style.display = "block";
       });
@@ -708,62 +705,9 @@
         loadQuestions({ type: 'random', num });
       });
 
-      // Side menu and overlay
-      const menuButton = document.getElementById("menuToggle");
-      const sideMenu = document.getElementById("sideMenu");
-      const menuOverlay = document.getElementById("menuOverlay");
-      menuButton.addEventListener("click", function() {
-        sideMenu.classList.toggle("open");
-        menuOverlay.classList.toggle("show");
-      });
-      menuOverlay.addEventListener("click", function() {
-        sideMenu.classList.remove("open");
-        menuOverlay.classList.remove("show");
-      });
-
-      // Toggle Categories submenu
-      document.getElementById("categoriesToggle").addEventListener("click", function(e) {
-        e.preventDefault();
-        const catList = document.getElementById("categoryList");
-        catList.style.display = (catList.style.display === "block") ? "none" : "block";
-      });
-
-      // Filter links
-      document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
-        e.preventDefault();
-        filterMode = "bookmarks";
-        loadQuestions();
-        sideMenu.classList.remove("open");
-        menuOverlay.classList.remove("show");
-      });
-      document.getElementById("resetProgress").addEventListener("click", function(e) {
-        e.preventDefault();
-        localStorage.removeItem("quizProgress");
-        loadQuestions();
-        sideMenu.classList.remove("open");
-        menuOverlay.classList.remove("show");
-      });
-
-      // Favorite & Feedback (Top Icon)
+      /********** Favorite & Feedback Icons **********/
       const favoriteButton = document.getElementById("favoriteButton");
       const feedbackButton = document.getElementById("feedbackButton");
-
-      function getCurrentQuestionId() {
-        let activeIndex = window.mySwiper ? window.mySwiper.activeIndex : 0;
-        if (activeIndex % 2 === 1) activeIndex--;
-        let slide = window.mySwiper ? window.mySwiper.slides[activeIndex] : null;
-        return slide ? slide.dataset.id : null;
-      }
-
-      function updateFavoriteIcon() {
-        const qId = getCurrentQuestionId();
-        if (qId) {
-          const bookmarks = getBookmarks();
-          favoriteButton.textContent = bookmarks.includes(qId) ? "★" : "☆";
-        } else {
-          favoriteButton.textContent = "☆";
-        }
-      }
 
       favoriteButton.addEventListener("click", function() {
         const qId = getCurrentQuestionId();
@@ -777,10 +721,47 @@
         document.getElementById("feedbackModal").style.display = "flex";
       });
 
-      window.addEventListener("load", function() {
-        setTimeout(updateFavoriteIcon, 500);
+      // Swipe left gesture to close side menu on mobile
+      let touchstartX = 0;
+      let touchendX = 0;
+      const swipeThreshold = 50;
+      sideMenu.addEventListener('touchstart', function(e) {
+        touchstartX = e.changedTouches[0].screenX;
       });
-    });
+      sideMenu.addEventListener('touchend', function(e) {
+        touchendX = e.changedTouches[0].screenX;
+        if (touchendX - touchstartX < -swipeThreshold) {
+          sideMenu.classList.remove("open");
+          menuOverlay.classList.remove("show");
+        }
+      });
+
+      /********** Feedback Modal **********/
+      const feedbackModal = document.getElementById("feedbackModal");
+      document.getElementById("closeFeedbackModal").addEventListener("click", function() {
+        feedbackModal.style.display = "none";
+      });
+      document.getElementById("submitFeedback").addEventListener("click", async function() {
+        const feedbackText = document.getElementById("feedbackText").value;
+        if (!feedbackText.trim()) {
+          alert("Please enter your feedback.");
+          return;
+        }
+        try {
+          await window.addDoc(window.collection(window.db, "feedback"), {
+            feedback: feedbackText,
+            timestamp: window.serverTimestamp()
+          });
+          alert("Thank you for your feedback!");
+          document.getElementById("feedbackText").value = "";
+          feedbackModal.style.display = "none";
+        } catch (error) {
+          console.error("Error submitting feedback: ", error);
+          alert("There was an error submitting your feedback. Please try again later.");
+        }
+      });
+
+    }); // end of window.load
   </script>
 </body>
 </html>
