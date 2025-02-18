@@ -41,27 +41,69 @@
   </script>
   
   <style>
-    /* Landing Page */
-    #landingPage {
+    /* Top Toolbar remains always visible */
+    .toolbar {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
-      height: 100%;
-      background-color: #E6F0FA;
-      z-index: 2000;
+      height: 50px;
+      background-color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      z-index: 1500;
+    }
+    .toolbar-left, .toolbar-center, .toolbar-right {
+      flex: 1;
+    }
+    .toolbar-left { text-align: left; }
+    .toolbar-center { text-align: center; }
+    .toolbar-right { text-align: right; }
+    .menu-button {
+      font-size: 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #333;
+    }
+    .logo img {
+      max-height: 40px;
+    }
+    
+    /* Icon Bar (Favorite & Feedback) */
+    #iconBar {
+      position: fixed;
+      top: 50px;
+      left: 0;
+      width: 100%;
+      height: 40px;
+      background-color: #fff;
+      display: none; /* Hidden initially */
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      z-index: 1450;
+    }
+    #iconBar button {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      margin: 0 15px;
+      color: #0056b3;
+    }
+    
+    /* Main Options (Quiz buttons) */
+    #mainOptions {
+      margin-top: 90px; /* Below toolbar and (hidden) icon bar */
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      text-align: center;
     }
-    /* Fixed the CSS rule by removing stray text */
-    #landingPage img {
-      width: 220px;
-      margin-bottom: 30px;
-    }
-    #landingPage button {
+    #mainOptions button {
       font-size: 1.2rem;
       padding: 10px 20px;
       margin: 10px;
@@ -70,8 +112,75 @@
       cursor: pointer;
       background-color: #0056b3;
       color: #fff;
+      width: 200px;
     }
-
+    
+    /* Swiper Container for Quiz - Hidden initially */
+    .swiper {
+      display: none;
+      width: 100%;
+      height: calc(100% - 50px - 40px - 50px);
+      min-height: calc(100vh - 140px);
+      margin-top: 90px;
+    }
+    .swiper-slide {
+      animation: fadeIn 0.5s ease-in-out;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      box-sizing: border-box;
+      padding-top: 20px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Bottom Toolbar for Quiz - Hidden initially */
+    #bottomToolbar {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background-color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+      z-index: 1500;
+    }
+    #progressBarContainer {
+      flex: 1;
+      height: 10px;
+      background-color: #ccc;
+      border-radius: 5px;
+      margin-right: 10px;
+      overflow: hidden;
+    }
+    #progressBar {
+      height: 100%;
+      width: 0%;
+      background-color: #0056b3;
+      border-radius: 5px;
+      transition: width 0.3s ease;
+    }
+    #questionProgress {
+      font-size: 0.9rem;
+      color: #0056b3;
+      margin-right: 10px;
+      min-width: 50px;
+      text-align: center;
+    }
+    #scoreDisplay {
+      font-size: 0.9rem;
+      color: #0056b3;
+      min-width: 60px;
+      text-align: right;
+    }
+    
     /* Modal Forms */
     .modalForm {
       display: none;
@@ -128,85 +237,8 @@
     .modalForm button.cancel {
       background-color: #aaa;
     }
-
-    /* General styling */
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: 'Roboto', sans-serif;
-      background-color: #E6F0FA;
-      color: #333;
-    }
-    .toolbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 50px;
-      background-color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 10px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      z-index: 1500;
-    }
-    .toolbar-left, .toolbar-center, .toolbar-right {
-      flex: 1;
-    }
-    .toolbar-left { text-align: left; }
-    .toolbar-center { text-align: center; }
-    .toolbar-right { text-align: right; }
-    .menu-button {
-      font-size: 24px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: #333;
-    }
-    .logo img {
-      max-height: 40px;
-    }
-    #iconBar {
-      position: fixed;
-      top: 50px;
-      left: 0;
-      width: 100%;
-      height: 40px;
-      background-color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      z-index: 1450;
-    }
-    #iconBar button {
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      margin: 0 15px;
-      color: #0056b3;
-    }
-    .swiper {
-      width: 100%;
-      height: calc(100% - 50px - 40px - 50px);
-      min-height: calc(100vh - 140px);
-      margin-top: 90px;
-    }
-    .swiper-slide {
-      animation: fadeIn 0.5s ease-in-out;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      box-sizing: border-box;
-      padding-top: 20px;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    
+    /* Quiz Card Styles (remain unchanged) */
     .card {
       position: relative;
       background: #fff;
@@ -276,48 +308,7 @@
       margin-bottom: 10px;
       border-radius: 5px;
     }
-    #bottomToolbar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 50px;
-      background-color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 10px;
-      box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
-      z-index: 1500;
-    }
-    #progressBarContainer {
-      flex: 1;
-      height: 10px;
-      background-color: #ccc;
-      border-radius: 5px;
-      margin-right: 10px;
-      overflow: hidden;
-    }
-    #progressBar {
-      height: 100%;
-      width: 0%;
-      background-color: #0056b3;
-      border-radius: 5px;
-      transition: width 0.3s ease;
-    }
-    #questionProgress {
-      font-size: 0.9rem;
-      color: #0056b3;
-      margin-right: 10px;
-      min-width: 50px;
-      text-align: center;
-    }
-    #scoreDisplay {
-      font-size: 0.9rem;
-      color: #0056b3;
-      min-width: 60px;
-      text-align: right;
-    }
+    
     /* Side Menu */
     #sideMenu {
       position: fixed;
@@ -383,7 +374,7 @@
     }
     
     @media (max-width: 600px) {
-      #landingPage img { width: 180px; }
+      #mainOptions button { width: 180px; }
       .toolbar { height: 60px; padding: 0 10px; }
       .menu-button { font-size: 28px; width: 40px; text-align: center; }
       .logo img { max-height: 45px; }
@@ -406,53 +397,38 @@
   </style>
 </head>
 <body>
-  <!-- Landing Page with Logo -->
-  <div id="landingPage">
-    <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
+  <!-- Top Toolbar (always visible) -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <button class="menu-button" id="menuToggle">&#9776;</button>
+    </div>
+    <div class="toolbar-center">
+      <div class="logo">
+        <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
+      </div>
+    </div>
+    <div class="toolbar-right"></div>
+  </div>
+  
+  <!-- Main Options: Displayed when no quiz is running -->
+  <div id="mainOptions" style="margin-top: 90px; display: flex; flex-direction: column; align-items: center;">
     <button id="customQuizBtn">Custom Quiz</button>
     <button id="randomQuizBtn">Random Quiz</button>
   </div>
   
-  <!-- Custom Quiz Modal Form -->
-  <div id="customQuizForm" class="modalForm">
-    <h2>Custom Quiz Options</h2>
-    <div class="formGroup">
-      <label for="categorySelect">Select Category</label>
-      <select id="categorySelect">
-        <option value="">All</option>
-        <option value="Head & Neck Surgery">Head & Neck Surgery</option>
-        <option value="Otology">Otology</option>
-        <option value="Laryngology">Laryngology</option>
-        <option value="Rhinology">Rhinology</option>
-        <option value="Pediatric ENT">Pediatric ENT</option>
-        <option value="Facial Plastics">Facial Plastics</option>
-      </select>
-    </div>
-    <div class="formGroup">
-      <label for="customNumQuestions">Number of Questions</label>
-      <input type="number" id="customNumQuestions" min="1" value="10">
-    </div>
-    <div class="btnRow">
-      <button id="startCustomQuiz">Start Quiz</button>
-      <button id="cancelCustomQuiz" class="cancel">Cancel</button>
-    </div>
+  <!-- Swiper Container for Quiz: Hidden initially -->
+  <div class="swiper" style="display: none;">
+    <div class="swiper-wrapper" id="quizSlides"></div>
   </div>
   
-  <!-- Random Quiz Modal Form -->
-  <div id="randomQuizForm" class="modalForm">
-    <h2>Random Quiz Options</h2>
-    <div class="formGroup">
-      <label for="randomNumQuestions">Number of Questions</label>
-      <input type="number" id="randomNumQuestions" min="1" value="10">
+  <!-- Bottom Toolbar for Quiz: Hidden initially -->
+  <div id="bottomToolbar" style="display: none;">
+    <div id="progressBarContainer">
+      <div id="progressBar"></div>
     </div>
-    <div class="btnRow">
-      <button id="startRandomQuiz">Start Quiz</button>
-      <button id="cancelRandomQuiz" class="cancel">Cancel</button>
-    </div>
+    <div id="questionProgress">0 / 0</div>
+    <div id="scoreDisplay">Score: 0</div>
   </div>
-  
-  <!-- Menu Overlay -->
-  <div id="menuOverlay"></div>
   
   <!-- Side Menu -->
   <div id="sideMenu">
@@ -471,37 +447,13 @@
     </ul>
   </div>
   
-  <!-- Top Toolbar -->
-  <div class="toolbar">
-    <div class="toolbar-left">
-      <button class="menu-button" id="menuToggle">&#9776;</button>
-    </div>
-    <div class="toolbar-center">
-      <div class="logo">
-        <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
-      </div>
-    </div>
-    <div class="toolbar-right"></div>
-  </div>
+  <!-- Menu Overlay -->
+  <div id="menuOverlay"></div>
   
   <!-- Icon Bar (Favorite & Feedback) -->
   <div id="iconBar">
     <button id="favoriteButton">☆</button>
     <button id="feedbackButton">💬</button>
-  </div>
-  
-  <!-- Swiper Container -->
-  <div class="swiper">
-    <div class="swiper-wrapper" id="quizSlides"></div>
-  </div>
-  
-  <!-- Bottom Toolbar -->
-  <div id="bottomToolbar">
-    <div id="progressBarContainer">
-      <div id="progressBar"></div>
-    </div>
-    <div id="questionProgress">0 / 0</div>
-    <div id="scoreDisplay">Score: 0</div>
   </div>
   
   <!-- Feedback Modal -->
@@ -660,8 +612,7 @@
         touchReleaseOnEdges: true
       });
 
-      // On slide change, update the favorite icon.
-      // Only auto-skip the answer slide if the corresponding question's card is not answered.
+      // On slide change, only auto-skip the answer slide if the corresponding question's card is not answered.
       window.mySwiper.on('slideChange', function() {
         const activeIndex = window.mySwiper.activeIndex;
         if (activeIndex % 2 === 1) {
@@ -680,6 +631,12 @@
 
       addOptionListeners();
       addBookmarkListeners();
+
+      // Show the quiz container and bottom toolbar; hide the main options
+      document.querySelector(".swiper").style.display = "block";
+      document.getElementById("bottomToolbar").style.display = "flex";
+      document.getElementById("mainOptions").style.display = "none";
+      document.getElementById("iconBar").style.display = "flex";
     }
 
     // Option listeners
@@ -756,20 +713,11 @@
 
     // Bookmark listeners
     function addBookmarkListeners() {
-      // In our current implementation, the bookmark icon in the top bar
-      // is updated via updateFavoriteIcon() on slide change.
-      // If you have separate bookmark buttons on question slides, attach listeners here.
-      document.querySelectorAll('.bookmark-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          const qId = this.getAttribute('data-id');
-          const isNowBookmarked = toggleBookmark(qId);
-          this.textContent = isNowBookmarked ? "★" : "☆";
-        });
-      });
+      // If you later add bookmark buttons inside each card, attach their listeners here.
+      // Currently, the top icon handles bookmarking.
     }
 
-    // Landing page and modals
+    // Landing page and modal event listeners (now main options)
     document.getElementById("customQuizBtn").addEventListener("click", function() {
       document.getElementById("customQuizForm").style.display = "block";
     });
@@ -786,13 +734,11 @@
       const category = document.getElementById("categorySelect").value;
       const num = parseInt(document.getElementById("customNumQuestions").value, 10);
       document.getElementById("customQuizForm").style.display = "none";
-      document.getElementById("landingPage").style.display = "none";
       loadQuestions({ type: 'custom', category, num });
     });
     document.getElementById("startRandomQuiz").addEventListener("click", function() {
       const num = parseInt(document.getElementById("randomNumQuestions").value, 10);
       document.getElementById("randomQuizForm").style.display = "none";
-      document.getElementById("landingPage").style.display = "none";
       loadQuestions({ type: 'random', num });
     });
 
@@ -832,7 +778,7 @@
       menuOverlay.classList.remove("show");
     });
 
-    // Favorite & Feedback
+    // Favorite & Feedback (Top Icon)
     const favoriteButton = document.getElementById("favoriteButton");
     const feedbackButton = document.getElementById("feedbackButton");
 
@@ -868,7 +814,7 @@
     window.addEventListener("load", function() {
       setTimeout(updateFavoriteIcon, 500);
     });
-
+    
     // Swipe left gesture for side menu on mobile
     let touchstartX = 0;
     let touchendX = 0;
