@@ -48,17 +48,26 @@
   </script>
 
   <style>
+    /* Global styling to match your baseline code */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Roboto', sans-serif;
+      background-color: #E6F0FA;
+      color: #333;
+    }
+
     /* Top Toolbar (always visible) */
     .toolbar {
-      position: fixed; top: 0; left: 0;
+      position: fixed;
+      top: 0; left: 0;
       width: 100%; height: 50px; background-color: #fff;
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       z-index: 1500;
     }
-    .toolbar-left, .toolbar-center, .toolbar-right {
-      flex: 1;
-    }
+    .toolbar-left, .toolbar-center, .toolbar-right { flex: 1; }
     .toolbar-left { text-align: left; }
     .toolbar-center { text-align: center; }
     .toolbar-right { text-align: right; }
@@ -170,7 +179,7 @@
       background-color: #aaa;
     }
 
-    /* Quiz Card Styles */
+    /* Quiz Card Styles (matching baseline code) */
     .card {
       position: relative; background: #fff; border-radius: 10px;
       padding: 20px 15px 15px 15px; margin: 10px auto;
@@ -183,22 +192,13 @@
     }
     .options { display: flex; flex-direction: column; gap: 8px; }
     .option-btn {
-      padding: 6px; border: 1px solid #0056b3; background: #fff;
-      color: #0056b3; border-radius: 5px; cursor: pointer;
-      font-size: 0.95rem; transition: background 0.3s ease;
+      padding: 6px; border: 1px solid #0056b3; background: #fff; color: #0056b3;
+      border-radius: 5px; cursor: pointer; font-size: 0.95rem; transition: background 0.3s ease;
     }
-    .option-btn:hover {
-      background: #0056b3; color: #fff;
-    }
-    .option-btn.correct {
-      background-color: #28a745; color: #fff;
-    }
-    .option-btn.incorrect {
-      background-color: #dc3545; color: #fff;
-    }
-    .option-btn:disabled {
-      cursor: not-allowed;
-    }
+    .option-btn:hover { background: #0056b3; color: #fff; }
+    .option-btn.correct { background-color: #28a745; color: #fff; }
+    .option-btn.incorrect { background-color: #dc3545; color: #fff; }
+    .option-btn:disabled { cursor: not-allowed; }
     .swipe-hint {
       font-size: 0.85rem; margin-top: 8px; color: #666; display: none;
     }
@@ -258,8 +258,7 @@
         min-height: calc(100vh - 150px);
       }
       .card {
-        max-width: 90%;
-        padding: 18px 12px 12px 12px;
+        max-width: 90%; padding: 18px 12px 12px 12px;
         margin: 8px auto;
       }
       .question { font-size: 1rem; }
@@ -377,16 +376,13 @@
       <button id="closeFeedbackModal">Close</button>
     </div>
   </div>
-  
-  <!-- Swiper JS (placed at bottom so DOM elements exist) -->
-  <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
 
-  <!-- Main Script: attach event listeners at bottom -->
+  <!-- Swiper JS at bottom so DOM elements exist first -->
+  <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
   <script>
-    // Wait until the entire page (HTML + above scripts) has loaded
+    /***** All logic below *****/
     window.addEventListener('load', function() {
 
-      /********** Global Variables **********/
       let allQuestions = [];
       let filterMode = "all";
       let selectedCategory = "";
@@ -397,7 +393,6 @@
 
       const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
 
-      /********** Utility Functions **********/
       function getBookmarks() {
         const bm = localStorage.getItem("bookmarks");
         return bm ? JSON.parse(bm) : [];
@@ -427,14 +422,12 @@
           favoriteButton.textContent = "☆";
         }
       }
-
       function getCurrentQuestionId() {
         let activeIndex = window.mySwiper ? window.mySwiper.activeIndex : 0;
         if (activeIndex % 2 === 1) activeIndex--;
         let slide = window.mySwiper ? window.mySwiper.slides[activeIndex] : null;
         return slide ? slide.dataset.id : null;
       }
-
       function updateProgress() {
         const progressPercent = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
         document.getElementById("progressBar").style.width = progressPercent + "%";
@@ -451,7 +444,6 @@
         }));
       }
 
-      /********** loadQuestions **********/
       function loadQuestions(options = {}) {
         Papa.parse(csvUrl, {
           download: true,
@@ -466,7 +458,6 @@
             } else if (options.type === 'custom' && options.category) {
               filtered = filtered.filter(q => q["Category"] && q["Category"].trim() === options.category);
             }
-
             let selectedQuestions = shuffleArray(filtered);
             if (options.num) {
               selectedQuestions = selectedQuestions.slice(0, options.num);
@@ -479,7 +470,6 @@
         });
       }
 
-      /********** initializeQuiz **********/
       function initializeQuiz(questions) {
         currentQuestion = 0;
         score = 0;
@@ -542,18 +532,16 @@
           touchReleaseOnEdges: true
         });
 
-        // On slide change, auto-skip if the question wasn't answered
-        window.mySwiper.on('slideChange', function() {
+        // Return to baseline code's logic: slideChangeTransitionEnd
+        window.mySwiper.on('slideChangeTransitionEnd', function() {
           const activeIndex = window.mySwiper.activeIndex;
-          if (activeIndex % 2 === 1) {
-            const questionSlide = window.mySwiper.slides[activeIndex - 1];
-            if (questionSlide) {
-              const card = questionSlide.querySelector('.card');
-              if (card && !card.classList.contains('answered')) {
-                setTimeout(() => {
-                  window.mySwiper.slideNext();
-                }, 200);
-              }
+          const previousIndex = window.mySwiper.previousIndex;
+          // If swiped forward and on an answer slide
+          if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
+            const prevSlide = window.mySwiper.slides[activeIndex - 1];
+            const card = prevSlide.querySelector('.card');
+            if (!card.classList.contains('answered')) {
+              window.mySwiper.slideNext();
             }
           }
           updateFavoriteIcon();
@@ -568,7 +556,6 @@
         document.getElementById("iconBar").style.display = "flex";
       }
 
-      /********** addOptionListeners **********/
       function addOptionListeners() {
         document.querySelectorAll('.option-btn').forEach(btn => {
           btn.addEventListener('click', function() {
@@ -621,7 +608,7 @@
             if (isCorrect) score++;
             updateProgress();
 
-            // If this was the last question, add final summary
+            // If last question, add final summary
             if (currentQuestion === totalQuestions) {
               setTimeout(() => {
                 const summarySlide = document.createElement("div");
@@ -642,7 +629,32 @@
         });
       }
 
-      /********** Menu and Overlay **********/
+      /***** Main Options Buttons *****/
+      document.getElementById("customQuizBtn").addEventListener("click", function() {
+        document.getElementById("customQuizForm").style.display = "block";
+      });
+      document.getElementById("randomQuizBtn").addEventListener("click", function() {
+        document.getElementById("randomQuizForm").style.display = "block";
+      });
+      document.getElementById("cancelCustomQuiz").addEventListener("click", function() {
+        document.getElementById("customQuizForm").style.display = "none";
+      });
+      document.getElementById("cancelRandomQuiz").addEventListener("click", function() {
+        document.getElementById("randomQuizForm").style.display = "none";
+      });
+      document.getElementById("startCustomQuiz").addEventListener("click", function() {
+        const category = document.getElementById("categorySelect").value;
+        const num = parseInt(document.getElementById("customNumQuestions").value, 10);
+        document.getElementById("customQuizForm").style.display = "none";
+        loadQuestions({ type: 'custom', category, num });
+      });
+      document.getElementById("startRandomQuiz").addEventListener("click", function() {
+        const num = parseInt(document.getElementById("randomNumQuestions").value, 10);
+        document.getElementById("randomQuizForm").style.display = "none";
+        loadQuestions({ type: 'random', num });
+      });
+
+      /***** Side Menu and Overlay *****/
       const menuButton = document.getElementById("menuToggle");
       const sideMenu = document.getElementById("sideMenu");
       const menuOverlay = document.getElementById("menuOverlay");
@@ -671,7 +683,7 @@
         menuOverlay.classList.remove("show");
       });
 
-      // Reset Progress
+      // Reset progress
       document.getElementById("resetProgress").addEventListener("click", function(e) {
         e.preventDefault();
         localStorage.removeItem("quizProgress");
@@ -680,32 +692,7 @@
         menuOverlay.classList.remove("show");
       });
 
-      /********** Quiz Option Buttons **********/
-      document.getElementById("customQuizBtn").addEventListener("click", function() {
-        document.getElementById("customQuizForm").style.display = "block";
-      });
-      document.getElementById("randomQuizBtn").addEventListener("click", function() {
-        document.getElementById("randomQuizForm").style.display = "block";
-      });
-      document.getElementById("cancelCustomQuiz").addEventListener("click", function() {
-        document.getElementById("customQuizForm").style.display = "none";
-      });
-      document.getElementById("cancelRandomQuiz").addEventListener("click", function() {
-        document.getElementById("randomQuizForm").style.display = "none";
-      });
-      document.getElementById("startCustomQuiz").addEventListener("click", function() {
-        const category = document.getElementById("categorySelect").value;
-        const num = parseInt(document.getElementById("customNumQuestions").value, 10);
-        document.getElementById("customQuizForm").style.display = "none";
-        loadQuestions({ type: 'custom', category, num });
-      });
-      document.getElementById("startRandomQuiz").addEventListener("click", function() {
-        const num = parseInt(document.getElementById("randomNumQuestions").value, 10);
-        document.getElementById("randomQuizForm").style.display = "none";
-        loadQuestions({ type: 'random', num });
-      });
-
-      /********** Favorite & Feedback Icons **********/
+      /***** Favorite & Feedback Icons *****/
       const favoriteButton = document.getElementById("favoriteButton");
       const feedbackButton = document.getElementById("feedbackButton");
 
@@ -736,7 +723,7 @@
         }
       });
 
-      /********** Feedback Modal **********/
+      /***** Feedback Modal *****/
       const feedbackModal = document.getElementById("feedbackModal");
       document.getElementById("closeFeedbackModal").addEventListener("click", function() {
         feedbackModal.style.display = "none";
