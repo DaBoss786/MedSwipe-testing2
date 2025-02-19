@@ -51,9 +51,377 @@
     window.auth = auth;
   </script>
   
+  <!-- Full CSS from Baseline Code -->
   <style>
-    /* (Your CSS remains unchanged from your baseline code) */
-    /* ... */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Roboto', sans-serif;
+      background-color: #E6F0FA;
+      color: #333;
+    }
+    
+    /* Top Toolbar */
+    .toolbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 50px;
+      background-color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      z-index: 1500;
+    }
+    .toolbar-left, .toolbar-center, .toolbar-right {
+      flex: 1;
+    }
+    .toolbar-left { text-align: left; }
+    .toolbar-center { text-align: center; }
+    .toolbar-right { text-align: right; }
+    .menu-button {
+      font-size: 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #333;
+    }
+    .logo img {
+      max-height: 40px;
+      cursor: pointer;
+    }
+    
+    /* Icon Bar */
+    #iconBar {
+      position: fixed;
+      top: 50px;
+      left: 0;
+      width: 100%;
+      height: 40px;
+      background-color: #fff;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      z-index: 1450;
+    }
+    #iconBar button {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      margin: 0 15px;
+      color: #0056b3;
+    }
+    
+    /* Main Options (Landing View) */
+    #mainOptions {
+      margin-top: 90px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #mainOptions button {
+      font-size: 1.2rem;
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #0056b3;
+      color: #fff;
+      width: 200px;
+    }
+    
+    /* Swiper Container */
+    .swiper {
+      display: none;
+      width: 100%;
+      height: calc(100% - 50px - 40px - 50px);
+      min-height: calc(100vh - 140px);
+      margin-top: 90px;
+    }
+    .swiper-slide {
+      animation: fadeIn 0.5s ease-in-out;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      box-sizing: border-box;
+      padding-top: 20px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Bottom Toolbar */
+    #bottomToolbar {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background-color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+      z-index: 1500;
+    }
+    #progressBarContainer {
+      flex: 1;
+      height: 10px;
+      background-color: #ccc;
+      border-radius: 5px;
+      margin-right: 10px;
+      overflow: hidden;
+    }
+    #progressBar {
+      height: 100%;
+      width: 0%;
+      background-color: #0056b3;
+      border-radius: 5px;
+      transition: width 0.3s ease;
+    }
+    #questionProgress {
+      font-size: 0.9rem;
+      color: #0056b3;
+      margin-right: 10px;
+      min-width: 50px;
+      text-align: center;
+    }
+    #scoreDisplay {
+      font-size: 0.9rem;
+      color: #0056b3;
+      min-width: 60px;
+      text-align: right;
+    }
+    
+    /* Modal Forms */
+    .modalForm {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      padding: 20px;
+      z-index: 2100;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      width: 90%;
+      max-width: 400px;
+    }
+    .modalForm h2 {
+      margin-bottom: 10px;
+      color: #0056b3;
+      text-align: center;
+    }
+    .modalForm .formGroup {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 15px;
+    }
+    .modalForm .formGroup label {
+      font-size: 0.9rem;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    .modalForm .formGroup select,
+    .modalForm .formGroup input {
+      width: 100%;
+      padding: 8px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .modalForm .btnRow {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+    .modalForm button {
+      margin-left: 10px;
+      padding: 8px 15px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #0056b3;
+      color: #fff;
+    }
+    .modalForm button.cancel {
+      background-color: #aaa;
+    }
+    
+    /* Performance View */
+    #performanceView {
+      display: none;
+      margin-top: 90px;
+      padding: 20px;
+    }
+    #performanceView h2 {
+      text-align: center;
+      color: #0056b3;
+    }
+    #performanceView p, #performanceView div {
+      font-size: 1rem;
+      color: #333;
+      margin: 5px 0;
+    }
+    #performanceView button {
+      margin-top: 20px;
+      padding: 8px 15px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 4px;
+      background-color: #0056b3;
+      color: #fff;
+      cursor: pointer;
+    }
+    
+    /* Quiz Card Styles */
+    .card {
+      position: relative;
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px 15px 15px 15px;
+      margin: 10px auto;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      max-width: 600px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      text-align: center;
+    }
+    .question {
+      white-space: pre-line;
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .option-btn {
+      padding: 6px;
+      border: 1px solid #0056b3;
+      background: #fff;
+      color: #0056b3;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.3s ease;
+    }
+    .option-btn:hover {
+      background: #0056b3;
+      color: #fff;
+    }
+    .option-btn.correct {
+      background-color: #28a745;
+      color: #fff;
+    }
+    .option-btn.incorrect {
+      background-color: #dc3545;
+      color: #fff;
+    }
+    .option-btn:disabled {
+      cursor: not-allowed;
+    }
+    .swipe-hint {
+      font-size: 0.85rem;
+      margin-top: 8px;
+      color: #666;
+      display: none;
+    }
+    .answer {
+      white-space: pre-line;
+      font-size: 1rem;
+      color: #333;
+      margin-top: 10px;
+      text-align: left;
+    }
+    .question-image {
+      max-width: 100%;
+      height: auto;
+      margin-bottom: 10px;
+      border-radius: 5px;
+    }
+    
+    /* Side Menu */
+    #sideMenu {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 250px;
+      height: 100vh;
+      background-color: #fff;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      z-index: 1600;
+      padding: 60px 20px 20px;
+    }
+    #sideMenu.open {
+      transform: translateX(0);
+    }
+    #menuOverlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.2);
+      z-index: 1599;
+    }
+    #menuOverlay.show {
+      display: block;
+    }
+    #menuList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    #menuList > li {
+      margin-bottom: 10px;
+      padding-left: 20px;
+      font-size: 1rem;
+      color: #0056b3;
+      cursor: pointer;
+    }
+    #menuList > li a {
+      text-decoration: none;
+      color: #0056b3;
+      font-size: 1rem;
+    }
+    
+    @media (max-width: 600px) {
+      #mainOptions button { width: 180px; }
+      .toolbar { height: 60px; padding: 0 10px; }
+      .menu-button { font-size: 28px; width: 40px; text-align: center; }
+      .logo img { max-height: 45px; }
+      #iconBar { top: 60px; }
+      .swiper {
+        margin-top: 100px;
+        height: calc(100% - 60px - 40px - 50px);
+        min-height: calc(100vh - 150px);
+      }
+      .card { max-width: 90%; padding: 18px 12px 12px 12px; margin: 8px auto; }
+      .question { font-size: 1rem; }
+      .option-btn { font-size: 0.9rem; padding: 5px; }
+      .answer { font-size: 0.9rem; }
+      .swipe-hint { font-size: 0.8rem; }
+    }
   </style>
 </head>
 <body>
@@ -177,7 +545,7 @@
   <!-- Include Swiper JS -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
   
-  <!-- Add the missing shuffleArray function -->
+  <!-- Add shuffleArray function -->
   <script>
     function shuffleArray(array) {
       return array.sort(() => Math.random() - 0.5);
