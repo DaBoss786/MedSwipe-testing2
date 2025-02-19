@@ -23,7 +23,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
     import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
-
     const firebaseConfig = {
       apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
       authDomain: "medswipe-648ee.firebaseapp.com",
@@ -33,12 +32,9 @@
       appId: "1:288366122490:web:1c150c48c8aed4e27f0043",
       measurementId: "G-748P8P634B"
     };
-
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const db = getFirestore(app);
-
-    // Make them available globally if needed
     window.analytics = analytics;
     window.logEvent = logEvent;
     window.db = db;
@@ -48,7 +44,7 @@
   </script>
 
   <style>
-    /* Global styling to match your baseline code */
+    /* Global styling to match baseline code */
     html, body {
       margin: 0;
       padding: 0;
@@ -62,9 +58,11 @@
     .toolbar {
       position: fixed;
       top: 0; left: 0;
-      width: 100%; height: 50px; background-color: #fff;
+      width: 100%; height: 50px;
+      background-color: #fff;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 0 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 0 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       z-index: 1500;
     }
     .toolbar-left, .toolbar-center, .toolbar-right { flex: 1; }
@@ -74,7 +72,7 @@
     .menu-button {
       font-size: 24px; background: none; border: none; cursor: pointer; color: #333;
     }
-    .logo img { max-height: 40px; }
+    .logo img { max-height: 40px; cursor: pointer; }
 
     /* Icon Bar (Favorite & Feedback) - hidden initially */
     #iconBar {
@@ -179,7 +177,7 @@
       background-color: #aaa;
     }
 
-    /* Quiz Card Styles (matching baseline code) */
+    /* Quiz Card Styles (matching baseline) */
     .card {
       position: relative; background: #fff; border-radius: 10px;
       padding: 20px 15px 15px 15px; margin: 10px auto;
@@ -234,18 +232,9 @@
     #menuList > li a {
       text-decoration: none; color: #0056b3; font-size: 1rem;
     }
-    /* Sub-list for categories (toggled by clicking "Categories") */
-    #categoryList {
-      list-style: none; padding: 0; margin: 5px 0 10px 20px;
-      display: none;
-    }
-    #categoryList li {
-      margin-bottom: 8px; font-size: 0.9rem;
-    }
-    #categoryList li a {
-      text-decoration: none; color: #0056b3;
-    }
-
+    /* Remove categories section and replace with "Start New Quiz" */
+    /* We'll remove the category toggler and list completely */
+    
     @media (max-width: 600px) {
       #mainOptions button { width: 180px; }
       .toolbar { height: 60px; padding: 0 10px; }
@@ -275,24 +264,24 @@
       <button class="menu-button" id="menuToggle">&#9776;</button>
     </div>
     <div class="toolbar-center">
-      <div class="logo">
+      <div class="logo" id="logoClick">
         <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
       </div>
     </div>
     <div class="toolbar-right"></div>
   </div>
-  
+
   <!-- Main Options: Displayed when no quiz is running -->
   <div id="mainOptions">
     <button id="customQuizBtn">Custom Quiz</button>
     <button id="randomQuizBtn">Random Quiz</button>
   </div>
-  
+
   <!-- Swiper Container for Quiz: Hidden initially -->
   <div class="swiper">
     <div class="swiper-wrapper" id="quizSlides"></div>
   </div>
-  
+
   <!-- Bottom Toolbar for Quiz: Hidden initially -->
   <div id="bottomToolbar">
     <div id="progressBarContainer">
@@ -301,33 +290,25 @@
     <div id="questionProgress">0 / 0</div>
     <div id="scoreDisplay">Score: 0</div>
   </div>
-  
+
   <!-- Side Menu -->
   <div id="sideMenu">
     <ul id="menuList">
-      <li id="categoriesToggle">Categories</li>
-      <ul id="categoryList">
-        <li><a href="#" data-category="Head & Neck Surgery">Head & Neck Surgery</a></li>
-        <li><a href="#" data-category="Otology">Otology</a></li>
-        <li><a href="#" data-category="Laryngology">Laryngology</a></li>
-        <li><a href="#" data-category="Rhinology">Rhinology</a></li>
-        <li><a href="#" data-category="Pediatric ENT">Pediatric ENT</a></li>
-        <li><a href="#" data-category="Facial Plastics">Facial Plastics</a></li>
-      </ul>
+      <li id="startNewQuiz">Start New Quiz</li>
       <li><a href="#" id="bookmarksFilter">Bookmarks</a></li>
       <li><a href="#" id="resetProgress">Reset Progress</a></li>
     </ul>
   </div>
-  
+
   <!-- Menu Overlay -->
   <div id="menuOverlay"></div>
-  
+
   <!-- Icon Bar (Favorite & Feedback) - hidden initially -->
   <div id="iconBar" style="display: none;">
     <button id="favoriteButton">☆</button>
     <button id="feedbackButton">💬</button>
   </div>
-  
+
   <!-- Custom Quiz Modal Form -->
   <div id="customQuizForm" class="modalForm">
     <h2>Custom Quiz Options</h2>
@@ -352,7 +333,7 @@
       <button id="cancelCustomQuiz" class="cancel">Cancel</button>
     </div>
   </div>
-  
+
   <!-- Random Quiz Modal Form -->
   <div id="randomQuizForm" class="modalForm">
     <h2>Random Quiz Options</h2>
@@ -365,7 +346,7 @@
       <button id="cancelRandomQuiz" class="cancel">Cancel</button>
     </div>
   </div>
-  
+
   <!-- Feedback Modal -->
   <div id="feedbackModal" style="display:none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1700; justify-content: center; align-items: center;">
     <div style="background: #fff; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px;">
@@ -377,12 +358,13 @@
     </div>
   </div>
 
-  <!-- Swiper JS at bottom so DOM elements exist first -->
+  <!-- Swiper JS -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
+
   <script>
-    /***** All logic below *****/
     window.addEventListener('load', function() {
 
+      /***** Global Variables *****/
       let allQuestions = [];
       let filterMode = "all";
       let selectedCategory = "";
@@ -390,9 +372,9 @@
       let currentQuestion = 0;
       let totalQuestions = 0;
       let score = 0;
-
       const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
 
+      /***** Utility Functions *****/
       function getBookmarks() {
         const bm = localStorage.getItem("bookmarks");
         return bm ? JSON.parse(bm) : [];
@@ -433,7 +415,6 @@
         document.getElementById("progressBar").style.width = progressPercent + "%";
         document.getElementById("questionProgress").textContent = `${currentQuestion} / ${totalQuestions}`;
         document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
-
         localStorage.setItem("quizProgress", JSON.stringify({
           quizData: allQuestions,
           currentQuestion,
@@ -444,6 +425,7 @@
         }));
       }
 
+      /***** loadQuestions *****/
       function loadQuestions(options = {}) {
         Papa.parse(csvUrl, {
           download: true,
@@ -451,7 +433,6 @@
           complete: function(results) {
             allQuestions = results.data;
             let filtered = allQuestions;
-
             if (filterMode === 'bookmarks') {
               let bookmarks = getBookmarks();
               filtered = filtered.filter(q => bookmarks.includes(q["Question"].trim()));
@@ -470,16 +451,15 @@
         });
       }
 
+      /***** initializeQuiz *****/
       function initializeQuiz(questions) {
         currentQuestion = 0;
         score = 0;
         totalQuestions = questions.length;
         answeredIds = [];
         updateProgress();
-
         const quizSlides = document.getElementById("quizSlides");
         quizSlides.innerHTML = "";
-
         questions.forEach(question => {
           const questionSlide = document.createElement("div");
           questionSlide.className = "swiper-slide";
@@ -491,30 +471,29 @@
             <div class="card">
               <div class="question">${question["Question"]}</div>
               ${question["Image URL"] && question["Image URL"].trim() !== "" 
-                 ? `<img src="${question["Image URL"].trim()}" class="question-image">` 
-                 : ""}
+                ? `<img src="${question["Image URL"].trim()}" class="question-image">` 
+                : ""}
               <div class="options">
                 ${question["Option A"] && question["Option A"].trim() !== "" 
-                   ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>` 
-                   : ""}
+                  ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>` 
+                  : ""}
                 ${question["Option B"] && question["Option B"].trim() !== "" 
-                   ? `<button class="option-btn" data-option="B">B. ${question["Option B"]}</button>` 
-                   : ""}
+                  ? `<button class="option-btn" data-option="B">B. ${question["Option B"]}</button>` 
+                  : ""}
                 ${question["Option C"] && question["Option C"].trim() !== "" 
-                   ? `<button class="option-btn" data-option="C">C. ${question["Option C"]}</button>` 
-                   : ""}
+                  ? `<button class="option-btn" data-option="C">C. ${question["Option C"]}</button>` 
+                  : ""}
                 ${question["Option D"] && question["Option D"].trim() !== "" 
-                   ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>` 
-                   : ""}
+                  ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>` 
+                  : ""}
                 ${question["Option E"] && question["Option E"].trim() !== "" 
-                   ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>` 
-                   : ""}
+                  ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>` 
+                  : ""}
               </div>
               <div class="swipe-hint" style="display:none;">Swipe up for explanation</div>
             </div>
           `;
           quizSlides.appendChild(questionSlide);
-
           const answerSlide = document.createElement("div");
           answerSlide.className = "swiper-slide";
           answerSlide.innerHTML = `
@@ -532,11 +511,10 @@
           touchReleaseOnEdges: true
         });
 
-        // Return to baseline code's logic: slideChangeTransitionEnd
+        // Use slideChangeTransitionEnd as in baseline code
         window.mySwiper.on('slideChangeTransitionEnd', function() {
           const activeIndex = window.mySwiper.activeIndex;
           const previousIndex = window.mySwiper.previousIndex;
-          // If swiped forward and on an answer slide
           if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
             const prevSlide = window.mySwiper.slides[activeIndex - 1];
             const card = prevSlide.querySelector('.card');
@@ -549,50 +527,40 @@
 
         addOptionListeners();
 
-        // Show the quiz container & bottom toolbar, hide the main options, show icon bar
+        // Show quiz elements; hide main options
         document.querySelector(".swiper").style.display = "block";
         document.getElementById("bottomToolbar").style.display = "flex";
         document.getElementById("mainOptions").style.display = "none";
         document.getElementById("iconBar").style.display = "flex";
       }
 
+      /***** addOptionListeners *****/
       function addOptionListeners() {
         document.querySelectorAll('.option-btn').forEach(btn => {
           btn.addEventListener('click', function() {
             const card = this.closest('.card');
             if (card.classList.contains('answered')) return;
             card.classList.add('answered');
-
             const questionSlide = card.closest('.swiper-slide');
             const qId = questionSlide.dataset.id;
-            if (!answeredIds.includes(qId)) {
-              answeredIds.push(qId);
-            }
-
+            if (!answeredIds.includes(qId)) { answeredIds.push(qId); }
             const correct = questionSlide.dataset.correct;
             const explanation = questionSlide.dataset.explanation;
             const options = card.querySelectorAll('.option-btn');
             const selected = this.getAttribute('data-option');
             const isCorrect = (selected === correct);
-
             if (window.analytics && window.logEvent) {
               window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect });
             }
-
-            // Mark correct as green, incorrect as red
             options.forEach(option => {
               option.disabled = true;
               if (option.getAttribute('data-option') === correct) {
                 option.classList.add('correct');
               }
             });
-            if (!isCorrect) {
-              this.classList.add('incorrect');
-            }
-
+            if (!isCorrect) { this.classList.add('incorrect'); }
             const hint = card.querySelector('.swipe-hint');
-            if (hint) hint.style.display = 'block';
-
+            if (hint) { hint.style.display = 'block'; }
             const answerSlide = questionSlide.nextElementSibling;
             if (answerSlide) {
               answerSlide.querySelector('.card').innerHTML = `
@@ -603,12 +571,9 @@
                 </div>
               `;
             }
-
             currentQuestion++;
-            if (isCorrect) score++;
+            if (isCorrect) { score++; }
             updateProgress();
-
-            // If last question, add final summary
             if (currentQuestion === totalQuestions) {
               setTimeout(() => {
                 const summarySlide = document.createElement("div");
@@ -667,29 +632,30 @@
         menuOverlay.classList.remove("show");
       });
 
-      // Toggle Categories
-      document.getElementById("categoriesToggle").addEventListener("click", function(e) {
-        e.preventDefault();
-        const catList = document.getElementById("categoryList");
-        catList.style.display = (catList.style.display === "block") ? "none" : "block";
+      // Instead of categories, add "Start New Quiz" in the menu to go back to main options
+      document.getElementById("startNewQuiz")?.remove(); // remove if it exists
+      // Create a new "Start New Quiz" element and insert it as the first item in the menu list.
+      const startNewQuizItem = document.createElement("li");
+      startNewQuizItem.id = "startNewQuiz";
+      startNewQuizItem.textContent = "Start New Quiz";
+      startNewQuizItem.style.paddingLeft = "20px";
+      startNewQuizItem.style.cursor = "pointer";
+      document.getElementById("menuList").insertBefore(startNewQuizItem, document.getElementById("menuList").firstChild);
+      startNewQuizItem.addEventListener("click", function() {
+        // Hide quiz elements and show main options
+        document.querySelector(".swiper").style.display = "none";
+        document.getElementById("bottomToolbar").style.display = "none";
+        document.getElementById("iconBar").style.display = "none";
+        document.getElementById("mainOptions").style.display = "flex";
       });
 
-      // Bookmarks filter
-      document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
-        e.preventDefault();
-        filterMode = "bookmarks";
-        loadQuestions();
-        sideMenu.classList.remove("open");
-        menuOverlay.classList.remove("show");
-      });
-
-      // Reset progress
-      document.getElementById("resetProgress").addEventListener("click", function(e) {
-        e.preventDefault();
-        localStorage.removeItem("quizProgress");
-        loadQuestions();
-        sideMenu.classList.remove("open");
-        menuOverlay.classList.remove("show");
+      /***** Make Logo Clickable to go back to main options *****/
+      document.getElementById("logoClick").addEventListener("click", function() {
+        // Same as start new quiz: hide quiz and show main options
+        document.querySelector(".swiper").style.display = "none";
+        document.getElementById("bottomToolbar").style.display = "none";
+        document.getElementById("iconBar").style.display = "none";
+        document.getElementById("mainOptions").style.display = "flex";
       });
 
       /***** Favorite & Feedback Icons *****/
@@ -703,12 +669,11 @@
           favoriteButton.textContent = isFav ? "★" : "☆";
         }
       });
-
       feedbackButton.addEventListener("click", function() {
         document.getElementById("feedbackModal").style.display = "flex";
       });
 
-      // Swipe left gesture to close side menu on mobile
+      /***** Swipe left gesture to close side menu on mobile *****/
       let touchstartX = 0;
       let touchendX = 0;
       const swipeThreshold = 50;
@@ -747,8 +712,7 @@
           alert("There was an error submitting your feedback. Please try again later.");
         }
       });
-
-    }); // end of window.load
+    });
   </script>
 </body>
 </html>
