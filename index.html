@@ -20,13 +20,11 @@
   
   <!-- Firebase App, Analytics, Firestore & Auth (Modular) -->
   <script type="module">
-    // Import Firebase modules
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
     import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
     import { getFirestore, doc, runTransaction, getDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
     
-    // Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
       authDomain: "medswipe-648ee.firebaseapp.com",
@@ -42,12 +40,10 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
     
-    // Sign in anonymously so we have a uid
     signInAnonymously(auth)
       .then(() => { console.log("Signed in anonymously as", auth.currentUser.uid); })
       .catch((error) => { console.error("Anonymous sign-in error:", error); });
     
-    // Make these available globally
     window.analytics = analytics;
     window.logEvent = logEvent;
     window.db = db;
@@ -55,17 +51,22 @@
   </script>
   
   <style>
-    /* Global Styling */
+    /* Global styling */
     html, body {
-      margin: 0; padding: 0; height: 100%;
+      margin: 0;
+      padding: 0;
+      height: 100%;
       font-family: 'Roboto', sans-serif;
-      background-color: #E6F0FA; color: #333;
+      background-color: #E6F0FA;
+      color: #333;
     }
     /* Top Toolbar */
     .toolbar {
-      position: fixed; top: 0; left: 0; width: 100%; height: 50px;
-      background-color: #fff; display: flex; align-items: center; justify-content: space-between;
-      padding: 0 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 1500;
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 50px; background-color: #fff;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      z-index: 1500;
     }
     .toolbar-left, .toolbar-center, .toolbar-right { flex: 1; }
     .toolbar-left { text-align: left; }
@@ -77,11 +78,13 @@
     .logo img {
       max-height: 40px; cursor: pointer;
     }
-    /* Icon Bar (Favorite & Feedback) */
+    /* Icon Bar (Favorite & Feedback) - hidden initially */
     #iconBar {
-      position: fixed; top: 50px; left: 0; width: 100%; height: 40px;
-      background-color: #fff; display: none;
-      align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: fixed; top: 50px; left: 0;
+      width: 100%; height: 40px; background-color: #fff;
+      display: none;
+      align-items: center; justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       z-index: 1450;
     }
     #iconBar button {
@@ -120,7 +123,8 @@
       display: none;
       position: fixed; bottom: 0; left: 0; right: 0; height: 50px;
       background-color: #fff; display: flex; align-items: center; justify-content: space-between;
-      padding: 0 10px; box-shadow: 0 -2px 4px rgba(0,0,0,0.1); z-index: 1500;
+      padding: 0 10px; box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+      z-index: 1500;
     }
     #progressBarContainer {
       flex: 1; height: 10px; background-color: #ccc;
@@ -170,33 +174,21 @@
     }
     .modalForm button.cancel { background-color: #aaa; }
     
-    /* Performance View (new section) */
+    /* Performance View */
     #performanceView {
       display: none;
       margin-top: 90px;
       padding: 20px;
     }
-    #performanceView h2 {
-      text-align: center;
-      color: #0056b3;
-    }
-    #performanceView p, #performanceView div {
-      font-size: 1rem;
-      color: #333;
-      margin: 5px 0;
-    }
+    #performanceView h2 { text-align: center; color: #0056b3; }
+    #performanceView p, #performanceView div { font-size: 1rem; color: #333; margin: 5px 0; }
     #performanceView button {
-      margin-top: 20px;
-      padding: 8px 15px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 4px;
-      background-color: #0056b3;
-      color: #fff;
+      margin-top: 20px; padding: 8px 15px; font-size: 1rem;
+      border: none; border-radius: 4px; background-color: #0056b3; color: #fff;
       cursor: pointer;
     }
     
-    /* Quiz Card Styles (baseline look) */
+    /* Quiz Card Styles */
     .card {
       position: relative; background: #fff; border-radius: 10px;
       padding: 20px 15px 15px 15px; margin: 10px auto;
@@ -209,9 +201,8 @@
     }
     .options { display: flex; flex-direction: column; gap: 8px; }
     .option-btn {
-      padding: 6px; border: 1px solid #0056b3; background: #fff;
-      color: #0056b3; border-radius: 5px; cursor: pointer;
-      font-size: 0.95rem; transition: background 0.3s ease;
+      padding: 6px; border: 1px solid #0056b3; background: #fff; color: #0056b3;
+      border-radius: 5px; cursor: pointer; font-size: 0.95rem; transition: background 0.3s ease;
     }
     .option-btn:hover { background: #0056b3; color: #fff; }
     .option-btn.correct { background-color: #28a745; color: #fff; }
@@ -234,9 +225,7 @@
       background: rgba(0,0,0,0.2); z-index: 1599;
     }
     #menuOverlay.show { display: block; }
-    #menuList {
-      list-style: none; padding: 0; margin: 0;
-    }
+    #menuList { list-style: none; padding: 0; margin: 0; }
     #menuList > li {
       margin-bottom: 10px; padding-left: 20px;
       font-size: 1rem; color: #0056b3; cursor: pointer;
@@ -256,11 +245,7 @@
         height: calc(100% - 60px - 40px - 50px);
         min-height: calc(100vh - 150px);
       }
-      .card {
-        max-width: 90%;
-        padding: 18px 12px 12px 12px;
-        margin: 8px auto;
-      }
+      .card { max-width: 90%; padding: 18px 12px 12px 12px; margin: 8px auto; }
       .question { font-size: 1rem; }
       .option-btn { font-size: 0.9rem; padding: 5px; }
       .answer { font-size: 0.9rem; }
@@ -391,7 +376,7 @@
   
   <script>
     window.addEventListener('load', function() {
-      
+
       /***** Global Variables *****/
       let allQuestions = [];
       let filterMode = "all";
@@ -400,13 +385,13 @@
       let currentQuestion = 0;
       let totalQuestions = 0;
       let score = 0;
-      // For performance tracking, we'll update stats in Firestore
-      // and later retrieve them in displayPerformance()
+      // For feedback tracking:
+      let currentFeedbackQuestionId = "";
+      let currentFeedbackQuestionText = "";
       
       const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
       
       /***** Firestore Stats Functions *****/
-      // Assumes user is authenticated (anonymous auth)
       async function recordAnswer(questionId, category, isCorrect) {
         const uid = window.auth.currentUser.uid;
         const userDocRef = doc(window.db, 'users', uid);
@@ -420,7 +405,6 @@
             if (!data.answeredQuestions) {
               data.answeredQuestions = {};
             }
-            // Only record if not answered before
             if (data.answeredQuestions[questionId]) return;
             
             data.answeredQuestions[questionId] = { isCorrect, category, timestamp: Date.now() };
@@ -439,6 +423,7 @@
             } else {
               data.stats.categories[category].incorrect++;
             }
+            
             transaction.set(userDocRef, data, { merge: true });
           });
           console.log("Recorded answer for", questionId);
@@ -448,7 +433,6 @@
       }
       
       async function displayPerformance() {
-        // Hide any other views
         document.querySelector(".swiper").style.display = "none";
         document.getElementById("bottomToolbar").style.display = "none";
         document.getElementById("iconBar").style.display = "none";
@@ -493,7 +477,7 @@
         });
       }
       
-      /***** Utility Functions (for local stats and UI) *****/
+      /***** Utility Functions *****/
       function updateFavoriteIcon() {
         const qId = getCurrentQuestionId();
         if (qId) {
@@ -532,7 +516,6 @@
           complete: function(results) {
             allQuestions = results.data;
             let filtered = allQuestions;
-            // If not including answered questions, filter them out.
             if (!options.includeAnswered) {
               filtered = filtered.filter(q => !answeredIds.includes(q["Question"].trim()));
             }
@@ -568,9 +551,11 @@
           const questionSlide = document.createElement("div");
           questionSlide.className = "swiper-slide";
           const qId = question["Question"].trim();
+          // Store category in dataset
           questionSlide.dataset.id = qId;
           questionSlide.dataset.correct = question["Correct Answer"].trim();
           questionSlide.dataset.explanation = question["Explanation"];
+          questionSlide.dataset.category = question["Category"] || "Uncategorized";
           questionSlide.innerHTML = `
             <div class="card">
               <div class="question">${question["Question"]}</div>
@@ -649,14 +634,13 @@
             if (!answeredIds.includes(qId)) { answeredIds.push(qId); }
             const correct = questionSlide.dataset.correct;
             const explanation = questionSlide.dataset.explanation;
+            const category = questionSlide.dataset.category;
             const options = card.querySelectorAll('.option-btn');
             const selected = this.getAttribute('data-option');
             const isCorrect = (selected === correct);
-      
             if (window.analytics && window.logEvent) {
               window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect });
             }
-      
             options.forEach(option => {
               option.disabled = true;
               if (option.getAttribute('data-option') === correct) {
@@ -664,10 +648,8 @@
               }
             });
             if (!isCorrect) { this.classList.add('incorrect'); }
-      
             const hint = card.querySelector('.swipe-hint');
             if (hint) { hint.style.display = 'block'; }
-      
             const answerSlide = questionSlide.nextElementSibling;
             if (answerSlide) {
               answerSlide.querySelector('.card').innerHTML = `
@@ -678,14 +660,10 @@
                 </div>
               `;
             }
-      
             currentQuestion++;
             if (isCorrect) { score++; }
             updateProgress();
-      
-            // Record the answer in Firestore
-            await recordAnswer(qId, question["Category"] || "Uncategorized", isCorrect);
-      
+            await recordAnswer(qId, category, isCorrect);
             if (currentQuestion === totalQuestions) {
               setTimeout(() => {
                 const summarySlide = document.createElement("div");
@@ -780,6 +758,7 @@
           favoriteButton.textContent = isFav ? "★" : "☆";
         }
       });
+      
       feedbackButton.addEventListener("click", function() {
         let currentSlide = window.mySwiper ? window.mySwiper.slides[window.mySwiper.activeIndex] : null;
         if (currentSlide) {
@@ -842,7 +821,7 @@
         }
       });
       
-    }); // end of window.load
+    });
   </script>
 </body>
 </html>
