@@ -8,21 +8,25 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#E6F0FA">
   <title>ENT Quiz & Facts</title>
-
+  
   <!-- Google Fonts: Roboto -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" rel="stylesheet">
-
+  
   <!-- Swiper CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css" />
-
+  
   <!-- PapaParse for CSV parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-
-  <!-- Firebase App, Analytics & Firestore (Modular) -->
+  
+  <!-- Firebase App, Analytics, Firestore & Auth (Modular) -->
   <script type="module">
+    // Import Firebase modules
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
     import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+    import { getFirestore, doc, runTransaction, getDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+    
+    // Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
       authDomain: "medswipe-648ee.firebaseapp.com",
@@ -32,100 +36,69 @@
       appId: "1:288366122490:web:1c150c48c8aed4e27f0043",
       measurementId: "G-748P8P634B"
     };
+    
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const db = getFirestore(app);
+    const auth = getAuth(app);
+    
+    // Sign in anonymously so we have a uid
+    signInAnonymously(auth)
+      .then(() => { console.log("Signed in anonymously as", auth.currentUser.uid); })
+      .catch((error) => { console.error("Anonymous sign-in error:", error); });
+    
+    // Make these available globally
     window.analytics = analytics;
     window.logEvent = logEvent;
     window.db = db;
-    window.addDoc = addDoc;
-    window.collection = collection;
-    window.serverTimestamp = serverTimestamp;
+    window.auth = auth;
   </script>
-
+  
   <style>
-    /* Global styling to match your baseline */
+    /* Global Styling */
     html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
+      margin: 0; padding: 0; height: 100%;
       font-family: 'Roboto', sans-serif;
-      background-color: #E6F0FA;
-      color: #333;
+      background-color: #E6F0FA; color: #333;
     }
-    /* Top Toolbar (always visible) */
+    /* Top Toolbar */
     .toolbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 50px;
-      background-color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 10px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      z-index: 1500;
+      position: fixed; top: 0; left: 0; width: 100%; height: 50px;
+      background-color: #fff; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 1500;
     }
-    .toolbar-left, .toolbar-center, .toolbar-right {
-      flex: 1;
-    }
+    .toolbar-left, .toolbar-center, .toolbar-right { flex: 1; }
     .toolbar-left { text-align: left; }
     .toolbar-center { text-align: center; }
     .toolbar-right { text-align: right; }
     .menu-button {
-      font-size: 24px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: #333;
+      font-size: 24px; background: none; border: none; cursor: pointer; color: #333;
     }
     .logo img {
-      max-height: 40px;
-      cursor: pointer;
+      max-height: 40px; cursor: pointer;
     }
-    /* Icon Bar (Favorite & Feedback) - hidden initially */
+    /* Icon Bar (Favorite & Feedback) */
     #iconBar {
-      position: fixed;
-      top: 50px;
-      left: 0;
-      width: 100%;
-      height: 40px;
-      background-color: #fff;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: fixed; top: 50px; left: 0; width: 100%; height: 40px;
+      background-color: #fff; display: none;
+      align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       z-index: 1450;
     }
     #iconBar button {
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      margin: 0 15px;
-      color: #0056b3;
+      background: none; border: none; font-size: 24px; cursor: pointer;
+      margin: 0 15px; color: #0056b3;
     }
-    /* Main Options (Quiz buttons) */
+    /* Main Options (Landing View) */
     #mainOptions {
       margin-top: 90px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      display: flex; flex-direction: column; align-items: center;
     }
     #mainOptions button {
-      font-size: 1.2rem;
-      padding: 10px 20px;
-      margin: 10px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      background-color: #0056b3;
-      color: #fff;
-      width: 200px;
+      font-size: 1.2rem; padding: 10px 20px; margin: 10px;
+      border: none; border-radius: 5px; cursor: pointer;
+      background-color: #0056b3; color: #fff; width: 200px;
     }
-    /* Swiper Container for Quiz - Hidden initially */
+    /* Swiper Container for Quiz */
     .swiper {
       display: none;
       width: 100%;
@@ -135,240 +108,143 @@
     }
     .swiper-slide {
       animation: fadeIn 0.5s ease-in-out;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      box-sizing: border-box;
-      padding-top: 20px;
+      display: flex; align-items: flex-start; justify-content: center;
+      box-sizing: border-box; padding-top: 20px;
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    /* Bottom Toolbar for Quiz - Hidden initially */
+    /* Bottom Toolbar for Quiz */
     #bottomToolbar {
       display: none;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 50px;
-      background-color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 10px;
-      box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
-      z-index: 1500;
+      position: fixed; bottom: 0; left: 0; right: 0; height: 50px;
+      background-color: #fff; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; box-shadow: 0 -2px 4px rgba(0,0,0,0.1); z-index: 1500;
     }
     #progressBarContainer {
-      flex: 1;
-      height: 10px;
-      background-color: #ccc;
-      border-radius: 5px;
-      margin-right: 10px;
-      overflow: hidden;
+      flex: 1; height: 10px; background-color: #ccc;
+      border-radius: 5px; margin-right: 10px; overflow: hidden;
     }
     #progressBar {
-      height: 100%;
-      width: 0%;
-      background-color: #0056b3;
-      border-radius: 5px;
-      transition: width 0.3s ease;
+      height: 100%; width: 0%; background-color: #0056b3;
+      border-radius: 5px; transition: width 0.3s ease;
     }
     #questionProgress {
-      font-size: 0.9rem;
-      color: #0056b3;
-      margin-right: 10px;
-      min-width: 50px;
-      text-align: center;
+      font-size: 0.9rem; color: #0056b3; margin-right: 10px;
+      min-width: 50px; text-align: center;
     }
     #scoreDisplay {
-      font-size: 0.9rem;
-      color: #0056b3;
-      min-width: 60px;
-      text-align: right;
+      font-size: 0.9rem; color: #0056b3; min-width: 60px; text-align: right;
     }
     /* Modal Forms */
     .modalForm {
       display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
+      position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      background: #fff;
-      padding: 20px;
-      z-index: 2100;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      width: 90%;
-      max-width: 400px;
+      background: #fff; padding: 20px; z-index: 2100;
+      border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      width: 90%; max-width: 400px;
     }
     .modalForm h2 {
-      margin-bottom: 10px;
-      color: #0056b3;
-      text-align: center;
-    }
-    /* Added element to show current question info in feedback */
-    #feedbackQuestionInfo {
-      font-size: 0.9rem;
-      color: #333;
-      margin-bottom: 10px;
+      margin-bottom: 10px; color: #0056b3; text-align: center;
     }
     .modalForm .formGroup {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 15px;
+      display: flex; flex-direction: column; margin-bottom: 15px;
     }
     .modalForm .formGroup label {
-      font-size: 0.9rem;
-      color: #333;
-      margin-bottom: 5px;
+      font-size: 0.9rem; color: #333; margin-bottom: 5px;
     }
     .modalForm .formGroup select,
     .modalForm .formGroup input {
-      width: 100%;
-      padding: 8px;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      width: 100%; padding: 8px; font-size: 1rem;
+      border: 1px solid #ccc; border-radius: 4px;
     }
     .modalForm .btnRow {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 10px;
+      display: flex; justify-content: flex-end; margin-top: 10px;
     }
     .modalForm button {
-      margin-left: 10px;
+      margin-left: 10px; padding: 8px 15px; font-size: 1rem;
+      border: none; border-radius: 4px; cursor: pointer;
+      background-color: #0056b3; color: #fff;
+    }
+    .modalForm button.cancel { background-color: #aaa; }
+    
+    /* Performance View (new section) */
+    #performanceView {
+      display: none;
+      margin-top: 90px;
+      padding: 20px;
+    }
+    #performanceView h2 {
+      text-align: center;
+      color: #0056b3;
+    }
+    #performanceView p, #performanceView div {
+      font-size: 1rem;
+      color: #333;
+      margin: 5px 0;
+    }
+    #performanceView button {
+      margin-top: 20px;
       padding: 8px 15px;
       font-size: 1rem;
       border: none;
       border-radius: 4px;
-      cursor: pointer;
       background-color: #0056b3;
       color: #fff;
+      cursor: pointer;
     }
-    .modalForm button.cancel {
-      background-color: #aaa;
-    }
-    /* Quiz Card Styles */
+    
+    /* Quiz Card Styles (baseline look) */
     .card {
-      position: relative;
-      background: #fff;
-      border-radius: 10px;
-      padding: 20px 15px 15px 15px;
-      margin: 10px auto;
+      position: relative; background: #fff; border-radius: 10px;
+      padding: 20px 15px 15px 15px; margin: 10px auto;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      max-width: 600px;
-      width: 100%;
-      max-height: 80vh;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      text-align: center;
+      max-width: 600px; width: 100%; max-height: 80vh;
+      overflow-y: auto; -webkit-overflow-scrolling: touch; text-align: center;
     }
     .question {
-      white-space: pre-line;
-      font-size: 1.1rem;
-      font-weight: 500;
-      margin-bottom: 10px;
+      white-space: pre-line; font-size: 1.1rem; font-weight: 500; margin-bottom: 10px;
     }
-    .options {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+    .options { display: flex; flex-direction: column; gap: 8px; }
     .option-btn {
-      padding: 6px;
-      border: 1px solid #0056b3;
-      background: #fff;
-      color: #0056b3;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 0.95rem;
-      transition: background 0.3s ease;
+      padding: 6px; border: 1px solid #0056b3; background: #fff;
+      color: #0056b3; border-radius: 5px; cursor: pointer;
+      font-size: 0.95rem; transition: background 0.3s ease;
     }
-    .option-btn:hover {
-      background: #0056b3;
-      color: #fff;
-    }
-    .option-btn.correct {
-      background-color: #28a745;
-      color: #fff;
-    }
-    .option-btn.incorrect {
-      background-color: #dc3545;
-      color: #fff;
-    }
-    .option-btn:disabled {
-      cursor: not-allowed;
-    }
-    .swipe-hint {
-      font-size: 0.85rem;
-      margin-top: 8px;
-      color: #666;
-      display: none;
-    }
-    .answer {
-      white-space: pre-line;
-      font-size: 1rem;
-      color: #333;
-      margin-top: 10px;
-      text-align: left;
-    }
-    .question-image {
-      max-width: 100%;
-      height: auto;
-      margin-bottom: 10px;
-      border-radius: 5px;
-    }
+    .option-btn:hover { background: #0056b3; color: #fff; }
+    .option-btn.correct { background-color: #28a745; color: #fff; }
+    .option-btn.incorrect { background-color: #dc3545; color: #fff; }
+    .option-btn:disabled { cursor: not-allowed; }
+    .swipe-hint { font-size: 0.85rem; margin-top: 8px; color: #666; display: none; }
+    .answer { white-space: pre-line; font-size: 1rem; color: #333; margin-top: 10px; text-align: left; }
+    .question-image { max-width: 100%; height: auto; margin-bottom: 10px; border-radius: 5px; }
+    
     /* Side Menu */
     #sideMenu {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 250px;
-      height: 100vh;
-      background-color: #fff;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-      transform: translateX(-100%);
-      transition: transform 0.3s ease;
-      z-index: 1600;
-      padding: 60px 20px 20px;
+      position: fixed; top: 0; left: 0; width: 250px; height: 100vh;
+      background-color: #fff; box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      transform: translateX(-100%); transition: transform 0.3s ease;
+      z-index: 1600; padding: 60px 20px 20px;
     }
-    #sideMenu.open {
-      transform: translateX(0);
-    }
+    #sideMenu.open { transform: translateX(0); }
     #menuOverlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.2);
-      z-index: 1599;
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.2); z-index: 1599;
     }
-    #menuOverlay.show {
-      display: block;
-    }
-    /* Single list for the side menu */
+    #menuOverlay.show { display: block; }
     #menuList {
-      list-style: none;
-      padding: 0;
-      margin: 0;
+      list-style: none; padding: 0; margin: 0;
     }
     #menuList > li {
-      margin-bottom: 10px;
-      padding-left: 20px;
-      font-size: 1rem;
-      color: #0056b3;
-      cursor: pointer;
+      margin-bottom: 10px; padding-left: 20px;
+      font-size: 1rem; color: #0056b3; cursor: pointer;
     }
     #menuList > li a {
-      text-decoration: none;
-      color: #0056b3;
-      font-size: 1rem;
+      text-decoration: none; color: #0056b3; font-size: 1rem;
     }
+    
     @media (max-width: 600px) {
       #mainOptions button { width: 180px; }
       .toolbar { height: 60px; padding: 0 10px; }
@@ -405,18 +281,18 @@
     </div>
     <div class="toolbar-right"></div>
   </div>
-
+  
   <!-- Main Options: Displayed when no quiz is running -->
   <div id="mainOptions">
     <button id="customQuizBtn">Custom Quiz</button>
     <button id="randomQuizBtn">Random Quiz</button>
   </div>
-
+  
   <!-- Swiper Container for Quiz: Hidden initially -->
   <div class="swiper">
     <div class="swiper-wrapper" id="quizSlides"></div>
   </div>
-
+  
   <!-- Bottom Toolbar for Quiz: Hidden initially -->
   <div id="bottomToolbar">
     <div id="progressBarContainer">
@@ -425,25 +301,29 @@
     <div id="questionProgress">0 / 0</div>
     <div id="scoreDisplay">Score: 0</div>
   </div>
-
+  
+  <!-- Performance View (new section) -->
+  <div id="performanceView" style="display: none;"></div>
+  
   <!-- Side Menu -->
   <div id="sideMenu">
     <ul id="menuList">
       <li id="startNewQuiz">Start New Quiz</li>
+      <li id="performanceItem">Performance</li>
       <li><a href="#" id="bookmarksFilter">Bookmarks</a></li>
       <li><a href="#" id="resetProgress">Reset Progress</a></li>
     </ul>
   </div>
-
+  
   <!-- Menu Overlay -->
   <div id="menuOverlay"></div>
-
+  
   <!-- Icon Bar (Favorite & Feedback) - hidden initially -->
   <div id="iconBar" style="display: none;">
     <button id="favoriteButton">☆</button>
     <button id="feedbackButton">💬</button>
   </div>
-
+  
   <!-- Custom Quiz Modal Form -->
   <div id="customQuizForm" class="modalForm">
     <h2>Custom Quiz Options</h2>
@@ -463,12 +343,18 @@
       <label for="customNumQuestions">Number of Questions</label>
       <input type="number" id="customNumQuestions" min="1" value="10">
     </div>
+    <div class="formGroup">
+      <label>
+        <input type="checkbox" id="includeAnsweredCheckbox">
+        Include answered questions
+      </label>
+    </div>
     <div class="btnRow">
       <button id="startCustomQuiz">Start Quiz</button>
       <button id="cancelCustomQuiz" class="cancel">Cancel</button>
     </div>
   </div>
-
+  
   <!-- Random Quiz Modal Form -->
   <div id="randomQuizForm" class="modalForm">
     <h2>Random Quiz Options</h2>
@@ -476,17 +362,22 @@
       <label for="randomNumQuestions">Number of Questions</label>
       <input type="number" id="randomNumQuestions" min="1" value="10">
     </div>
+    <div class="formGroup">
+      <label>
+        <input type="checkbox" id="includeAnsweredRandomCheckbox">
+        Include answered questions
+      </label>
+    </div>
     <div class="btnRow">
       <button id="startRandomQuiz">Start Quiz</button>
       <button id="cancelRandomQuiz" class="cancel">Cancel</button>
     </div>
   </div>
-
+  
   <!-- Feedback Modal -->
   <div id="feedbackModal" style="display:none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1700; justify-content: center; align-items: center;">
     <div style="background: #fff; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px;">
       <h3>Feedback</h3>
-      <!-- New element to show question info -->
       <p id="feedbackQuestionInfo" style="font-size:0.9rem; color:#333;"></p>
       <textarea id="feedbackText" placeholder="Enter your feedback here" style="width:100%; height:100px;"></textarea>
       <br>
@@ -494,12 +385,13 @@
       <button id="closeFeedbackModal">Close</button>
     </div>
   </div>
-
+  
   <!-- Swiper JS -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
+  
   <script>
     window.addEventListener('load', function() {
-
+      
       /***** Global Variables *****/
       let allQuestions = [];
       let filterMode = "all";
@@ -508,33 +400,100 @@
       let currentQuestion = 0;
       let totalQuestions = 0;
       let score = 0;
-      // Variables to store current question info for feedback
-      let currentFeedbackQuestionId = "";
-      let currentFeedbackQuestionText = "";
-
+      // For performance tracking, we'll update stats in Firestore
+      // and later retrieve them in displayPerformance()
+      
       const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
-
-      /***** Utility Functions *****/
-      function getBookmarks() {
-        const bm = localStorage.getItem("bookmarks");
-        return bm ? JSON.parse(bm) : [];
-      }
-      function saveBookmarks(bookmarks) {
-        localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
-      }
-      function toggleBookmark(questionId) {
-        let bookmarks = getBookmarks();
-        if (bookmarks.includes(questionId)) {
-          bookmarks = bookmarks.filter(id => id !== questionId);
-        } else {
-          bookmarks.push(questionId);
+      
+      /***** Firestore Stats Functions *****/
+      // Assumes user is authenticated (anonymous auth)
+      async function recordAnswer(questionId, category, isCorrect) {
+        const uid = window.auth.currentUser.uid;
+        const userDocRef = doc(window.db, 'users', uid);
+        try {
+          await runTransaction(window.db, async (transaction) => {
+            const userDoc = await transaction.get(userDocRef);
+            let data = userDoc.exists() ? userDoc.data() : {};
+            if (!data.stats) {
+              data.stats = { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {} };
+            }
+            if (!data.answeredQuestions) {
+              data.answeredQuestions = {};
+            }
+            // Only record if not answered before
+            if (data.answeredQuestions[questionId]) return;
+            
+            data.answeredQuestions[questionId] = { isCorrect, category, timestamp: Date.now() };
+            data.stats.totalAnswered++;
+            if (isCorrect) {
+              data.stats.totalCorrect++;
+            } else {
+              data.stats.totalIncorrect++;
+            }
+            if (!data.stats.categories[category]) {
+              data.stats.categories[category] = { answered: 0, correct: 0, incorrect: 0 };
+            }
+            data.stats.categories[category].answered++;
+            if (isCorrect) {
+              data.stats.categories[category].correct++;
+            } else {
+              data.stats.categories[category].incorrect++;
+            }
+            transaction.set(userDocRef, data, { merge: true });
+          });
+          console.log("Recorded answer for", questionId);
+        } catch (error) {
+          console.error("Error recording answer:", error);
         }
-        saveBookmarks(bookmarks);
-        return bookmarks.includes(questionId);
       }
-      function shuffleArray(array) {
-        return array.sort(() => Math.random() - 0.5);
+      
+      async function displayPerformance() {
+        // Hide any other views
+        document.querySelector(".swiper").style.display = "none";
+        document.getElementById("bottomToolbar").style.display = "none";
+        document.getElementById("iconBar").style.display = "none";
+        document.getElementById("mainOptions").style.display = "none";
+        document.getElementById("performanceView").style.display = "block";
+        
+        const uid = window.auth.currentUser.uid;
+        const userDocRef = doc(window.db, 'users', uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (!userDocSnap.exists()) {
+          document.getElementById("performanceView").innerHTML = "<h2>Performance</h2><p>No performance data available yet.</p><button id='backToMain'>Back</button>";
+          document.getElementById("backToMain").addEventListener("click", () => {
+            document.getElementById("performanceView").style.display = "none";
+            document.getElementById("mainOptions").style.display = "flex";
+          });
+          return;
+        }
+        const data = userDocSnap.data();
+        const stats = data.stats || {};
+        let categoryBreakdown = "";
+        if (stats.categories) {
+          categoryBreakdown = Object.keys(stats.categories).map(cat => {
+            const c = stats.categories[cat];
+            return `<div><strong>${cat}</strong>: Answered ${c.answered}, Correct ${c.correct}, Incorrect ${c.incorrect}</div>`;
+          }).join("");
+        } else {
+          categoryBreakdown = "<p>No category data available.</p>";
+        }
+        document.getElementById("performanceView").innerHTML = `
+          <h2>Performance</h2>
+          <p>Total Answered: ${stats.totalAnswered || 0}</p>
+          <p>Total Correct: ${stats.totalCorrect || 0}</p>
+          <p>Total Incorrect: ${stats.totalIncorrect || 0}</p>
+          <hr>
+          <h3>By Category</h3>
+          ${categoryBreakdown}
+          <button id="backToMain">Back</button>
+        `;
+        document.getElementById("backToMain").addEventListener("click", function() {
+          document.getElementById("performanceView").style.display = "none";
+          document.getElementById("mainOptions").style.display = "flex";
+        });
       }
+      
+      /***** Utility Functions (for local stats and UI) *****/
       function updateFavoriteIcon() {
         const qId = getCurrentQuestionId();
         if (qId) {
@@ -564,7 +523,7 @@
           selectedCategory
         }));
       }
-
+      
       /***** loadQuestions *****/
       function loadQuestions(options = {}) {
         Papa.parse(csvUrl, {
@@ -573,11 +532,16 @@
           complete: function(results) {
             allQuestions = results.data;
             let filtered = allQuestions;
+            // If not including answered questions, filter them out.
+            if (!options.includeAnswered) {
+              filtered = filtered.filter(q => !answeredIds.includes(q["Question"].trim()));
+            }
+            if (options.type === 'custom' && options.category) {
+              filtered = filtered.filter(q => q["Category"] && q["Category"].trim() === options.category);
+            }
             if (filterMode === 'bookmarks') {
               let bookmarks = getBookmarks();
               filtered = filtered.filter(q => bookmarks.includes(q["Question"].trim()));
-            } else if (options.type === 'custom' && options.category) {
-              filtered = filtered.filter(q => q["Category"] && q["Category"].trim() === options.category);
             }
             let selectedQuestions = shuffleArray(filtered);
             if (options.num) {
@@ -590,7 +554,7 @@
           }
         });
       }
-
+      
       /***** initializeQuiz *****/
       function initializeQuiz(questions) {
         currentQuestion = 0;
@@ -610,24 +574,24 @@
           questionSlide.innerHTML = `
             <div class="card">
               <div class="question">${question["Question"]}</div>
-              ${question["Image URL"] && question["Image URL"].trim() !== "" 
-                ? `<img src="${question["Image URL"].trim()}" class="question-image">` 
+              ${question["Image URL"] && question["Image URL"].trim() !== ""
+                ? `<img src="${question["Image URL"].trim()}" class="question-image">`
                 : ""}
               <div class="options">
-                ${question["Option A"] && question["Option A"].trim() !== "" 
-                  ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>` 
+                ${question["Option A"] && question["Option A"].trim() !== ""
+                  ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>`
                   : ""}
-                ${question["Option B"] && question["Option B"].trim() !== "" 
-                  ? `<button class="option-btn" data-option="B">B. ${question["Option B"]}</button>` 
+                ${question["Option B"] && question["Option B"].trim() !== ""
+                  ? `<button class="option-btn" data-option="B">B. ${question["Option B"]}</button>`
                   : ""}
-                ${question["Option C"] && question["Option C"].trim() !== "" 
-                  ? `<button class="option-btn" data-option="C">C. ${question["Option C"]}</button>` 
+                ${question["Option C"] && question["Option C"].trim() !== ""
+                  ? `<button class="option-btn" data-option="C">C. ${question["Option C"]}</button>`
                   : ""}
-                ${question["Option D"] && question["Option D"].trim() !== "" 
-                  ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>` 
+                ${question["Option D"] && question["Option D"].trim() !== ""
+                  ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>`
                   : ""}
-                ${question["Option E"] && question["Option E"].trim() !== "" 
-                  ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>` 
+                ${question["Option E"] && question["Option E"].trim() !== ""
+                  ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>`
                   : ""}
               </div>
               <div class="swipe-hint" style="display:none;">Swipe up for explanation</div>
@@ -643,14 +607,14 @@
           `;
           quizSlides.appendChild(answerSlide);
         });
-
+      
         window.mySwiper = new Swiper('.swiper', {
           direction: 'vertical',
           loop: false,
           mousewheel: true,
           touchReleaseOnEdges: true
         });
-
+      
         window.mySwiper.on('slideChangeTransitionEnd', function() {
           const activeIndex = window.mySwiper.activeIndex;
           const previousIndex = window.mySwiper.previousIndex;
@@ -663,20 +627,20 @@
           }
           updateFavoriteIcon();
         });
-
+      
         addOptionListeners();
-
-        // Show quiz elements; hide main options
+      
+        // Show quiz elements; hide main options and performance view
         document.querySelector(".swiper").style.display = "block";
         document.getElementById("bottomToolbar").style.display = "flex";
         document.getElementById("mainOptions").style.display = "none";
+        document.getElementById("performanceView").style.display = "none";
         document.getElementById("iconBar").style.display = "flex";
       }
-
-      /***** addOptionListeners *****/
+      
       function addOptionListeners() {
         document.querySelectorAll('.option-btn').forEach(btn => {
-          btn.addEventListener('click', function() {
+          btn.addEventListener('click', async function() {
             const card = this.closest('.card');
             if (card.classList.contains('answered')) return;
             card.classList.add('answered');
@@ -688,9 +652,11 @@
             const options = card.querySelectorAll('.option-btn');
             const selected = this.getAttribute('data-option');
             const isCorrect = (selected === correct);
+      
             if (window.analytics && window.logEvent) {
               window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect });
             }
+      
             options.forEach(option => {
               option.disabled = true;
               if (option.getAttribute('data-option') === correct) {
@@ -698,8 +664,10 @@
               }
             });
             if (!isCorrect) { this.classList.add('incorrect'); }
+      
             const hint = card.querySelector('.swipe-hint');
             if (hint) { hint.style.display = 'block'; }
+      
             const answerSlide = questionSlide.nextElementSibling;
             if (answerSlide) {
               answerSlide.querySelector('.card').innerHTML = `
@@ -710,9 +678,14 @@
                 </div>
               `;
             }
+      
             currentQuestion++;
             if (isCorrect) { score++; }
             updateProgress();
+      
+            // Record the answer in Firestore
+            await recordAnswer(qId, question["Category"] || "Uncategorized", isCorrect);
+      
             if (currentQuestion === totalQuestions) {
               setTimeout(() => {
                 const summarySlide = document.createElement("div");
@@ -732,7 +705,7 @@
           });
         });
       }
-
+      
       /***** Main Options Buttons *****/
       document.getElementById("customQuizBtn").addEventListener("click", function() {
         document.getElementById("customQuizForm").style.display = "block";
@@ -749,15 +722,17 @@
       document.getElementById("startCustomQuiz").addEventListener("click", function() {
         const category = document.getElementById("categorySelect").value;
         const num = parseInt(document.getElementById("customNumQuestions").value, 10);
+        const includeAnswered = document.getElementById("includeAnsweredCheckbox").checked;
         document.getElementById("customQuizForm").style.display = "none";
-        loadQuestions({ type: 'custom', category, num });
+        loadQuestions({ type: 'custom', category, num, includeAnswered });
       });
       document.getElementById("startRandomQuiz").addEventListener("click", function() {
         const num = parseInt(document.getElementById("randomNumQuestions").value, 10);
+        const includeAnswered = document.getElementById("includeAnsweredRandomCheckbox").checked;
         document.getElementById("randomQuizForm").style.display = "none";
-        loadQuestions({ type: 'random', num });
+        loadQuestions({ type: 'random', num, includeAnswered });
       });
-
+      
       /***** Side Menu and Overlay *****/
       const menuButton = document.getElementById("menuToggle");
       const sideMenu = document.getElementById("sideMenu");
@@ -775,21 +750,29 @@
         document.querySelector(".swiper").style.display = "none";
         document.getElementById("bottomToolbar").style.display = "none";
         document.getElementById("iconBar").style.display = "none";
+        document.getElementById("performanceView").style.display = "none";
         document.getElementById("mainOptions").style.display = "flex";
       });
-
+      // Performance menu item
+      document.getElementById("performanceItem").addEventListener("click", function() {
+        sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
+        displayPerformance();
+      });
+      
       /***** Make Logo Clickable to Start New Quiz *****/
       document.getElementById("logoClick").addEventListener("click", function() {
         document.querySelector(".swiper").style.display = "none";
         document.getElementById("bottomToolbar").style.display = "none";
         document.getElementById("iconBar").style.display = "none";
+        document.getElementById("performanceView").style.display = "none";
         document.getElementById("mainOptions").style.display = "flex";
       });
-
+      
       /***** Favorite & Feedback Icons *****/
       const favoriteButton = document.getElementById("favoriteButton");
       const feedbackButton = document.getElementById("feedbackButton");
-
+      
       favoriteButton.addEventListener("click", function() {
         const qId = getCurrentQuestionId();
         if (qId) {
@@ -797,9 +780,7 @@
           favoriteButton.textContent = isFav ? "★" : "☆";
         }
       });
-
       feedbackButton.addEventListener("click", function() {
-        // Capture current question info (ID and text)
         let currentSlide = window.mySwiper ? window.mySwiper.slides[window.mySwiper.activeIndex] : null;
         if (currentSlide) {
           if (window.mySwiper.activeIndex % 2 === 1) {
@@ -810,7 +791,7 @@
           currentFeedbackQuestionId = questionId;
           if (questionElement) {
             currentFeedbackQuestionText = questionElement.innerText;
-            document.getElementById("feedbackQuestionInfo").textContent = "Question: " + questionElement.innerText + " (ID: " + questionId + ")";
+            document.getElementById("feedbackQuestionInfo").textContent = "Question: " + currentFeedbackQuestionText + " (ID: " + questionId + ")";
           } else {
             currentFeedbackQuestionText = "";
             document.getElementById("feedbackQuestionInfo").textContent = "No question info available.";
@@ -818,7 +799,7 @@
         }
         document.getElementById("feedbackModal").style.display = "flex";
       });
-
+      
       /***** Swipe left gesture for side menu on mobile *****/
       let touchstartX = 0;
       let touchendX = 0;
@@ -833,7 +814,7 @@
           menuOverlay.classList.remove("show");
         }
       });
-
+      
       /***** Feedback Modal Functionality *****/
       const feedbackModal = document.getElementById("feedbackModal");
       document.getElementById("closeFeedbackModal").addEventListener("click", function() {
@@ -860,7 +841,7 @@
           alert("There was an error submitting your feedback. Please try again later.");
         }
       });
-
+      
     }); // end of window.load
   </script>
 </body>
