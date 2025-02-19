@@ -44,7 +44,7 @@
   </script>
 
   <style>
-    /* Global styling to match baseline code */
+    /* Global styling to match your baseline */
     html, body {
       margin: 0;
       padding: 0;
@@ -53,55 +53,81 @@
       background-color: #E6F0FA;
       color: #333;
     }
-
     /* Top Toolbar (always visible) */
     .toolbar {
       position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 50px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 50px;
       background-color: #fff;
-      display: flex; align-items: center; justify-content: space-between;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       padding: 0 10px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       z-index: 1500;
     }
-    .toolbar-left, .toolbar-center, .toolbar-right { flex: 1; }
+    .toolbar-left, .toolbar-center, .toolbar-right {
+      flex: 1;
+    }
     .toolbar-left { text-align: left; }
     .toolbar-center { text-align: center; }
     .toolbar-right { text-align: right; }
     .menu-button {
-      font-size: 24px; background: none; border: none; cursor: pointer; color: #333;
+      font-size: 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #333;
     }
-    .logo img { max-height: 40px; cursor: pointer; }
-
+    .logo img {
+      max-height: 40px;
+      cursor: pointer;
+    }
     /* Icon Bar (Favorite & Feedback) - hidden initially */
     #iconBar {
-      position: fixed; top: 50px; left: 0;
-      width: 100%; height: 40px; background-color: #fff;
-      display: none; /* hidden by default */
-      align-items: center; justify-content: center;
+      position: fixed;
+      top: 50px;
+      left: 0;
+      width: 100%;
+      height: 40px;
+      background-color: #fff;
+      display: none;
+      align-items: center;
+      justify-content: center;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       z-index: 1450;
     }
     #iconBar button {
-      background: none; border: none; font-size: 24px; cursor: pointer;
-      margin: 0 15px; color: #0056b3;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      margin: 0 15px;
+      color: #0056b3;
     }
-
     /* Main Options (Quiz buttons) */
     #mainOptions {
       margin-top: 90px;
-      display: flex; flex-direction: column; align-items: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     #mainOptions button {
-      font-size: 1.2rem; padding: 10px 20px; margin: 10px;
-      border: none; border-radius: 5px; cursor: pointer;
-      background-color: #0056b3; color: #fff; width: 200px;
+      font-size: 1.2rem;
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #0056b3;
+      color: #fff;
+      width: 200px;
     }
-
     /* Swiper Container for Quiz - Hidden initially */
     .swiper {
-      display: none; /* hidden by default */
+      display: none;
       width: 100%;
       height: calc(100% - 50px - 40px - 50px);
       min-height: calc(100vh - 140px);
@@ -109,132 +135,240 @@
     }
     .swiper-slide {
       animation: fadeIn 0.5s ease-in-out;
-      display: flex; align-items: flex-start; justify-content: center;
-      box-sizing: border-box; padding-top: 20px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      box-sizing: border-box;
+      padding-top: 20px;
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
     /* Bottom Toolbar for Quiz - Hidden initially */
     #bottomToolbar {
-      display: none; /* hidden by default */
-      position: fixed; bottom: 0; left: 0; right: 0; height: 50px;
-      background-color: #fff; display: flex; align-items: center; justify-content: space-between;
-      padding: 0 10px; box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background-color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
       z-index: 1500;
     }
     #progressBarContainer {
-      flex: 1; height: 10px; background-color: #ccc;
-      border-radius: 5px; margin-right: 10px; overflow: hidden;
+      flex: 1;
+      height: 10px;
+      background-color: #ccc;
+      border-radius: 5px;
+      margin-right: 10px;
+      overflow: hidden;
     }
     #progressBar {
-      height: 100%; width: 0%; background-color: #0056b3;
-      border-radius: 5px; transition: width 0.3s ease;
+      height: 100%;
+      width: 0%;
+      background-color: #0056b3;
+      border-radius: 5px;
+      transition: width 0.3s ease;
     }
     #questionProgress {
-      font-size: 0.9rem; color: #0056b3; margin-right: 10px;
-      min-width: 50px; text-align: center;
+      font-size: 0.9rem;
+      color: #0056b3;
+      margin-right: 10px;
+      min-width: 50px;
+      text-align: center;
     }
     #scoreDisplay {
-      font-size: 0.9rem; color: #0056b3;
-      min-width: 60px; text-align: right;
+      font-size: 0.9rem;
+      color: #0056b3;
+      min-width: 60px;
+      text-align: right;
     }
-
     /* Modal Forms */
     .modalForm {
       display: none;
-      position: fixed; top: 50%; left: 50%;
+      position: fixed;
+      top: 50%;
+      left: 50%;
       transform: translate(-50%, -50%);
-      background: #fff; padding: 20px; z-index: 2100;
-      border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      width: 90%; max-width: 400px;
+      background: #fff;
+      padding: 20px;
+      z-index: 2100;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      width: 90%;
+      max-width: 400px;
     }
     .modalForm h2 {
-      margin-bottom: 10px; color: #0056b3; text-align: center;
+      margin-bottom: 10px;
+      color: #0056b3;
+      text-align: center;
+    }
+    /* Added element to show current question info in feedback */
+    #feedbackQuestionInfo {
+      font-size: 0.9rem;
+      color: #333;
+      margin-bottom: 10px;
     }
     .modalForm .formGroup {
-      display: flex; flex-direction: column; margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 15px;
     }
     .modalForm .formGroup label {
-      font-size: 0.9rem; color: #333; margin-bottom: 5px;
+      font-size: 0.9rem;
+      color: #333;
+      margin-bottom: 5px;
     }
     .modalForm .formGroup select,
     .modalForm .formGroup input {
-      width: 100%; padding: 8px; font-size: 1rem;
-      border: 1px solid #ccc; border-radius: 4px;
+      width: 100%;
+      padding: 8px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
     .modalForm .btnRow {
-      display: flex; justify-content: flex-end; margin-top: 10px;
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
     }
     .modalForm button {
-      margin-left: 10px; padding: 8px 15px; font-size: 1rem;
-      border: none; border-radius: 4px; cursor: pointer;
-      background-color: #0056b3; color: #fff;
+      margin-left: 10px;
+      padding: 8px 15px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #0056b3;
+      color: #fff;
     }
     .modalForm button.cancel {
       background-color: #aaa;
     }
-
-    /* Quiz Card Styles (matching baseline) */
+    /* Quiz Card Styles */
     .card {
-      position: relative; background: #fff; border-radius: 10px;
-      padding: 20px 15px 15px 15px; margin: 10px auto;
+      position: relative;
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px 15px 15px 15px;
+      margin: 10px auto;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      max-width: 600px; width: 100%; max-height: 80vh;
-      overflow-y: auto; -webkit-overflow-scrolling: touch; text-align: center;
+      max-width: 600px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      text-align: center;
     }
     .question {
-      white-space: pre-line; font-size: 1.1rem; font-weight: 500; margin-bottom: 10px;
+      white-space: pre-line;
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-bottom: 10px;
     }
-    .options { display: flex; flex-direction: column; gap: 8px; }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
     .option-btn {
-      padding: 6px; border: 1px solid #0056b3; background: #fff; color: #0056b3;
-      border-radius: 5px; cursor: pointer; font-size: 0.95rem; transition: background 0.3s ease;
+      padding: 6px;
+      border: 1px solid #0056b3;
+      background: #fff;
+      color: #0056b3;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.3s ease;
     }
-    .option-btn:hover { background: #0056b3; color: #fff; }
-    .option-btn.correct { background-color: #28a745; color: #fff; }
-    .option-btn.incorrect { background-color: #dc3545; color: #fff; }
-    .option-btn:disabled { cursor: not-allowed; }
+    .option-btn:hover {
+      background: #0056b3;
+      color: #fff;
+    }
+    .option-btn.correct {
+      background-color: #28a745;
+      color: #fff;
+    }
+    .option-btn.incorrect {
+      background-color: #dc3545;
+      color: #fff;
+    }
+    .option-btn:disabled {
+      cursor: not-allowed;
+    }
     .swipe-hint {
-      font-size: 0.85rem; margin-top: 8px; color: #666; display: none;
+      font-size: 0.85rem;
+      margin-top: 8px;
+      color: #666;
+      display: none;
     }
     .answer {
-      white-space: pre-line; font-size: 1rem; color: #333;
-      margin-top: 10px; text-align: left;
+      white-space: pre-line;
+      font-size: 1rem;
+      color: #333;
+      margin-top: 10px;
+      text-align: left;
     }
     .question-image {
-      max-width: 100%; height: auto; margin-bottom: 10px; border-radius: 5px;
+      max-width: 100%;
+      height: auto;
+      margin-bottom: 10px;
+      border-radius: 5px;
     }
-
     /* Side Menu */
     #sideMenu {
-      position: fixed; top: 0; left: 0; width: 250px; height: 100vh;
-      background-color: #fff; box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-      transform: translateX(-100%); transition: transform 0.3s ease;
-      z-index: 1600; padding: 60px 20px 20px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 250px;
+      height: 100vh;
+      background-color: #fff;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      z-index: 1600;
+      padding: 60px 20px 20px;
     }
-    #sideMenu.open { transform: translateX(0); }
+    #sideMenu.open {
+      transform: translateX(0);
+    }
     #menuOverlay {
-      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.2); z-index: 1599;
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.2);
+      z-index: 1599;
     }
-    #menuOverlay.show { display: block; }
+    #menuOverlay.show {
+      display: block;
+    }
     /* Single list for the side menu */
     #menuList {
-      list-style: none; padding: 0; margin: 0;
+      list-style: none;
+      padding: 0;
+      margin: 0;
     }
     #menuList > li {
-      margin-bottom: 10px; padding-left: 20px;
-      font-size: 1rem; color: #0056b3; cursor: pointer;
+      margin-bottom: 10px;
+      padding-left: 20px;
+      font-size: 1rem;
+      color: #0056b3;
+      cursor: pointer;
     }
     #menuList > li a {
-      text-decoration: none; color: #0056b3; font-size: 1rem;
+      text-decoration: none;
+      color: #0056b3;
+      font-size: 1rem;
     }
-    /* Remove categories section and replace with "Start New Quiz" */
-    /* We'll remove the category toggler and list completely */
-    
     @media (max-width: 600px) {
       #mainOptions button { width: 180px; }
       .toolbar { height: 60px; padding: 0 10px; }
@@ -247,7 +381,8 @@
         min-height: calc(100vh - 150px);
       }
       .card {
-        max-width: 90%; padding: 18px 12px 12px 12px;
+        max-width: 90%;
+        padding: 18px 12px 12px 12px;
         margin: 8px auto;
       }
       .question { font-size: 1rem; }
@@ -351,6 +486,8 @@
   <div id="feedbackModal" style="display:none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1700; justify-content: center; align-items: center;">
     <div style="background: #fff; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px;">
       <h3>Feedback</h3>
+      <!-- New element to show question info -->
+      <p id="feedbackQuestionInfo" style="font-size:0.9rem; color:#333;"></p>
       <textarea id="feedbackText" placeholder="Enter your feedback here" style="width:100%; height:100px;"></textarea>
       <br>
       <button id="submitFeedback">Submit Feedback</button>
@@ -360,7 +497,6 @@
 
   <!-- Swiper JS -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
-
   <script>
     window.addEventListener('load', function() {
 
@@ -372,6 +508,10 @@
       let currentQuestion = 0;
       let totalQuestions = 0;
       let score = 0;
+      // Variables to store current question info for feedback
+      let currentFeedbackQuestionId = "";
+      let currentFeedbackQuestionText = "";
+
       const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
 
       /***** Utility Functions *****/
@@ -511,7 +651,6 @@
           touchReleaseOnEdges: true
         });
 
-        // Use slideChangeTransitionEnd as in baseline code
         window.mySwiper.on('slideChangeTransitionEnd', function() {
           const activeIndex = window.mySwiper.activeIndex;
           const previousIndex = window.mySwiper.previousIndex;
@@ -631,27 +770,16 @@
         sideMenu.classList.remove("open");
         menuOverlay.classList.remove("show");
       });
-
-      // Instead of categories, add "Start New Quiz" in the menu to go back to main options
-      document.getElementById("startNewQuiz")?.remove(); // remove if it exists
-      // Create a new "Start New Quiz" element and insert it as the first item in the menu list.
-      const startNewQuizItem = document.createElement("li");
-      startNewQuizItem.id = "startNewQuiz";
-      startNewQuizItem.textContent = "Start New Quiz";
-      startNewQuizItem.style.paddingLeft = "20px";
-      startNewQuizItem.style.cursor = "pointer";
-      document.getElementById("menuList").insertBefore(startNewQuizItem, document.getElementById("menuList").firstChild);
-      startNewQuizItem.addEventListener("click", function() {
-        // Hide quiz elements and show main options
+      // "Start New Quiz" returns to main options
+      document.getElementById("startNewQuiz").addEventListener("click", function() {
         document.querySelector(".swiper").style.display = "none";
         document.getElementById("bottomToolbar").style.display = "none";
         document.getElementById("iconBar").style.display = "none";
         document.getElementById("mainOptions").style.display = "flex";
       });
 
-      /***** Make Logo Clickable to go back to main options *****/
+      /***** Make Logo Clickable to Start New Quiz *****/
       document.getElementById("logoClick").addEventListener("click", function() {
-        // Same as start new quiz: hide quiz and show main options
         document.querySelector(".swiper").style.display = "none";
         document.getElementById("bottomToolbar").style.display = "none";
         document.getElementById("iconBar").style.display = "none";
@@ -669,11 +797,29 @@
           favoriteButton.textContent = isFav ? "★" : "☆";
         }
       });
+
       feedbackButton.addEventListener("click", function() {
+        // Capture current question info (ID and text)
+        let currentSlide = window.mySwiper ? window.mySwiper.slides[window.mySwiper.activeIndex] : null;
+        if (currentSlide) {
+          if (window.mySwiper.activeIndex % 2 === 1) {
+            currentSlide = window.mySwiper.slides[window.mySwiper.activeIndex - 1];
+          }
+          let questionElement = currentSlide.querySelector('.question');
+          let questionId = currentSlide.dataset.id;
+          currentFeedbackQuestionId = questionId;
+          if (questionElement) {
+            currentFeedbackQuestionText = questionElement.innerText;
+            document.getElementById("feedbackQuestionInfo").textContent = "Question: " + questionElement.innerText + " (ID: " + questionId + ")";
+          } else {
+            currentFeedbackQuestionText = "";
+            document.getElementById("feedbackQuestionInfo").textContent = "No question info available.";
+          }
+        }
         document.getElementById("feedbackModal").style.display = "flex";
       });
 
-      /***** Swipe left gesture to close side menu on mobile *****/
+      /***** Swipe left gesture for side menu on mobile *****/
       let touchstartX = 0;
       let touchendX = 0;
       const swipeThreshold = 50;
@@ -688,7 +834,7 @@
         }
       });
 
-      /***** Feedback Modal *****/
+      /***** Feedback Modal Functionality *****/
       const feedbackModal = document.getElementById("feedbackModal");
       document.getElementById("closeFeedbackModal").addEventListener("click", function() {
         feedbackModal.style.display = "none";
@@ -702,6 +848,8 @@
         try {
           await window.addDoc(window.collection(window.db, "feedback"), {
             feedback: feedbackText,
+            questionId: currentFeedbackQuestionId,
+            questionText: currentFeedbackQuestionText,
             timestamp: window.serverTimestamp()
           });
           alert("Thank you for your feedback!");
@@ -712,7 +860,8 @@
           alert("There was an error submitting your feedback. Please try again later.");
         }
       });
-    });
+
+    }); // end of window.load
   </script>
 </body>
 </html>
