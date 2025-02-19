@@ -911,6 +911,9 @@
         document.getElementById("iconBar").style.display = "none";
         document.getElementById("performanceView").style.display = "none";
         document.getElementById("mainOptions").style.display = "flex";
+        // Close side menu and overlay:
+        document.getElementById("menuOverlay").classList.remove("show");
+        document.getElementById("sideMenu").classList.remove("open");
       });
       document.getElementById("performanceItem").addEventListener("click", function() {
         sideMenu.classList.remove("open");
