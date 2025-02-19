@@ -78,7 +78,7 @@
     .logo img {
       max-height: 40px; cursor: pointer;
     }
-    /* Icon Bar (Favorite & Feedback) - hidden initially */
+    /* Icon Bar */
     #iconBar {
       position: fixed; top: 50px; left: 0;
       width: 100%; height: 40px; background-color: #fff;
@@ -287,7 +287,7 @@
     <div id="scoreDisplay">Score: 0</div>
   </div>
   
-  <!-- Performance View (new section) -->
+  <!-- Performance View -->
   <div id="performanceView" style="display: none;"></div>
   
   <!-- Side Menu -->
@@ -303,7 +303,7 @@
   <!-- Menu Overlay -->
   <div id="menuOverlay"></div>
   
-  <!-- Icon Bar (Favorite & Feedback) - hidden initially -->
+  <!-- Icon Bar (Favorite & Feedback) -->
   <div id="iconBar" style="display: none;">
     <button id="favoriteButton">☆</button>
     <button id="feedbackButton">💬</button>
@@ -510,10 +510,12 @@
       
       /***** loadQuestions *****/
       function loadQuestions(options = {}) {
+        console.log("Loading questions with options:", options);
         Papa.parse(csvUrl, {
           download: true,
           header: true,
           complete: function(results) {
+            console.log("Questions loaded:", results.data.length);
             allQuestions = results.data;
             let filtered = allQuestions;
             if (!options.includeAnswered) {
@@ -530,6 +532,7 @@
             if (options.num) {
               selectedQuestions = selectedQuestions.slice(0, options.num);
             }
+            console.log("Selected questions count:", selectedQuestions.length);
             initializeQuiz(selectedQuestions);
           },
           error: function(error) {
@@ -551,7 +554,6 @@
           const questionSlide = document.createElement("div");
           questionSlide.className = "swiper-slide";
           const qId = question["Question"].trim();
-          // Store category in dataset
           questionSlide.dataset.id = qId;
           questionSlide.dataset.correct = question["Correct Answer"].trim();
           questionSlide.dataset.explanation = question["Explanation"];
@@ -702,12 +704,14 @@
         const num = parseInt(document.getElementById("customNumQuestions").value, 10);
         const includeAnswered = document.getElementById("includeAnsweredCheckbox").checked;
         document.getElementById("customQuizForm").style.display = "none";
+        console.log("Starting custom quiz:", { category, num, includeAnswered });
         loadQuestions({ type: 'custom', category, num, includeAnswered });
       });
       document.getElementById("startRandomQuiz").addEventListener("click", function() {
         const num = parseInt(document.getElementById("randomNumQuestions").value, 10);
         const includeAnswered = document.getElementById("includeAnsweredRandomCheckbox").checked;
         document.getElementById("randomQuizForm").style.display = "none";
+        console.log("Starting random quiz:", { num, includeAnswered });
         loadQuestions({ type: 'random', num, includeAnswered });
       });
       
@@ -723,7 +727,6 @@
         sideMenu.classList.remove("open");
         menuOverlay.classList.remove("show");
       });
-      // "Start New Quiz" returns to main options
       document.getElementById("startNewQuiz").addEventListener("click", function() {
         document.querySelector(".swiper").style.display = "none";
         document.getElementById("bottomToolbar").style.display = "none";
@@ -731,7 +734,6 @@
         document.getElementById("performanceView").style.display = "none";
         document.getElementById("mainOptions").style.display = "flex";
       });
-      // Performance menu item
       document.getElementById("performanceItem").addEventListener("click", function() {
         sideMenu.classList.remove("open");
         menuOverlay.classList.remove("show");
