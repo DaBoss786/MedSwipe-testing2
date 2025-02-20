@@ -45,7 +45,7 @@
       .then(() => { console.log("Signed in anonymously as", auth.currentUser.uid); })
       .catch((error) => { console.error("Anonymous sign-in error:", error); });
     
-    // Attach Firestore functions to the window so they're available globally.
+    // Attach Firestore functions to the global window object so they're available in non-module scripts.
     window.analytics = analytics;
     window.logEvent = logEvent;
     window.db = db;
@@ -560,6 +560,25 @@
   </script>
   
   <script>
+    // Add definitions for bookmark functions
+    function getBookmarks() {
+      const bm = localStorage.getItem("bookmarks");
+      return bm ? JSON.parse(bm) : [];
+    }
+    function saveBookmarks(bookmarks) {
+      localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
+    }
+    function toggleBookmark(questionId) {
+      let bookmarks = getBookmarks();
+      if (bookmarks.includes(questionId)) {
+        bookmarks = bookmarks.filter(id => id !== questionId);
+      } else {
+        bookmarks.push(questionId);
+      }
+      saveBookmarks(bookmarks);
+      return bookmarks.includes(questionId);
+    }
+  
     window.addEventListener('load', function() {
       
       /***** Global Variables *****/
@@ -579,9 +598,10 @@
       /***** Firestore Stats Functions *****/
       async function recordAnswer(questionId, category, isCorrect) {
         const uid = window.auth.currentUser.uid;
-        const userDocRef = doc(window.db, 'users', uid);
+        // Use window.doc to reference the Firestore function attached to window
+        const userDocRef = window.doc(window.db, 'users', uid);
         try {
-          await runTransaction(window.db, async (transaction) => {
+          await window.runTransaction(window.db, async (transaction) => {
             const userDoc = await transaction.get(userDocRef);
             let data = userDoc.exists() ? userDoc.data() : {};
             if (!data.stats) {
@@ -627,8 +647,8 @@
         document.getElementById("performanceView").style.display = "block";
         
         const uid = window.auth.currentUser.uid;
-        const userDocRef = doc(window.db, 'users', uid);
-        const userDocSnap = await getDoc(userDocRef);
+        const userDocRef = window.doc(window.db, 'users', uid);
+        const userDocSnap = await window.getDoc(userDocRef);
         console.log("User document exists:", userDocSnap.exists());
         
         if (!userDocSnap.exists()) {
@@ -923,8 +943,8 @@
         document.getElementById("performanceView").style.display = "none";
         document.getElementById("mainOptions").style.display = "flex";
         // Close side menu and overlay:
-        document.getElementById("menuOverlay").classList.remove("show");
-        document.getElementById("sideMenu").classList.remove("open");
+        menuOverlay.classList.remove("show");
+        sideMenu.classList.remove("open");
       });
       document.getElementById("performanceItem").addEventListener("click", function() {
         sideMenu.classList.remove("open");
