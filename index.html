@@ -22,7 +22,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
     import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
-    import { getFirestore, doc, runTransaction, getDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+    import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
     
     const firebaseConfig = {
@@ -45,10 +45,17 @@
       .then(() => { console.log("Signed in anonymously as", auth.currentUser.uid); })
       .catch((error) => { console.error("Anonymous sign-in error:", error); });
     
+    // Attach Firestore functions to the window so they're available globally.
     window.analytics = analytics;
     window.logEvent = logEvent;
     window.db = db;
     window.auth = auth;
+    window.doc = doc;
+    window.runTransaction = runTransaction;
+    window.getDoc = getDoc;
+    window.addDoc = addDoc;
+    window.collection = collection;
+    window.serverTimestamp = serverTimestamp;
   </script>
   
   <!-- Full CSS from Baseline Code -->
