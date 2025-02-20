@@ -611,6 +611,8 @@
       }
       
       async function displayPerformance() {
+        console.log("displayPerformance function called");
+        // Hide other views and show performance view
         document.querySelector(".swiper").style.display = "none";
         document.getElementById("bottomToolbar").style.display = "none";
         document.getElementById("iconBar").style.display = "none";
@@ -620,6 +622,8 @@
         const uid = window.auth.currentUser.uid;
         const userDocRef = doc(window.db, 'users', uid);
         const userDocSnap = await getDoc(userDocRef);
+        console.log("User document exists:", userDocSnap.exists());
+        
         if (!userDocSnap.exists()) {
           document.getElementById("performanceView").innerHTML = "<h2>Performance</h2><p>No performance data available yet.</p><button id='backToMain'>Back</button>";
           document.getElementById("backToMain").addEventListener("click", () => {
