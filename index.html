@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#E6F0FA">
   <title>ENT Quiz & Facts</title>
   
-  <!-- Google Fonts: Roboto -->
+  <!-- Google Fonts: Roboto (you can change to another modern font if desired) -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" rel="stylesheet">
   
   <!-- Swiper CSS -->
@@ -44,7 +44,7 @@
       .then(() => { console.log("Signed in anonymously as", auth.currentUser.uid); })
       .catch((error) => { console.error("Anonymous sign-in error:", error); });
     
-    // Attach Firestore functions to the global window object
+    // Attach Firestore functions to the global window object so they're available globally.
     window.analytics = analytics;
     window.logEvent = logEvent;
     window.db = db;
@@ -60,8 +60,9 @@
   <!-- Chart.js for the doughnut chart -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
-  <!-- Full CSS from Baseline Code + Progress Bar Styles for Category Breakdown -->
+  <!-- Full CSS with Modern Styling -->
   <style>
+    /* Global Styles */
     html, body {
       margin: 0;
       padding: 0;
@@ -82,8 +83,8 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 10px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 0 15px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
       z-index: 1500;
     }
     .toolbar-left, .toolbar-center, .toolbar-right {
@@ -98,6 +99,10 @@
       border: none;
       cursor: pointer;
       color: #333;
+      transition: transform 0.2s ease;
+    }
+    .menu-button:hover {
+      transform: scale(1.1);
     }
     .logo img {
       max-height: 40px;
@@ -115,7 +120,7 @@
       display: none;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
       z-index: 1450;
     }
     #iconBar button {
@@ -125,6 +130,10 @@
       cursor: pointer;
       margin: 0 15px;
       color: #0056b3;
+      transition: color 0.2s ease;
+    }
+    #iconBar button:hover {
+      color: #003f7f;
     }
     
     /* Main Options (Landing View) */
@@ -136,14 +145,18 @@
     }
     #mainOptions button {
       font-size: 1.2rem;
-      padding: 10px 20px;
+      padding: 12px 20px;
       margin: 10px;
       border: none;
-      border-radius: 5px;
+      border-radius: 6px;
       cursor: pointer;
       background-color: #0056b3;
       color: #fff;
-      width: 200px;
+      width: 220px;
+      transition: background-color 0.2s ease;
+    }
+    #mainOptions button:hover {
+      background-color: #004a95;
     }
     
     /* Swiper Container */
@@ -179,8 +192,8 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 10px;
-      box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+      padding: 0 15px;
+      box-shadow: 0 -1px 3px rgba(0,0,0,0.1);
       z-index: 1500;
     }
     #progressBarContainer {
@@ -222,8 +235,8 @@
       background: #fff;
       padding: 20px;
       z-index: 2100;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
       width: 90%;
       max-width: 400px;
     }
@@ -264,6 +277,10 @@
       cursor: pointer;
       background-color: #0056b3;
       color: #fff;
+      transition: background-color 0.2s ease;
+    }
+    .modalForm button:hover {
+      background-color: #004a95;
     }
     .modalForm button.cancel {
       background-color: #aaa;
@@ -293,8 +310,12 @@
       background-color: #0056b3;
       color: #fff;
       cursor: pointer;
+      transition: background-color 0.2s ease;
     }
-    /* Category breakdown progress bars */
+    #performanceView button:hover {
+      background-color: #004a95;
+    }
+    /* Category Breakdown Progress Bars */
     .category-item {
       margin: 10px 0;
     }
@@ -317,10 +338,10 @@
     .card {
       position: relative;
       background: #fff;
-      border-radius: 10px;
+      border-radius: 6px;
       padding: 20px 15px 15px 15px;
       margin: 10px auto;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
       max-width: 600px;
       width: 100%;
       max-height: 80vh;
@@ -344,7 +365,7 @@
       border: 1px solid #0056b3;
       background: #fff;
       color: #0056b3;
-      border-radius: 5px;
+      border-radius: 6px;
       cursor: pointer;
       font-size: 0.95rem;
       transition: background 0.3s ease;
@@ -381,7 +402,7 @@
       max-width: 100%;
       height: auto;
       margin-bottom: 10px;
-      border-radius: 5px;
+      border-radius: 6px;
     }
     
     /* Side Menu */
@@ -425,6 +446,10 @@
       font-size: 1rem;
       color: #0056b3;
       cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    #menuList > li:hover {
+      background-color: #f0f0f0;
     }
     #menuList > li a {
       text-decoration: none;
@@ -559,7 +584,7 @@
   
   <!-- Feedback Modal -->
   <div id="feedbackModal" style="display:none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1700; justify-content: center; align-items: center;">
-    <div style="background: #fff; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px;">
+    <div style="background: #fff; padding: 20px; border-radius: 6px; width: 90%; max-width: 400px;">
       <h3>Feedback</h3>
       <p id="feedbackQuestionInfo" style="font-size:0.9rem; color:#333;"></p>
       <textarea id="feedbackText" placeholder="Enter your feedback here" style="width:100%; height:100px;"></textarea>
