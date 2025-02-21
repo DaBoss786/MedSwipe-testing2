@@ -57,6 +57,9 @@
     window.serverTimestamp = serverTimestamp;
   </script>
   
+  <!-- Chart.js for the doughnut chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
   <!-- Full CSS from Baseline Code -->
   <style>
     html, body {
@@ -652,15 +655,27 @@
         console.log("User document exists:", userDocSnap.exists());
         
         if (!userDocSnap.exists()) {
-          document.getElementById("performanceView").innerHTML = "<h2>Performance</h2><p>No performance data available yet.</p><button id='backToMain'>Back</button>";
+          document.getElementById("performanceView").innerHTML = `
+            <h2>Performance</h2>
+            <p>No performance data available yet.</p>
+            <button id='backToMain'>Back</button>
+          `;
           document.getElementById("backToMain").addEventListener("click", () => {
             document.getElementById("performanceView").style.display = "none";
             document.getElementById("mainOptions").style.display = "flex";
           });
           return;
         }
+        
         const data = userDocSnap.data();
         const stats = data.stats || {};
+        
+        // Calculate overall percentage correct
+        const totalAnswered = stats.totalAnswered || 0;
+        const totalCorrect = stats.totalCorrect || 0;
+        const overallPercent = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+        
+        // Keep the category breakdown as text for now
         let categoryBreakdown = "";
         if (stats.categories) {
           categoryBreakdown = Object.keys(stats.categories).map(cat => {
@@ -670,16 +685,50 @@
         } else {
           categoryBreakdown = "<p>No category data available.</p>";
         }
+        
+        // Build the performanceView HTML, including a canvas for the doughnut chart
         document.getElementById("performanceView").innerHTML = `
-          <h2>Performance</h2>
-          <p>Total Answered: ${stats.totalAnswered || 0}</p>
-          <p>Total Correct: ${stats.totalCorrect || 0}</p>
-          <p>Total Incorrect: ${stats.totalIncorrect || 0}</p>
+          <h2 style="text-align:center; color:#0056b3;">Performance</h2>
+          <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
+            <!-- Canvas for doughnut chart -->
+            <canvas id="overallScoreChart" width="200" height="200"></canvas>
+            <!-- Show numeric overall score below the chart -->
+            <p style="font-size:1.2rem; color:#333; margin-top:10px;">
+              Overall Score: ${overallPercent}%
+            </p>
+          </div>
+          
           <hr>
-          <h3>By Category</h3>
+          <h3 style="text-align:center; color:#0056b3;">By Category</h3>
           ${categoryBreakdown}
-          <button id="backToMain">Back</button>
+          <button id="backToMain" style="margin-top:20px;">Back</button>
         `;
+        
+        // Render the doughnut chart using Chart.js
+        const ctx = document.getElementById("overallScoreChart").getContext("2d");
+        new Chart(ctx, {
+          type: "doughnut",
+          data: {
+            labels: ["Correct", "Incorrect"],
+            datasets: [{
+              data: [
+                totalCorrect,
+                totalAnswered - totalCorrect
+              ],
+              backgroundColor: ["#28a745", "#dc3545"]
+            }]
+          },
+          options: {
+            responsive: false,  // keep size as defined by width/height
+            cutout: "60%",      // make it a "donut" rather than a full pie
+            plugins: {
+              legend: {
+                display: true
+              }
+            }
+          }
+        });
+        
         document.getElementById("backToMain").addEventListener("click", function() {
           document.getElementById("performanceView").style.display = "none";
           document.getElementById("mainOptions").style.display = "flex";
