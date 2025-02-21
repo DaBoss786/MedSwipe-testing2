@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#E6F0FA">
   <title>ENT Quiz & Facts</title>
   
-  <!-- Google Fonts: Roboto (you can change to another modern font if desired) -->
+  <!-- Google Fonts: Roboto -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" rel="stylesheet">
   
   <!-- Swiper CSS -->
@@ -62,7 +62,6 @@
   
   <!-- Full CSS with Modern Styling -->
   <style>
-    /* Global Styles */
     html, body {
       margin: 0;
       padding: 0;
@@ -332,6 +331,13 @@
       background-color: #28a745;
       width: 0%;
       transition: width 0.5s ease;
+    }
+    
+    /* Additional hint on explanation slide */
+    .swipe-next-hint {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: #666;
     }
     
     /* Quiz Card Styles */
@@ -896,6 +902,7 @@
           answerSlide.innerHTML = `
             <div class="card">
               <div class="answer"></div>
+              <p class="swipe-next-hint">Swipe up for next question</p>
             </div>
           `;
           quizSlides.appendChild(answerSlide);
@@ -966,6 +973,7 @@
                   Correct Answer: ${correct}<br>
                   ${explanation}
                 </div>
+                <p class="swipe-next-hint">Swipe up for next question</p>
               `;
             }
             currentQuestion++;
