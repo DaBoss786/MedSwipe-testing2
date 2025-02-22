@@ -713,6 +713,18 @@
         });
       }
       
+      // Re-added helper function to fetch persistent answered IDs from Firestore
+      async function fetchPersistentAnsweredIds() {
+        const uid = window.auth.currentUser.uid;
+        const userDocRef = window.doc(window.db, 'users', uid);
+        const userDocSnap = await window.getDoc(userDocRef);
+        if (userDocSnap.exists()){
+          let data = userDocSnap.data();
+          return Object.keys(data.answeredQuestions || {});
+        }
+        return [];
+      }
+      
       /***** Firestore Stats Functions *****/
       async function recordAnswer(questionId, category, isCorrect) {
         const uid = window.auth.currentUser.uid;
