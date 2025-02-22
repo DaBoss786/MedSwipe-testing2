@@ -67,7 +67,9 @@
       padding: 0;
       height: 100%;
       font-family: 'Roboto', sans-serif;
-      background-color: #E6F0FA;
+      /* Old color commented out:
+         background-color: #E6F0FA; 
+      */
       color: #333;
     }
     
@@ -149,13 +151,17 @@
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      background-color: #0056b3;
+      /* Old background color commented out:
+         background-color: #0056b3; 
+      */
       color: #fff;
       width: 220px;
       transition: background-color 0.2s ease;
     }
     #mainOptions button:hover {
-      background-color: #004a95;
+      /* background-color: #004a95; 
+         commented out to be replaced by gradient hover 
+      */
     }
     
     /* Swiper Container */
@@ -480,6 +486,25 @@
       .answer { font-size: 0.9rem; }
       .swipe-hint { font-size: 0.8rem; }
     }
+    
+    /* ====== NEW GRADIENT STYLES BELOW ====== */
+    
+    /* 1) Body background gradient (light, subtle) */
+    html, body {
+      background: linear-gradient(to bottom right, #F3FAFF, #E6F0FA);
+    }
+    
+    /* 2) Buttons with a dark-to-light blue gradient matching the new logo */
+    #mainOptions button {
+      background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+      border: none;
+      transition: background 0.3s ease;
+    }
+    
+    #mainOptions button:hover {
+      background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
+    }
+    
   </style>
 </head>
 <body>
