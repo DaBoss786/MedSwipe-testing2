@@ -417,56 +417,85 @@
       border-radius: 6px;
     }
     
-    /* Side Menu */
+    /* Side Menu - Updated with Close Button and Modern Styling */
     #sideMenu {
       position: fixed;
       top: 0;
       left: 0;
-      width: 250px;
+      width: 280px;
       height: 100vh;
-      background-color: #fff;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      background: rgba(255, 255, 255, 0.95);  /* semi-transparent background */
+      backdrop-filter: blur(5px);             /* subtle blur effect */
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
       transform: translateX(-100%);
-      transition: transform 0.3s ease;
+      transition: transform 0.3s ease-in-out;
       z-index: 1600;
-      padding: 60px 20px 20px;
+      padding: 20px;
     }
     #sideMenu.open {
       transform: translateX(0);
     }
+    #menuHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    #menuTitle {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #0056b3;
+    }
+    #menuClose {
+      font-size: 1.5rem;
+      color: #0056b3;
+      transition: color 0.2s ease;
+      cursor: pointer;
+    }
+    #menuClose:hover {
+      color: #003f7f;
+    }
+    
+    /* Menu Overlay - Updated */
     #menuOverlay {
-      display: none;
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0,0,0,0.2);
+      background: rgba(0,0,0,0.4);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease-in-out;
       z-index: 1599;
     }
     #menuOverlay.show {
-      display: block;
+      opacity: 1;
+      visibility: visible;
     }
+    
+    /* Menu List Items - Updated */
     #menuList {
       list-style: none;
       padding: 0;
       margin: 0;
     }
     #menuList > li {
-      margin-bottom: 10px;
-      padding-left: 20px;
-      font-size: 1rem;
+      margin-bottom: 15px;
+      padding: 10px 15px;
+      font-size: 1.1rem;
       color: #0056b3;
+      border-radius: 5px;
       cursor: pointer;
-      transition: background 0.2s ease;
+      transition: background 0.3s ease;
     }
     #menuList > li:hover {
-      background-color: #f0f0f0;
+      background: rgba(0, 86, 179, 0.1);
     }
     #menuList > li a {
       text-decoration: none;
       color: #0056b3;
-      font-size: 1rem;
+      font-size: 1.1rem;
     }
     
     @media (max-width: 600px) {
@@ -504,7 +533,6 @@
     #mainOptions button:hover {
       background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
     }
-    
   </style>
 </head>
 <body>
@@ -544,8 +572,12 @@
   <!-- Performance View -->
   <div id="performanceView" style="display: none;"></div>
   
-  <!-- Side Menu -->
+  <!-- Side Menu with Close Button -->
   <div id="sideMenu">
+    <div id="menuHeader">
+      <span id="menuTitle">Menu</span>
+      <span id="menuClose" style="cursor:pointer;">&times;</span>
+    </div>
     <ul id="menuList">
       <li id="startNewQuiz">Start New Quiz</li>
       <li id="performanceItem">Performance</li>
@@ -915,7 +947,7 @@
               <div class="question">${question["Question"]}</div>
               ${question["Image URL"] && question["Image URL"].trim() !== ""
                 ? `<img src="${question["Image URL"].trim()}" class="question-image">`
-                : ""}
+                : "" }
               <div class="options">
                 ${question["Option A"] && question["Option A"].trim() !== ""
                   ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>`
@@ -1106,6 +1138,12 @@
         sideMenu.classList.remove("open");
         menuOverlay.classList.remove("show");
         displayPerformance();
+      });
+      
+      // Add event listener for menu close button
+      document.getElementById("menuClose").addEventListener("click", function() {
+        sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
       });
       
       /***** Make Logo Clickable to Start New Quiz *****/
