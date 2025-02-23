@@ -62,6 +62,25 @@
   
   <!-- Full CSS with Modern Styling -->
   <style>
+    /* Splash Screen Styles */
+    #splashScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #fff; /* or use a gradient if desired */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      opacity: 1;
+      transition: opacity 0.5s ease-out;
+    }
+    #splashScreen.fade-out {
+      opacity: 0;
+    }
+    
     html, body {
       margin: 0;
       padding: 0;
@@ -151,9 +170,6 @@
       color: #fff;
       width: 220px;
       transition: background-color 0.2s ease;
-    }
-    #mainOptions button:hover {
-      /* gradient hover defined below */
     }
     
     /* Swiper Container */
@@ -528,7 +544,12 @@
   </style>
 </head>
 <body>
-  <!-- Top Toolbar -->
+  <!-- Splash Screen -->
+  <div id="splashScreen">
+    <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
+  </div>
+  
+  <!-- Main Content -->
   <div class="toolbar">
     <div class="toolbar-left">
       <button class="menu-button" id="menuToggle">&#9776;</button>
@@ -541,18 +562,15 @@
     <div class="toolbar-right"></div>
   </div>
   
-  <!-- Main Options -->
   <div id="mainOptions">
     <button id="customQuizBtn">Custom Quiz</button>
     <button id="randomQuizBtn">Random Quiz</button>
   </div>
   
-  <!-- Swiper Container for Quiz -->
   <div class="swiper">
     <div class="swiper-wrapper" id="quizSlides"></div>
   </div>
   
-  <!-- Bottom Toolbar for Quiz -->
   <div id="bottomToolbar">
     <div id="progressBarContainer">
       <div id="progressBar"></div>
@@ -561,10 +579,8 @@
     <div id="scoreDisplay">Score: 0</div>
   </div>
   
-  <!-- Performance View -->
   <div id="performanceView" style="display: none;"></div>
   
-  <!-- Side Menu with Close Button -->
   <div id="sideMenu">
     <div id="menuHeader">
       <span id="menuTitle">Menu</span>
@@ -578,16 +594,13 @@
     </ul>
   </div>
   
-  <!-- Menu Overlay -->
   <div id="menuOverlay"></div>
   
-  <!-- Icon Bar (Favorite & Feedback) -->
   <div id="iconBar" style="display: none;">
     <button id="favoriteButton">☆</button>
     <button id="feedbackButton">💬</button>
   </div>
   
-  <!-- Custom Quiz Modal Form -->
   <div id="customQuizForm" class="modalForm">
     <h2>Custom Quiz Options</h2>
     <div class="formGroup">
@@ -618,7 +631,6 @@
     </div>
   </div>
   
-  <!-- Random Quiz Modal Form -->
   <div id="randomQuizForm" class="modalForm">
     <h2>Random Quiz Options</h2>
     <div class="formGroup">
@@ -637,7 +649,6 @@
     </div>
   </div>
   
-  <!-- Feedback Modal -->
   <div id="feedbackModal" style="display:none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1700; justify-content: center; align-items: center;">
     <div style="background: #fff; padding: 20px; border-radius: 6px; width: 90%; max-width: 400px;">
       <h3>Feedback</h3>
@@ -678,6 +689,19 @@
       saveBookmarks(bookmarks);
       return bookmarks.includes(questionId);
     }
+  </script>
+  
+  <!-- Splash Screen Script -->
+  <script>
+    window.addEventListener('load', function(){
+      setTimeout(function(){
+        var splash = document.getElementById('splashScreen');
+        splash.classList.add('fade-out');
+        splash.addEventListener('transitionend', function(){
+          splash.parentNode.removeChild(splash);
+        });
+      }, 1250);
+    });
   </script>
   
   <script>
