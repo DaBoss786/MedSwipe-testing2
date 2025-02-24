@@ -722,6 +722,28 @@
         return [];
       }
       
+      /***** QUESTION-SPECIFIC STATS FUNCTION *****/
+      async function updateQuestionStats(questionId, isCorrect) {
+        // Reference the document in the "questionStats" collection
+        const questionStatsRef = window.doc(window.db, "questionStats", questionId);
+        try {
+          await window.runTransaction(window.db, async (transaction) => {
+            const statsDoc = await transaction.get(questionStatsRef);
+            let statsData = statsDoc.exists() 
+              ? statsDoc.data() 
+              : { totalAttempts: 0, correctAttempts: 0 };
+            statsData.totalAttempts++;
+            if (isCorrect) {
+              statsData.correctAttempts++;
+            }
+            transaction.set(questionStatsRef, statsData, { merge: true });
+          });
+          console.log("Updated stats for question", questionId);
+        } catch (error) {
+          console.error("Error updating question stats:", error);
+        }
+      }
+      
       /***** Firestore Stats Functions *****/
       async function recordAnswer(questionId, category, isCorrect) {
         const uid = window.auth.currentUser.uid;
@@ -1120,6 +1142,8 @@
             if (isCorrect) { score++; }
             updateProgress();
             await recordAnswer(qId, category, isCorrect);
+            // Update question-specific stats (record accuracy for this question)
+            await updateQuestionStats(qId, isCorrect);
             if (currentQuestion === totalQuestions) {
               setTimeout(() => {
                 const summarySlide = document.createElement("div");
