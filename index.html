@@ -1081,23 +1081,20 @@
       
         // Update questionStartTime when a new question slide is shown
         window.mySwiper.on('slideChangeTransitionEnd', function() {
-  const activeIndex = window.mySwiper.activeIndex;
-  const previousIndex = window.mySwiper.previousIndex;
-  // If on a question slide (even-numbered slide), update the start time
-  if (activeIndex % 2 === 0) {
-    questionStartTime = Date.now();
-    console.log("New question slide displayed. questionStartTime updated to:", questionStartTime);
-  }
-  if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
-    const prevSlide = window.mySwiper.slides[activeIndex - 1];
-    const card = prevSlide.querySelector('.card');
-    if (!card.classList.contains('answered')) {
-      window.mySwiper.slideNext();
-    }
-  }
-  updateFavoriteIcon();
-});
-
+          const activeIndex = window.mySwiper.activeIndex;
+          const previousIndex = window.mySwiper.previousIndex;
+          // If on a question slide (even-numbered slide), update the start time
+          if (activeIndex % 2 === 0) {
+            questionStartTime = Date.now();
+          }
+          if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
+            const prevSlide = window.mySwiper.slides[activeIndex - 1];
+            const card = prevSlide.querySelector('.card');
+            if (!card.classList.contains('answered')) {
+              window.mySwiper.slideNext();
+            }
+          }
+          updateFavoriteIcon();
         });
       
         addOptionListeners();
