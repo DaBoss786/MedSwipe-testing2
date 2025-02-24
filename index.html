@@ -678,6 +678,9 @@
   </script>
   
   <script>
+    // Global variable to track when the current question was shown
+    let questionStartTime = 0;
+    
     window.addEventListener('load', function() {
       
       /***** Global Variables *****/
@@ -729,9 +732,7 @@
         try {
           await window.runTransaction(window.db, async (transaction) => {
             const statsDoc = await transaction.get(questionStatsRef);
-            let statsData = statsDoc.exists() 
-              ? statsDoc.data() 
-              : { totalAttempts: 0, correctAttempts: 0 };
+            let statsData = statsDoc.exists() ? statsDoc.data() : { totalAttempts: 0, correctAttempts: 0 };
             statsData.totalAttempts++;
             if (isCorrect) {
               statsData.correctAttempts++;
@@ -745,7 +746,7 @@
       }
       
       /***** Firestore Stats Functions *****/
-      async function recordAnswer(questionId, category, isCorrect) {
+      async function recordAnswer(questionId, category, isCorrect, timeSpent) {
         const uid = window.auth.currentUser.uid;
         const userDocRef = window.doc(window.db, 'users', uid);
         try {
@@ -755,7 +756,7 @@
             
             // Ensure stats exists
             if (!data.stats) {
-              data.stats = { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {} };
+              data.stats = { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0 };
             }
             // Ensure answeredQuestions exists
             if (!data.answeredQuestions) {
@@ -764,14 +765,16 @@
             // Prevent re-recording an answer for the same question
             if (data.answeredQuestions[questionId]) return;
             
-            // Record the answer
-            data.answeredQuestions[questionId] = { isCorrect, category, timestamp: Date.now() };
+            // Record the answer along with time spent (in ms)
+            data.answeredQuestions[questionId] = { isCorrect, category, timestamp: Date.now(), timeSpent };
             data.stats.totalAnswered++;
             if (isCorrect) {
               data.stats.totalCorrect++;
             } else {
               data.stats.totalIncorrect++;
             }
+            // Accumulate total time spent answering questions
+            data.stats.totalTimeSpent = (data.stats.totalTimeSpent || 0) + timeSpent;
             
             // (Optional) Update per-category stats
             if (!data.stats.categories[category]) {
@@ -798,8 +801,7 @@
             
             if (streaks.lastAnsweredDate) {
               const lastDate = new Date(streaks.lastAnsweredDate);
-              const lastDateString = lastDate.toDateString();
-              if (currentDateString === lastDateString) {
+              if (currentDateString === lastDate.toDateString()) {
                 // Already answered today, no streak update needed
               } else {
                 // Calculate the difference in days
@@ -1077,9 +1079,14 @@
           touchReleaseOnEdges: true
         });
       
+        // Update questionStartTime when a new question slide is shown
         window.mySwiper.on('slideChangeTransitionEnd', function() {
           const activeIndex = window.mySwiper.activeIndex;
           const previousIndex = window.mySwiper.previousIndex;
+          // If on a question slide (even-numbered slide), update the start time
+          if (activeIndex % 2 === 0) {
+            questionStartTime = Date.now();
+          }
           if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
             const prevSlide = window.mySwiper.slides[activeIndex - 1];
             const card = prevSlide.querySelector('.card');
@@ -1115,6 +1122,8 @@
             const options = card.querySelectorAll('.option-btn');
             const selected = this.getAttribute('data-option');
             const isCorrect = (selected === correct);
+            // Compute time spent on this question (in milliseconds)
+            const timeSpent = Date.now() - questionStartTime;
             if (window.analytics && window.logEvent) {
               window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect });
             }
@@ -1141,7 +1150,7 @@
             currentQuestion++;
             if (isCorrect) { score++; }
             updateProgress();
-            await recordAnswer(qId, category, isCorrect);
+            await recordAnswer(qId, category, isCorrect, timeSpent);
             // Update question-specific stats (record accuracy for this question)
             await updateQuestionStats(qId, isCorrect);
             if (currentQuestion === totalQuestions) {
