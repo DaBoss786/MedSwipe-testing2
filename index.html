@@ -26,13 +26,13 @@
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
     
     const firebaseConfig = {
-      apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
-      authDomain: "medswipe-648ee.firebaseapp.com",
-      projectId: "medswipe-648ee",
-      storageBucket: "medswipe-648ee.appspot.com",
-      messagingSenderId: "288366122490",
-      appId: "1:288366122490:web:1c150c48c8aed4e27f0043",
-      measurementId: "G-748P8P634B"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID",
+      measurementId: "YOUR_MEASUREMENT_ID"
     };
     
     const app = initializeApp(firebaseConfig);
@@ -151,9 +151,6 @@
       color: #fff;
       width: 220px;
       transition: background-color 0.2s ease;
-    }
-    #mainOptions button:hover {
-      /* gradient hover defined below */
     }
     
     /* Swiper Container */
@@ -695,7 +692,7 @@
       let currentFeedbackQuestionId = "";
       let currentFeedbackQuestionText = "";
       
-      const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
+      const csvUrl = "YOUR_GOOGLE_SHEET_CSV_URL_HERE";
       
       // New Helper Function to fetch the entire question bank
       function fetchQuestionBank() {
@@ -733,14 +730,19 @@
           await window.runTransaction(window.db, async (transaction) => {
             const userDoc = await transaction.get(userDocRef);
             let data = userDoc.exists() ? userDoc.data() : {};
+            
+            // Ensure stats exists
             if (!data.stats) {
               data.stats = { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {} };
             }
+            // Ensure answeredQuestions exists
             if (!data.answeredQuestions) {
               data.answeredQuestions = {};
             }
+            // Prevent re-recording an answer for the same question
             if (data.answeredQuestions[questionId]) return;
             
+            // Record the answer
             data.answeredQuestions[questionId] = { isCorrect, category, timestamp: Date.now() };
             data.stats.totalAnswered++;
             if (isCorrect) {
@@ -748,6 +750,8 @@
             } else {
               data.stats.totalIncorrect++;
             }
+            
+            // (Optional) Update per-category stats
             if (!data.stats.categories[category]) {
               data.stats.categories[category] = { answered: 0, correct: 0, incorrect: 0 };
             }
@@ -758,6 +762,49 @@
               data.stats.categories[category].incorrect++;
             }
             
+            /***** STREAK TRACKING LOGIC *****/
+            // Get the current date as a date string (e.g., "Wed Feb 20 2025")
+            const currentDate = new Date();
+            const currentDateString = currentDate.toDateString();
+            
+            // Get existing streak data or set default values
+            let streaks = data.streaks || {
+              lastAnsweredDate: null,
+              currentStreak: 0,
+              longestStreak: 0
+            };
+            
+            if (streaks.lastAnsweredDate) {
+              const lastDate = new Date(streaks.lastAnsweredDate);
+              const lastDateString = lastDate.toDateString();
+              if (currentDateString === lastDateString) {
+                // Already answered today, no streak update needed
+              } else {
+                // Calculate the difference in days
+                const diffDays = Math.floor((currentDate - lastDate) / (1000 * 60 * 60 * 24));
+                if (diffDays === 1) {
+                  // Consecutive day: increment the streak
+                  streaks.currentStreak += 1;
+                } else {
+                  // Non-consecutive day: reset the streak
+                  streaks.currentStreak = 1;
+                }
+                streaks.lastAnsweredDate = currentDate.toISOString();
+                // Update longestStreak if needed
+                if (streaks.currentStreak > streaks.longestStreak) {
+                  streaks.longestStreak = streaks.currentStreak;
+                }
+              }
+            } else {
+              // No streak data yet—start a new streak
+              streaks.lastAnsweredDate = currentDate.toISOString();
+              streaks.currentStreak = 1;
+              streaks.longestStreak = 1;
+            }
+            
+            data.streaks = streaks;
+            
+            // Write updated data back to Firestore
             transaction.set(userDocRef, data, { merge: true });
           });
           console.log("Recorded answer for", questionId);
