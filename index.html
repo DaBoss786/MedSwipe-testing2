@@ -656,24 +656,40 @@
     }
   </script>
   
-  <!-- Bookmark functions -->
+  <!-- Firebase Bookmarks Functions (using Firestore) -->
   <script>
-    function getBookmarks() {
-      const bm = localStorage.getItem("bookmarks");
-      return bm ? JSON.parse(bm) : [];
-    }
-    function saveBookmarks(bookmarks) {
-      localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
-    }
-    function toggleBookmark(questionId) {
-      let bookmarks = getBookmarks();
-      if (bookmarks.includes(questionId)) {
-        bookmarks = bookmarks.filter(id => id !== questionId);
-      } else {
-        bookmarks.push(questionId);
+    async function getBookmarks() {
+      const uid = window.auth.currentUser.uid;
+      const userDocRef = window.doc(window.db, 'users', uid);
+      const userDocSnap = await window.getDoc(userDocRef);
+      if(userDocSnap.exists()){
+        const data = userDocSnap.data();
+        return data.bookmarks || [];
       }
-      saveBookmarks(bookmarks);
-      return bookmarks.includes(questionId);
+      return [];
+    }
+    
+    async function toggleBookmark(questionId) {
+      const uid = window.auth.currentUser.uid;
+      const userDocRef = window.doc(window.db, 'users', uid);
+      try {
+        await window.runTransaction(window.db, async (transaction) => {
+          const userDoc = await transaction.get(userDocRef);
+          let data = userDoc.exists() ? userDoc.data() : {};
+          let bookmarks = data.bookmarks || [];
+          if (bookmarks.includes(questionId)) {
+            bookmarks = bookmarks.filter(id => id !== questionId);
+          } else {
+            bookmarks.push(questionId);
+          }
+          transaction.set(userDocRef, { bookmarks: bookmarks }, { merge: true });
+        });
+        const updatedBookmarks = await getBookmarks();
+        return updatedBookmarks.includes(questionId);
+      } catch (e) {
+        console.error("Error toggling bookmark:", e);
+        return false;
+      }
     }
   </script>
   
@@ -934,15 +950,17 @@
       
       /***** Utility Functions *****/
       function updateFavoriteIcon() {
-        const qId = getCurrentQuestionId();
-        if (qId) {
-          const bookmarks = getBookmarks();
-          favoriteButton.textContent = bookmarks.includes(qId) ? "★" : "☆";
-        } else {
-          favoriteButton.textContent = "☆";
-        }
+        getCurrentQuestionId().then(qId => {
+          if (qId) {
+            getBookmarks().then(bookmarks => {
+              favoriteButton.textContent = bookmarks.includes(qId) ? "★" : "☆";
+            });
+          } else {
+            favoriteButton.textContent = "☆";
+          }
+        });
       }
-      function getCurrentQuestionId() {
+      async function getCurrentQuestionId() {
         let activeIndex = window.mySwiper ? window.mySwiper.activeIndex : 0;
         if (activeIndex % 2 === 1) activeIndex--;
         let slide = window.mySwiper ? window.mySwiper.slides[activeIndex] : null;
@@ -982,7 +1000,7 @@
               filtered = filtered.filter(q => q["Category"] && q["Category"].trim() === options.category);
             }
             if (filterMode === 'bookmarks') {
-              let bookmarks = getBookmarks();
+              const bookmarks = await getBookmarks();
               filtered = filtered.filter(q => bookmarks.includes(q["Question"].trim()));
             }
             let selectedQuestions = shuffleArray(filtered);
@@ -1204,10 +1222,12 @@
         menuOverlay.classList.remove("show");
         sideMenu.classList.remove("open");
       });
-      document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
+      document.getElementById("bookmarksFilter").addEventListener("click", async function(e) {
         e.preventDefault();
         filterMode = "bookmarks";
-        loadQuestions();
+        const bookmarks = await getBookmarks();
+        let filtered = allQuestions.filter(q => bookmarks.includes(q["Question"].trim()));
+        initializeQuiz(filtered);
         sideMenu.classList.remove("open");
         menuOverlay.classList.remove("show");
       });
@@ -1233,10 +1253,10 @@
       const favoriteButton = document.getElementById("favoriteButton");
       const feedbackButton = document.getElementById("feedbackButton");
       
-      favoriteButton.addEventListener("click", function() {
-        const qId = getCurrentQuestionId();
+      favoriteButton.addEventListener("click", async function() {
+        const qId = await getCurrentQuestionId();
         if (qId) {
-          const isFav = toggleBookmark(qId);
+          const isFav = await toggleBookmark(qId);
           favoriteButton.textContent = isFav ? "★" : "☆";
         }
       });
