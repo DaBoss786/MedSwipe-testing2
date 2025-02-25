@@ -693,9 +693,12 @@
     }
   </script>
   
+  <!-- Global Session Tracking and Main App Code -->
   <script>
-    // Global variable to track when the current question was shown
+    // Global variables to track time
     let questionStartTime = 0;
+    // Record session start time when the app loads
+    let sessionStartTime = Date.now();
     
     window.addEventListener('load', function() {
       
@@ -729,7 +732,7 @@
         });
       }
       
-      // Re-added helper function to fetch persistent answered IDs from Firestore
+      // Helper function to fetch persistent answered IDs from Firestore
       async function fetchPersistentAnsweredIds() {
         const uid = window.auth.currentUser.uid;
         const userDocRef = window.doc(window.db, 'users', uid);
@@ -794,7 +797,7 @@
             // Accumulate total time spent answering questions
             data.stats.totalTimeSpent = (data.stats.totalTimeSpent || 0) + timeSpent;
             
-            // (Optional) Update per-category stats
+            // Update per-category stats
             if (!data.stats.categories[category]) {
               data.stats.categories[category] = { answered: 0, correct: 0, incorrect: 0 };
             }
@@ -1321,6 +1324,34 @@
         }
       });
       
+    });
+    
+    // Session Tracking: Record session time and update total time in Firestore when the user leaves the app.
+    window.addEventListener("beforeunload", async function() {
+      const sessionTime = Date.now() - sessionStartTime;
+      const uid = window.auth.currentUser.uid;
+      const userDocRef = window.doc(window.db, "users", uid);
+      try {
+        await window.runTransaction(window.db, async (transaction) => {
+          const userDoc = await transaction.get(userDocRef);
+          let data = userDoc.exists() ? userDoc.data() : {};
+          // Update total session time
+          let totalTimeSpentInApp = data.totalTimeSpentInApp || 0;
+          totalTimeSpentInApp += sessionTime;
+          // Add this session's record to sessionHistory
+          let sessionHistory = data.sessionHistory || [];
+          sessionHistory.push({
+            sessionTime: sessionTime,
+            sessionEnd: new Date().toISOString()
+          });
+          transaction.set(userDocRef, { 
+            totalTimeSpentInApp: totalTimeSpentInApp,
+            sessionHistory: sessionHistory
+          }, { merge: true });
+        });
+      } catch (e) {
+        console.error("Error updating session time:", e);
+      }
     });
   </script>
 </body>
