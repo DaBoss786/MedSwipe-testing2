@@ -955,7 +955,7 @@
         querySnapshot.forEach(docSnap => {
           const data = docSnap.data();
           // Only include users with stats and answered questions
-          if (data.stats && data.stats.totalAnswered > 0) {
+          if (data.stats && data.stats.totalAnswered >= 10) {
             const totalAnswered = data.stats.totalAnswered;
             const totalCorrect = data.stats.totalCorrect || 0;
             const accuracy = Math.round((totalCorrect / totalAnswered) * 100);
