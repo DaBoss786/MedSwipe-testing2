@@ -58,6 +58,11 @@
     window.getDocs = getDocs;
   </script>
   
+  <!-- Define csvUrl globally so all functions can access it -->
+  <script>
+    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
+  </script>
+  
   <!-- Chart.js for the doughnut chart -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
@@ -584,7 +589,6 @@
     
     /* ====== NEW GRADIENT STYLES BELOW ====== */
     
-    /* 1) Body background gradient (light, subtle) */
     html, body {
       background: linear-gradient(to bottom right, #F3FAFF, #E6F0FA);
     }
@@ -1032,9 +1036,7 @@
       console.log("Total in bank: ", totalInBank, "Total answered: ", totalAnswered);
       
       let remaining = totalInBank - totalAnswered;
-      if (remaining < 0) {
-        remaining = 0;
-      }
+      if (remaining < 0) { remaining = 0; }
       
       const totalCorrect = stats.totalCorrect || 0;
       const overallPercent = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
@@ -1255,8 +1257,6 @@
       let score = 0;
       let currentFeedbackQuestionId = "";
       let currentFeedbackQuestionText = "";
-      
-      const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
       
       async function loadQuestions(options = {}) {
         console.log("Loading questions with options:", options);
