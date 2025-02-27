@@ -1031,9 +1031,8 @@
       const stats = data.stats || {};
       
       const totalAnswered = stats.totalAnswered || 0;
-      const totalCorrect = stats.totalCorrect || 0;
-      const overallPercent = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
       
+      // 1) totalInBank
       let questionBank = [];
       try {
         questionBank = await fetchQuestionBank();
@@ -1041,7 +1040,16 @@
         console.error("Error fetching question bank:", error);
       }
       const totalInBank = questionBank.length;
-      const remaining = totalInBank - totalAnswered;
+      
+      // 2) remaining is clamped to zero
+      let remaining = totalInBank - totalAnswered;
+      if (remaining < 0) {
+        remaining = 0;
+      }
+      
+      // 3) overallPercent
+      const totalCorrect = stats.totalCorrect || 0;
+      const overallPercent = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
       
       let categoryBreakdown = "";
       if (stats.categories) {
@@ -1638,7 +1646,7 @@
     window.addEventListener("beforeunload", async function() {
       const sessionTime = Date.now() - sessionStartTime;
       const uid = window.auth.currentUser.uid;
-      const userDocRef = window.doc(window.db, "users", uid);
+      const userDocRef = window.doc(window.db, 'users', uid);
       try {
         await window.runTransaction(window.db, async (transaction) => {
           const userDoc = await transaction.get(userDocRef);
