@@ -522,6 +522,23 @@
     #mainOptions button:hover {
       background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
     }
+
+    /* New style for Start New Quiz button to match landing page buttons */
+    .start-quiz-btn {
+      font-size: 1.2rem;
+      padding: 12px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #fff;
+      width: 220px;
+      transition: background-color 0.2s ease;
+      background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+    }
+    .start-quiz-btn:hover {
+      background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
+    }
   </style>
 </head>
 <body>
@@ -1163,10 +1180,20 @@
                       <strong>Final Score: ${score} out of ${totalQuestions}</strong><br>
                       ${score/totalQuestions >= 0.8 ? "Great job!" : "Keep practicing!"}
                     </div>
+                    <button id="startNewQuizButton" class="start-quiz-btn">Start New Quiz</button>
                   </div>
                 `;
                 document.getElementById("quizSlides").appendChild(summarySlide);
                 window.mySwiper.update();
+                
+                // Add click listener to the new button to go back to the landing page
+                document.getElementById("startNewQuizButton").addEventListener("click", function() {
+                  document.querySelector(".swiper").style.display = "none";
+                  document.getElementById("bottomToolbar").style.display = "none";
+                  document.getElementById("iconBar").style.display = "none";
+                  document.getElementById("performanceView").style.display = "none";
+                  document.getElementById("mainOptions").style.display = "flex";
+                });
               }, 1000);
             }
           });
