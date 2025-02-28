@@ -1181,7 +1181,7 @@
       }
     }
     
-    // Modified recordAnswer function:
+    // Modified recordAnswer function: now saves both numeric and human-readable timestamps.
     async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       const uid = window.auth.currentUser.uid;
       const userDocRef = window.doc(window.db, 'users', uid);
@@ -1198,7 +1198,6 @@
           }
           if (data.answeredQuestions[questionId]) return;
           
-          // Save both a numeric timestamp and a human-readable formatted date.
           const currentDate = new Date();
           const currentTimestamp = currentDate.getTime();
           const currentFormatted = currentDate.toLocaleString();
@@ -1228,17 +1227,15 @@
             data.stats.categories[category].incorrect++;
           }
           
-          // Update streaks (streak logic remains based on ISO string for reliable date math)
           const currentDateString = currentDate.toDateString();
           let streaks = data.streaks || { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
           if (streaks.lastAnsweredDate) {
             const lastDate = new Date(streaks.lastAnsweredDate);
             if (currentDateString === lastDate.toDateString()) {
-              // do nothing if answered on the same day
+              // do nothing if answered on same day
             } else {
               const diffDays = Math.floor((currentDate - lastDate) / (1000 * 60 * 60 * 24));
               streaks.currentStreak = diffDays === 1 ? streaks.currentStreak + 1 : 1;
-              // Continue to store lastAnsweredDate as ISO string for calculation reliability
               streaks.lastAnsweredDate = currentDate.toISOString();
               if (streaks.currentStreak > streaks.longestStreak) {
                 streaks.longestStreak = streaks.currentStreak;
@@ -1447,6 +1444,7 @@
                       ${score/totalQuestions >= 0.8 ? "Great job!" : "Keep practicing!"}
                     </div>
                     <button id="startNewQuizButton" class="start-quiz-btn">Start New Quiz</button>
+                    <button id="leaderboardButton" class="start-quiz-btn">Leaderboards</button>
                   </div>
                 `;
                 document.getElementById("quizSlides").appendChild(summarySlide);
@@ -1459,6 +1457,16 @@
                   document.getElementById("performanceView").style.display = "none";
                   document.getElementById("leaderboardView").style.display = "none";
                   document.getElementById("mainOptions").style.display = "flex";
+                });
+                
+                document.getElementById("leaderboardButton").addEventListener("click", function() {
+                  document.querySelector(".swiper").style.display = "none";
+                  document.getElementById("bottomToolbar").style.display = "none";
+                  document.getElementById("iconBar").style.display = "none";
+                  document.getElementById("performanceView").style.display = "none";
+                  document.getElementById("mainOptions").style.display = "none";
+                  // Show leaderboard view
+                  showLeaderboard();
                 });
               }, 1000);
             }
