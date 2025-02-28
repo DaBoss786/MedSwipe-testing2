@@ -1127,9 +1127,10 @@
       return username;
     }
     
+    // Updated generateRandomName function with ENT-themed adjectives and nouns.
     function generateRandomName() {
-      const adjectives = ["Brave", "Calm", "Eager", "Gentle", "Happy", "Jolly", "Kind", "Lively"];
-      const nouns = ["Lion", "Tiger", "Eagle", "Shark", "Panther", "Wolf", "Falcon", "Bear"];
+      const adjectives = ["Aural", "Otologic", "Laryngic", "Rhinal", "Acoustic", "Vocal"];
+      const nouns = ["Cochlea", "Tympanum", "Glottis", "Sinus", "Auricle", "Eustachian"];
       const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
       const noun = nouns[Math.floor(Math.random() * nouns.length)];
       const num = Math.floor(Math.random() * 9000) + 1000;
@@ -1181,7 +1182,6 @@
       }
     }
     
-    // Modified recordAnswer function: now saves both numeric and human-readable timestamps.
     async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       const uid = window.auth.currentUser.uid;
       const userDocRef = window.doc(window.db, 'users', uid);
@@ -1465,7 +1465,6 @@
                   document.getElementById("iconBar").style.display = "none";
                   document.getElementById("performanceView").style.display = "none";
                   document.getElementById("mainOptions").style.display = "none";
-                  // Show leaderboard view
                   showLeaderboard();
                 });
               }, 1000);
