@@ -1181,6 +1181,7 @@
       }
     }
     
+    // Modified recordAnswer function:
     async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       const uid = window.auth.currentUser.uid;
       const userDocRef = window.doc(window.db, 'users', uid);
@@ -1197,7 +1198,18 @@
           }
           if (data.answeredQuestions[questionId]) return;
           
-          data.answeredQuestions[questionId] = { isCorrect, category, timestamp: Date.now(), timeSpent };
+          // Save both a numeric timestamp and a human-readable formatted date.
+          const currentDate = new Date();
+          const currentTimestamp = currentDate.getTime();
+          const currentFormatted = currentDate.toLocaleString();
+          
+          data.answeredQuestions[questionId] = { 
+            isCorrect, 
+            category, 
+            timestamp: currentTimestamp, 
+            timestampFormatted: currentFormatted, 
+            timeSpent 
+          };
           data.stats.totalAnswered++;
           if (isCorrect) {
             data.stats.totalCorrect++;
@@ -1216,16 +1228,17 @@
             data.stats.categories[category].incorrect++;
           }
           
-          const currentDate = new Date();
+          // Update streaks (streak logic remains based on ISO string for reliable date math)
           const currentDateString = currentDate.toDateString();
           let streaks = data.streaks || { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
           if (streaks.lastAnsweredDate) {
             const lastDate = new Date(streaks.lastAnsweredDate);
             if (currentDateString === lastDate.toDateString()) {
-              // do nothing
+              // do nothing if answered on the same day
             } else {
               const diffDays = Math.floor((currentDate - lastDate) / (1000 * 60 * 60 * 24));
               streaks.currentStreak = diffDays === 1 ? streaks.currentStreak + 1 : 1;
+              // Continue to store lastAnsweredDate as ISO string for calculation reliability
               streaks.lastAnsweredDate = currentDate.toISOString();
               if (streaks.currentStreak > streaks.longestStreak) {
                 streaks.longestStreak = streaks.currentStreak;
