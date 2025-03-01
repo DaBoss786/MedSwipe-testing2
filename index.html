@@ -74,7 +74,6 @@
       height: 100%;
       font-family: 'Roboto', sans-serif;
       color: #333;
-      background: linear-gradient(to bottom right, #F3FAFF, #E6F0FA);
     }
     /* Top Toolbar */
     .toolbar {
@@ -94,6 +93,9 @@
     .toolbar-left, .toolbar-center, .toolbar-right {
       flex: 1;
     }
+    .toolbar-left { text-align: left; }
+    .toolbar-center { text-align: center; }
+    .toolbar-right { text-align: right; }
     .menu-button {
       font-size: 24px;
       background: none;
@@ -109,7 +111,6 @@
       max-height: 40px;
       cursor: pointer;
     }
-    
     /* Icon Bar */
     #iconBar {
       position: fixed;
@@ -136,7 +137,6 @@
     #iconBar button:hover {
       color: #003f7f;
     }
-    
     /* Main Options (Landing View) */
     #mainOptions {
       margin-top: 90px;
@@ -159,8 +159,7 @@
     #mainOptions button:hover {
       background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
     }
-    
-    /* Swiper Container for Quiz */
+    /* Swiper Container */
     .swiper {
       display: none;
       width: 100%;
@@ -180,7 +179,6 @@
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    
     /* Bottom Toolbar */
     #bottomToolbar {
       display: none;
@@ -225,7 +223,6 @@
       min-width: 60px;
       text-align: right;
     }
-    
     /* Modal Forms */
     .modalForm {
       display: none;
@@ -286,7 +283,6 @@
     .modalForm button.cancel {
       background-color: #aaa;
     }
-    
     /* Performance View */
     #performanceView {
       display: none;
@@ -316,220 +312,30 @@
     #performanceView button:hover {
       background-color: #004a95;
     }
-    
-    /* Leaderboard Table (with borders) */
-    .leaderboard-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    .leaderboard-table th, .leaderboard-table td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: center;
-    }
-    .leaderboard-table th {
-      background-color: #f2f2f2;
-    }
-    .leaderboard-back-btn {
-      margin-top: 20px;
-      padding: 8px 15px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 4px;
-      background-color: #0056b3;
-      color: #fff;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-    .leaderboard-back-btn:hover {
-      background-color: #004a95;
-    }
-    
-    /* Start New Quiz button style */
-    .start-quiz-btn {
-      font-size: 1.2rem;
-      padding: 12px 20px;
-      margin: 10px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      color: #fff;
-      width: 220px;
-      transition: background-color 0.2s ease;
-      background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
-    }
-    .start-quiz-btn:hover {
-      background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
-    }
-    
-    /* About Us View */
-    #aboutView {
-      display: none;
-      margin-top: 90px;
-      padding: 20px;
-    }
-    #aboutView h2 {
-      text-align: center;
-      color: #0056b3;
-    }
-    #aboutView p {
-      font-size: 1rem;
-      color: #333;
+    /* Category Breakdown Progress Bars */
+    .category-item {
       margin: 10px 0;
-      line-height: 1.5;
     }
-    #aboutView button {
-      margin-top: 20px;
-      padding: 8px 15px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 4px;
-      background-color: #0056b3;
-      color: #fff;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-    #aboutView button:hover {
-      background-color: #004a95;
-    }
-    
-    /* Contact Us Modal */
-    #contactModal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
+    .progress-bar-container {
       width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      z-index: 1800;
-      justify-content: center;
-      align-items: center;
-    }
-    #contactModal > div {
-      background: #fff;
-      padding: 20px;
-      border-radius: 6px;
-      width: 90%;
-      max-width: 400px;
-    }
-    #contactModal h3 {
-      margin-bottom: 10px;
-      color: #0056b3;
-      text-align: center;
-    }
-    #contactModal p {
-      font-size: 1rem;
-      color: #333;
-      margin-bottom: 10px;
-    }
-    #contactModal label {
-      font-size: 0.9rem;
-      color: #333;
-      margin-bottom: 5px;
-      display: block;
-    }
-    #contactModal input[type="email"],
-    #contactModal textarea {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      margin-bottom: 10px;
-      font-size: 1rem;
-    }
-    #contactModal button {
-      padding: 8px 15px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      background-color: #0056b3;
-      color: #fff;
-      transition: background-color 0.2s ease;
-    }
-    #contactModal button:hover {
-      background-color: #004a95;
-    }
-    
-    /* Side Menu */
-    #sideMenu {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 280px;
-      height: 100vh;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(5px);
-      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
-      transform: translateX(-100%);
-      transition: transform 0.3s ease-in-out;
-      z-index: 1600;
-      padding: 20px;
-    }
-    #sideMenu.open {
-      transform: translateX(0);
-    }
-    #menuOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.4);
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s ease-in-out;
-      z-index: 1599;
-    }
-    #menuOverlay.show {
-      opacity: 1;
-      visibility: visible;
-    }
-    #menuHeader {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    #menuTitle {
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: #0056b3;
-    }
-    #menuClose {
-      font-size: 1.5rem;
-      color: #0056b3;
-      transition: color 0.2s ease;
-      cursor: pointer;
-    }
-    #menuClose:hover {
-      color: #003f7f;
-    }
-    #menuList {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    #menuList > li {
-      margin-bottom: 15px;
-      padding: 10px 15px;
-      font-size: 1.1rem;
-      color: #0056b3;
+      background-color: #ccc;
       border-radius: 5px;
-      cursor: pointer;
-      transition: background 0.3s ease;
+      overflow: hidden;
+      margin-top: 5px;
+      height: 20px;
     }
-    #menuList > li:hover {
-      background: rgba(0, 86, 179, 0.1);
+    .progress-bar {
+      height: 100%;
+      background-color: #28a745;
+      width: 0%;
+      transition: width 0.5s ease;
     }
-    #menuList > li a {
-      text-decoration: none;
-      color: #0056b3;
-      font-size: 1.1rem;
+    /* Additional hint on explanation slide */
+    .swipe-next-hint {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: #666;
     }
-    
     /* Quiz Card Styles */
     .card {
       position: relative;
@@ -600,12 +406,267 @@
       margin-bottom: 10px;
       border-radius: 6px;
     }
-    
-    .info-icon {
-      font-size: 0.9rem;
-      margin-left: 5px;
-      cursor: help;
+    /* Side Menu - Updated with Close Button and Modern Styling */
+    #sideMenu {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 280px;
+      height: 100vh;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(5px);
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease-in-out;
+      z-index: 1600;
+      padding: 20px;
+    }
+    #sideMenu.open {
+      transform: translateX(0);
+    }
+    #menuHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    #menuTitle {
+      font-size: 1.2rem;
+      font-weight: bold;
       color: #0056b3;
+    }
+    #menuClose {
+      font-size: 1.5rem;
+      color: #0056b3;
+      transition: color 0.2s ease;
+      cursor: pointer;
+    }
+    #menuClose:hover {
+      color: #003f7f;
+    }
+    /* Menu Overlay - Updated */
+    #menuOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.4);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease-in-out;
+      z-index: 1599;
+    }
+    #menuOverlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    /* Menu List Items - Updated */
+    #menuList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    #menuList > li {
+      margin-bottom: 15px;
+      padding: 10px 15px;
+      font-size: 1.1rem;
+      color: #0056b3;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    #menuList > li:hover {
+      background: rgba(0, 86, 179, 0.1);
+    }
+    #menuList > li a {
+      text-decoration: none;
+      color: #0056b3;
+      font-size: 1.1rem;
+    }
+    /* Leaderboard View Styles */
+    #leaderboardView {
+      display: none;
+      padding: 20px;
+      margin-top: 90px;
+    }
+    #leaderboardView h2 {
+      text-align: center;
+      color: #0056b3;
+    }
+    #leaderboardTabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .leaderboard-tab {
+      margin: 0 10px;
+      padding: 8px 15px;
+      border: none;
+      border-radius: 4px;
+      background: #0C72D3;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .leaderboard-tab.active {
+      background: #0056b3;
+    }
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .leaderboard-table th, .leaderboard-table td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    .leaderboard-table th {
+      background-color: #f2f2f2;
+    }
+    .leaderboard-back-btn {
+      margin-top: 20px;
+      padding: 8px 15px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 4px;
+      background-color: #0056b3;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .leaderboard-back-btn:hover {
+      background-color: #004a95;
+    }
+    /* New style for Start New Quiz button to match landing page buttons */
+    .start-quiz-btn {
+      font-size: 1.2rem;
+      padding: 12px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #fff;
+      width: 220px;
+      transition: background-color 0.2s ease;
+      background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+    }
+    .start-quiz-btn:hover {
+      background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
+    }
+    /* About Us View */
+    #aboutView {
+      display: none;
+      padding: 20px;
+      margin-top: 90px;
+    }
+    #aboutView h2 {
+      text-align: center;
+      color: #0056b3;
+    }
+    #aboutView p {
+      font-size: 1rem;
+      color: #333;
+      margin: 10px 0;
+      line-height: 1.5;
+    }
+    #aboutView button {
+      margin-top: 20px;
+      padding: 8px 15px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 4px;
+      background-color: #0056b3;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    #aboutView button:hover {
+      background-color: #004a95;
+    }
+    /* Contact Us Modal */
+    #contactModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1800;
+      justify-content: center;
+      align-items: center;
+    }
+    #contactModal > div {
+      background: #fff;
+      padding: 20px;
+      border-radius: 6px;
+      width: 90%;
+      max-width: 400px;
+    }
+    #contactModal h3 {
+      margin-bottom: 10px;
+      color: #0056b3;
+      text-align: center;
+    }
+    #contactModal p {
+      font-size: 1rem;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    #contactModal label {
+      font-size: 0.9rem;
+      color: #333;
+      margin-bottom: 5px;
+      display: block;
+    }
+    #contactModal input[type="email"],
+    #contactModal textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+    #contactModal button {
+      padding: 8px 15px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #0056b3;
+      color: #fff;
+      transition: background-color 0.2s ease;
+    }
+    #contactModal button:hover {
+      background-color: #004a95;
+    }
+    
+    /* Contact Us Menu Item will follow same styling as others */
+    
+    @media (max-width: 600px) {
+      #mainOptions button { width: 180px; }
+      .toolbar { height: 60px; padding: 0 10px; }
+      .menu-button { font-size: 28px; width: 40px; text-align: center; }
+      .logo img { max-height: 45px; }
+      #iconBar { top: 60px; }
+      .swiper {
+        margin-top: 100px;
+        height: calc(100% - 60px - 40px - 50px);
+        min-height: calc(100vh - 150px);
+      }
+      .card { max-width: 90%; padding: 18px 12px 12px 12px; margin: 8px auto; }
+      .question { font-size: 1rem; }
+      .option-btn { font-size: 0.9rem; padding: 5px; }
+      .answer { font-size: 0.9rem; }
+      .swipe-hint { font-size: 0.8rem; }
+    }
+    
+    /* ====== NEW GRADIENT STYLES BELOW ====== */
+    
+    html, body {
+      background: linear-gradient(to bottom right, #F3FAFF, #E6F0FA);
     }
   </style>
 </head>
@@ -652,21 +713,7 @@
   <!-- About Us View -->
   <div id="aboutView"></div>
   
-  <!-- Contact Us Modal -->
-  <div id="contactModal">
-    <div>
-      <h3>Contact Us</h3>
-      <p>Please let us know your thoughts or any issues you’re experiencing with MedSwipe.</p>
-      <label for="contactEmail">Your Email (Optional):</label>
-      <input type="email" id="contactEmail" placeholder="you@example.com">
-      <textarea id="contactMessage" placeholder="Enter your message here" style="height:100px;"></textarea>
-      <br>
-      <button id="submitContact">Submit</button>
-      <button id="closeContactModal">Cancel</button>
-    </div>
-  </div>
-  
-  <!-- Side Menu -->
+  <!-- Side Menu with Close Button -->
   <div id="sideMenu">
     <div id="menuHeader">
       <span id="menuTitle">Menu</span>
@@ -754,6 +801,23 @@
     </div>
   </div>
   
+  <!-- Contact Us Modal -->
+  <div id="contactModal">
+    <div>
+      <h3>Contact Us</h3>
+      <p>Please let us know your thoughts or any issues you’re experiencing with MedSwipe.</p>
+      <label for="contactEmail">Your Email (Optional):</label>
+      <input type="email" id="contactEmail" placeholder="you@example.com">
+      <textarea id="contactMessage" placeholder="Enter your message here" style="height:100px;"></textarea>
+      <br>
+      <button id="submitContact">Submit</button>
+      <button id="closeContactModal">Cancel</button>
+    </div>
+  </div>
+  
+  <!-- About Us View -->
+  <div id="aboutView"></div>
+  
   <!-- Include Swiper JS -->
   <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
   
@@ -764,396 +828,266 @@
     }
   </script>
   
-  <!-- Helper Functions -->
+  <!-- Firebase Bookmarks Functions (using Firestore) -->
   <script>
-    async function fetchPersistentAnsweredIds() {
+    async function getBookmarks() {
       const uid = window.auth.currentUser.uid;
       const userDocRef = window.doc(window.db, 'users', uid);
       const userDocSnap = await window.getDoc(userDocRef);
-      if (userDocSnap.exists()){
-        let data = userDocSnap.data();
-        return Object.keys(data.answeredQuestions || {});
+      if(userDocSnap.exists()){
+        const data = userDocSnap.data();
+        return data.bookmarks || [];
       }
       return [];
     }
     
-    async function fetchQuestionBank() {
-      return new Promise((resolve, reject) => {
-        Papa.parse(csvUrl, {
-          download: true,
-          header: true,
-          complete: function(results) {
-            resolve(results.data);
-          },
-          error: function(error) {
-            reject(error);
-          }
-        });
-      });
-    }
-    
-    async function getOrGenerateUsername() {
-      const uid = window.auth.currentUser.uid;
-      const userDocRef = window.doc(window.db, 'users', uid);
-      const userDocSnap = await window.getDoc(userDocRef);
-      let username;
-      if (userDocSnap.exists() && userDocSnap.data().username) {
-        username = userDocSnap.data().username;
-      } else {
-        username = generateRandomName();
-        await window.runTransaction(window.db, async (transaction) => {
-          const docSnap = await transaction.get(userDocRef);
-          let data = docSnap.exists() ? docSnap.data() : {};
-          data.username = username;
-          transaction.set(userDocRef, data, { merge: true });
-        });
-      }
-      return username;
-    }
-    
-    function generateRandomName() {
-      const adjectives = ["Aural", "Otologic", "Laryngic", "Rhinal", "Acoustic", "Vocal"];
-      const nouns = ["Cochlea", "Tympanum", "Glottis", "Sinus", "Auricle", "Eustachian"];
-      const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
-      const noun = nouns[Math.floor(Math.random() * nouns.length)];
-      const num = Math.floor(Math.random() * 9000) + 1000;
-      return `${adj}${noun}${num}`;
-    }
-  </script>
-  
-  <!-- Main App Logic -->
-  <script>
-    let questionStartTime = 0;
-    let sessionStartTime = Date.now();
-    let allQuestions = [];
-    let filterMode = "all";
-    let answeredIds = [];
-    let currentQuestion = 0;
-    let totalQuestions = 0;
-    let score = 0;
-    let currentFeedbackQuestionId = "";
-    let currentFeedbackQuestionText = "";
-    
-    async function loadQuestions(options = {}) {
-      console.log("Loading questions with options:", options);
-      Papa.parse(csvUrl, {
-        download: true,
-        header: true,
-        complete: async function(results) {
-          console.log("Questions loaded:", results.data.length);
-          allQuestions = results.data;
-          const persistentAnsweredIds = await fetchPersistentAnsweredIds();
-          answeredIds = persistentAnsweredIds;
-          let filtered = allQuestions;
-          if (!options.includeAnswered) {
-            filtered = filtered.filter(q => !answeredIds.includes(q["Question"].trim()));
-          }
-          if (options.type === 'custom' && options.category) {
-            filtered = filtered.filter(q => q["Category"] && q["Category"].trim() === options.category);
-          }
-          if (filterMode === 'bookmarks') {
-            const bookmarks = await getBookmarks();
-            filtered = filtered.filter(q => bookmarks.includes(q["Question"].trim()));
-          }
-          let selectedQuestions = shuffleArray(filtered);
-          if (options.num) {
-            selectedQuestions = selectedQuestions.slice(0, options.num);
-          }
-          console.log("Selected questions count:", selectedQuestions.length);
-          initializeQuiz(selectedQuestions);
-        },
-        error: function(error) {
-          console.error("Error parsing CSV:", error);
-        }
-      });
-    }
-    
-    function initializeQuiz(questions) {
-      currentQuestion = 0;
-      score = 0;
-      totalQuestions = questions.length;
-      answeredIds = [];
-      updateProgress();
-      const quizSlides = document.getElementById("quizSlides");
-      quizSlides.innerHTML = "";
-      questions.forEach(question => {
-        const questionSlide = document.createElement("div");
-        questionSlide.className = "swiper-slide";
-        const qId = question["Question"].trim();
-        questionSlide.dataset.id = qId;
-        questionSlide.dataset.correct = question["Correct Answer"].trim();
-        questionSlide.dataset.explanation = question["Explanation"];
-        questionSlide.dataset.category = question["Category"] || "Uncategorized";
-        questionSlide.innerHTML = `
-          <div class="card">
-            <div class="question">${question["Question"]}</div>
-            ${
-              question["Image URL"] && question["Image URL"].trim() !== ""
-                ? `<img src="${question["Image URL"].trim()}" class="question-image">`
-                : ""
-            }
-            <div class="options">
-              ${
-                question["Option A"] && question["Option A"].trim() !== ""
-                  ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>`
-                  : ""
-              }
-              ${
-                question["Option B"] && question["Option B"].trim() !== ""
-                  ? `<button class="option-btn" data-option="B">B. ${question["Option B"]}</button>`
-                  : ""
-              }
-              ${
-                question["Option C"] && question["Option C"].trim() !== ""
-                  ? `<button class="option-btn" data-option="C">C. ${question["Option C"]}</button>`
-                  : ""
-              }
-              ${
-                question["Option D"] && question["Option D"].trim() !== ""
-                  ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>`
-                  : ""
-              }
-              ${
-                question["Option E"] && question["Option E"].trim() !== ""
-                  ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>`
-                  : ""
-              }
-            </div>
-            <div class="swipe-hint" style="display:none;">Swipe up for explanation</div>
-          </div>
-        `;
-        quizSlides.appendChild(questionSlide);
-        const answerSlide = document.createElement("div");
-        answerSlide.className = "swiper-slide";
-        answerSlide.innerHTML = `
-          <div class="card">
-            <div class="answer"></div>
-            <p class="swipe-next-hint">Swipe up for next question</p>
-          </div>
-        `;
-        quizSlides.appendChild(answerSlide);
-      });
-      
-      window.mySwiper = new Swiper('.swiper', {
-        direction: 'vertical',
-        loop: false,
-        mousewheel: true,
-        touchReleaseOnEdges: true
-      });
-      
-      window.mySwiper.on('slideChangeTransitionEnd', function() {
-        const activeIndex = window.mySwiper.activeIndex;
-        const previousIndex = window.mySwiper.previousIndex;
-        if (activeIndex % 2 === 0) {
-          questionStartTime = Date.now();
-          console.log("New question slide. questionStartTime updated to:", questionStartTime);
-        }
-        if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
-          const prevSlide = window.mySwiper.slides[activeIndex - 1];
-          const card = prevSlide.querySelector('.card');
-          if (!card.classList.contains('answered')) {
-            window.mySwiper.slideNext();
-          }
-        }
-        updateFavoriteIcon();
-      });
-      
-      addOptionListeners();
-      
-      document.querySelector(".swiper").style.display = "block";
-      document.getElementById("bottomToolbar").style.display = "flex";
-      document.getElementById("mainOptions").style.display = "none";
-      document.getElementById("performanceView").style.display = "none";
-      document.getElementById("iconBar").style.display = "flex";
-      document.getElementById("aboutView").style.display = "none";
-    }
-    
-    function addOptionListeners() {
-      document.querySelectorAll('.option-btn').forEach(btn => {
-        btn.addEventListener('click', async function() {
-          const card = this.closest('.card');
-          if (card.classList.contains('answered')) return;
-          card.classList.add('answered');
-          const questionSlide = card.closest('.swiper-slide');
-          const qId = questionSlide.dataset.id;
-          if (!answeredIds.includes(qId)) { answeredIds.push(qId); }
-          const correct = questionSlide.dataset.correct;
-          const explanation = questionSlide.dataset.explanation;
-          const category = questionSlide.dataset.category;
-          const options = card.querySelectorAll('.option-btn');
-          const selected = this.getAttribute('data-option');
-          const isCorrect = (selected === correct);
-          const timeSpent = Date.now() - questionStartTime;
-          if (window.analytics && window.logEvent) {
-            window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect });
-          }
-          options.forEach(option => {
-            option.disabled = true;
-            if (option.getAttribute('data-option') === correct) {
-              option.classList.add('correct');
-            }
-          });
-          if (!isCorrect) {
-            this.classList.add('incorrect');
-          }
-          const hint = card.querySelector('.swipe-hint');
-          if (hint) { hint.style.display = 'block'; }
-          const answerSlide = questionSlide.nextElementSibling;
-          if (answerSlide) {
-            answerSlide.querySelector('.card').innerHTML = `
-              <div class="answer">
-                <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
-                Correct Answer: ${correct}<br>
-                ${explanation}
-              </div>
-              <p class="swipe-next-hint">Swipe up for next question</p>
-            `;
-          }
-          currentQuestion++;
-          if (isCorrect) { score++; }
-          updateProgress();
-          await recordAnswer(qId, category, isCorrect, timeSpent);
-          await updateQuestionStats(qId, isCorrect);
-          if (currentQuestion === totalQuestions) {
-            setTimeout(() => {
-              const summarySlide = document.createElement("div");
-              summarySlide.className = "swiper-slide";
-              summarySlide.innerHTML = `
-                <div class="card">
-                  <div class="answer">
-                    <strong>Final Score: ${score} out of ${totalQuestions}</strong><br>
-                    ${score/totalQuestions >= 0.8 ? "Great job!" : "Keep practicing!"}
-                  </div>
-                  <button id="startNewQuizButton" class="start-quiz-btn">Start New Quiz</button>
-                  <button id="leaderboardButton" class="start-quiz-btn">Leaderboards</button>
-                </div>
-              `;
-              document.getElementById("quizSlides").appendChild(summarySlide);
-              window.mySwiper.update();
-              document.getElementById("startNewQuizButton").addEventListener("click", function() {
-                document.getElementById("aboutView").style.display = "none";
-                document.querySelector(".swiper").style.display = "none";
-                document.getElementById("bottomToolbar").style.display = "none";
-                document.getElementById("iconBar").style.display = "none";
-                document.getElementById("performanceView").style.display = "none";
-                document.getElementById("leaderboardView").style.display = "none";
-                document.getElementById("mainOptions").style.display = "flex";
-              });
-              document.getElementById("leaderboardButton").addEventListener("click", function() {
-                document.getElementById("aboutView").style.display = "none";
-                document.querySelector(".swiper").style.display = "none";
-                document.getElementById("bottomToolbar").style.display = "none";
-                document.getElementById("iconBar").style.display = "none";
-                document.getElementById("performanceView").style.display = "none";
-                document.getElementById("mainOptions").style.display = "none";
-                showLeaderboard();
-              });
-            }, 1000);
-          }
-        });
-      });
-    }
-    
-    function updateProgress() {
-      const progressPercent = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
-      document.getElementById("progressBar").style.width = progressPercent + "%";
-      document.getElementById("questionProgress").textContent = `${currentQuestion} / ${totalQuestions}`;
-      document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
-    }
-    
-    async function updateQuestionStats(questionId, isCorrect) {
-      console.log("updateQuestionStats called for:", questionId, "isCorrect:", isCorrect);
-      const questionStatsRef = window.doc(window.db, "questionStats", questionId);
-      try {
-        await window.runTransaction(window.db, async (transaction) => {
-          const statsDoc = await transaction.get(questionStatsRef);
-          let statsData = statsDoc.exists() ? statsDoc.data() : { totalAttempts: 0, correctAttempts: 0 };
-          statsData.totalAttempts++;
-          if (isCorrect) {
-            statsData.correctAttempts++;
-          }
-          transaction.set(questionStatsRef, statsData, { merge: true });
-        });
-        console.log("Updated stats for question", questionId);
-      } catch (error) {
-        console.error("Error updating question stats:", error);
-      }
-    }
-    
-    async function recordAnswer(questionId, category, isCorrect, timeSpent) {
+    async function toggleBookmark(questionId) {
       const uid = window.auth.currentUser.uid;
       const userDocRef = window.doc(window.db, 'users', uid);
       try {
         await window.runTransaction(window.db, async (transaction) => {
           const userDoc = await transaction.get(userDocRef);
           let data = userDoc.exists() ? userDoc.data() : {};
-          if (!data.stats) {
-            data.stats = { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0 };
-          }
-          if (!data.answeredQuestions) {
-            data.answeredQuestions = {};
-          }
-          if (data.answeredQuestions[questionId]) return;
-          
-          const currentDate = new Date();
-          const currentTimestamp = currentDate.getTime();
-          const currentFormatted = currentDate.toLocaleString();
-          
-          data.answeredQuestions[questionId] = { 
-            isCorrect, 
-            category, 
-            timestamp: currentTimestamp, 
-            timestampFormatted: currentFormatted, 
-            timeSpent 
-          };
-          data.stats.totalAnswered++;
-          if (isCorrect) {
-            data.stats.totalCorrect++;
+          let bookmarks = data.bookmarks || [];
+          if (bookmarks.includes(questionId)) {
+            bookmarks = bookmarks.filter(id => id !== questionId);
           } else {
-            data.stats.totalIncorrect++;
+            bookmarks.push(questionId);
           }
-          data.stats.totalTimeSpent = (data.stats.totalTimeSpent || 0) + timeSpent;
-          
-          if (!data.stats.categories[category]) {
-            data.stats.categories[category] = { answered: 0, correct: 0, incorrect: 0 };
-          }
-          data.stats.categories[category].answered++;
-          if (isCorrect) {
-            data.stats.categories[category].correct++;
-          } else {
-            data.stats.categories[category].incorrect++;
-          }
-          
-          const currentDateString = currentDate.toDateString();
-          let streaks = data.streaks || { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
-          if (streaks.lastAnsweredDate) {
-            const lastDate = new Date(streaks.lastAnsweredDate);
-            if (currentDateString === lastDate.toDateString()) {
-              // Same day – no change to streak
-            } else {
-              const diffDays = Math.floor((currentDate - lastDate) / (1000 * 60 * 60 * 24));
-              streaks.currentStreak = (diffDays === 1) ? streaks.currentStreak + 1 : 1;
-              streaks.lastAnsweredDate = currentDate.toISOString();
-              if (streaks.currentStreak > streaks.longestStreak) {
-                streaks.longestStreak = streaks.currentStreak;
-              }
-            }
-          } else {
-            streaks.lastAnsweredDate = currentDate.toISOString();
-            streaks.currentStreak = 1;
-            streaks.longestStreak = 1;
-          }
-          data.streaks = streaks;
-          
-          transaction.set(userDocRef, data, { merge: true });
+          transaction.set(userDocRef, { bookmarks: bookmarks }, { merge: true });
         });
-        console.log("Recorded answer for", questionId);
-      } catch (error) {
-        console.error("Error recording answer:", error);
+        const updatedBookmarks = await getBookmarks();
+        return updatedBookmarks.includes(questionId);
+      } catch (e) {
+        console.error("Error toggling bookmark:", e);
+        return false;
       }
+    }
+  </script>
+  
+  <!-- Global Session Tracking and Main App Code -->
+  <script>
+    let questionStartTime = 0;
+    let sessionStartTime = Date.now();
+    
+    function leaderboardTabsHTML(activeTab) {
+      return `
+        <div id="leaderboardTabs">
+          <button class="leaderboard-tab ${activeTab === 'overall' ? 'active' : ''}" id="overallTab">Overall</button>
+          <button class="leaderboard-tab ${activeTab === 'streaks' ? 'active' : ''}" id="streaksTab">Streaks</button>
+          <button class="leaderboard-tab ${activeTab === 'answered' ? 'active' : ''}" id="answeredTab">Total Answered</button>
+        </div>
+      `;
+    }
+    
+    function getStartOfWeek() {
+      let now = new Date();
+      let day = now.getDay();
+      let diff = now.getDate() - day + (day === 0 ? -6 : 1);
+      let weekStart = new Date(now.setDate(diff));
+      weekStart.setHours(0,0,0,0);
+      return weekStart.getTime();
+    }
+    
+    async function loadOverallData() {
+      const currentUid = window.auth.currentUser.uid;
+      const currentUsername = await getOrGenerateUsername();
+      const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+      let leaderboardEntries = [];
+      querySnapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data.stats && data.stats.totalAnswered >= 10) {
+          const totalAnswered = data.stats.totalAnswered;
+          const totalCorrect = data.stats.totalCorrect || 0;
+          const accuracy = Math.round((totalCorrect / totalAnswered) * 100);
+          leaderboardEntries.push({
+            uid: docSnap.id,
+            username: data.username || "Anonymous",
+            accuracy: accuracy
+          });
+        }
+      });
+      leaderboardEntries.sort((a, b) => b.accuracy - a.accuracy);
+      let top10 = leaderboardEntries.slice(0,10);
+      let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
+      
+      let html = `<h2>Leaderboard - Overall Accuracy</h2>`;
+      html += leaderboardTabsHTML("overall");
+      html += `
+        <table class="leaderboard-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Name</th>
+              <th>Accuracy (%)</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      top10.forEach((entry, index) => {
+        const bold = entry.uid === currentUid ? "style='font-weight:bold;'" : "";
+        html += `
+          <tr ${bold}>
+            <td>${index + 1}</td>
+            <td>${entry.username}</td>
+            <td>${entry.accuracy}</td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+      
+      if (currentUserEntry && !top10.find(e => e.uid === currentUid)) {
+        html += `
+          <h3>Your Ranking</h3>
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Accuracy (%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="font-weight:bold;">
+                <td>${currentUsername}</td>
+                <td>${currentUserEntry.accuracy}</td>
+              </tr>
+            </tbody>
+          </table>
+        `;
+      }
+      html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
+      document.getElementById("leaderboardView").innerHTML = html;
+      
+      document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
+      document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
+      document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
+      
+      document.getElementById("leaderboardBack").addEventListener("click", function(){
+         document.getElementById("leaderboardView").style.display = "none";
+         document.getElementById("mainOptions").style.display = "flex";
+         document.getElementById("aboutView").style.display = "none";
+      });
+    }
+    
+    async function loadStreaksData() {
+      const currentUid = window.auth.currentUser.uid;
+      const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+      let streakEntries = [];
+      querySnapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        let streak = data.streaks ? (data.streaks.currentStreak || 0) : 0;
+        if (streak > 0) {
+          streakEntries.push({
+            uid: docSnap.id,
+            username: data.username || "Anonymous",
+            streak: streak
+          });
+        }
+      });
+      streakEntries.sort((a, b) => b.streak - a.streak);
+      let html = `<h2>Leaderboard - Streaks</h2>`;
+      html += leaderboardTabsHTML("streaks");
+      html += `
+         <table class="leaderboard-table">
+           <thead>
+             <tr>
+               <th>Rank</th>
+               <th>Name</th>
+               <th>Streak (days)</th>
+             </tr>
+           </thead>
+           <tbody>
+      `;
+      streakEntries.forEach((entry, index) => {
+        const bold = entry.uid === currentUid ? "style='font-weight:bold;'" : "";
+        html += `
+           <tr ${bold}>
+             <td>${index + 1}</td>
+             <td>${entry.username}</td>
+             <td>${entry.streak}</td>
+           </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+      html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
+      document.getElementById("leaderboardView").innerHTML = html;
+      
+      document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
+      document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
+      document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
+      
+      document.getElementById("leaderboardBack").addEventListener("click", function(){
+         document.getElementById("leaderboardView").style.display = "none";
+         document.getElementById("mainOptions").style.display = "flex";
+         document.getElementById("aboutView").style.display = "none";
+      });
+    }
+    
+    async function loadTotalAnsweredData() {
+      const currentUid = window.auth.currentUser.uid;
+      const weekStart = getStartOfWeek();
+      const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+      let answeredEntries = [];
+      querySnapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        let weeklyCount = 0;
+        if (data.answeredQuestions) {
+          for (const key in data.answeredQuestions) {
+            const answer = data.answeredQuestions[key];
+            if (answer.timestamp && answer.timestamp >= weekStart) {
+              weeklyCount++;
+            }
+          }
+        }
+        if (weeklyCount > 0) {
+          answeredEntries.push({
+            uid: docSnap.id,
+            username: data.username || "Anonymous",
+            weeklyCount: weeklyCount
+          });
+        }
+      });
+      answeredEntries.sort((a, b) => b.weeklyCount - a.weeklyCount);
+      let html = `<h2>Leaderboard - Total Answered This Week</h2>`;
+      html += leaderboardTabsHTML("answered");
+      html += `
+         <table class="leaderboard-table">
+           <thead>
+             <tr>
+               <th>Rank</th>
+               <th>Name</th>
+               <th>Total Answered</th>
+             </tr>
+           </thead>
+           <tbody>
+      `;
+      answeredEntries.forEach((entry, index) => {
+        const bold = entry.uid === currentUid ? "style='font-weight:bold;'" : "";
+        html += `
+           <tr ${bold}>
+             <td>${index + 1}</td>
+             <td>${entry.username}</td>
+             <td>${entry.weeklyCount}</td>
+           </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+      html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
+      document.getElementById("leaderboardView").innerHTML = html;
+      
+      document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
+      document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
+      document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
+      
+      document.getElementById("leaderboardBack").addEventListener("click", function(){
+         document.getElementById("leaderboardView").style.display = "none";
+         document.getElementById("mainOptions").style.display = "flex";
+         document.getElementById("aboutView").style.display = "none";
+      });
     }
     
     function showLeaderboard() {
+      // Hide all other views including About
       document.querySelector(".swiper").style.display = "none";
       document.getElementById("bottomToolbar").style.display = "none";
       document.getElementById("iconBar").style.display = "none";
@@ -1165,6 +1099,7 @@
     }
     
     function showAbout() {
+      // Hide all other views
       document.querySelector(".swiper").style.display = "none";
       document.getElementById("bottomToolbar").style.display = "none";
       document.getElementById("iconBar").style.display = "none";
@@ -1172,6 +1107,7 @@
       document.getElementById("leaderboardView").style.display = "none";
       document.getElementById("mainOptions").style.display = "none";
       
+      // Set the About Us content
       document.getElementById("aboutView").innerHTML = `
         <h2>About MedSwipe</h2>
         <p>MedSwipe is a dynamic, swipe-based quiz app designed specifically for medical professionals and learners. Our goal is to improve medical education by offering a casual, engaging alternative to the traditional, regimented board review resources and question banks.</p>
@@ -1190,8 +1126,56 @@
       document.getElementById("contactModal").style.display = "flex";
     }
     
+    // Set up Contact Us modal event listeners
+    window.addEventListener('load', function() {
+      document.getElementById("closeContactModal").addEventListener("click", function() {
+        document.getElementById("contactModal").style.display = "none";
+      });
+      
+      document.getElementById("submitContact").addEventListener("click", async function() {
+        const email = document.getElementById("contactEmail").value;
+        const message = document.getElementById("contactMessage").value;
+        if (!message.trim()) {
+          alert("Please enter your message.");
+          return;
+        }
+        try {
+          await window.addDoc(window.collection(window.db, "contactMessages"), {
+            email: email || "Not provided",
+            message: message,
+            timestamp: window.serverTimestamp()
+          });
+          alert("Thank you for contacting us!");
+          document.getElementById("contactEmail").value = "";
+          document.getElementById("contactMessage").value = "";
+          document.getElementById("contactModal").style.display = "none";
+        } catch (error) {
+          console.error("Error submitting contact message:", error);
+          alert("There was an error submitting your message. Please try again later.");
+        }
+      });
+    });
+    
+    window.addEventListener('load', function() {
+      // Contact Us menu item event listener
+      document.getElementById("contactItem").addEventListener("click", function() {
+        // Hide all other views
+        document.querySelector(".swiper").style.display = "none";
+        document.getElementById("bottomToolbar").style.display = "none";
+        document.getElementById("iconBar").style.display = "none";
+        document.getElementById("performanceView").style.display = "none";
+        document.getElementById("leaderboardView").style.display = "none";
+        document.getElementById("aboutView").style.display = "none";
+        document.getElementById("mainOptions").style.display = "none";
+        showContactModal();
+        document.getElementById("menuOverlay").classList.remove("show");
+        document.getElementById("sideMenu").classList.remove("open");
+      });
+    });
+    
     async function displayPerformance() {
       console.log("displayPerformance function called");
+      // Hide all other views including About
       document.querySelector(".swiper").style.display = "none";
       document.getElementById("bottomToolbar").style.display = "none";
       document.getElementById("iconBar").style.display = "none";
@@ -1217,7 +1201,6 @@
         });
         return;
       }
-      
       const data = userDocSnap.data();
       const stats = data.stats || {};
       
@@ -1229,9 +1212,8 @@
       } catch (error) {
         console.error("Error fetching question bank:", error);
       }
-      
       const totalInBank = questionBank.length;
-      console.log("Total in bank:", totalInBank, "Total answered:", totalAnswered);
+      console.log("Total in bank: ", totalInBank, "Total answered: ", totalAnswered);
       
       let remaining = totalInBank - totalAnswered;
       if (remaining < 0) { remaining = 0; }
@@ -1306,76 +1288,391 @@
       });
     }
     
-    window.addEventListener("beforeunload", async function() {
-      const sessionTime = Date.now() - sessionStartTime;
+    async function getOrGenerateUsername() {
+      const uid = window.auth.currentUser.uid;
+      const userDocRef = window.doc(window.db, 'users', uid);
+      const userDocSnap = await window.getDoc(userDocRef);
+      let username;
+      if (userDocSnap.exists() && userDocSnap.data().username) {
+        username = userDocSnap.data().username;
+      } else {
+        username = generateRandomName();
+        await window.runTransaction(window.db, async (transaction) => {
+          const docSnap = await transaction.get(userDocRef);
+          let data = docSnap.exists() ? docSnap.data() : {};
+          data.username = username;
+          transaction.set(userDocRef, data, { merge: true });
+        });
+      }
+      return username;
+    }
+    
+    // Updated generateRandomName function with ENT-themed adjectives and nouns.
+    function generateRandomName() {
+      const adjectives = ["Aural", "Otologic", "Laryngic", "Rhinal", "Acoustic", "Vocal"];
+      const nouns = ["Cochlea", "Tympanum", "Glottis", "Sinus", "Auricle", "Eustachian"];
+      const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+      const noun = nouns[Math.floor(Math.random() * nouns.length)];
+      const num = Math.floor(Math.random() * 9000) + 1000;
+      return `${adj}${noun}${num}`;
+    }
+    
+    async function fetchQuestionBank() {
+      return new Promise((resolve, reject) => {
+        Papa.parse(csvUrl, {
+          download: true,
+          header: true,
+          complete: function(results) {
+            resolve(results.data);
+          },
+          error: function(error) {
+            reject(error);
+          }
+        });
+      });
+    }
+    
+    async function fetchPersistentAnsweredIds() {
+      const uid = window.auth.currentUser.uid;
+      const userDocRef = window.doc(window.db, 'users', uid);
+      const userDocSnap = await window.getDoc(userDocRef);
+      if (userDocSnap.exists()){
+        let data = userDocSnap.data();
+        return Object.keys(data.answeredQuestions || {});
+      }
+      return [];
+    }
+    
+    async function updateQuestionStats(questionId, isCorrect) {
+      console.log("updateQuestionStats called for:", questionId, "isCorrect:", isCorrect);
+      const questionStatsRef = window.doc(window.db, "questionStats", questionId);
+      try {
+        await window.runTransaction(window.db, async (transaction) => {
+          const statsDoc = await transaction.get(questionStatsRef);
+          let statsData = statsDoc.exists() ? statsDoc.data() : { totalAttempts: 0, correctAttempts: 0 };
+          statsData.totalAttempts++;
+          if (isCorrect) {
+            statsData.correctAttempts++;
+          }
+          transaction.set(questionStatsRef, statsData, { merge: true });
+        });
+        console.log("Updated stats for question", questionId);
+      } catch (error) {
+        console.error("Error updating question stats:", error);
+      }
+    }
+    
+    // Modified recordAnswer function: now saves both numeric and human-readable timestamps.
+    async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       const uid = window.auth.currentUser.uid;
       const userDocRef = window.doc(window.db, 'users', uid);
       try {
         await window.runTransaction(window.db, async (transaction) => {
           const userDoc = await transaction.get(userDocRef);
           let data = userDoc.exists() ? userDoc.data() : {};
-          let totalTimeSpentInApp = data.totalTimeSpentInApp || 0;
-          totalTimeSpentInApp += sessionTime;
-          let sessionHistory = data.sessionHistory || [];
-          sessionHistory.push({
-            sessionTime: sessionTime,
-            sessionEnd: new Date().toISOString()
-          });
-          transaction.set(userDocRef, { 
-            totalTimeSpentInApp: totalTimeSpentInApp,
-            sessionHistory: sessionHistory
-          }, { merge: true });
+          
+          if (!data.stats) {
+            data.stats = { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0 };
+          }
+          if (!data.answeredQuestions) {
+            data.answeredQuestions = {};
+          }
+          if (data.answeredQuestions[questionId]) return;
+          
+          const currentDate = new Date();
+          const currentTimestamp = currentDate.getTime();
+          const currentFormatted = currentDate.toLocaleString();
+          
+          data.answeredQuestions[questionId] = { 
+            isCorrect, 
+            category, 
+            timestamp: currentTimestamp, 
+            timestampFormatted: currentFormatted, 
+            timeSpent 
+          };
+          data.stats.totalAnswered++;
+          if (isCorrect) {
+            data.stats.totalCorrect++;
+          } else {
+            data.stats.totalIncorrect++;
+          }
+          data.stats.totalTimeSpent = (data.stats.totalTimeSpent || 0) + timeSpent;
+          
+          if (!data.stats.categories[category]) {
+            data.stats.categories[category] = { answered: 0, correct: 0, incorrect: 0 };
+          }
+          data.stats.categories[category].answered++;
+          if (isCorrect) {
+            data.stats.categories[category].correct++;
+          } else {
+            data.stats.categories[category].incorrect++;
+          }
+          
+          const currentDateString = currentDate.toDateString();
+          let streaks = data.streaks || { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
+          if (streaks.lastAnsweredDate) {
+            const lastDate = new Date(streaks.lastAnsweredDate);
+            if (currentDateString === lastDate.toDateString()) {
+              // do nothing if answered on same day
+            } else {
+              const diffDays = Math.floor((currentDate - lastDate) / (1000 * 60 * 60 * 24));
+              streaks.currentStreak = diffDays === 1 ? streaks.currentStreak + 1 : 1;
+              streaks.lastAnsweredDate = currentDate.toISOString();
+              if (streaks.currentStreak > streaks.longestStreak) {
+                streaks.longestStreak = streaks.currentStreak;
+              }
+            }
+          } else {
+            streaks.lastAnsweredDate = currentDate.toISOString();
+            streaks.currentStreak = 1;
+            streaks.longestStreak = 1;
+          }
+          data.streaks = streaks;
+          
+          transaction.set(userDocRef, data, { merge: true });
         });
-      } catch (e) {
-        console.error("Error updating session time:", e);
+        console.log("Recorded answer for", questionId);
+      } catch (error) {
+        console.error("Error recording answer:", error);
       }
-    });
+    }
     
     window.addEventListener('load', function() {
-      /* Side menu items */
-      document.getElementById("startNewQuiz").addEventListener("click", function() {
-        document.querySelector(".swiper").style.display = "none";
-        document.getElementById("bottomToolbar").style.display = "none";
-        document.getElementById("iconBar").style.display = "none";
-        document.getElementById("performanceView").style.display = "none";
-        document.getElementById("leaderboardView").style.display = "none";
-        document.getElementById("aboutView").style.display = "none";
-        document.getElementById("mainOptions").style.display = "flex";
-        menuOverlay.classList.remove("show");
-        sideMenu.classList.remove("open");
-      });
-      document.getElementById("leaderboardItem").addEventListener("click", function() {
-        document.getElementById("aboutView").style.display = "none";
-        sideMenu.classList.remove("open");
-        menuOverlay.classList.remove("show");
-        showLeaderboard();
-      });
-      document.getElementById("performanceItem").addEventListener("click", function() {
-        document.getElementById("aboutView").style.display = "none";
-        sideMenu.classList.remove("open");
-        menuOverlay.classList.remove("show");
-        displayPerformance();
-      });
-      document.getElementById("aboutItem").addEventListener("click", function() {
-        document.getElementById("aboutView").style.display = "none";
-        sideMenu.classList.remove("open");
-        menuOverlay.classList.remove("show");
-        showAbout();
-      });
-      document.getElementById("contactItem").addEventListener("click", function() {
-        document.getElementById("aboutView").style.display = "none";
-        document.querySelector(".swiper").style.display = "none";
-        document.getElementById("bottomToolbar").style.display = "none";
-        document.getElementById("iconBar").style.display = "none";
-        document.getElementById("performanceView").style.display = "none";
-        document.getElementById("leaderboardView").style.display = "none";
-        document.getElementById("mainOptions").style.display = "none";
-        showContactModal();
-        menuOverlay.classList.remove("show");
-        sideMenu.classList.remove("open");
-      });
       
-      /* Custom/Random quiz modals */
+      let allQuestions = [];
+      let filterMode = "all";
+      let selectedCategory = "";
+      let answeredIds = [];
+      let currentQuestion = 0;
+      let totalQuestions = 0;
+      let score = 0;
+      let currentFeedbackQuestionId = "";
+      let currentFeedbackQuestionText = "";
+      
+      async function loadQuestions(options = {}) {
+        console.log("Loading questions with options:", options);
+        Papa.parse(csvUrl, {
+          download: true,
+          header: true,
+          complete: async function(results) {
+            console.log("Questions loaded:", results.data.length);
+            allQuestions = results.data;
+            const persistentAnsweredIds = await fetchPersistentAnsweredIds();
+            answeredIds = persistentAnsweredIds;
+            let filtered = allQuestions;
+            if (!options.includeAnswered) {
+              filtered = filtered.filter(q => !answeredIds.includes(q["Question"].trim()));
+            }
+            if (options.type === 'custom' && options.category) {
+              filtered = filtered.filter(q => q["Category"] && q["Category"].trim() === options.category);
+            }
+            if (filterMode === 'bookmarks') {
+              const bookmarks = await getBookmarks();
+              filtered = filtered.filter(q => bookmarks.includes(q["Question"].trim()));
+            }
+            let selectedQuestions = shuffleArray(filtered);
+            if (options.num) {
+              selectedQuestions = selectedQuestions.slice(0, options.num);
+            }
+            console.log("Selected questions count:", selectedQuestions.length);
+            initializeQuiz(selectedQuestions);
+          },
+          error: function(error) {
+            console.error("Error parsing CSV:", error);
+          }
+        });
+      }
+      
+      function initializeQuiz(questions) {
+        currentQuestion = 0;
+        score = 0;
+        totalQuestions = questions.length;
+        answeredIds = [];
+        updateProgress();
+        const quizSlides = document.getElementById("quizSlides");
+        quizSlides.innerHTML = "";
+        questions.forEach(question => {
+          const questionSlide = document.createElement("div");
+          questionSlide.className = "swiper-slide";
+          const qId = question["Question"].trim();
+          questionSlide.dataset.id = qId;
+          questionSlide.dataset.correct = question["Correct Answer"].trim();
+          questionSlide.dataset.explanation = question["Explanation"];
+          questionSlide.dataset.category = question["Category"] || "Uncategorized";
+          questionSlide.innerHTML = `
+            <div class="card">
+              <div class="question">${question["Question"]}</div>
+              ${question["Image URL"] && question["Image URL"].trim() !== ""
+                ? `<img src="${question["Image URL"].trim()}" class="question-image">`
+                : "" }
+              <div class="options">
+                ${question["Option A"] && question["Option A"].trim() !== ""
+                  ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>`
+                  : "" }
+                ${question["Option B"] && question["Option B"].trim() !== ""
+                  ? `<button class="option-btn" data-option="B">B. ${question["Option B"]}</button>`
+                  : "" }
+                ${question["Option C"] && question["Option C"].trim() !== ""
+                  ? `<button class="option-btn" data-option="C">C. ${question["Option C"]}</button>`
+                  : "" }
+                ${question["Option D"] && question["Option D"].trim() !== ""
+                  ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>`
+                  : "" }
+                ${question["Option E"] && question["Option E"] !== ""
+                  ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>`
+                  : "" }
+              </div>
+              <div class="swipe-hint" style="display:none;">Swipe up for explanation</div>
+            </div>
+          `;
+          quizSlides.appendChild(questionSlide);
+          const answerSlide = document.createElement("div");
+          answerSlide.className = "swiper-slide";
+          answerSlide.innerHTML = `
+            <div class="card">
+              <div class="answer"></div>
+              <p class="swipe-next-hint">Swipe up for next question</p>
+            </div>
+          `;
+          quizSlides.appendChild(answerSlide);
+        });
+      
+        window.mySwiper = new Swiper('.swiper', {
+          direction: 'vertical',
+          loop: false,
+          mousewheel: true,
+          touchReleaseOnEdges: true
+        });
+      
+        window.mySwiper.on('slideChangeTransitionEnd', function() {
+          const activeIndex = window.mySwiper.activeIndex;
+          const previousIndex = window.mySwiper.previousIndex;
+          if (activeIndex % 2 === 0) {
+            questionStartTime = Date.now();
+            console.log("New question slide. questionStartTime updated to:", questionStartTime);
+          }
+          if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
+            const prevSlide = window.mySwiper.slides[activeIndex - 1];
+            const card = prevSlide.querySelector('.card');
+            if (!card.classList.contains('answered')) {
+              window.mySwiper.slideNext();
+            }
+          }
+          updateFavoriteIcon();
+        });
+      
+        addOptionListeners();
+      
+        document.querySelector(".swiper").style.display = "block";
+        document.getElementById("bottomToolbar").style.display = "flex";
+        document.getElementById("mainOptions").style.display = "none";
+        document.getElementById("performanceView").style.display = "none";
+        document.getElementById("iconBar").style.display = "flex";
+        // Hide About view whenever a quiz starts
+        document.getElementById("aboutView").style.display = "none";
+      }
+      
+      function addOptionListeners() {
+        document.querySelectorAll('.option-btn').forEach(btn => {
+          btn.addEventListener('click', async function() {
+            const card = this.closest('.card');
+            if (card.classList.contains('answered')) return;
+            card.classList.add('answered');
+            const questionSlide = card.closest('.swiper-slide');
+            const qId = questionSlide.dataset.id;
+            if (!answeredIds.includes(qId)) { answeredIds.push(qId); }
+            const correct = questionSlide.dataset.correct;
+            const explanation = questionSlide.dataset.explanation;
+            const category = questionSlide.dataset.category;
+            const options = card.querySelectorAll('.option-btn');
+            const selected = this.getAttribute('data-option');
+            const isCorrect = (selected === correct);
+            const timeSpent = Date.now() - questionStartTime;
+            if (window.analytics && window.logEvent) {
+              window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect });
+            }
+            options.forEach(option => {
+              option.disabled = true;
+              if (option.getAttribute('data-option') === correct) {
+                option.classList.add('correct');
+              }
+            });
+            if (!isCorrect) { this.classList.add('incorrect'); }
+            const hint = card.querySelector('.swipe-hint');
+            if (hint) { hint.style.display = 'block'; }
+            const answerSlide = questionSlide.nextElementSibling;
+            if (answerSlide) {
+              answerSlide.querySelector('.card').innerHTML = `
+                <div class="answer">
+                  <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
+                  Correct Answer: ${correct}<br>
+                  ${explanation}
+                </div>
+                <p class="swipe-next-hint">Swipe up for next question</p>
+              `;
+            }
+            currentQuestion++;
+            if (isCorrect) { score++; }
+            updateProgress();
+            await recordAnswer(qId, category, isCorrect, timeSpent);
+            await updateQuestionStats(qId, isCorrect);
+            if (currentQuestion === totalQuestions) {
+              setTimeout(() => {
+                const summarySlide = document.createElement("div");
+                summarySlide.className = "swiper-slide";
+                summarySlide.innerHTML = `
+                  <div class="card">
+                    <div class="answer">
+                      <strong>Final Score: ${score} out of ${totalQuestions}</strong><br>
+                      ${score/totalQuestions >= 0.8 ? "Great job!" : "Keep practicing!"}
+                    </div>
+                    <button id="startNewQuizButton" class="start-quiz-btn">Start New Quiz</button>
+                    <button id="leaderboardButton" class="start-quiz-btn">Leaderboards</button>
+                  </div>
+                `;
+                document.getElementById("quizSlides").appendChild(summarySlide);
+                window.mySwiper.update();
+                
+                document.getElementById("startNewQuizButton").addEventListener("click", function() {
+                  document.getElementById("aboutView").style.display = "none";
+                  document.querySelector(".swiper").style.display = "none";
+                  document.getElementById("bottomToolbar").style.display = "none";
+                  document.getElementById("iconBar").style.display = "none";
+                  document.getElementById("performanceView").style.display = "none";
+                  document.getElementById("leaderboardView").style.display = "none";
+                  document.getElementById("mainOptions").style.display = "flex";
+                });
+                
+                document.getElementById("leaderboardButton").addEventListener("click", function() {
+                  document.getElementById("aboutView").style.display = "none";
+                  document.querySelector(".swiper").style.display = "none";
+                  document.getElementById("bottomToolbar").style.display = "none";
+                  document.getElementById("iconBar").style.display = "none";
+                  document.getElementById("performanceView").style.display = "none";
+                  document.getElementById("mainOptions").style.display = "none";
+                  showLeaderboard();
+                });
+              }, 1000);
+            }
+          });
+        });
+      }
+      
+      function updateProgress() {
+        const progressPercent = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
+        document.getElementById("progressBar").style.width = progressPercent + "%";
+        document.getElementById("questionProgress").textContent = `${currentQuestion} / ${totalQuestions}`;
+        document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
+        localStorage.setItem("quizProgress", JSON.stringify({
+          quizData: allQuestions,
+          currentQuestion,
+          score,
+          answeredIds,
+          filterMode,
+          selectedCategory
+        }));
+      }
+      
       document.getElementById("customQuizBtn").addEventListener("click", function() {
         document.getElementById("aboutView").style.display = "none";
         document.getElementById("customQuizForm").style.display = "block";
@@ -1408,34 +1705,132 @@
         loadQuestions({ type: 'random', num, includeAnswered });
       });
       
-      /* Contact Us modal events */
-      document.getElementById("closeContactModal").addEventListener("click", function() {
-        document.getElementById("contactModal").style.display = "none";
+      const menuButton = document.getElementById("menuToggle");
+      const sideMenu = document.getElementById("sideMenu");
+      const menuOverlay = document.getElementById("menuOverlay");
+      menuButton.addEventListener("click", function() {
+        sideMenu.classList.toggle("open");
+        menuOverlay.classList.toggle("show");
       });
-      document.getElementById("submitContact").addEventListener("click", async function() {
-        const email = document.getElementById("contactEmail").value;
-        const message = document.getElementById("contactMessage").value;
-        if (!message.trim()) {
-          alert("Please enter your message.");
-          return;
-        }
-        try {
-          await window.addDoc(window.collection(window.db, "contactMessages"), {
-            email: email || "Not provided",
-            message: message,
-            timestamp: window.serverTimestamp()
-          });
-          alert("Thank you for contacting us!");
-          document.getElementById("contactEmail").value = "";
-          document.getElementById("contactMessage").value = "";
-          document.getElementById("contactModal").style.display = "none";
-        } catch (error) {
-          console.error("Error submitting contact message:", error);
-          alert("There was an error submitting your message. Please try again later.");
+      menuOverlay.addEventListener("click", function() {
+        sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
+      });
+      document.getElementById("startNewQuiz").addEventListener("click", function() {
+        document.getElementById("aboutView").style.display = "none";
+        document.querySelector(".swiper").style.display = "none";
+        document.getElementById("bottomToolbar").style.display = "none";
+        document.getElementById("iconBar").style.display = "none";
+        document.getElementById("performanceView").style.display = "none";
+        document.getElementById("leaderboardView").style.display = "none";
+        document.getElementById("mainOptions").style.display = "flex";
+        menuOverlay.classList.remove("show");
+        sideMenu.classList.remove("open");
+      });
+      document.getElementById("leaderboardItem").addEventListener("click", function() {
+        document.getElementById("aboutView").style.display = "none";
+        sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
+        showLeaderboard();
+      });
+      document.getElementById("performanceItem").addEventListener("click", function() {
+        document.getElementById("aboutView").style.display = "none";
+        sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
+        displayPerformance();
+      });
+      document.getElementById("bookmarksFilter").addEventListener("click", async function(e) {
+        e.preventDefault();
+        filterMode = "bookmarks";
+        const bookmarks = await getBookmarks();
+        let filtered = allQuestions.filter(q => bookmarks.includes(q["Question"].trim()));
+        initializeQuiz(filtered);
+        sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
+      });
+      document.getElementById("resetProgress").addEventListener("click", function() {
+        alert("Reset Progress functionality coming soon!");
+      });
+      document.getElementById("aboutItem").addEventListener("click", function() {
+        document.getElementById("aboutView").style.display = "none";
+        sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
+        showAbout();
+      });
+      document.getElementById("contactItem").addEventListener("click", function() {
+        // Hide all other views before showing Contact modal
+        document.getElementById("aboutView").style.display = "none";
+        document.querySelector(".swiper").style.display = "none";
+        document.getElementById("bottomToolbar").style.display = "none";
+        document.getElementById("iconBar").style.display = "none";
+        document.getElementById("performanceView").style.display = "none";
+        document.getElementById("leaderboardView").style.display = "none";
+        document.getElementById("mainOptions").style.display = "none";
+        showContactModal();
+        menuOverlay.classList.remove("show");
+        sideMenu.classList.remove("open");
+      });
+      
+      document.getElementById("menuClose").addEventListener("click", function() {
+        sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
+      });
+      
+      document.getElementById("logoClick").addEventListener("click", function() {
+        document.getElementById("aboutView").style.display = "none";
+        document.querySelector(".swiper").style.display = "none";
+        document.getElementById("bottomToolbar").style.display = "none";
+        document.getElementById("iconBar").style.display = "none";
+        document.getElementById("performanceView").style.display = "none";
+        document.getElementById("leaderboardView").style.display = "none";
+        document.getElementById("mainOptions").style.display = "flex";
+      });
+      
+      const favoriteButton = document.getElementById("favoriteButton");
+      const feedbackButton = document.getElementById("feedbackButton");
+      
+      favoriteButton.addEventListener("click", async function() {
+        const qId = await getCurrentQuestionId();
+        if (qId) {
+          const isFav = await toggleBookmark(qId);
+          favoriteButton.textContent = isFav ? "★" : "☆";
         }
       });
       
-      /* Feedback modal events */
+      feedbackButton.addEventListener("click", function() {
+        let currentSlide = window.mySwiper ? window.mySwiper.slides[window.mySwiper.activeIndex] : null;
+        if (currentSlide) {
+          if (window.mySwiper.activeIndex % 2 === 1) {
+            currentSlide = window.mySwiper.slides[window.mySwiper.activeIndex - 1];
+          }
+          let questionElement = currentSlide.querySelector('.question');
+          let questionId = currentSlide.dataset.id;
+          currentFeedbackQuestionId = questionId;
+          if (questionElement) {
+            currentFeedbackQuestionText = questionElement.innerText;
+            document.getElementById("feedbackQuestionInfo").textContent = "Question: " + currentFeedbackQuestionText + " (ID: " + questionId + ")";
+          } else {
+            currentFeedbackQuestionText = "";
+            document.getElementById("feedbackQuestionInfo").textContent = "No question info available.";
+          }
+        }
+        document.getElementById("feedbackModal").style.display = "flex";
+      });
+      
+      let touchstartX = 0;
+      let touchendX = 0;
+      const swipeThreshold = 50;
+      sideMenu.addEventListener('touchstart', function(e) {
+        touchstartX = e.changedTouches[0].screenX;
+      });
+      sideMenu.addEventListener('touchend', function(e) {
+        touchendX = e.changedTouches[0].screenX;
+        if (touchendX - touchstartX < -swipeThreshold) {
+          sideMenu.classList.remove("open");
+          menuOverlay.classList.remove("show");
+        }
+      });
+      
       const feedbackModal = document.getElementById("feedbackModal");
       document.getElementById("closeFeedbackModal").addEventListener("click", function() {
         feedbackModal.style.display = "none";
@@ -1462,37 +1857,6 @@
         }
       });
       
-      /* Favorite button event */
-      const favoriteButton = document.getElementById("favoriteButton");
-      favoriteButton.addEventListener("click", async function() {
-        const qId = await getCurrentQuestionId();
-        if (qId) {
-          const isFav = await toggleBookmark(qId);
-          favoriteButton.textContent = isFav ? "★" : "☆";
-        }
-      });
-      
-      /* Feedback button event */
-      const feedbackButton = document.getElementById("feedbackButton");
-      feedbackButton.addEventListener("click", function() {
-        let currentSlide = window.mySwiper ? window.mySwiper.slides[window.mySwiper.activeIndex] : null;
-        if (currentSlide) {
-          if (window.mySwiper.activeIndex % 2 === 1) {
-            currentSlide = window.mySwiper.slides[window.mySwiper.activeIndex - 1];
-          }
-          let questionElement = currentSlide.querySelector('.question');
-          let questionId = currentSlide.dataset.id;
-          currentFeedbackQuestionId = questionId;
-          if (questionElement) {
-            currentFeedbackQuestionText = questionElement.innerText;
-            document.getElementById("feedbackQuestionInfo").textContent = "Question: " + currentFeedbackQuestionText + " (ID: " + questionId + ")";
-          } else {
-            currentFeedbackQuestionText = "";
-            document.getElementById("feedbackQuestionInfo").textContent = "No question info available.";
-          }
-        }
-        feedbackModal.style.display = "flex";
-      });
     });
     
     async function getCurrentQuestionId() {
