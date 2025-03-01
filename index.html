@@ -1596,8 +1596,9 @@
       }
     }
     
+    // The following block defines loadQuestions and related variables.
+    // Moved into global scope by attaching loadQuestions to window.
     window.addEventListener('load', function() {
-      
       let allQuestions = [];
       let filterMode = "all";
       let selectedCategory = "";
@@ -1608,7 +1609,7 @@
       let currentFeedbackQuestionId = "";
       let currentFeedbackQuestionText = "";
       
-      async function loadQuestions(options = {}) {
+      function loadQuestions(options = {}) {
         console.log("Loading questions with options:", options);
         Papa.parse(csvUrl, {
           download: true,
@@ -1871,6 +1872,8 @@
         loadQuestions({ type: 'random', num, includeAnswered });
       });
       
+      // Attach loadQuestions to the global window object to fix the ReferenceError
+      window.loadQuestions = loadQuestions;
     });
     
     // Added event listeners for menu toggle, close, and overlay
@@ -1927,7 +1930,7 @@
         showAbout();
       });
       
-      // Updated bookmarks filter: load bookmarked questions instead of alerting.
+      // Updated bookmarks filter: load bookmarked questions.
       document.getElementById("bookmarksFilter").addEventListener("click", async function(e) {
         e.preventDefault();
         document.getElementById("sideMenu").classList.remove("open");
