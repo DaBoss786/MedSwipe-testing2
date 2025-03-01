@@ -1172,7 +1172,7 @@
             data.stats.categories[category].incorrect++;
           }
           
-          // Revised streak logic: normalize both dates to midnight before calculating diffDays.
+          // Revised streak logic: normalize both current date and last answered date to midnight
           const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
           let streaks = data.streaks || { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
           if (streaks.lastAnsweredDate) {
