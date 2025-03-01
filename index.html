@@ -312,209 +312,11 @@
     #performanceView button:hover {
       background-color: #004a95;
     }
-    /* Category Breakdown Progress Bars */
-    .category-item {
-      margin: 10px 0;
-    }
-    .progress-bar-container {
-      width: 100%;
-      background-color: #ccc;
-      border-radius: 5px;
-      overflow: hidden;
-      margin-top: 5px;
-      height: 20px;
-    }
-    .progress-bar {
-      height: 100%;
-      background-color: #28a745;
-      width: 0%;
-      transition: width 0.5s ease;
-    }
-    /* Additional hint on explanation slide */
-    .swipe-next-hint {
-      margin-top: 10px;
-      font-size: 0.85rem;
-      color: #666;
-    }
-    /* Quiz Card Styles */
-    .card {
-      position: relative;
-      background: #fff;
-      border-radius: 6px;
-      padding: 20px 15px 15px 15px;
-      margin: 10px auto;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      max-width: 600px;
-      width: 100%;
-      max-height: 80vh;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      text-align: center;
-    }
-    .question {
-      white-space: pre-line;
-      font-size: 1.1rem;
-      font-weight: 500;
-      margin-bottom: 10px;
-    }
-    .options {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .option-btn {
-      padding: 6px;
-      border: 1px solid #0056b3;
-      background: #fff;
-      color: #0056b3;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.95rem;
-      transition: background 0.3s ease;
-    }
-    .option-btn:hover {
-      background: #0056b3;
-      color: #fff;
-    }
-    .option-btn.correct {
-      background-color: #28a745;
-      color: #fff;
-    }
-    .option-btn.incorrect {
-      background-color: #dc3545;
-      color: #fff;
-    }
-    .option-btn:disabled {
-      cursor: not-allowed;
-    }
-    .swipe-hint {
-      font-size: 0.85rem;
-      margin-top: 8px;
-      color: #666;
-      display: none;
-    }
-    .answer {
-      white-space: pre-line;
-      font-size: 1rem;
-      color: #333;
-      margin-top: 10px;
-      text-align: left;
-    }
-    .question-image {
-      max-width: 100%;
-      height: auto;
-      margin-bottom: 10px;
-      border-radius: 6px;
-    }
-    /* Side Menu - Updated with Close Button and Modern Styling */
-    #sideMenu {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 280px;
-      height: 100vh;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(5px);
-      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
-      transform: translateX(-100%);
-      transition: transform 0.3s ease-in-out;
-      z-index: 1600;
-      padding: 20px;
-    }
-    #sideMenu.open {
-      transform: translateX(0);
-    }
-    #menuHeader {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    #menuTitle {
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: #0056b3;
-    }
-    #menuClose {
-      font-size: 1.5rem;
-      color: #0056b3;
-      transition: color 0.2s ease;
-      cursor: pointer;
-    }
-    #menuClose:hover {
-      color: #003f7f;
-    }
-    /* Menu Overlay - Updated */
-    #menuOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.4);
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s ease-in-out;
-      z-index: 1599;
-    }
-    #menuOverlay.show {
-      opacity: 1;
-      visibility: visible;
-    }
-    /* Menu List Items - Updated */
-    #menuList {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    #menuList > li {
-      margin-bottom: 15px;
-      padding: 10px 15px;
-      font-size: 1.1rem;
-      color: #0056b3;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-    #menuList > li:hover {
-      background: rgba(0, 86, 179, 0.1);
-    }
-    #menuList > li a {
-      text-decoration: none;
-      color: #0056b3;
-      font-size: 1.1rem;
-    }
-    /* Leaderboard View Styles */
-    #leaderboardView {
-      display: none;
-      padding: 20px;
-      margin-top: 90px;
-    }
-    #leaderboardView h2 {
-      text-align: center;
-      color: #0056b3;
-    }
-    #leaderboardTabs {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-    .leaderboard-tab {
-      margin: 0 10px;
-      padding: 8px 15px;
-      border: none;
-      border-radius: 4px;
-      background: #0C72D3;
-      color: #fff;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-    .leaderboard-tab.active {
-      background: #0056b3;
-    }
+    /* Leaderboard Table - Original Styling */
     .leaderboard-table {
       width: 100%;
       border-collapse: collapse;
+      margin-top: 10px;
     }
     .leaderboard-table th, .leaderboard-table td {
       border: 1px solid #ccc;
@@ -557,8 +359,8 @@
     /* About Us View */
     #aboutView {
       display: none;
-      padding: 20px;
       margin-top: 90px;
+      padding: 20px;
     }
     #aboutView h2 {
       text-align: center;
@@ -643,8 +445,6 @@
       background-color: #004a95;
     }
     
-    /* Contact Us Menu Item will follow same styling as others */
-    
     @media (max-width: 600px) {
       #mainOptions button { width: 180px; }
       .toolbar { height: 60px; padding: 0 10px; }
@@ -663,10 +463,16 @@
       .swipe-hint { font-size: 0.8rem; }
     }
     
-    /* ====== NEW GRADIENT STYLES BELOW ====== */
-    
     html, body {
       background: linear-gradient(to bottom right, #F3FAFF, #E6F0FA);
+    }
+    
+    /* Info Icon Style */
+    .info-icon {
+      font-size: 0.9rem;
+      margin-left: 5px;
+      cursor: help;
+      color: #0056b3;
     }
   </style>
 </head>
@@ -899,19 +705,30 @@
         if (data.stats && data.stats.totalAnswered >= 10) {
           const totalAnswered = data.stats.totalAnswered;
           const totalCorrect = data.stats.totalCorrect || 0;
-          const accuracy = Math.round((totalCorrect / totalAnswered) * 100);
+          // Calculate accuracy fraction
+          const accuracyFraction = totalCorrect / totalAnswered;
+          // Normalize total answered (cap at 100)
+          const normalizedAnswered = Math.min(totalAnswered, 100) / 100;
+          // Normalize longest daily streak (cap at 30)
+          const longestStreak = data.streaks && data.streaks.longestStreak ? data.streaks.longestStreak : 0;
+          const normalizedStreak = Math.min(longestStreak, 30) / 30;
+          // Composite score: 50% accuracy, 30% total answered, 20% streaks
+          const compositeFraction = 0.5 * accuracyFraction + 0.3 * normalizedAnswered + 0.2 * normalizedStreak;
+          const proficiencyPoints = Math.round(compositeFraction * 100);
+          
           leaderboardEntries.push({
             uid: docSnap.id,
             username: data.username || "Anonymous",
-            accuracy: accuracy
+            proficiencyPoints: proficiencyPoints
           });
         }
       });
-      leaderboardEntries.sort((a, b) => b.accuracy - a.accuracy);
+      // Sort by proficiencyPoints descending
+      leaderboardEntries.sort((a, b) => b.proficiencyPoints - a.proficiencyPoints);
       let top10 = leaderboardEntries.slice(0,10);
       let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
       
-      let html = `<h2>Leaderboard - Overall Accuracy</h2>`;
+      let html = `<h2>Leaderboard - Proficiency Points</h2>`;
       html += leaderboardTabsHTML("overall");
       html += `
         <table class="leaderboard-table">
@@ -919,7 +736,10 @@
             <tr>
               <th>Rank</th>
               <th>Name</th>
-              <th>Accuracy (%)</th>
+              <th>
+                Proficiency Points
+                <span class="info-icon" title="Composite score based on accuracy, total answered questions, and daily streaks">&#8505;</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -930,7 +750,7 @@
           <tr ${bold}>
             <td>${index + 1}</td>
             <td>${entry.username}</td>
-            <td>${entry.accuracy}</td>
+            <td>${entry.proficiencyPoints}</td>
           </tr>
         `;
       });
@@ -938,18 +758,18 @@
       
       if (currentUserEntry && !top10.find(e => e.uid === currentUid)) {
         html += `
-          <h3>Your Ranking</h3>
+          <h3>Your Proficiency Points</h3>
           <table class="leaderboard-table">
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Accuracy (%)</th>
+                <th>Proficiency Points</th>
               </tr>
             </thead>
             <tbody>
               <tr style="font-weight:bold;">
                 <td>${currentUsername}</td>
-                <td>${currentUserEntry.accuracy}</td>
+                <td>${currentUserEntry.proficiencyPoints}</td>
               </tr>
             </tbody>
           </table>
@@ -1087,7 +907,6 @@
     }
     
     function showLeaderboard() {
-      // Hide all other views including About
       document.querySelector(".swiper").style.display = "none";
       document.getElementById("bottomToolbar").style.display = "none";
       document.getElementById("iconBar").style.display = "none";
@@ -1099,7 +918,6 @@
     }
     
     function showAbout() {
-      // Hide all other views
       document.querySelector(".swiper").style.display = "none";
       document.getElementById("bottomToolbar").style.display = "none";
       document.getElementById("iconBar").style.display = "none";
@@ -1107,7 +925,6 @@
       document.getElementById("leaderboardView").style.display = "none";
       document.getElementById("mainOptions").style.display = "none";
       
-      // Set the About Us content
       document.getElementById("aboutView").innerHTML = `
         <h2>About MedSwipe</h2>
         <p>MedSwipe is a dynamic, swipe-based quiz app designed specifically for medical professionals and learners. Our goal is to improve medical education by offering a casual, engaging alternative to the traditional, regimented board review resources and question banks.</p>
@@ -1126,7 +943,6 @@
       document.getElementById("contactModal").style.display = "flex";
     }
     
-    // Set up Contact Us modal event listeners
     window.addEventListener('load', function() {
       document.getElementById("closeContactModal").addEventListener("click", function() {
         document.getElementById("contactModal").style.display = "none";
@@ -1157,9 +973,7 @@
     });
     
     window.addEventListener('load', function() {
-      // Contact Us menu item event listener
       document.getElementById("contactItem").addEventListener("click", function() {
-        // Hide all other views
         document.querySelector(".swiper").style.display = "none";
         document.getElementById("bottomToolbar").style.display = "none";
         document.getElementById("iconBar").style.display = "none";
@@ -1175,7 +989,6 @@
     
     async function displayPerformance() {
       console.log("displayPerformance function called");
-      // Hide all other views including About
       document.querySelector(".swiper").style.display = "none";
       document.getElementById("bottomToolbar").style.display = "none";
       document.getElementById("iconBar").style.display = "none";
@@ -1438,7 +1251,6 @@
     }
     
     window.addEventListener('load', function() {
-      
       let allQuestions = [];
       let filterMode = "all";
       let selectedCategory = "";
@@ -1518,7 +1330,7 @@
                 ${question["Option D"] && question["Option D"].trim() !== ""
                   ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>`
                   : "" }
-                ${question["Option E"] && question["Option E"] !== ""
+                ${question["Option E"] && question["Option E"].trim() !== ""
                   ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>`
                   : "" }
               </div>
@@ -1568,7 +1380,6 @@
         document.getElementById("mainOptions").style.display = "none";
         document.getElementById("performanceView").style.display = "none";
         document.getElementById("iconBar").style.display = "flex";
-        // Hide About view whenever a quiz starts
         document.getElementById("aboutView").style.display = "none";
       }
       
@@ -1758,7 +1569,6 @@
         showAbout();
       });
       document.getElementById("contactItem").addEventListener("click", function() {
-        // Hide all other views before showing Contact modal
         document.getElementById("aboutView").style.display = "none";
         document.querySelector(".swiper").style.display = "none";
         document.getElementById("bottomToolbar").style.display = "none";
