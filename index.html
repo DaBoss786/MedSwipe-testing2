@@ -905,6 +905,11 @@
   <script>
     let questionStartTime = 0;
     let sessionStartTime = Date.now();
+
+    // Added dummy definition for updateFavoriteIcon to prevent ReferenceError
+    function updateFavoriteIcon() {
+      // Dummy function; implement favorite icon logic if needed.
+    }
     
     function leaderboardTabsHTML(activeTab) {
       return `
