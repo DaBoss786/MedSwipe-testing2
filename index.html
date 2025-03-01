@@ -585,6 +585,40 @@
     #aboutView button:hover {
       background-color: #004a95;
     }
+    /* FAQ View */
+    #faqView {
+      display: none;
+      padding: 20px;
+      margin-top: 90px;
+    }
+    #faqView h2 {
+      text-align: center;
+      color: #0056b3;
+    }
+    #faqView p, #faqView li {
+      font-size: 1rem;
+      color: #333;
+      margin: 10px 0;
+      line-height: 1.5;
+    }
+    #faqView ul {
+      list-style: decimal;
+      padding-left: 20px;
+    }
+    #faqView button {
+      margin-top: 20px;
+      padding: 8px 15px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 4px;
+      background-color: #0056b3;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    #faqView button:hover {
+      background-color: #004a95;
+    }
     /* Contact Us Modal */
     #contactModal {
       display: none;
@@ -685,6 +719,9 @@
   <!-- Leaderboard View -->
   <div id="leaderboardView"></div>
   
+  <!-- FAQ View -->
+  <div id="faqView"></div>
+  
   <!-- About Us View -->
   <div id="aboutView"></div>
   
@@ -700,6 +737,7 @@
       <li id="performanceItem">Performance</li>
       <li><a href="#" id="bookmarksFilter">Bookmarks</a></li>
       <li><a href="#" id="resetProgress">Reset Progress</a></li>
+      <li id="faqItem">FAQ</li>
       <li id="aboutItem">About Us</li>
       <li id="contactItem">Contact Us</li>
     </ul>
@@ -898,7 +936,7 @@
             <tr>
               <th>Rank</th>
               <th>Name</th>
-              <th>Composite Score (%)</th>
+              <th>Composite Score</th>
             </tr>
           </thead>
           <tbody>
@@ -922,7 +960,7 @@
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Composite Score (%)</th>
+                <th>Composite Score</th>
               </tr>
             </thead>
             <tbody>
@@ -1073,6 +1111,7 @@
       document.getElementById("performanceView").style.display = "none";
       document.getElementById("mainOptions").style.display = "none";
       document.getElementById("aboutView").style.display = "none";
+      document.getElementById("faqView").style.display = "none";
       document.getElementById("leaderboardView").style.display = "block";
       loadOverallData();
     }
@@ -1085,6 +1124,7 @@
       document.getElementById("performanceView").style.display = "none";
       document.getElementById("leaderboardView").style.display = "none";
       document.getElementById("mainOptions").style.display = "none";
+      document.getElementById("faqView").style.display = "none";
       
       // Set the About Us content
       document.getElementById("aboutView").innerHTML = `
@@ -1097,6 +1137,65 @@
       document.getElementById("aboutView").style.display = "block";
       document.getElementById("aboutBack").addEventListener("click", function() {
           document.getElementById("aboutView").style.display = "none";
+          document.getElementById("mainOptions").style.display = "flex";
+      });
+    }
+    
+    function showFAQ() {
+      // Hide all other views
+      document.querySelector(".swiper").style.display = "none";
+      document.getElementById("bottomToolbar").style.display = "none";
+      document.getElementById("iconBar").style.display = "none";
+      document.getElementById("performanceView").style.display = "none";
+      document.getElementById("leaderboardView").style.display = "none";
+      document.getElementById("aboutView").style.display = "none";
+      document.getElementById("mainOptions").style.display = "none";
+      
+      // Set the FAQ content
+      document.getElementById("faqView").innerHTML = `
+        <h2>FAQ</h2>
+        <ul>
+          <li>
+            <strong>What is MedSwipe?</strong><br>
+            MedSwipe is a dynamic, swipe‑based quiz app designed for ENT professionals and learners. It offers a more casual, engaging alternative to traditional, regimented board review resources.
+          </li>
+          <li>
+            <strong>How Does MedSwipe Work?</strong><br>
+            MedSwipe presents ENT questions in an intuitive, swipe‑based format. As you answer, your performance is tracked using a composite score that factors in:
+            <ul>
+              <li>Accuracy: The percentage of correct answers.</li>
+              <li>Total Answered: Your overall volume of answered questions (normalized so that beyond a certain point, additional answers don’t disproportionately boost your score).</li>
+              <li>Longest Streak: Your longest run of consecutive days answering questions.</li>
+            </ul>
+            This approach rewards both knowledge and sustained engagement.
+          </li>
+          <li>
+            <strong>What Is the Composite Score?</strong><br>
+            Your Composite Score is calculated using a weighted formula such as:<br>
+            <em>Composite Score = (Accuracy × 0.5) + (Normalized Total Answered × 0.3) + (Normalized Longest Streak × 0.2)</em><br>
+            Where:<br>
+            Normalized Total Answered = min(total answered, 100) ÷ 100<br>
+            Normalized Longest Streak = min(longest streak, 30) ÷ 30<br>
+            This means that answering just a few questions perfectly won’t automatically rank you at the top; sustained engagement is key.
+          </li>
+          <li>
+            <strong>Who Can Access the Leaderboards?</strong><br>
+            In our MVP, all users have access to the leaderboards and performance metrics. In the future, if we move to a freemium model, basic leaderboard data will remain free while more detailed analytics may be reserved for registered or premium users.
+          </li>
+          <li>
+            <strong>Is MedSwipe Free?</strong><br>
+            For now, MedSwipe is completely free. Our aim is to build an engaged community before we roll out any premium features.
+          </li>
+          <li>
+            <strong>How Do I Provide Feedback?</strong><br>
+            Use the in‑app feedback button to let us know what you think or if you encounter any issues. Your input is crucial for our continued improvement.
+          </li>
+        </ul>
+        <button id="faqBack" class="start-quiz-btn">Back</button>
+      `;
+      document.getElementById("faqView").style.display = "block";
+      document.getElementById("faqBack").addEventListener("click", function() {
+          document.getElementById("faqView").style.display = "none";
           document.getElementById("mainOptions").style.display = "flex";
       });
     }
@@ -1145,6 +1244,7 @@
         document.getElementById("performanceView").style.display = "none";
         document.getElementById("leaderboardView").style.display = "none";
         document.getElementById("aboutView").style.display = "none";
+        document.getElementById("faqView").style.display = "none";
         document.getElementById("mainOptions").style.display = "none";
         showContactModal();
         document.getElementById("menuOverlay").classList.remove("show");
@@ -1161,6 +1261,7 @@
       document.getElementById("mainOptions").style.display = "none";
       document.getElementById("leaderboardView").style.display = "none";
       document.getElementById("aboutView").style.display = "none";
+      document.getElementById("faqView").style.display = "none";
       document.getElementById("performanceView").style.display = "block";
       
       const uid = window.auth.currentUser.uid;
@@ -1547,8 +1648,9 @@
         document.getElementById("mainOptions").style.display = "none";
         document.getElementById("performanceView").style.display = "none";
         document.getElementById("iconBar").style.display = "flex";
-        // Hide About view whenever a quiz starts
+        // Hide About and FAQ views whenever a quiz starts
         document.getElementById("aboutView").style.display = "none";
+        document.getElementById("faqView").style.display = "none";
       }
       
       function addOptionListeners() {
@@ -1619,6 +1721,7 @@
                   document.getElementById("iconBar").style.display = "none";
                   document.getElementById("performanceView").style.display = "none";
                   document.getElementById("leaderboardView").style.display = "none";
+                  document.getElementById("faqView").style.display = "none";
                   document.getElementById("mainOptions").style.display = "flex";
                 });
                 
@@ -1628,6 +1731,7 @@
                   document.getElementById("bottomToolbar").style.display = "none";
                   document.getElementById("iconBar").style.display = "none";
                   document.getElementById("performanceView").style.display = "none";
+                  document.getElementById("faqView").style.display = "none";
                   document.getElementById("mainOptions").style.display = "none";
                   showLeaderboard();
                 });
@@ -1654,10 +1758,12 @@
       
       document.getElementById("customQuizBtn").addEventListener("click", function() {
         document.getElementById("aboutView").style.display = "none";
+        document.getElementById("faqView").style.display = "none";
         document.getElementById("customQuizForm").style.display = "block";
       });
       document.getElementById("randomQuizBtn").addEventListener("click", function() {
         document.getElementById("aboutView").style.display = "none";
+        document.getElementById("faqView").style.display = "none";
         document.getElementById("randomQuizForm").style.display = "block";
       });
       document.getElementById("cancelCustomQuiz").addEventListener("click", function() {
@@ -1697,6 +1803,7 @@
       });
       document.getElementById("startNewQuiz").addEventListener("click", function() {
         document.getElementById("aboutView").style.display = "none";
+        document.getElementById("faqView").style.display = "none";
         document.querySelector(".swiper").style.display = "none";
         document.getElementById("bottomToolbar").style.display = "none";
         document.getElementById("iconBar").style.display = "none";
@@ -1708,15 +1815,24 @@
       });
       document.getElementById("leaderboardItem").addEventListener("click", function() {
         document.getElementById("aboutView").style.display = "none";
+        document.getElementById("faqView").style.display = "none";
         sideMenu.classList.remove("open");
         menuOverlay.classList.remove("show");
         showLeaderboard();
       });
       document.getElementById("performanceItem").addEventListener("click", function() {
         document.getElementById("aboutView").style.display = "none";
+        document.getElementById("faqView").style.display = "none";
         sideMenu.classList.remove("open");
         menuOverlay.classList.remove("show");
         displayPerformance();
+      });
+      document.getElementById("faqItem").addEventListener("click", function() {
+        document.getElementById("aboutView").style.display = "none";
+        document.getElementById("leaderboardView").style.display = "none";
+        sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
+        showFAQ();
       });
       document.getElementById("bookmarksFilter").addEventListener("click", async function(e) {
         e.preventDefault();
@@ -1731,7 +1847,7 @@
         alert("Reset Progress functionality coming soon!");
       });
       document.getElementById("aboutItem").addEventListener("click", function() {
-        document.getElementById("aboutView").style.display = "none";
+        document.getElementById("faqView").style.display = "none";
         sideMenu.classList.remove("open");
         menuOverlay.classList.remove("show");
         showAbout();
@@ -1739,6 +1855,7 @@
       document.getElementById("contactItem").addEventListener("click", function() {
         // Hide all other views before showing Contact modal
         document.getElementById("aboutView").style.display = "none";
+        document.getElementById("faqView").style.display = "none";
         document.querySelector(".swiper").style.display = "none";
         document.getElementById("bottomToolbar").style.display = "none";
         document.getElementById("iconBar").style.display = "none";
@@ -1757,6 +1874,7 @@
       
       document.getElementById("logoClick").addEventListener("click", function() {
         document.getElementById("aboutView").style.display = "none";
+        document.getElementById("faqView").style.display = "none";
         document.querySelector(".swiper").style.display = "none";
         document.getElementById("bottomToolbar").style.display = "none";
         document.getElementById("iconBar").style.display = "none";
