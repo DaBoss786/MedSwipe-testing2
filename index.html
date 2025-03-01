@@ -906,10 +906,44 @@
     let questionStartTime = 0;
     let sessionStartTime = Date.now();
 
-    // Added dummy definition for updateFavoriteIcon to prevent ReferenceError
-    function updateFavoriteIcon() {
-      // Dummy function; implement favorite icon logic if needed.
+    // Helper to get current question id from the active slide.
+    function getCurrentQuestionId() {
+      if (!window.mySwiper) return null;
+      let activeIndex = window.mySwiper.activeIndex;
+      let currentSlide;
+      // If on an answer slide (odd), use the previous slide.
+      if (activeIndex % 2 !== 0) {
+        currentSlide = window.mySwiper.slides[activeIndex - 1];
+      } else {
+        currentSlide = window.mySwiper.slides[activeIndex];
+      }
+      return currentSlide && currentSlide.dataset ? currentSlide.dataset.id : null;
     }
+    
+    // Updated updateFavoriteIcon function to change the favorite icon based on bookmark state.
+    async function updateFavoriteIcon() {
+      let questionId = getCurrentQuestionId();
+      if (!questionId) return;
+      let bookmarks = await getBookmarks();
+      let favoriteButton = document.getElementById("favoriteButton");
+      if (bookmarks.includes(questionId.trim())) {
+        favoriteButton.innerText = "★";
+        favoriteButton.style.color = "blue";
+      } else {
+        favoriteButton.innerText = "☆";
+        favoriteButton.style.color = "";
+      }
+    }
+    
+    // Event listener for favoriteButton click.
+    window.addEventListener('load', function() {
+      document.getElementById("favoriteButton").addEventListener("click", async function() {
+        let questionId = getCurrentQuestionId();
+        if (!questionId) return;
+        await toggleBookmark(questionId.trim());
+        updateFavoriteIcon();
+      });
+    });
     
     function leaderboardTabsHTML(activeTab) {
       return `
@@ -937,7 +971,7 @@
       let leaderboardEntries = [];
       querySnapshot.forEach(docSnap => {
         const data = docSnap.data();
-        // Modified here: include users with any amount of answered questions
+        // Include users with any amount of answered questions.
         if (data.stats) {
           const totalAnswered = data.stats.totalAnswered || 0;
           const totalCorrect = data.stats.totalCorrect || 0;
@@ -1893,11 +1927,13 @@
         showAbout();
       });
       
-      document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
+      // Updated bookmarks filter: load bookmarked questions instead of alerting.
+      document.getElementById("bookmarksFilter").addEventListener("click", async function(e) {
         e.preventDefault();
-        alert("Bookmarks feature coming soon.");
         document.getElementById("sideMenu").classList.remove("open");
         document.getElementById("menuOverlay").classList.remove("show");
+        filterMode = "bookmarks";
+        loadQuestions({});
       });
       
       document.getElementById("resetProgress").addEventListener("click", function(e) {
