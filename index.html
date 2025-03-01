@@ -1833,6 +1833,24 @@
       });
       
     });
+    
+    // Added event listeners for menu toggle, close, and overlay
+    window.addEventListener('load', function() {
+      document.getElementById("menuToggle").addEventListener("click", function() {
+        document.getElementById("sideMenu").classList.toggle("open");
+        document.getElementById("menuOverlay").classList.toggle("show");
+      });
+      
+      document.getElementById("menuClose").addEventListener("click", function() {
+        document.getElementById("sideMenu").classList.remove("open");
+        document.getElementById("menuOverlay").classList.remove("show");
+      });
+      
+      document.getElementById("menuOverlay").addEventListener("click", function() {
+        document.getElementById("sideMenu").classList.remove("open");
+        document.getElementById("menuOverlay").classList.remove("show");
+      });
+    });
   </script>
 </body>
 </html>
