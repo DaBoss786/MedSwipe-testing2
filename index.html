@@ -312,13 +312,14 @@
     #performanceView button:hover {
       background-color: #004a95;
     }
-    /* Leaderboard Table Styling (Less formal) */
+    /* Leaderboard Table - Original Styling (with borders) */
     .leaderboard-table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
     }
     .leaderboard-table th, .leaderboard-table td {
+      border: 1px solid #ccc;
       padding: 8px;
       text-align: center;
     }
@@ -488,7 +489,6 @@
       color: #0056b3;
       font-size: 1.1rem;
     }
-    
     /* New style for Start New Quiz button */
     .start-quiz-btn {
       font-size: 1.2rem;
@@ -505,7 +505,13 @@
     .start-quiz-btn:hover {
       background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
     }
-    
+    /* Info Icon Style */
+    .info-icon {
+      font-size: 0.9rem;
+      margin-left: 5px;
+      cursor: help;
+      color: #0056b3;
+    }
     @media (max-width: 600px) {
       #mainOptions button { width: 180px; }
       .toolbar { height: 60px; padding: 0 10px; }
@@ -523,7 +529,6 @@
       .answer { font-size: 0.9rem; }
       .swipe-hint { font-size: 0.8rem; }
     }
-    
     /* ====== NEW GRADIENT STYLES BELOW ====== */
     html, body {
       background: linear-gradient(to bottom right, #F3FAFF, #E6F0FA);
@@ -733,7 +738,7 @@
     function leaderboardTabsHTML(activeTab) {
       return `
         <div id="leaderboardTabs">
-          <button class="leaderboard-tab ${activeTab === 'overall' ? 'active' : ''}" id="overallTab">Overall</button>
+          <button class="leaderboard-tab ${activeTab === 'overall' ? 'active' : ''}" id="overallTab">Proficiency Points</button>
           <button class="leaderboard-tab ${activeTab === 'streaks' ? 'active' : ''}" id="streaksTab">Streaks</button>
           <button class="leaderboard-tab ${activeTab === 'answered' ? 'active' : ''}" id="answeredTab">Total Answered</button>
         </div>
@@ -776,7 +781,8 @@
       let top10 = leaderboardEntries.slice(0,10);
       let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
       
-      let html = `<h2>Leaderboard - Proficiency Points</h2>`;
+      // Header now includes an info icon with a tooltip.
+      let html = `<h2>Leaderboard - Proficiency Points <span class="info-icon" title="Composite score based on accuracy, total answered questions, and streaks">&#8505;</span></h2>`;
       html += leaderboardTabsHTML("overall");
       html += `
         <table class="leaderboard-table">
