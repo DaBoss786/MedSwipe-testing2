@@ -496,6 +496,7 @@
       color: #0056b3;
       font-size: 1.1rem;
     }
+    /* Added About Us menu item style will follow the same styling as others */
     
     /* Leaderboard View Styles */
     #leaderboardView {
@@ -569,6 +570,37 @@
       background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
     }
     
+    /* About Us View */
+    #aboutView {
+      display: none;
+      padding: 20px;
+      margin-top: 90px;
+    }
+    #aboutView h2 {
+      text-align: center;
+      color: #0056b3;
+    }
+    #aboutView p {
+      font-size: 1rem;
+      color: #333;
+      margin: 10px 0;
+      line-height: 1.5;
+    }
+    #aboutView button {
+      margin-top: 20px;
+      padding: 8px 15px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 4px;
+      background-color: #0056b3;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    #aboutView button:hover {
+      background-color: #004a95;
+    }
+    
     @media (max-width: 600px) {
       #mainOptions button { width: 180px; }
       .toolbar { height: 60px; padding: 0 10px; }
@@ -634,6 +666,9 @@
   <!-- Leaderboard View -->
   <div id="leaderboardView"></div>
   
+  <!-- About Us View -->
+  <div id="aboutView"></div>
+  
   <!-- Side Menu with Close Button -->
   <div id="sideMenu">
     <div id="menuHeader">
@@ -646,6 +681,7 @@
       <li id="performanceItem">Performance</li>
       <li><a href="#" id="bookmarksFilter">Bookmarks</a></li>
       <li><a href="#" id="resetProgress">Reset Progress</a></li>
+      <li id="aboutItem">About Us</li>
     </ul>
   </div>
   
@@ -995,6 +1031,30 @@
       loadOverallData();
     }
     
+    function showAbout() {
+      // Hide other views
+      document.querySelector(".swiper").style.display = "none";
+      document.getElementById("bottomToolbar").style.display = "none";
+      document.getElementById("iconBar").style.display = "none";
+      document.getElementById("performanceView").style.display = "none";
+      document.getElementById("leaderboardView").style.display = "none";
+      document.getElementById("mainOptions").style.display = "none";
+      
+      // Set the About Us content
+      document.getElementById("aboutView").innerHTML = `
+        <h2>About MedSwipe</h2>
+        <p>MedSwipe is a dynamic, swipe-based quiz app designed specifically for medical professionals and learners. Our goal is to improve medical education by offering a casual, engaging alternative to the traditional, regimented board review resources and question banks.</p>
+        <p>Created by a board-certified ENT, MedSwipe brings a fresh, interactive approach to studying medicine. Instead of slogging through lengthy textbooks and overly structured review materials, MedSwipe lets you learn on the go—one swipe at a time. The app is designed to keep you engaged with bite‑sized questions, real‑time performance tracking, and interactive leaderboards that make board review feel less like a chore and more like a game.</p>
+        <p>Whether you're a seasoned practitioner or just starting out in medicine, MedSwipe is here to support your learning journey in a way that fits seamlessly into your busy lifestyle.</p>
+        <button id="aboutBack" class="start-quiz-btn">Back</button>
+      `;
+      document.getElementById("aboutView").style.display = "block";
+      document.getElementById("aboutBack").addEventListener("click", function() {
+          document.getElementById("aboutView").style.display = "none";
+          document.getElementById("mainOptions").style.display = "flex";
+      });
+    }
+    
     async function displayPerformance() {
       console.log("displayPerformance function called");
       document.querySelector(".swiper").style.display = "none";
@@ -1182,6 +1242,7 @@
       }
     }
     
+    // Modified recordAnswer function: now saves both numeric and human-readable timestamps.
     async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       const uid = window.auth.currentUser.uid;
       const userDocRef = window.doc(window.db, 'users', uid);
@@ -1544,6 +1605,11 @@
         menuOverlay.classList.remove("show");
         showLeaderboard();
       });
+      document.getElementById("performanceItem").addEventListener("click", function() {
+        sideMenu.classList.remove("open");
+        menuOverlay.classList.remove("show");
+        displayPerformance();
+      });
       document.getElementById("bookmarksFilter").addEventListener("click", async function(e) {
         e.preventDefault();
         filterMode = "bookmarks";
@@ -1553,10 +1619,14 @@
         sideMenu.classList.remove("open");
         menuOverlay.classList.remove("show");
       });
-      document.getElementById("performanceItem").addEventListener("click", function() {
+      document.getElementById("resetProgress").addEventListener("click", function() {
+        // Optional: Implement reset progress functionality here.
+        alert("Reset Progress functionality coming soon!");
+      });
+      document.getElementById("aboutItem").addEventListener("click", function() {
         sideMenu.classList.remove("open");
         menuOverlay.classList.remove("show");
-        displayPerformance();
+        showAbout();
       });
       
       document.getElementById("menuClose").addEventListener("click", function() {
@@ -1570,6 +1640,7 @@
         document.getElementById("iconBar").style.display = "none";
         document.getElementById("performanceView").style.display = "none";
         document.getElementById("leaderboardView").style.display = "none";
+        document.getElementById("aboutView").style.display = "none";
         document.getElementById("mainOptions").style.display = "flex";
       });
       
