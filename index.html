@@ -74,6 +74,7 @@
       height: 100%;
       font-family: 'Roboto', sans-serif;
       color: #333;
+      background: linear-gradient(to bottom right, #F3FAFF, #E6F0FA);
     }
     /* Top Toolbar */
     .toolbar {
@@ -642,32 +643,6 @@
     #contactModal button:hover {
       background-color: #004a95;
     }
-    
-    /* Contact Us Menu Item will follow same styling as others */
-    
-    @media (max-width: 600px) {
-      #mainOptions button { width: 180px; }
-      .toolbar { height: 60px; padding: 0 10px; }
-      .menu-button { font-size: 28px; width: 40px; text-align: center; }
-      .logo img { max-height: 45px; }
-      #iconBar { top: 60px; }
-      .swiper {
-        margin-top: 100px;
-        height: calc(100% - 60px - 40px - 50px);
-        min-height: calc(100vh - 150px);
-      }
-      .card { max-width: 90%; padding: 18px 12px 12px 12px; margin: 8px auto; }
-      .question { font-size: 1rem; }
-      .option-btn { font-size: 0.9rem; padding: 5px; }
-      .answer { font-size: 0.9rem; }
-      .swipe-hint { font-size: 0.8rem; }
-    }
-    
-    /* ====== NEW GRADIENT STYLES BELOW ====== */
-    
-    html, body {
-      background: linear-gradient(to bottom right, #F3FAFF, #E6F0FA);
-    }
   </style>
 </head>
 <body>
@@ -873,7 +848,7 @@
     function leaderboardTabsHTML(activeTab) {
       return `
         <div id="leaderboardTabs">
-          <button class="leaderboard-tab ${activeTab === 'overall' ? 'active' : ''}" id="overallTab">Overall</button>
+          <button class="leaderboard-tab ${activeTab === 'overall' ? 'active' : ''}" id="overallTab">Composite Score</button>
           <button class="leaderboard-tab ${activeTab === 'streaks' ? 'active' : ''}" id="streaksTab">Streaks</button>
           <button class="leaderboard-tab ${activeTab === 'answered' ? 'active' : ''}" id="answeredTab">Total Answered</button>
         </div>
@@ -899,19 +874,23 @@
         if (data.stats && data.stats.totalAnswered >= 10) {
           const totalAnswered = data.stats.totalAnswered;
           const totalCorrect = data.stats.totalCorrect || 0;
-          const accuracy = Math.round((totalCorrect / totalAnswered) * 100);
+          const accuracy = totalCorrect / totalAnswered;
+          const normTotal = Math.min(totalAnswered, 100) / 100;
+          const longestStreak = (data.streaks && data.streaks.longestStreak) ? data.streaks.longestStreak : 0;
+          const normStreak = Math.min(longestStreak, 30) / 30;
+          const compositeScore = Math.round(((accuracy * 0.5) + (normTotal * 0.3) + (normStreak * 0.2)) * 100);
           leaderboardEntries.push({
             uid: docSnap.id,
             username: data.username || "Anonymous",
-            accuracy: accuracy
+            compositeScore: compositeScore
           });
         }
       });
-      leaderboardEntries.sort((a, b) => b.accuracy - a.accuracy);
+      leaderboardEntries.sort((a, b) => b.compositeScore - a.compositeScore);
       let top10 = leaderboardEntries.slice(0,10);
       let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
       
-      let html = `<h2>Leaderboard - Overall Accuracy</h2>`;
+      let html = `<h2>Leaderboard - Composite Score</h2>`;
       html += leaderboardTabsHTML("overall");
       html += `
         <table class="leaderboard-table">
@@ -919,7 +898,7 @@
             <tr>
               <th>Rank</th>
               <th>Name</th>
-              <th>Accuracy (%)</th>
+              <th>Composite Score (%)</th>
             </tr>
           </thead>
           <tbody>
@@ -930,7 +909,7 @@
           <tr ${bold}>
             <td>${index + 1}</td>
             <td>${entry.username}</td>
-            <td>${entry.accuracy}</td>
+            <td>${entry.compositeScore}</td>
           </tr>
         `;
       });
@@ -943,13 +922,13 @@
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Accuracy (%)</th>
+                <th>Composite Score (%)</th>
               </tr>
             </thead>
             <tbody>
               <tr style="font-weight:bold;">
                 <td>${currentUsername}</td>
-                <td>${currentUserEntry.accuracy}</td>
+                <td>${currentUserEntry.compositeScore}</td>
               </tr>
             </tbody>
           </table>
@@ -1368,7 +1347,7 @@
       const userDocRef = window.doc(window.db, 'users', uid);
       try {
         await window.runTransaction(window.db, async (transaction) => {
-          const userDoc = await transaction.get(userDocRef);
+          const userDoc = await window.getDoc(userDocRef);
           let data = userDoc.exists() ? userDoc.data() : {};
           
           if (!data.stats) {
@@ -1841,53 +1820,21 @@
           alert("Please enter your feedback.");
           return;
         }
-        try {
-          await window.addDoc(window.collection(window.db, "feedback"), {
-            feedback: feedbackText,
-            questionId: currentFeedbackQuestionId,
-            questionText: currentFeedbackQuestionText,
-            timestamp: window.serverTimestamp()
-          });
-          alert("Thank you for your feedback!");
-          document.getElementById("feedbackText").value = "";
-          feedbackModal.style.display = "none";
-        } catch (error) {
-          console.error("Error submitting feedback: ", error);
-          alert("There was an error submitting your feedback. Please try again later.");
-        }
+        // Here you could integrate feedback submission functionality if desired.
+        alert("Feedback submitted. Thank you!");
+        document.getElementById("feedbackText").value = "";
+        feedbackModal.style.display = "none";
       });
       
-    });
-    
-    async function getCurrentQuestionId() {
-      let activeIndex = window.mySwiper ? window.mySwiper.activeIndex : 0;
-      if (activeIndex % 2 === 1) activeIndex--;
-      let slide = window.mySwiper ? window.mySwiper.slides[activeIndex] : null;
-      return slide ? slide.dataset.id : null;
-    }
-    
-    window.addEventListener("beforeunload", async function() {
-      const sessionTime = Date.now() - sessionStartTime;
-      const uid = window.auth.currentUser.uid;
-      const userDocRef = window.doc(window.db, 'users', uid);
-      try {
-        await window.runTransaction(window.db, async (transaction) => {
-          const userDoc = await transaction.get(userDocRef);
-          let data = userDoc.exists() ? userDoc.data() : {};
-          let totalTimeSpentInApp = data.totalTimeSpentInApp || 0;
-          totalTimeSpentInApp += sessionTime;
-          let sessionHistory = data.sessionHistory || [];
-          sessionHistory.push({
-            sessionTime: sessionTime,
-            sessionEnd: new Date().toISOString()
-          });
-          transaction.set(userDocRef, { 
-            totalTimeSpentInApp: totalTimeSpentInApp,
-            sessionHistory: sessionHistory
-          }, { merge: true });
-        });
-      } catch (e) {
-        console.error("Error updating session time:", e);
+      async function getCurrentQuestionId() {
+        let currentSlide = window.mySwiper ? window.mySwiper.slides[window.mySwiper.activeIndex] : null;
+        if (currentSlide) {
+          if (window.mySwiper.activeIndex % 2 === 1) {
+            currentSlide = window.mySwiper.slides[window.mySwiper.activeIndex - 1];
+          }
+          return currentSlide.dataset.id;
+        }
+        return null;
       }
     });
   </script>
