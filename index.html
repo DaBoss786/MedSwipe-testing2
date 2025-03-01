@@ -96,7 +96,25 @@
     }
     .toolbar-left { text-align: left; }
     .toolbar-center { text-align: center; }
-    .toolbar-right { text-align: right; }
+    /* In toolbar-right we add a user icon and composite score display */
+    .toolbar-right {
+      text-align: right;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .user-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #0C72D3;
+      display: inline-block;
+    }
+    #userCompositeScore {
+      font-size: 1rem;
+      color: #0056b3;
+    }
     .menu-button {
       font-size: 24px;
       background: none;
@@ -690,7 +708,10 @@
         <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
       </div>
     </div>
-    <div class="toolbar-right"></div>
+    <div class="toolbar-right">
+      <div class="user-icon"></div>
+      <div id="userCompositeScore">0%</div>
+    </div>
   </div>
   
   <!-- Main Options -->
@@ -1102,6 +1123,22 @@
          document.getElementById("mainOptions").style.display = "flex";
          document.getElementById("aboutView").style.display = "none";
       });
+    }
+    
+    // This function computes and updates the user's composite score display in the top-right toolbar.
+    function updateUserCompositeScore() {
+      let composite = 0;
+      // Using local values: currentQuestion as total answered and score as total correct.
+      if (currentQuestion > 0) {
+        let accuracy = score / currentQuestion;
+        let normTotal = Math.min(currentQuestion, 100) / 100;
+        // For demonstration, using a placeholder longest streak of 1.
+        // Replace this with your actual local streak value if available.
+        let longestStreak = 1;
+        let normStreak = Math.min(longestStreak, 30) / 30;
+        composite = Math.round(((accuracy * 0.5) + (normTotal * 0.3) + (normStreak * 0.2)) * 100);
+      }
+      document.getElementById("userCompositeScore").textContent = composite + "%";
     }
     
     function showLeaderboard() {
@@ -1756,6 +1793,8 @@
           filterMode,
           selectedCategory
         }));
+        // Update the composite score display in the toolbar.
+        updateUserCompositeScore();
       }
       
       document.getElementById("customQuizBtn").addEventListener("click", function() {
