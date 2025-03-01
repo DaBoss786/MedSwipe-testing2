@@ -936,7 +936,7 @@
             <tr>
               <th>Rank</th>
               <th>Name</th>
-              <th>Composite Score</th>
+              <th>Composite Score (%)</th>
             </tr>
           </thead>
           <tbody>
@@ -953,14 +953,15 @@
       });
       html += `</tbody></table>`;
       
-      if (currentUserEntry && !top10.find(e => e.uid === currentUid)) {
+      // If current user is not in top 10, display a "Your Ranking" table at the bottom.
+      if (!top10.some(e => e.uid === currentUid) && currentUserEntry) {
         html += `
           <h3>Your Ranking</h3>
           <table class="leaderboard-table">
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Composite Score</th>
+                <th>Composite Score (%)</th>
               </tr>
             </thead>
             <tbody>
@@ -1104,7 +1105,7 @@
     }
     
     function showLeaderboard() {
-      // Hide all other views including About
+      // Hide all other views including About and FAQ
       document.querySelector(".swiper").style.display = "none";
       document.getElementById("bottomToolbar").style.display = "none";
       document.getElementById("iconBar").style.display = "none";
@@ -1254,7 +1255,7 @@
     
     async function displayPerformance() {
       console.log("displayPerformance function called");
-      // Hide all other views including About
+      // Hide all other views including About and FAQ
       document.querySelector(".swiper").style.display = "none";
       document.getElementById("bottomToolbar").style.display = "none";
       document.getElementById("iconBar").style.display = "none";
@@ -1716,17 +1717,18 @@
                 
                 document.getElementById("startNewQuizButton").addEventListener("click", function() {
                   document.getElementById("aboutView").style.display = "none";
+                  document.getElementById("faqView").style.display = "none";
                   document.querySelector(".swiper").style.display = "none";
                   document.getElementById("bottomToolbar").style.display = "none";
                   document.getElementById("iconBar").style.display = "none";
                   document.getElementById("performanceView").style.display = "none";
                   document.getElementById("leaderboardView").style.display = "none";
-                  document.getElementById("faqView").style.display = "none";
                   document.getElementById("mainOptions").style.display = "flex";
                 });
                 
                 document.getElementById("leaderboardButton").addEventListener("click", function() {
                   document.getElementById("aboutView").style.display = "none";
+                  document.getElementById("faqView").style.display = "none";
                   document.querySelector(".swiper").style.display = "none";
                   document.getElementById("bottomToolbar").style.display = "none";
                   document.getElementById("iconBar").style.display = "none";
