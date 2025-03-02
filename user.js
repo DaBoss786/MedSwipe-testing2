@@ -4,18 +4,32 @@ let sessionStartTime = Date.now();
 
 // Fetch already answered questions from Firestore
 async function fetchPersistentAnsweredIds() {
-  const uid = window.auth.currentUser.uid;
-  const userDocRef = window.doc(window.db, 'users', uid);
-  const userDocSnap = await window.getDoc(userDocRef);
-  if (userDocSnap.exists()){
-    let data = userDocSnap.data();
-    return Object.keys(data.answeredQuestions || {});
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("User not authenticated yet");
+    return [];
+  }
+  
+  try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDocSnap = await window.getDoc(userDocRef);
+    if (userDocSnap.exists()){
+      let data = userDocSnap.data();
+      return Object.keys(data.answeredQuestions || {});
+    }
+  } catch (error) {
+    console.error("Error fetching answered IDs:", error);
   }
   return [];
 }
 
 // Record answer in Firestore with streaks logic
 async function recordAnswer(questionId, category, isCorrect, timeSpent) {
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("User not authenticated, can't record answer");
+    return;
+  }
+  
   const uid = window.auth.currentUser.uid;
   const userDocRef = window.doc(window.db, 'users', uid);
   try {
@@ -96,6 +110,11 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
 
 // Update question stats in Firestore
 async function updateQuestionStats(questionId, isCorrect) {
+  if (!window.db) {
+    console.log("Database not initialized");
+    return;
+  }
+  
   console.log("updateQuestionStats called for:", questionId, "isCorrect:", isCorrect);
   const questionStatsRef = window.doc(window.db, "questionStats", questionId);
   try {
@@ -116,6 +135,11 @@ async function updateQuestionStats(questionId, isCorrect) {
 
 // Update composite score from Firestore stats
 async function updateUserCompositeScore() {
+  if (!window.auth || !window.auth.currentUser || !window.db) {
+    console.log("Auth or DB not initialized for updateUserCompositeScore");
+    return;
+  }
+  
   try {
     const uid = window.auth.currentUser.uid;
     const userDocRef = window.doc(window.db, 'users', uid);
@@ -131,8 +155,15 @@ async function updateUserCompositeScore() {
       const composite = Math.round(((accuracy * 0.5) + (normTotal * 0.3) + (normStreak * 0.2)) * 100);
       
       // Update both score circles
-      document.getElementById("scoreCircle").textContent = composite;
-      document.getElementById("userScoreCircle").textContent = composite;
+      const scoreCircle = document.getElementById("scoreCircle");
+      if (scoreCircle) {
+        scoreCircle.textContent = composite;
+      }
+      
+      const userScoreCircle = document.getElementById("userScoreCircle");
+      if (userScoreCircle) {
+        userScoreCircle.textContent = composite;
+      }
     }
   } catch (error) {
     console.error("Error updating user composite score:", error);
@@ -141,9 +172,17 @@ async function updateUserCompositeScore() {
 
 // Update the user menu with current username and score
 async function updateUserMenu() {
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("Auth not initialized for updateUserMenu");
+    return;
+  }
+  
   try {
     const username = await getOrGenerateUsername();
-    document.getElementById("usernameDisplay").textContent = username;
+    const usernameDisplay = document.getElementById("usernameDisplay");
+    if (usernameDisplay) {
+      usernameDisplay.textContent = username;
+    }
     
     // Also update the composite score
     updateUserCompositeScore();
@@ -154,6 +193,10 @@ async function updateUserMenu() {
 
 // Get or generate a username
 async function getOrGenerateUsername() {
+  if (!window.auth || !window.auth.currentUser) {
+    throw new Error("User not authenticated");
+  }
+  
   const uid = window.auth.currentUser.uid;
   const userDocRef = window.doc(window.db, 'users', uid);
   const userDocSnap = await window.getDoc(userDocRef);
@@ -184,6 +227,11 @@ function generateRandomName() {
 
 // Bookmark functions
 async function getBookmarks() {
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("User not authenticated for getBookmarks");
+    return [];
+  }
+  
   const uid = window.auth.currentUser.uid;
   const userDocRef = window.doc(window.db, 'users', uid);
   const userDocSnap = await window.getDoc(userDocRef);
@@ -195,6 +243,11 @@ async function getBookmarks() {
 }
 
 async function toggleBookmark(questionId) {
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("User not authenticated for toggleBookmark");
+    return false;
+  }
+  
   const uid = window.auth.currentUser.uid;
   const userDocRef = window.doc(window.db, 'users', uid);
   try {
