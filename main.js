@@ -1,4 +1,4 @@
-// Global helper functions so that they are accessible everywhere.
+// Global helper functions
 window.shuffleArray = function(array) {
   return array.sort(() => Math.random() - 0.5);
 };
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let sessionStartTime = Date.now();
 
   // -------------------------
-  // Function declarations that must be globally available
+  // Functions that must be available globally
   // -------------------------
   async function updateUserCompositeScore() {
     try {
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
       console.error("Error updating user composite score:", error);
     }
   }
-  window.updateUserCompositeScore = updateUserCompositeScore; // Attach to global
+  window.updateUserCompositeScore = updateUserCompositeScore;
 
   async function loadOverallData() {
     const currentUid = window.auth.currentUser.uid;
@@ -141,10 +141,29 @@ document.addEventListener('DOMContentLoaded', function() {
        document.getElementById("aboutView").style.display = "none";
     });
   }
-  window.loadOverallData = loadOverallData; // Attach globally
+  window.loadOverallData = loadOverallData;
+
+  async function updateQuestionStats(questionId, isCorrect) {
+    console.log("updateQuestionStats called for:", questionId, "isCorrect:", isCorrect);
+    const questionStatsRef = window.doc(window.db, "questionStats", questionId);
+    try {
+      await window.runTransaction(window.db, async (transaction) => {
+        const statsDoc = await transaction.get(questionStatsRef);
+        let statsData = statsDoc.exists() ? statsDoc.data() : { totalAttempts: 0, correctAttempts: 0 };
+        statsData.totalAttempts++;
+        if (isCorrect) {
+          statsData.correctAttempts++;
+        }
+        transaction.set(questionStatsRef, statsData, { merge: true });
+      });
+      console.log("Updated stats for question", questionId);
+    } catch (error) {
+      console.error("Error updating question stats:", error);
+    }
+  }
 
   // -------------------------
-  // Other functions
+  // Other function declarations
   // -------------------------
   function leaderboardTabsHTML(activeTab) {
     return `
@@ -648,7 +667,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // -------------------------
-  // Event listeners for modals and menu buttons
+  // Event Listeners for landing page buttons and modals
   // -------------------------
   document.getElementById("customQuizBtn").addEventListener("click", function() {
     window.filterMode = "all";
