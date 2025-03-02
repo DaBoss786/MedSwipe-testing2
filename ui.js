@@ -35,7 +35,7 @@ function showAbout() {
   });
 }
 
-// Show FAQ view
+// Show FAQ view - UPDATED with new composite score explanation
 function showFAQ() {
   document.querySelector(".swiper").style.display = "none";
   document.getElementById("bottomToolbar").style.display = "none";
@@ -57,19 +57,19 @@ function showFAQ() {
         MedSwipe presents ENT questions in an intuitive, swipe‑based format. As you answer, your performance is tracked using a composite score that factors in:
         <ul>
           <li>Accuracy: The percentage of correct answers.</li>
-          <li>Total Answered: Your overall volume of answered questions (normalized so that beyond a certain point, additional answers don't disproportionately boost your score).</li>
+          <li>Total Answered: Your overall volume of answered questions (normalized at a cap of 250 questions).</li>
           <li>Longest Streak: Your longest run of consecutive days answering questions.</li>
         </ul>
         This approach rewards both knowledge and sustained engagement.
       </li>
       <li>
         <strong>What Is the Composite Score?</strong><br>
-        Your Composite Score is calculated using a weighted formula such as:<br>
+        Your Composite Score is calculated using a weighted formula:<br>
         <em>Composite Score = (Accuracy × 0.5) + (Normalized Total Answered × 0.3) + (Normalized Longest Streak × 0.2)</em><br>
         Where:<br>
-        Normalized Total Answered = min(total answered, 100) ÷ 100<br>
+        Normalized Total Answered = min(total answered, 250) ÷ 250<br>
         Normalized Longest Streak = min(longest streak, 30) ÷ 30<br>
-        This means that answering just a few questions perfectly won't automatically rank you at the top; sustained engagement is key.
+        This means that answering just a few questions perfectly won't automatically rank you at the top; sustained engagement and working through a substantial portion of our question bank is key to a high composite score.
       </li>
       <li>
         <strong>Who Can Access the Leaderboards?</strong><br>
