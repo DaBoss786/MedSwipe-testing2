@@ -1,4 +1,4 @@
-// Global helper functions available outside DOMContentLoaded
+// Global helper functions so that they are accessible everywhere.
 window.shuffleArray = function(array) {
   return array.sort(() => Math.random() - 0.5);
 };
@@ -34,9 +34,8 @@ document.addEventListener('DOMContentLoaded', function() {
   let sessionStartTime = Date.now();
 
   // -------------------------
-  // Define functions that need to be available before others
+  // Function declarations that must be globally available
   // -------------------------
-
   async function updateUserCompositeScore() {
     try {
       const uid = window.auth.currentUser.uid;
@@ -57,6 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
       console.error("Error updating user composite score:", error);
     }
   }
+  window.updateUserCompositeScore = updateUserCompositeScore; // Attach to global
 
   async function loadOverallData() {
     const currentUid = window.auth.currentUser.uid;
@@ -141,11 +141,11 @@ document.addEventListener('DOMContentLoaded', function() {
        document.getElementById("aboutView").style.display = "none";
     });
   }
+  window.loadOverallData = loadOverallData; // Attach globally
 
   // -------------------------
-  // Other function declarations
+  // Other functions
   // -------------------------
-
   function leaderboardTabsHTML(activeTab) {
     return `
       <div id="leaderboardTabs">
@@ -648,7 +648,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // -------------------------
-  // Event Listeners for modals and menu buttons
+  // Event listeners for modals and menu buttons
   // -------------------------
   document.getElementById("customQuizBtn").addEventListener("click", function() {
     window.filterMode = "all";
