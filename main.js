@@ -1,4 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
+  // Helper function to shuffle an array
+  function shuffleArray(array) {
+    return array.sort(() => Math.random() - 0.5);
+  }
+  
   let questionStartTime = 0;
   let sessionStartTime = Date.now();
 
@@ -598,7 +603,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   async function fetchQuestionBank() {
     return new Promise((resolve, reject) => {
-      Papa.parse(csvUrl, {
+      Papa.parse(window.csvUrl, {
         download: true,
         header: true,
         complete: function(results) {
@@ -653,7 +658,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function loadQuestions(options = {}) {
     console.log("Loading questions with options:", options);
-    Papa.parse(csvUrl, {
+    Papa.parse(window.csvUrl, {
       download: true,
       header: true,
       complete: async function(results) {
@@ -874,7 +879,6 @@ document.addEventListener('DOMContentLoaded', function() {
     updateUserCompositeScore();
   }
 
-  // Event listeners for modal buttons
   document.getElementById("customQuizBtn").addEventListener("click", function() {
     window.filterMode = "all";
     closeSideMenu();
