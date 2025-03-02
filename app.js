@@ -135,8 +135,6 @@ window.addEventListener('load', function() {
     showLeaderboard();
   });
   
-  // PERFORMANCE (removed from left menu, now only in user menu)
-  
   // FAQ
   document.getElementById("faqItem").addEventListener("click", function() {
     closeSideMenu();
@@ -163,7 +161,7 @@ window.addEventListener('load', function() {
     showContactModal();
   });
   
-  // Side menu toggling
+  // Side menu toggling - this is the crucial part that was causing the issue
   document.getElementById("menuToggle").addEventListener("click", function() {
     document.getElementById("sideMenu").classList.add("open");
     document.getElementById("menuOverlay").classList.add("show");
@@ -177,8 +175,6 @@ window.addEventListener('load', function() {
     closeSideMenu();
     closeUserMenu();
   });
-  
-  // RESET PROGRESS (removed from left menu, now only in user menu)
   
   // Logo click => go to main menu
   document.getElementById("logoClick").addEventListener("click", function() {
