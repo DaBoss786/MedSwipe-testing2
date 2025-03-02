@@ -864,7 +864,7 @@
     }
   </script>
   
-  <!-- Firebase Bookmarks Functions (using Firestore) -->
+  <!-- Firebase Bookmarks Functions (unused now) -->
   <script>
     async function getBookmarks() {
       const uid = window.auth.currentUser.uid;
@@ -885,7 +885,6 @@
           const userDoc = await transaction.get(userDocRef);
           let data = userDoc.exists() ? userDoc.data() : {};
           let bookmarks = data.bookmarks || [];
-          // If the question is not bookmarked, add it.
           if (!bookmarks.includes(questionId)) {
             bookmarks.push(questionId);
           }
@@ -902,7 +901,6 @@
   
   <!-- Declare global filterMode variable -->
   <script>
-    // This ensures we can switch to "bookmarks" mode globally.
     window.filterMode = "all";
   </script>
   
@@ -916,7 +914,6 @@
       if (!window.mySwiper) return null;
       let activeIndex = window.mySwiper.activeIndex;
       let currentSlide;
-      // If on an answer slide (odd), use the previous slide.
       if (activeIndex % 2 !== 0) {
         currentSlide = window.mySwiper.slides[activeIndex - 1];
       } else {
@@ -925,14 +922,20 @@
       return currentSlide && currentSlide.dataset ? currentSlide.dataset.id : null;
     }
     
-    // updateFavoriteIcon resets the icon to unfilled for new questions.
+    // Reset favorite icon for new questions.
     async function updateFavoriteIcon() {
       let favoriteButton = document.getElementById("favoriteButton");
       favoriteButton.innerText = "☆";
       favoriteButton.style.color = "";
     }
     
-    // Favorite icon click => toggle bookmark for current question
+    // Close the side menu.
+    function closeSideMenu() {
+      document.getElementById("sideMenu").classList.remove("open");
+      document.getElementById("menuOverlay").classList.remove("show");
+    }
+    
+    // Favorite icon click.
     window.addEventListener('load', function() {
       document.getElementById("favoriteButton").addEventListener("click", async function() {
         let questionId = getCurrentQuestionId();
@@ -1166,7 +1169,7 @@
       });
     }
     
-    // Record answer with normalized date for streaks
+    // Record answer with normalized streak logic.
     async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       const uid = window.auth.currentUser.uid;
       const userDocRef = window.doc(window.db, 'users', uid);
@@ -1212,7 +1215,6 @@
             data.stats.categories[category].incorrect++;
           }
           
-          // Streak logic
           const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
           let streaks = data.streaks || { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
           if (streaks.lastAnsweredDate) {
@@ -1244,7 +1246,7 @@
       }
     }
     
-    // Update user composite score from Firestore stats
+    // Update composite score from Firestore stats.
     async function updateUserCompositeScore() {
       try {
         const uid = window.auth.currentUser.uid;
@@ -1362,7 +1364,6 @@
       document.getElementById("contactModal").style.display = "flex";
     }
     
-    // PERFORMANCE VIEW
     async function displayPerformance() {
       console.log("displayPerformance function called");
       document.querySelector(".swiper").style.display = "none";
@@ -1572,24 +1573,13 @@
             const persistentAnsweredIds = await fetchPersistentAnsweredIds();
             answeredIds = persistentAnsweredIds;
             let filtered = allQuestions;
-            
-            // If user doesn't want answered included, remove answered from pool
             if (!options.includeAnswered) {
               filtered = filtered.filter(q => !answeredIds.includes(q["Question"].trim()));
             }
-            
-            // If it's a custom quiz with a category, filter to that category
             if (options.type === 'custom' && options.category) {
               filtered = filtered.filter(q => q["Category"] && q["Category"].trim() === options.category);
             }
-            
-            // If filterMode is "bookmarks", only show bookmarked
-            if (window.filterMode === 'bookmarks') {
-              const bookmarks = await getBookmarks();
-              filtered = filtered.filter(q => bookmarks.includes(q["Question"].trim()));
-            }
-            
-            // Shuffle and slice
+            // Bookmarks functionality is scrapped now.
             let selectedQuestions = shuffleArray(filtered);
             if (options.num) {
               selectedQuestions = selectedQuestions.slice(0, options.num);
@@ -1609,10 +1599,8 @@
         totalQuestions = questions.length;
         answeredIds = [];
         updateProgress();
-        
         const quizSlides = document.getElementById("quizSlides");
         quizSlides.innerHTML = "";
-        
         questions.forEach(question => {
           const questionSlide = document.createElement("div");
           questionSlide.className = "swiper-slide";
@@ -1648,8 +1636,6 @@
             </div>
           `;
           quizSlides.appendChild(questionSlide);
-          
-          // Answer slide
           const answerSlide = document.createElement("div");
           answerSlide.className = "swiper-slide";
           answerSlide.innerHTML = `
@@ -1671,12 +1657,10 @@
         window.mySwiper.on('slideChangeTransitionEnd', function() {
           const activeIndex = window.mySwiper.activeIndex;
           const previousIndex = window.mySwiper.previousIndex;
-          // If it's a question slide (even index), record questionStartTime
           if (activeIndex % 2 === 0) {
             questionStartTime = Date.now();
             console.log("New question slide. questionStartTime updated to:", questionStartTime);
           }
-          // If user tries to move to the explanation slide before answering, skip
           if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
             const prevSlide = window.mySwiper.slides[activeIndex - 1];
             const card = prevSlide.querySelector('.card');
@@ -1684,7 +1668,6 @@
               window.mySwiper.slideNext();
             }
           }
-          // Reset the favorite icon for each new question
           updateFavoriteIcon();
         });
       
@@ -1705,11 +1688,9 @@
             const card = this.closest('.card');
             if (card.classList.contains('answered')) return;
             card.classList.add('answered');
-            
             const questionSlide = card.closest('.swiper-slide');
             const qId = questionSlide.dataset.id;
             if (!answeredIds.includes(qId)) { answeredIds.push(qId); }
-            
             const correct = questionSlide.dataset.correct;
             const explanation = questionSlide.dataset.explanation;
             const category = questionSlide.dataset.category;
@@ -1717,12 +1698,9 @@
             const selected = this.getAttribute('data-option');
             const isCorrect = (selected === correct);
             const timeSpent = Date.now() - questionStartTime;
-            
             if (window.analytics && window.logEvent) {
               window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect });
             }
-            
-            // Mark correct & incorrect
             options.forEach(option => {
               option.disabled = true;
               if (option.getAttribute('data-option') === correct) {
@@ -1730,12 +1708,8 @@
               }
             });
             if (!isCorrect) { this.classList.add('incorrect'); }
-            
-            // Reveal hint about swiping
             const hint = card.querySelector('.swipe-hint');
             if (hint) { hint.style.display = 'block'; }
-            
-            // Show the explanation on the next slide
             const answerSlide = questionSlide.nextElementSibling;
             if (answerSlide) {
               answerSlide.querySelector('.card').innerHTML = `
@@ -1747,15 +1721,11 @@
                 <p class="swipe-next-hint">Swipe up for next question</p>
               `;
             }
-            
             currentQuestion++;
             if (isCorrect) { score++; }
             updateProgress();
-            
             await recordAnswer(qId, category, isCorrect, timeSpent);
             await updateQuestionStats(qId, isCorrect);
-            
-            // If that was the final question, show a summary slide
             if (currentQuestion === totalQuestions) {
               setTimeout(() => {
                 const summarySlide = document.createElement("div");
@@ -1772,9 +1742,7 @@
                 `;
                 document.getElementById("quizSlides").appendChild(summarySlide);
                 window.mySwiper.update();
-                
                 document.getElementById("startNewQuizButton").addEventListener("click", function() {
-                  // Reset filterMode
                   window.filterMode = "all";
                   document.getElementById("aboutView").style.display = "none";
                   document.getElementById("faqView").style.display = "none";
@@ -1785,7 +1753,6 @@
                   document.getElementById("leaderboardView").style.display = "none";
                   document.getElementById("mainOptions").style.display = "flex";
                 });
-                
                 document.getElementById("leaderboardButton").addEventListener("click", function() {
                   document.getElementById("aboutView").style.display = "none";
                   document.getElementById("faqView").style.display = "none";
@@ -1816,34 +1783,33 @@
           filterMode: window.filterMode,
           selectedCategory
         }));
-        // Update composite score in the circle from persistent Firebase data.
         updateUserCompositeScore();
       }
       
-      // CUSTOM QUIZ BUTTON => show the modal
+      // CUSTOM QUIZ BUTTON => show modal
       document.getElementById("customQuizBtn").addEventListener("click", function() {
         window.filterMode = "all";
+        closeSideMenu();
         document.getElementById("aboutView").style.display = "none";
         document.getElementById("faqView").style.display = "none";
         document.getElementById("customQuizForm").style.display = "block";
       });
       
-      // RANDOM QUIZ BUTTON => show the modal
+      // RANDOM QUIZ BUTTON => show modal
       document.getElementById("randomQuizBtn").addEventListener("click", function() {
         window.filterMode = "all";
+        closeSideMenu();
         document.getElementById("aboutView").style.display = "none";
         document.getElementById("faqView").style.display = "none";
         document.getElementById("randomQuizForm").style.display = "block";
       });
       
-      // START QUIZ (Custom) => actually load the quiz, hide the modal
+      // START QUIZ (Custom) => hide modal, load quiz
       document.getElementById("startCustomQuiz").addEventListener("click", function() {
         let category = document.getElementById("categorySelect").value;
         let numQuestions = parseInt(document.getElementById("customNumQuestions").value) || 10;
         let includeAnswered = document.getElementById("includeAnsweredCheckbox").checked;
-        
         document.getElementById("customQuizForm").style.display = "none";
-        
         loadQuestions({
           type: 'custom',
           category: category,
@@ -1857,13 +1823,11 @@
         document.getElementById("customQuizForm").style.display = "none";
       });
       
-      // START QUIZ (Random) => load the quiz, hide the modal
+      // START QUIZ (Random) => hide modal, load quiz
       document.getElementById("startRandomQuiz").addEventListener("click", function() {
         let numQuestions = parseInt(document.getElementById("randomNumQuestions").value) || 10;
         let includeAnswered = document.getElementById("includeAnsweredRandomCheckbox").checked;
-        
         document.getElementById("randomQuizForm").style.display = "none";
-        
         loadQuestions({
           type: 'random',
           num: numQuestions,
@@ -1876,21 +1840,15 @@
         document.getElementById("randomQuizForm").style.display = "none";
       });
       
-      // BOOKMARKS => filterMode=bookmarks, load questions
+      // BOOKMARKS => now simply close the menu
       document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
         e.preventDefault();
-        window.filterMode = "bookmarks";
-        // Hide open views
-        document.getElementById("aboutView").style.display = "none";
-        document.getElementById("faqView").style.display = "none";
-        document.getElementById("performanceView").style.display = "none";
-        document.getElementById("leaderboardView").style.display = "none";
-        // Load bookmarked questions
-        loadQuestions({ num: 10 });
+        closeSideMenu();
       });
       
-      // Additional menu item listeners
+      // START NEW QUIZ from side menu
       document.getElementById("startNewQuiz").addEventListener("click", function() {
+        closeSideMenu();
         window.filterMode = "all";
         document.querySelector(".swiper").style.display = "none";
         document.getElementById("bottomToolbar").style.display = "none";
@@ -1902,23 +1860,33 @@
         document.getElementById("mainOptions").style.display = "flex";
       });
       
+      // LEADERBOARD
       document.getElementById("leaderboardItem").addEventListener("click", function() {
+        closeSideMenu();
         showLeaderboard();
       });
       
+      // PERFORMANCE
       document.getElementById("performanceItem").addEventListener("click", function() {
+        closeSideMenu();
         displayPerformance();
       });
       
+      // FAQ
       document.getElementById("faqItem").addEventListener("click", function() {
+        closeSideMenu();
         showFAQ();
       });
       
+      // ABOUT US
       document.getElementById("aboutItem").addEventListener("click", function() {
+        closeSideMenu();
         showAbout();
       });
       
+      // CONTACT US
       document.getElementById("contactItem").addEventListener("click", function() {
+        closeSideMenu();
         document.querySelector(".swiper").style.display = "none";
         document.getElementById("bottomToolbar").style.display = "none";
         document.getElementById("iconBar").style.display = "none";
@@ -1928,8 +1896,6 @@
         document.getElementById("faqView").style.display = "none";
         document.getElementById("mainOptions").style.display = "none";
         showContactModal();
-        document.getElementById("menuOverlay").classList.remove("show");
-        document.getElementById("sideMenu").classList.remove("open");
       });
       
       // Side menu toggling
@@ -1938,20 +1904,17 @@
         document.getElementById("menuOverlay").classList.add("show");
       });
       document.getElementById("menuClose").addEventListener("click", function() {
-        document.getElementById("sideMenu").classList.remove("open");
-        document.getElementById("menuOverlay").classList.remove("show");
+        closeSideMenu();
       });
       document.getElementById("menuOverlay").addEventListener("click", function() {
-        document.getElementById("sideMenu").classList.remove("open");
-        document.getElementById("menuOverlay").classList.remove("show");
+        closeSideMenu();
       });
       
-      // Reset progress logic
+      // RESET PROGRESS
       document.getElementById("resetProgress").addEventListener("click", async function(e) {
         e.preventDefault();
         const confirmReset = confirm("Are you sure you want to reset all progress?");
         if (!confirmReset) return;
-        
         const uid = window.auth.currentUser.uid;
         const userDocRef = window.doc(window.db, 'users', uid);
         try {
@@ -1970,12 +1933,12 @@
           console.error("Error resetting progress:", error);
           alert("There was an error resetting your progress.");
         }
-        document.getElementById("sideMenu").classList.remove("open");
-        document.getElementById("menuOverlay").classList.remove("show");
+        closeSideMenu();
       });
       
-      // Logo click => go back to main menu
+      // Logo click => go to main menu
       document.getElementById("logoClick").addEventListener("click", function() {
+        closeSideMenu();
         document.getElementById("aboutView").style.display = "none";
         document.getElementById("faqView").style.display = "none";
         document.querySelector(".swiper").style.display = "none";
@@ -1986,7 +1949,7 @@
         document.getElementById("mainOptions").style.display = "flex";
       });
       
-      // Feedback button => open feedback modal for current question
+      // FEEDBACK button
       document.getElementById("feedbackButton").addEventListener("click", function() {
         const questionId = getCurrentQuestionId();
         const questionSlide = document.querySelector(`.swiper-slide[data-id="${questionId}"]`);
@@ -2003,12 +1966,12 @@
         document.getElementById("feedbackModal").style.display = "flex";
       });
       
-      // Feedback modal close
+      // FEEDBACK modal close
       document.getElementById("closeFeedbackModal").addEventListener("click", function() {
         document.getElementById("feedbackModal").style.display = "none";
       });
       
-      // Feedback submit
+      // FEEDBACK submit
       document.getElementById("submitFeedback").addEventListener("click", async function() {
         const feedbackText = document.getElementById("feedbackText").value.trim();
         if (!feedbackText) {
