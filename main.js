@@ -1,34 +1,34 @@
-let questionStartTime = 0;
-let sessionStartTime = Date.now();
+document.addEventListener('DOMContentLoaded', function() {
+  let questionStartTime = 0;
+  let sessionStartTime = Date.now();
 
-// Helper to get current question id from the active slide.
-function getCurrentQuestionId() {
-  if (!window.mySwiper) return null;
-  let activeIndex = window.mySwiper.activeIndex;
-  let currentSlide;
-  if (activeIndex % 2 !== 0) {
-    currentSlide = window.mySwiper.slides[activeIndex - 1];
-  } else {
-    currentSlide = window.mySwiper.slides[activeIndex];
+  // Helper to get current question id from the active slide.
+  function getCurrentQuestionId() {
+    if (!window.mySwiper) return null;
+    let activeIndex = window.mySwiper.activeIndex;
+    let currentSlide;
+    if (activeIndex % 2 !== 0) {
+      currentSlide = window.mySwiper.slides[activeIndex - 1];
+    } else {
+      currentSlide = window.mySwiper.slides[activeIndex];
+    }
+    return currentSlide && currentSlide.dataset ? currentSlide.dataset.id : null;
   }
-  return currentSlide && currentSlide.dataset ? currentSlide.dataset.id : null;
-}
 
-// Reset favorite icon for new questions.
-async function updateFavoriteIcon() {
-  let favoriteButton = document.getElementById("favoriteButton");
-  favoriteButton.innerText = "☆";
-  favoriteButton.style.color = "";
-}
+  // Reset favorite icon for new questions.
+  async function updateFavoriteIcon() {
+    let favoriteButton = document.getElementById("favoriteButton");
+    favoriteButton.innerText = "☆";
+    favoriteButton.style.color = "";
+  }
 
-// Close the side menu.
-function closeSideMenu() {
-  document.getElementById("sideMenu").classList.remove("open");
-  document.getElementById("menuOverlay").classList.remove("show");
-}
+  // Close the side menu.
+  function closeSideMenu() {
+    document.getElementById("sideMenu").classList.remove("open");
+    document.getElementById("menuOverlay").classList.remove("show");
+  }
 
-// Favorite icon click.
-window.addEventListener('load', function() {
+  // Favorite icon click.
   document.getElementById("favoriteButton").addEventListener("click", async function() {
     let questionId = getCurrentQuestionId();
     if (!questionId) return;
@@ -39,610 +39,609 @@ window.addEventListener('load', function() {
       document.getElementById("favoriteButton").style.color = "blue";
     }
   });
-});
 
-function leaderboardTabsHTML(activeTab) {
-  return `
-    <div id="leaderboardTabs">
-      <button class="leaderboard-tab ${activeTab === 'overall' ? 'active' : ''}" id="overallTab">Composite Score</button>
-      <button class="leaderboard-tab ${activeTab === 'streaks' ? 'active' : ''}" id="streaksTab">Streaks</button>
-      <button class="leaderboard-tab ${activeTab === 'answered' ? 'active' : ''}" id="answeredTab">Total Answered</button>
-    </div>
-  `;
-}
-
-function getStartOfWeek() {
-  let now = new Date();
-  let day = now.getDay();
-  let diff = now.getDate() - day + (day === 0 ? -6 : 1);
-  let weekStart = new Date(now.setDate(diff));
-  weekStart.setHours(0,0,0,0);
-  return weekStart.getTime();
-}
-
-async function loadOverallData() {
-  const currentUid = window.auth.currentUser.uid;
-  const currentUsername = await getOrGenerateUsername();
-  const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
-  let leaderboardEntries = [];
-  querySnapshot.forEach(docSnap => {
-    const data = docSnap.data();
-    if (data.stats) {
-      const totalAnswered = data.stats.totalAnswered || 0;
-      const totalCorrect = data.stats.totalCorrect || 0;
-      const accuracy = totalAnswered ? totalCorrect / totalAnswered : 0;
-      const normTotal = Math.min(totalAnswered, 100) / 100;
-      const longestStreak = (data.streaks && data.streaks.longestStreak) ? data.streaks.longestStreak : 0;
-      const normStreak = Math.min(longestStreak, 30) / 30;
-      const compositeScore = Math.round(((accuracy * 0.5) + (normTotal * 0.3) + (normStreak * 0.2)) * 100);
-      leaderboardEntries.push({
-        uid: docSnap.id,
-        username: data.username || "Anonymous",
-        compositeScore: compositeScore
-      });
-    }
-  });
-  leaderboardEntries.sort((a, b) => b.compositeScore - a.compositeScore);
-  let top10 = leaderboardEntries.slice(0,10);
-  let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
-  
-  let html = `<h2>Leaderboard - Composite Score</h2>`;
-  html += leaderboardTabsHTML("overall");
-  html += `
-    <table class="leaderboard-table">
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>Name</th>
-          <th>Composite Score</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-  top10.forEach((entry, index) => {
-    const bold = entry.uid === currentUid ? "style='font-weight:bold;'" : "";
-    html += `
-      <tr ${bold}>
-        <td>${index + 1}</td>
-        <td>${entry.username}</td>
-        <td>${entry.compositeScore}</td>
-      </tr>
+  function leaderboardTabsHTML(activeTab) {
+    return `
+      <div id="leaderboardTabs">
+        <button class="leaderboard-tab ${activeTab === 'overall' ? 'active' : ''}" id="overallTab">Composite Score</button>
+        <button class="leaderboard-tab ${activeTab === 'streaks' ? 'active' : ''}" id="streaksTab">Streaks</button>
+        <button class="leaderboard-tab ${activeTab === 'answered' ? 'active' : ''}" id="answeredTab">Total Answered</button>
+      </div>
     `;
-  });
-  html += `</tbody></table>`;
-  
-  if (!top10.some(e => e.uid === currentUid) && currentUserEntry) {
+  }
+
+  function getStartOfWeek() {
+    let now = new Date();
+    let day = now.getDay();
+    let diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    let weekStart = new Date(now.setDate(diff));
+    weekStart.setHours(0,0,0,0);
+    return weekStart.getTime();
+  }
+
+  async function loadOverallData() {
+    const currentUid = window.auth.currentUser.uid;
+    const currentUsername = await getOrGenerateUsername();
+    const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+    let leaderboardEntries = [];
+    querySnapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      if (data.stats) {
+        const totalAnswered = data.stats.totalAnswered || 0;
+        const totalCorrect = data.stats.totalCorrect || 0;
+        const accuracy = totalAnswered ? totalCorrect / totalAnswered : 0;
+        const normTotal = Math.min(totalAnswered, 100) / 100;
+        const longestStreak = (data.streaks && data.streaks.longestStreak) ? data.streaks.longestStreak : 0;
+        const normStreak = Math.min(longestStreak, 30) / 30;
+        const compositeScore = Math.round(((accuracy * 0.5) + (normTotal * 0.3) + (normStreak * 0.2)) * 100);
+        leaderboardEntries.push({
+          uid: docSnap.id,
+          username: data.username || "Anonymous",
+          compositeScore: compositeScore
+        });
+      }
+    });
+    leaderboardEntries.sort((a, b) => b.compositeScore - a.compositeScore);
+    let top10 = leaderboardEntries.slice(0,10);
+    let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
+
+    let html = `<h2>Leaderboard - Composite Score</h2>`;
+    html += leaderboardTabsHTML("overall");
     html += `
-      <h3>Your Ranking</h3>
       <table class="leaderboard-table">
         <thead>
           <tr>
+            <th>Rank</th>
             <th>Name</th>
             <th>Composite Score</th>
           </tr>
         </thead>
         <tbody>
-          <tr style="font-weight:bold;">
-            <td>${currentUsername}</td>
-            <td>${currentUserEntry.compositeScore}</td>
-          </tr>
-        </tbody>
-      </table>
     `;
-  }
-  html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
-  document.getElementById("leaderboardView").innerHTML = html;
-  
-  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
-  document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
-  document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
-  
-  document.getElementById("leaderboardBack").addEventListener("click", function(){
-     document.getElementById("leaderboardView").style.display = "none";
-     document.getElementById("mainOptions").style.display = "flex";
-     document.getElementById("aboutView").style.display = "none";
-  });
-}
-
-async function loadStreaksData() {
-  const currentUid = window.auth.currentUser.uid;
-  const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
-  let streakEntries = [];
-  querySnapshot.forEach(docSnap => {
-    const data = docSnap.data();
-    let streak = data.streaks ? (data.streaks.currentStreak || 0) : 0;
-    if (streak > 0) {
-      streakEntries.push({
-        uid: docSnap.id,
-        username: data.username || "Anonymous",
-        streak: streak
-      });
-    }
-  });
-  streakEntries.sort((a, b) => b.streak - a.streak);
-  let html = `<h2>Leaderboard - Streaks</h2>`;
-  html += leaderboardTabsHTML("streaks");
-  html += `
-     <table class="leaderboard-table">
-       <thead>
-         <tr>
-           <th>Rank</th>
-           <th>Name</th>
-           <th>Streak (days)</th>
-         </tr>
-       </thead>
-       <tbody>
-  `;
-  streakEntries.forEach((entry, index) => {
-    const bold = entry.uid === currentUid ? "style='font-weight:bold;'" : "";
-    html += `
-       <tr ${bold}>
-         <td>${index + 1}</td>
-         <td>${entry.username}</td>
-         <td>${entry.streak}</td>
-       </tr>
-    `;
-  });
-  html += `</tbody></table>`;
-  html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
-  document.getElementById("leaderboardView").innerHTML = html;
-  
-  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
-  document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
-  document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
-  
-  document.getElementById("leaderboardBack").addEventListener("click", function(){
-     document.getElementById("leaderboardView").style.display = "none";
-     document.getElementById("mainOptions").style.display = "flex";
-     document.getElementById("aboutView").style.display = "none";
-  });
-}
-
-async function loadTotalAnsweredData() {
-  const currentUid = window.auth.currentUser.uid;
-  const weekStart = getStartOfWeek();
-  const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
-  let answeredEntries = [];
-  querySnapshot.forEach(docSnap => {
-    const data = docSnap.data();
-    let weeklyCount = 0;
-    if (data.answeredQuestions) {
-      for (const key in data.answeredQuestions) {
-        const answer = data.answeredQuestions[key];
-        if (answer.timestamp && answer.timestamp >= weekStart) {
-          weeklyCount++;
-        }
-      }
-    }
-    if (weeklyCount > 0) {
-      answeredEntries.push({
-        uid: docSnap.id,
-        username: data.username || "Anonymous",
-        weeklyCount: weeklyCount
-      });
-    }
-  });
-  answeredEntries.sort((a, b) => b.weeklyCount - a.weeklyCount);
-  let html = `<h2>Leaderboard - Total Answered This Week</h2>`;
-  html += leaderboardTabsHTML("answered");
-  html += `
-     <table class="leaderboard-table">
-       <thead>
-         <tr>
-           <th>Rank</th>
-           <th>Name</th>
-           <th>Total Answered</th>
-         </tr>
-       </thead>
-       <tbody>
-  `;
-  answeredEntries.forEach((entry, index) => {
-    const bold = entry.uid === currentUid ? "style='font-weight:bold;'" : "";
-    html += `
-       <tr ${bold}>
-         <td>${index + 1}</td>
-         <td>${entry.username}</td>
-         <td>${entry.weeklyCount}</td>
-       </tr>
-    `;
-  });
-  html += `</tbody></table>`;
-  html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
-  document.getElementById("leaderboardView").innerHTML = html;
-  
-  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
-  document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
-  document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
-  
-  document.getElementById("leaderboardBack").addEventListener("click", function(){
-     document.getElementById("leaderboardView").style.display = "none";
-     document.getElementById("mainOptions").style.display = "flex";
-     document.getElementById("aboutView").style.display = "none";
-  });
-}
-
-async function recordAnswer(questionId, category, isCorrect, timeSpent) {
-  const uid = window.auth.currentUser.uid;
-  const userDocRef = window.doc(window.db, 'users', uid);
-  try {
-    await window.runTransaction(window.db, async (transaction) => {
-      const userDoc = await window.getDoc(userDocRef);
-      let data = userDoc.exists() ? userDoc.data() : {};
-      
-      if (!data.stats) {
-        data.stats = { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0 };
-      }
-      if (!data.answeredQuestions) {
-        data.answeredQuestions = {};
-      }
-      if (data.answeredQuestions[questionId]) return;
-      
-      const currentDate = new Date();
-      const currentTimestamp = currentDate.getTime();
-      const currentFormatted = currentDate.toLocaleString();
-      
-      data.answeredQuestions[questionId] = { 
-        isCorrect, 
-        category, 
-        timestamp: currentTimestamp, 
-        timestampFormatted: currentFormatted, 
-        timeSpent 
-      };
-      data.stats.totalAnswered++;
-      if (isCorrect) {
-        data.stats.totalCorrect++;
-      } else {
-        data.stats.totalIncorrect++;
-      }
-      data.stats.totalTimeSpent = (data.stats.totalTimeSpent || 0) + timeSpent;
-      
-      if (!data.stats.categories[category]) {
-        data.stats.categories[category] = { answered: 0, correct: 0, incorrect: 0 };
-      }
-      data.stats.categories[category].answered++;
-      if (isCorrect) {
-        data.stats.categories[category].correct++;
-      } else {
-        data.stats.categories[category].incorrect++;
-      }
-      
-      const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      let streaks = data.streaks || { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
-      if (streaks.lastAnsweredDate) {
-        const lastDate = new Date(streaks.lastAnsweredDate);
-        const normalizedCurrent = normalizeDate(currentDate);
-        const normalizedLast = normalizeDate(lastDate);
-        const diffDays = Math.round((normalizedCurrent - normalizedLast) / (1000 * 60 * 60 * 24));
-        if (diffDays === 1) {
-          streaks.currentStreak += 1;
-        } else if (diffDays > 1) {
-          streaks.currentStreak = 1;
-        }
-        streaks.lastAnsweredDate = currentDate.toISOString();
-        if (streaks.currentStreak > streaks.longestStreak) {
-          streaks.longestStreak = streaks.currentStreak;
-        }
-      } else {
-        streaks.lastAnsweredDate = currentDate.toISOString();
-        streaks.currentStreak = 1;
-        streaks.longestStreak = 1;
-      }
-      data.streaks = streaks;
-      
-      transaction.set(userDocRef, data, { merge: true });
+    top10.forEach((entry, index) => {
+      const bold = entry.uid === currentUid ? "style='font-weight:bold;'" : "";
+      html += `
+        <tr ${bold}>
+          <td>${index + 1}</td>
+          <td>${entry.username}</td>
+          <td>${entry.compositeScore}</td>
+        </tr>
+      `;
     });
-    console.log("Recorded answer for", questionId);
-  } catch (error) {
-    console.error("Error recording answer:", error);
+    html += `</tbody></table>`;
+    
+    if (!top10.some(e => e.uid === currentUid) && currentUserEntry) {
+      html += `
+        <h3>Your Ranking</h3>
+        <table class="leaderboard-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Composite Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="font-weight:bold;">
+              <td>${currentUsername}</td>
+              <td>${currentUserEntry.compositeScore}</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+    }
+    html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
+    document.getElementById("leaderboardView").innerHTML = html;
+    
+    document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
+    document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
+    document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
+    
+    document.getElementById("leaderboardBack").addEventListener("click", function(){
+       document.getElementById("leaderboardView").style.display = "none";
+       document.getElementById("mainOptions").style.display = "flex";
+       document.getElementById("aboutView").style.display = "none";
+    });
   }
-}
 
-async function updateUserCompositeScore() {
-  try {
+  async function loadStreaksData() {
+    const currentUid = window.auth.currentUser.uid;
+    const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+    let streakEntries = [];
+    querySnapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      let streak = data.streaks ? (data.streaks.currentStreak || 0) : 0;
+      if (streak > 0) {
+        streakEntries.push({
+          uid: docSnap.id,
+          username: data.username || "Anonymous",
+          streak: streak
+        });
+      }
+    });
+    streakEntries.sort((a, b) => b.streak - a.streak);
+    let html = `<h2>Leaderboard - Streaks</h2>`;
+    html += leaderboardTabsHTML("streaks");
+    html += `
+       <table class="leaderboard-table">
+         <thead>
+           <tr>
+             <th>Rank</th>
+             <th>Name</th>
+             <th>Streak (days)</th>
+           </tr>
+         </thead>
+         <tbody>
+    `;
+    streakEntries.forEach((entry, index) => {
+      const bold = entry.uid === currentUid ? "style='font-weight:bold;'" : "";
+      html += `
+         <tr ${bold}>
+           <td>${index + 1}</td>
+           <td>${entry.username}</td>
+           <td>${entry.streak}</td>
+         </tr>
+      `;
+    });
+    html += `</tbody></table>`;
+    html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
+    document.getElementById("leaderboardView").innerHTML = html;
+    
+    document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
+    document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
+    document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
+    
+    document.getElementById("leaderboardBack").addEventListener("click", function(){
+       document.getElementById("leaderboardView").style.display = "none";
+       document.getElementById("mainOptions").style.display = "flex";
+       document.getElementById("aboutView").style.display = "none";
+    });
+  }
+
+  async function loadTotalAnsweredData() {
+    const currentUid = window.auth.currentUser.uid;
+    const weekStart = getStartOfWeek();
+    const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+    let answeredEntries = [];
+    querySnapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      let weeklyCount = 0;
+      if (data.answeredQuestions) {
+        for (const key in data.answeredQuestions) {
+          const answer = data.answeredQuestions[key];
+          if (answer.timestamp && answer.timestamp >= weekStart) {
+            weeklyCount++;
+          }
+        }
+      }
+      if (weeklyCount > 0) {
+        answeredEntries.push({
+          uid: docSnap.id,
+          username: data.username || "Anonymous",
+          weeklyCount: weeklyCount
+        });
+      }
+    });
+    answeredEntries.sort((a, b) => b.weeklyCount - a.weeklyCount);
+    let html = `<h2>Leaderboard - Total Answered This Week</h2>`;
+    html += leaderboardTabsHTML("answered");
+    html += `
+       <table class="leaderboard-table">
+         <thead>
+           <tr>
+             <th>Rank</th>
+             <th>Name</th>
+             <th>Total Answered</th>
+           </tr>
+         </thead>
+         <tbody>
+    `;
+    answeredEntries.forEach((entry, index) => {
+      const bold = entry.uid === currentUid ? "style='font-weight:bold;'" : "";
+      html += `
+         <tr ${bold}>
+           <td>${index + 1}</td>
+           <td>${entry.username}</td>
+           <td>${entry.weeklyCount}</td>
+         </tr>
+      `;
+    });
+    html += `</tbody></table>`;
+    html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
+    document.getElementById("leaderboardView").innerHTML = html;
+    
+    document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
+    document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
+    document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
+    
+    document.getElementById("leaderboardBack").addEventListener("click", function(){
+       document.getElementById("leaderboardView").style.display = "none";
+       document.getElementById("mainOptions").style.display = "flex";
+       document.getElementById("aboutView").style.display = "none";
+    });
+  }
+
+  async function recordAnswer(questionId, category, isCorrect, timeSpent) {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    try {
+      await window.runTransaction(window.db, async (transaction) => {
+        const userDoc = await window.getDoc(userDocRef);
+        let data = userDoc.exists() ? userDoc.data() : {};
+        
+        if (!data.stats) {
+          data.stats = { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0 };
+        }
+        if (!data.answeredQuestions) {
+          data.answeredQuestions = {};
+        }
+        if (data.answeredQuestions[questionId]) return;
+        
+        const currentDate = new Date();
+        const currentTimestamp = currentDate.getTime();
+        const currentFormatted = currentDate.toLocaleString();
+        
+        data.answeredQuestions[questionId] = { 
+          isCorrect, 
+          category, 
+          timestamp: currentTimestamp, 
+          timestampFormatted: currentFormatted, 
+          timeSpent 
+        };
+        data.stats.totalAnswered++;
+        if (isCorrect) {
+          data.stats.totalCorrect++;
+        } else {
+          data.stats.totalIncorrect++;
+        }
+        data.stats.totalTimeSpent = (data.stats.totalTimeSpent || 0) + timeSpent;
+        
+        if (!data.stats.categories[category]) {
+          data.stats.categories[category] = { answered: 0, correct: 0, incorrect: 0 };
+        }
+        data.stats.categories[category].answered++;
+        if (isCorrect) {
+          data.stats.categories[category].correct++;
+        } else {
+          data.stats.categories[category].incorrect++;
+        }
+        
+        const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        let streaks = data.streaks || { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
+        if (streaks.lastAnsweredDate) {
+          const lastDate = new Date(streaks.lastAnsweredDate);
+          const normalizedCurrent = normalizeDate(currentDate);
+          const normalizedLast = normalizeDate(lastDate);
+          const diffDays = Math.round((normalizedCurrent - normalizedLast) / (1000 * 60 * 60 * 24));
+          if (diffDays === 1) {
+            streaks.currentStreak += 1;
+          } else if (diffDays > 1) {
+            streaks.currentStreak = 1;
+          }
+          streaks.lastAnsweredDate = currentDate.toISOString();
+          if (streaks.currentStreak > streaks.longestStreak) {
+            streaks.longestStreak = streaks.currentStreak;
+          }
+        } else {
+          streaks.lastAnsweredDate = currentDate.toISOString();
+          streaks.currentStreak = 1;
+          streaks.longestStreak = 1;
+        }
+        data.streaks = streaks;
+        
+        transaction.set(userDocRef, data, { merge: true });
+      });
+      console.log("Recorded answer for", questionId);
+    } catch (error) {
+      console.error("Error recording answer:", error);
+    }
+  }
+
+  async function updateUserCompositeScore() {
+    try {
+      const uid = window.auth.currentUser.uid;
+      const userDocRef = window.doc(window.db, 'users', uid);
+      const userDocSnap = await window.getDoc(userDocRef);
+      if (userDocSnap.exists()) {
+        const data = userDocSnap.data();
+        const totalAnswered = data.stats?.totalAnswered || 0;
+        const totalCorrect = data.stats?.totalCorrect || 0;
+        const accuracy = totalAnswered ? totalCorrect / totalAnswered : 0;
+        const normTotal = Math.min(totalAnswered, 100) / 100;
+        const longestStreak = (data.streaks && data.streaks.longestStreak) ? data.streaks.longestStreak : 0;
+        const normStreak = Math.min(longestStreak, 30) / 30;
+        const composite = Math.round(((accuracy * 0.5) + (normTotal * 0.3) + (normStreak * 0.2)) * 100);
+        document.getElementById("scoreCircle").textContent = composite;
+      }
+    } catch (error) {
+      console.error("Error updating user composite score:", error);
+    }
+  }
+
+  function showLeaderboard() {
+    document.querySelector(".swiper").style.display = "none";
+    document.getElementById("bottomToolbar").style.display = "none";
+    document.getElementById("iconBar").style.display = "none";
+    document.getElementById("performanceView").style.display = "none";
+    document.getElementById("mainOptions").style.display = "none";
+    document.getElementById("aboutView").style.display = "none";
+    document.getElementById("faqView").style.display = "none";
+    document.getElementById("leaderboardView").style.display = "block";
+    loadOverallData();
+  }
+
+  function showAbout() {
+    document.querySelector(".swiper").style.display = "none";
+    document.getElementById("bottomToolbar").style.display = "none";
+    document.getElementById("iconBar").style.display = "none";
+    document.getElementById("performanceView").style.display = "none";
+    document.getElementById("leaderboardView").style.display = "none";
+    document.getElementById("mainOptions").style.display = "none";
+    document.getElementById("faqView").style.display = "none";
+    
+    document.getElementById("aboutView").innerHTML = `
+      <h2>About MedSwipe</h2>
+      <p>MedSwipe is a dynamic, swipe-based quiz app designed specifically for medical professionals and learners. Our goal is to improve medical education by offering a casual, engaging alternative to the traditional, regimented board review resources and question banks.</p>
+      <p>Created by a board-certified ENT, MedSwipe brings a fresh, interactive approach to studying medicine. Instead of slogging through lengthy textbooks and overly structured review materials, MedSwipe lets you learn on the go—one swipe at a time. The app is designed to keep you engaged with bite‑sized questions, real‑time performance tracking, and interactive leaderboards that make board review feel less like a chore and more like a game.</p>
+      <p>Whether you're a seasoned practitioner or just starting out in medicine, MedSwipe is here to support your learning journey in a way that fits seamlessly into your busy lifestyle.</p>
+      <button id="aboutBack" class="start-quiz-btn">Back</button>
+    `;
+    document.getElementById("aboutView").style.display = "block";
+    document.getElementById("aboutBack").addEventListener("click", function() {
+        document.getElementById("aboutView").style.display = "none";
+        document.getElementById("mainOptions").style.display = "flex";
+    });
+  }
+
+  function showFAQ() {
+    document.querySelector(".swiper").style.display = "none";
+    document.getElementById("bottomToolbar").style.display = "none";
+    document.getElementById("iconBar").style.display = "none";
+    document.getElementById("performanceView").style.display = "none";
+    document.getElementById("leaderboardView").style.display = "none";
+    document.getElementById("aboutView").style.display = "none";
+    document.getElementById("mainOptions").style.display = "none";
+    
+    document.getElementById("faqView").innerHTML = `
+      <h2>FAQ</h2>
+      <ul>
+        <li>
+          <strong>What is MedSwipe?</strong><br>
+          MedSwipe is a dynamic, swipe‑based quiz app designed for ENT professionals and learners. It offers a more casual, engaging alternative to traditional, regimented board review resources.
+        </li>
+        <li>
+          <strong>How Does MedSwipe Work?</strong><br>
+          MedSwipe presents ENT questions in an intuitive, swipe‑based format. As you answer, your performance is tracked using a composite score that factors in:
+          <ul>
+            <li>Accuracy: The percentage of correct answers.</li>
+            <li>Total Answered: Your overall volume of answered questions (normalized so that beyond a certain point, additional answers don’t disproportionately boost your score).</li>
+            <li>Longest Streak: Your longest run of consecutive days answering questions.</li>
+          </ul>
+          This approach rewards both knowledge and sustained engagement.
+        </li>
+        <li>
+          <strong>What Is the Composite Score?</strong><br>
+          Your Composite Score is calculated using a weighted formula such as:<br>
+          <em>Composite Score = (Accuracy × 0.5) + (Normalized Total Answered × 0.3) + (Normalized Longest Streak × 0.2)</em><br>
+          Where:<br>
+          Normalized Total Answered = min(total answered, 100) ÷ 100<br>
+          Normalized Longest Streak = min(longest streak, 30) ÷ 30<br>
+          This means that answering just a few questions perfectly won’t automatically rank you at the top; sustained engagement is key.
+        </li>
+        <li>
+          <strong>Who Can Access the Leaderboards?</strong><br>
+          In our MVP, all users have access to the leaderboards and performance metrics. In the future, if we move to a freemium model, basic leaderboard data will remain free while more detailed analytics may be reserved for registered or premium users.
+        </li>
+        <li>
+          <strong>Is MedSwipe Free?</strong><br>
+          For now, MedSwipe is completely free. Our aim is to build an engaged community before we roll out any premium features.
+        </li>
+        <li>
+          <strong>How Do I Provide Feedback?</strong><br>
+          Use the in‑app feedback button to let us know what you think or if you encounter any issues. Your input is crucial for our continued improvement.
+        </li>
+      </ul>
+      <button id="faqBack" class="start-quiz-btn">Back</button>
+    `;
+    document.getElementById("faqView").style.display = "block";
+    document.getElementById("faqBack").addEventListener("click", function() {
+        document.getElementById("faqView").style.display = "none";
+        document.getElementById("mainOptions").style.display = "flex";
+    });
+  }
+
+  function showContactModal() {
+    document.getElementById("contactModal").style.display = "flex";
+  }
+
+  async function displayPerformance() {
+    console.log("displayPerformance function called");
+    document.querySelector(".swiper").style.display = "none";
+    document.getElementById("bottomToolbar").style.display = "none";
+    document.getElementById("iconBar").style.display = "none";
+    document.getElementById("mainOptions").style.display = "none";
+    document.getElementById("leaderboardView").style.display = "none";
+    document.getElementById("aboutView").style.display = "none";
+    document.getElementById("faqView").style.display = "none";
+    document.getElementById("performanceView").style.display = "block";
+    
     const uid = window.auth.currentUser.uid;
     const userDocRef = window.doc(window.db, 'users', uid);
     const userDocSnap = await window.getDoc(userDocRef);
-    if (userDocSnap.exists()) {
-      const data = userDocSnap.data();
-      const totalAnswered = data.stats?.totalAnswered || 0;
-      const totalCorrect = data.stats?.totalCorrect || 0;
-      const accuracy = totalAnswered ? totalCorrect / totalAnswered : 0;
-      const normTotal = Math.min(totalAnswered, 100) / 100;
-      const longestStreak = (data.streaks && data.streaks.longestStreak) ? data.streaks.longestStreak : 0;
-      const normStreak = Math.min(longestStreak, 30) / 30;
-      const composite = Math.round(((accuracy * 0.5) + (normTotal * 0.3) + (normStreak * 0.2)) * 100);
-      document.getElementById("scoreCircle").textContent = composite;
+    console.log("User document exists:", userDocSnap.exists());
+    
+    if (!userDocSnap.exists()) {
+      document.getElementById("performanceView").innerHTML = `
+        <h2>Performance</h2>
+        <p>No performance data available yet.</p>
+        <button id='backToMain'>Back</button>
+      `;
+      document.getElementById("backToMain").addEventListener("click", () => {
+        document.getElementById("performanceView").style.display = "none";
+        document.getElementById("mainOptions").style.display = "flex";
+      });
+      return;
     }
-  } catch (error) {
-    console.error("Error updating user composite score:", error);
-  }
-}
-
-function showLeaderboard() {
-  document.querySelector(".swiper").style.display = "none";
-  document.getElementById("bottomToolbar").style.display = "none";
-  document.getElementById("iconBar").style.display = "none";
-  document.getElementById("performanceView").style.display = "none";
-  document.getElementById("mainOptions").style.display = "none";
-  document.getElementById("aboutView").style.display = "none";
-  document.getElementById("faqView").style.display = "none";
-  document.getElementById("leaderboardView").style.display = "block";
-  loadOverallData();
-}
-
-function showAbout() {
-  document.querySelector(".swiper").style.display = "none";
-  document.getElementById("bottomToolbar").style.display = "none";
-  document.getElementById("iconBar").style.display = "none";
-  document.getElementById("performanceView").style.display = "none";
-  document.getElementById("leaderboardView").style.display = "none";
-  document.getElementById("mainOptions").style.display = "none";
-  document.getElementById("faqView").style.display = "none";
-  
-  document.getElementById("aboutView").innerHTML = `
-    <h2>About MedSwipe</h2>
-    <p>MedSwipe is a dynamic, swipe-based quiz app designed specifically for medical professionals and learners. Our goal is to improve medical education by offering a casual, engaging alternative to the traditional, regimented board review resources and question banks.</p>
-    <p>Created by a board-certified ENT, MedSwipe brings a fresh, interactive approach to studying medicine. Instead of slogging through lengthy textbooks and overly structured review materials, MedSwipe lets you learn on the go—one swipe at a time. The app is designed to keep you engaged with bite‑sized questions, real‑time performance tracking, and interactive leaderboards that make board review feel less like a chore and more like a game.</p>
-    <p>Whether you're a seasoned practitioner or just starting out in medicine, MedSwipe is here to support your learning journey in a way that fits seamlessly into your busy lifestyle.</p>
-    <button id="aboutBack" class="start-quiz-btn">Back</button>
-  `;
-  document.getElementById("aboutView").style.display = "block";
-  document.getElementById("aboutBack").addEventListener("click", function() {
-      document.getElementById("aboutView").style.display = "none";
-      document.getElementById("mainOptions").style.display = "flex";
-  });
-}
-
-function showFAQ() {
-  document.querySelector(".swiper").style.display = "none";
-  document.getElementById("bottomToolbar").style.display = "none";
-  document.getElementById("iconBar").style.display = "none";
-  document.getElementById("performanceView").style.display = "none";
-  document.getElementById("leaderboardView").style.display = "none";
-  document.getElementById("aboutView").style.display = "none";
-  document.getElementById("mainOptions").style.display = "none";
-  
-  document.getElementById("faqView").innerHTML = `
-    <h2>FAQ</h2>
-    <ul>
-      <li>
-        <strong>What is MedSwipe?</strong><br>
-        MedSwipe is a dynamic, swipe‑based quiz app designed for ENT professionals and learners. It offers a more casual, engaging alternative to traditional, regimented board review resources.
-      </li>
-      <li>
-        <strong>How Does MedSwipe Work?</strong><br>
-        MedSwipe presents ENT questions in an intuitive, swipe‑based format. As you answer, your performance is tracked using a composite score that factors in:
-        <ul>
-          <li>Accuracy: The percentage of correct answers.</li>
-          <li>Total Answered: Your overall volume of answered questions (normalized so that beyond a certain point, additional answers don’t disproportionately boost your score).</li>
-          <li>Longest Streak: Your longest run of consecutive days answering questions.</li>
-        </ul>
-        This approach rewards both knowledge and sustained engagement.
-      </li>
-      <li>
-        <strong>What Is the Composite Score?</strong><br>
-        Your Composite Score is calculated using a weighted formula such as:<br>
-        <em>Composite Score = (Accuracy × 0.5) + (Normalized Total Answered × 0.3) + (Normalized Longest Streak × 0.2)</em><br>
-        Where:<br>
-        Normalized Total Answered = min(total answered, 100) ÷ 100<br>
-        Normalized Longest Streak = min(longest streak, 30) ÷ 30<br>
-        This means that answering just a few questions perfectly won’t automatically rank you at the top; sustained engagement is key.
-      </li>
-      <li>
-        <strong>Who Can Access the Leaderboards?</strong><br>
-        In our MVP, all users have access to the leaderboards and performance metrics. In the future, if we move to a freemium model, basic leaderboard data will remain free while more detailed analytics may be reserved for registered or premium users.
-      </li>
-      <li>
-        <strong>Is MedSwipe Free?</strong><br>
-        For now, MedSwipe is completely free. Our aim is to build an engaged community before we roll out any premium features.
-      </li>
-      <li>
-        <strong>How Do I Provide Feedback?</strong><br>
-        Use the in‑app feedback button to let us know what you think or if you encounter any issues. Your input is crucial for our continued improvement.
-      </li>
-    </ul>
-    <button id="faqBack" class="start-quiz-btn">Back</button>
-  `;
-  document.getElementById("faqView").style.display = "block";
-  document.getElementById("faqBack").addEventListener("click", function() {
-      document.getElementById("faqView").style.display = "none";
-      document.getElementById("mainOptions").style.display = "flex";
-  });
-}
-
-function showContactModal() {
-  document.getElementById("contactModal").style.display = "flex";
-}
-
-async function displayPerformance() {
-  console.log("displayPerformance function called");
-  document.querySelector(".swiper").style.display = "none";
-  document.getElementById("bottomToolbar").style.display = "none";
-  document.getElementById("iconBar").style.display = "none";
-  document.getElementById("mainOptions").style.display = "none";
-  document.getElementById("leaderboardView").style.display = "none";
-  document.getElementById("aboutView").style.display = "none";
-  document.getElementById("faqView").style.display = "none";
-  document.getElementById("performanceView").style.display = "block";
-  
-  const uid = window.auth.currentUser.uid;
-  const userDocRef = window.doc(window.db, 'users', uid);
-  const userDocSnap = await window.getDoc(userDocRef);
-  console.log("User document exists:", userDocSnap.exists());
-  
-  if (!userDocSnap.exists()) {
+    const data = userDocSnap.data();
+    const stats = data.stats || {};
+    
+    const totalAnswered = stats.totalAnswered || 0;
+    
+    let questionBank = [];
+    try {
+      questionBank = await fetchQuestionBank();
+    } catch (error) {
+      console.error("Error fetching question bank:", error);
+    }
+    const totalInBank = questionBank.length;
+    console.log("Total in bank: ", totalInBank, "Total answered: ", totalAnswered);
+    
+    let remaining = totalInBank - totalAnswered;
+    if (remaining < 0) { remaining = 0; }
+    
+    const totalCorrect = stats.totalCorrect || 0;
+    const overallPercent = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+    
+    let categoryBreakdown = "";
+    if (stats.categories) {
+      categoryBreakdown = Object.keys(stats.categories).map(cat => {
+        const c = stats.categories[cat];
+        const answered = c.answered;
+        const correct = c.correct;
+        const percent = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+        return `
+          <div class="category-item">
+            <strong>${cat}</strong>: ${correct}/${answered} (${percent}%)
+            <div class="progress-bar-container">
+              <div class="progress-bar" style="width: ${percent}%"></div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    } else {
+      categoryBreakdown = "<p>No category data available.</p>";
+    }
+    
     document.getElementById("performanceView").innerHTML = `
-      <h2>Performance</h2>
-      <p>No performance data available yet.</p>
-      <button id='backToMain'>Back</button>
+      <h2 style="text-align:center; color:#0056b3;">Performance</h2>
+      <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
+        <canvas id="overallScoreChart" width="200" height="200"></canvas>
+        <p style="font-size:1.2rem; color:#333; margin-top:10px;">
+          Overall Score: ${overallPercent}%
+        </p>
+        <p style="font-size:1rem; color:#333;">
+          Total Questions Remaining: ${remaining}
+        </p>
+      </div>
+      <hr>
+      <h3 style="text-align:center; color:#0056b3;">By Category</h3>
+      ${categoryBreakdown}
+      <button id="backToMain" style="margin-top:20px;">Back</button>
     `;
-    document.getElementById("backToMain").addEventListener("click", () => {
+    
+    const ctx = document.getElementById("overallScoreChart").getContext("2d");
+    new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: ["Correct", "Incorrect"],
+        datasets: [{
+          data: [
+            totalCorrect,
+            totalAnswered - totalCorrect
+          ],
+          backgroundColor: ["#28a745", "#dc3545"]
+        }]
+      },
+      options: {
+        responsive: false,
+        cutout: "60%",
+        plugins: {
+          legend: {
+            display: true
+          }
+        }
+      }
+    });
+    
+    document.getElementById("backToMain").addEventListener("click", function() {
       document.getElementById("performanceView").style.display = "none";
       document.getElementById("mainOptions").style.display = "flex";
     });
-    return;
   }
-  const data = userDocSnap.data();
-  const stats = data.stats || {};
-  
-  const totalAnswered = stats.totalAnswered || 0;
-  
-  let questionBank = [];
-  try {
-    questionBank = await fetchQuestionBank();
-  } catch (error) {
-    console.error("Error fetching question bank:", error);
-  }
-  const totalInBank = questionBank.length;
-  console.log("Total in bank: ", totalInBank, "Total answered: ", totalAnswered);
-  
-  let remaining = totalInBank - totalAnswered;
-  if (remaining < 0) { remaining = 0; }
-  
-  const totalCorrect = stats.totalCorrect || 0;
-  const overallPercent = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
-  
-  let categoryBreakdown = "";
-  if (stats.categories) {
-    categoryBreakdown = Object.keys(stats.categories).map(cat => {
-      const c = stats.categories[cat];
-      const answered = c.answered;
-      const correct = c.correct;
-      const percent = answered > 0 ? Math.round((correct / answered) * 100) : 0;
-      return `
-        <div class="category-item">
-          <strong>${cat}</strong>: ${correct}/${answered} (${percent}%)
-          <div class="progress-bar-container">
-            <div class="progress-bar" style="width: ${percent}%"></div>
-          </div>
-        </div>
-      `;
-    }).join("");
-  } else {
-    categoryBreakdown = "<p>No category data available.</p>";
-  }
-  
-  document.getElementById("performanceView").innerHTML = `
-    <h2 style="text-align:center; color:#0056b3;">Performance</h2>
-    <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
-      <canvas id="overallScoreChart" width="200" height="200"></canvas>
-      <p style="font-size:1.2rem; color:#333; margin-top:10px;">
-        Overall Score: ${overallPercent}%
-      </p>
-      <p style="font-size:1rem; color:#333;">
-        Total Questions Remaining: ${remaining}
-      </p>
-    </div>
-    <hr>
-    <h3 style="text-align:center; color:#0056b3;">By Category</h3>
-    ${categoryBreakdown}
-    <button id="backToMain" style="margin-top:20px;">Back</button>
-  `;
-  
-  const ctx = document.getElementById("overallScoreChart").getContext("2d");
-  new Chart(ctx, {
-    type: "doughnut",
-    data: {
-      labels: ["Correct", "Incorrect"],
-      datasets: [{
-        data: [
-          totalCorrect,
-          totalAnswered - totalCorrect
-        ],
-        backgroundColor: ["#28a745", "#dc3545"]
-      }]
-    },
-    options: {
-      responsive: false,
-      cutout: "60%",
-      plugins: {
-        legend: {
-          display: true
-        }
-      }
+
+  async function getOrGenerateUsername() {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDocSnap = await window.getDoc(userDocRef);
+    let username;
+    if (userDocSnap.exists() && userDocSnap.data().username) {
+      username = userDocSnap.data().username;
+    } else {
+      username = generateRandomName();
+      await window.runTransaction(window.db, async (transaction) => {
+        const docSnap = await transaction.get(userDocRef);
+        let data = docSnap.exists() ? docSnap.data() : {};
+        data.username = username;
+        transaction.set(userDocRef, data, { merge: true });
+      });
     }
-  });
-  
-  document.getElementById("backToMain").addEventListener("click", function() {
-    document.getElementById("performanceView").style.display = "none";
-    document.getElementById("mainOptions").style.display = "flex";
-  });
-}
+    return username;
+  }
 
-async function getOrGenerateUsername() {
-  const uid = window.auth.currentUser.uid;
-  const userDocRef = window.doc(window.db, 'users', uid);
-  const userDocSnap = await window.getDoc(userDocRef);
-  let username;
-  if (userDocSnap.exists() && userDocSnap.data().username) {
-    username = userDocSnap.data().username;
-  } else {
-    username = generateRandomName();
-    await window.runTransaction(window.db, async (transaction) => {
-      const docSnap = await transaction.get(userDocRef);
-      let data = docSnap.exists() ? docSnap.data() : {};
-      data.username = username;
-      transaction.set(userDocRef, data, { merge: true });
+  function generateRandomName() {
+    const adjectives = ["Aural", "Otologic", "Laryngic", "Rhinal", "Acoustic", "Vocal"];
+    const nouns = ["Cochlea", "Tympanum", "Glottis", "Sinus", "Auricle", "Eustachian"];
+    const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const noun = nouns[Math.floor(Math.random() * nouns.length)];
+    const num = Math.floor(Math.random() * 9000) + 1000;
+    return `${adj}${noun}${num}`;
+  }
+
+  async function fetchQuestionBank() {
+    return new Promise((resolve, reject) => {
+      Papa.parse(csvUrl, {
+        download: true,
+        header: true,
+        complete: function(results) {
+          resolve(results.data);
+        },
+        error: function(error) {
+          reject(error);
+        }
+      });
     });
   }
-  return username;
-}
 
-function generateRandomName() {
-  const adjectives = ["Aural", "Otologic", "Laryngic", "Rhinal", "Acoustic", "Vocal"];
-  const nouns = ["Cochlea", "Tympanum", "Glottis", "Sinus", "Auricle", "Eustachian"];
-  const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
-  const noun = nouns[Math.floor(Math.random() * nouns.length)];
-  const num = Math.floor(Math.random() * 9000) + 1000;
-  return `${adj}${noun}${num}`;
-}
-
-async function fetchQuestionBank() {
-  return new Promise((resolve, reject) => {
-    Papa.parse(csvUrl, {
-      download: true,
-      header: true,
-      complete: function(results) {
-        resolve(results.data);
-      },
-      error: function(error) {
-        reject(error);
-      }
-    });
-  });
-}
-
-async function fetchPersistentAnsweredIds() {
-  const uid = window.auth.currentUser.uid;
-  const userDocRef = window.doc(window.db, 'users', uid);
-  const userDocSnap = await window.getDoc(userDocRef);
-  if (userDocSnap.exists()){
-    let data = userDocSnap.data();
-    return Object.keys(data.answeredQuestions || {});
+  async function fetchPersistentAnsweredIds() {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDocSnap = await window.getDoc(userDocRef);
+    if (userDocSnap.exists()){
+      let data = userDocSnap.data();
+      return Object.keys(data.answeredQuestions || {});
+    }
+    return [];
   }
-  return [];
-}
 
-async function updateQuestionStats(questionId, isCorrect) {
-  console.log("updateQuestionStats called for:", questionId, "isCorrect:", isCorrect);
-  const questionStatsRef = window.doc(window.db, "questionStats", questionId);
-  try {
-    await window.runTransaction(window.db, async (transaction) => {
-      const statsDoc = await transaction.get(questionStatsRef);
-      let statsData = statsDoc.exists() ? statsDoc.data() : { totalAttempts: 0, correctAttempts: 0 };
-      statsData.totalAttempts++;
-      if (isCorrect) {
-        statsData.correctAttempts++;
-      }
-      transaction.set(questionStatsRef, statsData, { merge: true });
-    });
-    console.log("Updated stats for question", questionId);
-  } catch (error) {
-    console.error("Error updating question stats:", error);
+  async function updateQuestionStats(questionId, isCorrect) {
+    console.log("updateQuestionStats called for:", questionId, "isCorrect:", isCorrect);
+    const questionStatsRef = window.doc(window.db, "questionStats", questionId);
+    try {
+      await window.runTransaction(window.db, async (transaction) => {
+        const statsDoc = await transaction.get(questionStatsRef);
+        let statsData = statsDoc.exists() ? statsDoc.data() : { totalAttempts: 0, correctAttempts: 0 };
+        statsData.totalAttempts++;
+        if (isCorrect) {
+          statsData.correctAttempts++;
+        }
+        transaction.set(questionStatsRef, statsData, { merge: true });
+      });
+      console.log("Updated stats for question", questionId);
+    } catch (error) {
+      console.error("Error updating question stats:", error);
+    }
   }
-}
 
-window.addEventListener('load', function() {
+  // Global quiz variables and functions.
   let allQuestions = [];
   let selectedCategory = "";
   let answeredIds = [];
@@ -651,7 +650,7 @@ window.addEventListener('load', function() {
   let score = 0;
   let currentFeedbackQuestionId = "";
   let currentFeedbackQuestionText = "";
-  
+
   function loadQuestions(options = {}) {
     console.log("Loading questions with options:", options);
     Papa.parse(csvUrl, {
@@ -681,7 +680,7 @@ window.addEventListener('load', function() {
       }
     });
   }
-  
+
   function initializeQuiz(questions) {
     currentQuestion = 0;
     score = 0;
@@ -735,14 +734,14 @@ window.addEventListener('load', function() {
       `;
       quizSlides.appendChild(answerSlide);
     });
-  
+
     window.mySwiper = new Swiper('.swiper', {
       direction: 'vertical',
       loop: false,
       mousewheel: true,
       touchReleaseOnEdges: true
     });
-  
+
     window.mySwiper.on('slideChangeTransitionEnd', function() {
       const activeIndex = window.mySwiper.activeIndex;
       const previousIndex = window.mySwiper.previousIndex;
@@ -759,9 +758,9 @@ window.addEventListener('load', function() {
       }
       updateFavoriteIcon();
     });
-  
+
     addOptionListeners();
-  
+
     document.querySelector(".swiper").style.display = "block";
     document.getElementById("bottomToolbar").style.display = "flex";
     document.getElementById("mainOptions").style.display = "none";
@@ -770,7 +769,7 @@ window.addEventListener('load', function() {
     document.getElementById("aboutView").style.display = "none";
     document.getElementById("faqView").style.display = "none";
   }
-  
+
   function addOptionListeners() {
     document.querySelectorAll('.option-btn').forEach(btn => {
       btn.addEventListener('click', async function() {
@@ -858,7 +857,7 @@ window.addEventListener('load', function() {
       });
     });
   }
-  
+
   function updateProgress() {
     const progressPercent = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
     document.getElementById("progressBar").style.width = progressPercent + "%";
@@ -874,7 +873,8 @@ window.addEventListener('load', function() {
     }));
     updateUserCompositeScore();
   }
-  
+
+  // Event listeners for modal buttons
   document.getElementById("customQuizBtn").addEventListener("click", function() {
     window.filterMode = "all";
     closeSideMenu();
@@ -882,7 +882,7 @@ window.addEventListener('load', function() {
     document.getElementById("faqView").style.display = "none";
     document.getElementById("customQuizForm").style.display = "block";
   });
-  
+
   document.getElementById("randomQuizBtn").addEventListener("click", function() {
     window.filterMode = "all";
     closeSideMenu();
@@ -890,7 +890,7 @@ window.addEventListener('load', function() {
     document.getElementById("faqView").style.display = "none";
     document.getElementById("randomQuizForm").style.display = "block";
   });
-  
+
   document.getElementById("startCustomQuiz").addEventListener("click", function() {
     let category = document.getElementById("categorySelect").value;
     let numQuestions = parseInt(document.getElementById("customNumQuestions").value) || 10;
@@ -903,11 +903,11 @@ window.addEventListener('load', function() {
       includeAnswered: includeAnswered
     });
   });
-  
+
   document.getElementById("cancelCustomQuiz").addEventListener("click", function() {
     document.getElementById("customQuizForm").style.display = "none";
   });
-  
+
   document.getElementById("startRandomQuiz").addEventListener("click", function() {
     let numQuestions = parseInt(document.getElementById("randomNumQuestions").value) || 10;
     let includeAnswered = document.getElementById("includeAnsweredRandomCheckbox").checked;
@@ -918,16 +918,16 @@ window.addEventListener('load', function() {
       includeAnswered: includeAnswered
     });
   });
-  
+
   document.getElementById("cancelRandomQuiz").addEventListener("click", function() {
     document.getElementById("randomQuizForm").style.display = "none";
   });
-  
+
   document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
     e.preventDefault();
     closeSideMenu();
   });
-  
+
   document.getElementById("startNewQuiz").addEventListener("click", function() {
     closeSideMenu();
     window.filterMode = "all";
@@ -940,27 +940,27 @@ window.addEventListener('load', function() {
     document.getElementById("aboutView").style.display = "none";
     document.getElementById("mainOptions").style.display = "flex";
   });
-  
+
   document.getElementById("leaderboardItem").addEventListener("click", function() {
     closeSideMenu();
     showLeaderboard();
   });
-  
+
   document.getElementById("performanceItem").addEventListener("click", function() {
     closeSideMenu();
     displayPerformance();
   });
-  
+
   document.getElementById("faqItem").addEventListener("click", function() {
     closeSideMenu();
     showFAQ();
   });
-  
+
   document.getElementById("aboutItem").addEventListener("click", function() {
     closeSideMenu();
     showAbout();
   });
-  
+
   document.getElementById("contactItem").addEventListener("click", function() {
     closeSideMenu();
     document.querySelector(".swiper").style.display = "none";
@@ -973,7 +973,7 @@ window.addEventListener('load', function() {
     document.getElementById("mainOptions").style.display = "none";
     showContactModal();
   });
-  
+
   document.getElementById("menuToggle").addEventListener("click", function() {
     document.getElementById("sideMenu").classList.add("open");
     document.getElementById("menuOverlay").classList.add("show");
@@ -984,7 +984,7 @@ window.addEventListener('load', function() {
   document.getElementById("menuOverlay").addEventListener("click", function() {
     closeSideMenu();
   });
-  
+
   document.getElementById("resetProgress").addEventListener("click", async function(e) {
     e.preventDefault();
     const confirmReset = confirm("Are you sure you want to reset all progress?");
@@ -1009,7 +1009,7 @@ window.addEventListener('load', function() {
     }
     closeSideMenu();
   });
-  
+
   document.getElementById("logoClick").addEventListener("click", function() {
     closeSideMenu();
     document.getElementById("aboutView").style.display = "none";
@@ -1021,7 +1021,7 @@ window.addEventListener('load', function() {
     document.getElementById("leaderboardView").style.display = "none";
     document.getElementById("mainOptions").style.display = "flex";
   });
-  
+
   document.getElementById("feedbackButton").addEventListener("click", function() {
     const questionId = getCurrentQuestionId();
     const questionSlide = document.querySelector(`.swiper-slide[data-id="${questionId}"]`);
@@ -1037,11 +1037,11 @@ window.addEventListener('load', function() {
     document.getElementById("feedbackQuestionInfo").textContent = `Feedback for Q: ${currentFeedbackQuestionText}`;
     document.getElementById("feedbackModal").style.display = "flex";
   });
-  
+
   document.getElementById("closeFeedbackModal").addEventListener("click", function() {
     document.getElementById("feedbackModal").style.display = "none";
   });
-  
+
   document.getElementById("submitFeedback").addEventListener("click", async function() {
     const feedbackText = document.getElementById("feedbackText").value.trim();
     if (!feedbackText) {
@@ -1064,4 +1064,3 @@ window.addEventListener('load', function() {
     }
   });
 });
-
