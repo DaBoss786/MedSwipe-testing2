@@ -53,13 +53,18 @@ window.addEventListener('load', function() {
     });
   }
   
-  // Bookmarks from user menu
+  // Bookmarks from user menu - start a bookmarks-only quiz
   const bookmarksFilterUser = document.getElementById("bookmarksFilterUser");
   if (bookmarksFilterUser) {
     bookmarksFilterUser.addEventListener("click", function(e) {
       e.preventDefault();
       closeUserMenu();
-      // Bookmark functionality here
+      
+      // Start a quiz with only bookmarked questions
+      loadQuestions({
+        bookmarksOnly: true,
+        num: 50 // Large number to include all bookmarks
+      });
     });
   }
   
@@ -431,7 +436,7 @@ window.addEventListener('load', function() {
     });
   }
   
-  // FAVORITE button (BOOKMARK functionality)
+  // FAVORITE button (bookmark functionality)
   const favoriteButton = document.getElementById("favoriteButton");
   if (favoriteButton) {
     favoriteButton.addEventListener("click", async function() {
@@ -446,21 +451,6 @@ window.addEventListener('load', function() {
         favoriteButton.innerText = "☆";
         favoriteButton.style.color = "";
       }
-    });
-  }
-  
-  // BOOKMARKS from user menu - start a bookmarks-only quiz
-  const bookmarksFilterUser = document.getElementById("bookmarksFilterUser");
-  if (bookmarksFilterUser) {
-    bookmarksFilterUser.addEventListener("click", function(e) {
-      e.preventDefault();
-      closeUserMenu();
-      
-      // Start a quiz with only bookmarked questions
-      loadQuestions({
-        bookmarksOnly: true,
-        num: 50 // Large number to include all bookmarks
-      });
     });
   }
   
@@ -516,8 +506,4 @@ window.addEventListener('load', function() {
       }
     });
   }
-
-  // We'll only update the scores when Firebase auth is ready
-  // Instead of calling it here directly
-  // updateUserCompositeScore();
 });
