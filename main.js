@@ -1,6 +1,32 @@
-// Define shuffleArray globally
+// Define global helper functions so that they are accessible everywhere.
 window.shuffleArray = function(array) {
   return array.sort(() => Math.random() - 0.5);
+};
+
+window.fetchPersistentAnsweredIds = async function() {
+  const uid = window.auth.currentUser.uid;
+  const userDocRef = window.doc(window.db, 'users', uid);
+  const userDocSnap = await window.getDoc(userDocRef);
+  if (userDocSnap.exists()){
+    let data = userDocSnap.data();
+    return Object.keys(data.answeredQuestions || {});
+  }
+  return [];
+};
+
+window.fetchQuestionBank = async function() {
+  return new Promise((resolve, reject) => {
+    Papa.parse(window.csvUrl, {
+      download: true,
+      header: true,
+      complete: function(results) {
+        resolve(results.data);
+      },
+      error: function(error) {
+        reject(error);
+      }
+    });
+  });
 };
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -37,9 +63,9 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById("favoriteButton").addEventListener("click", async function() {
     let questionId = getCurrentQuestionId();
     if (!questionId) return;
-    let bookmarks = await getBookmarks();
+    let bookmarks = await window.getBookmarks();
     if (!bookmarks.includes(questionId.trim())) {
-      await toggleBookmark(questionId.trim());
+      await window.toggleBookmark(questionId.trim());
       document.getElementById("favoriteButton").innerText = "★";
       document.getElementById("favoriteButton").style.color = "blue";
     }
@@ -379,7 +405,7 @@ document.addEventListener('DOMContentLoaded', function() {
       complete: async function(results) {
         console.log("Questions loaded:", results.data.length);
         allQuestions = results.data;
-        const persistentAnsweredIds = await fetchPersistentAnsweredIds();
+        const persistentAnsweredIds = await window.fetchPersistentAnsweredIds();
         answeredIds = persistentAnsweredIds;
         let filtered = allQuestions;
         if (!options.includeAnswered) {
