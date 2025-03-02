@@ -1,4 +1,4 @@
-// Define global helper functions so that they are accessible everywhere.
+// Global helper functions available outside DOMContentLoaded
 window.shuffleArray = function(array) {
   return array.sort(() => Math.random() - 0.5);
 };
@@ -33,33 +33,129 @@ document.addEventListener('DOMContentLoaded', function() {
   let questionStartTime = 0;
   let sessionStartTime = Date.now();
 
-  // Helper to get current question id from the active slide.
-  function getCurrentQuestionId() {
-    if (!window.mySwiper) return null;
-    let activeIndex = window.mySwiper.activeIndex;
-    let currentSlide;
-    if (activeIndex % 2 !== 0) {
-      currentSlide = window.mySwiper.slides[activeIndex - 1];
-    } else {
-      currentSlide = window.mySwiper.slides[activeIndex];
+  // -------------------------
+  // Define functions that need to be available before others
+  // -------------------------
+
+  async function updateUserCompositeScore() {
+    try {
+      const uid = window.auth.currentUser.uid;
+      const userDocRef = window.doc(window.db, 'users', uid);
+      const userDocSnap = await window.getDoc(userDocRef);
+      if (userDocSnap.exists()) {
+        const data = userDocSnap.data();
+        const totalAnswered = data.stats?.totalAnswered || 0;
+        const totalCorrect = data.stats?.totalCorrect || 0;
+        const accuracy = totalAnswered ? totalCorrect / totalAnswered : 0;
+        const normTotal = Math.min(totalAnswered, 100) / 100;
+        const longestStreak = (data.streaks && data.streaks.longestStreak) ? data.streaks.longestStreak : 0;
+        const normStreak = Math.min(longestStreak, 30) / 30;
+        const composite = Math.round(((accuracy * 0.5) + (normTotal * 0.3) + (normStreak * 0.2)) * 100);
+        document.getElementById("scoreCircle").textContent = composite;
+      }
+    } catch (error) {
+      console.error("Error updating user composite score:", error);
     }
-    return currentSlide && currentSlide.dataset ? currentSlide.dataset.id : null;
   }
 
-  // Reset favorite icon for new questions.
-  async function updateFavoriteIcon() {
-    let favoriteButton = document.getElementById("favoriteButton");
-    favoriteButton.innerText = "☆";
-    favoriteButton.style.color = "";
+  async function loadOverallData() {
+    const currentUid = window.auth.currentUser.uid;
+    const currentUsername = await getOrGenerateUsername();
+    const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+    let leaderboardEntries = [];
+    querySnapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      if (data.stats) {
+        const totalAnswered = data.stats.totalAnswered || 0;
+        const totalCorrect = data.stats.totalCorrect || 0;
+        const accuracy = totalAnswered ? totalCorrect / totalAnswered : 0;
+        const normTotal = Math.min(totalAnswered, 100) / 100;
+        const longestStreak = (data.streaks && data.streaks.longestStreak) ? data.streaks.longestStreak : 0;
+        const normStreak = Math.min(longestStreak, 30) / 30;
+        const compositeScore = Math.round(((accuracy * 0.5) + (normTotal * 0.3) + (normStreak * 0.2)) * 100);
+        leaderboardEntries.push({
+          uid: docSnap.id,
+          username: data.username || "Anonymous",
+          compositeScore: compositeScore
+        });
+      }
+    });
+    leaderboardEntries.sort((a, b) => b.compositeScore - a.compositeScore);
+    let top10 = leaderboardEntries.slice(0,10);
+    let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
+
+    let html = `<h2>Leaderboard - Composite Score</h2>`;
+    html += leaderboardTabsHTML("overall");
+    html += `
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Name</th>
+            <th>Composite Score</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    top10.forEach((entry, index) => {
+      const bold = entry.uid === currentUid ? "style='font-weight:bold;'" : "";
+      html += `
+        <tr ${bold}>
+          <td>${index + 1}</td>
+          <td>${entry.username}</td>
+          <td>${entry.compositeScore}</td>
+        </tr>
+      `;
+    });
+    html += `</tbody></table>`;
+    
+    if (!top10.some(e => e.uid === currentUid) && currentUserEntry) {
+      html += `
+        <h3>Your Ranking</h3>
+        <table class="leaderboard-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Composite Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="font-weight:bold;">
+              <td>${currentUsername}</td>
+              <td>${currentUserEntry.compositeScore}</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+    }
+    html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
+    document.getElementById("leaderboardView").innerHTML = html;
+    
+    document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
+    document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
+    document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
+    
+    document.getElementById("leaderboardBack").addEventListener("click", function(){
+       document.getElementById("leaderboardView").style.display = "none";
+       document.getElementById("mainOptions").style.display = "flex";
+       document.getElementById("aboutView").style.display = "none";
+    });
   }
 
-  // Close the side menu.
-  function closeSideMenu() {
-    document.getElementById("sideMenu").classList.remove("open");
-    document.getElementById("menuOverlay").classList.remove("show");
+  // -------------------------
+  // Other function declarations
+  // -------------------------
+
+  function leaderboardTabsHTML(activeTab) {
+    return `
+      <div id="leaderboardTabs">
+        <button class="leaderboard-tab ${activeTab === 'overall' ? 'active' : ''}" id="overallTab">Composite Score</button>
+        <button class="leaderboard-tab ${activeTab === 'streaks' ? 'active' : ''}" id="streaksTab">Streaks</button>
+        <button class="leaderboard-tab ${activeTab === 'answered' ? 'active' : ''}" id="answeredTab">Total Answered</button>
+      </div>
+    `;
   }
 
-  // View Functions
   function showLeaderboard() {
     document.querySelector(".swiper").style.display = "none";
     document.getElementById("bottomToolbar").style.display = "none";
@@ -81,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById("leaderboardView").style.display = "none";
     document.getElementById("mainOptions").style.display = "none";
     document.getElementById("faqView").style.display = "none";
-
+    
     document.getElementById("aboutView").innerHTML = `
       <h2>About MedSwipe</h2>
       <p>MedSwipe is a dynamic, swipe-based quiz app designed specifically for medical professionals and learners. Our goal is to improve medical education by offering a casual, engaging alternative to traditional, regimented board review resources and question banks.</p>
@@ -104,7 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById("leaderboardView").style.display = "none";
     document.getElementById("aboutView").style.display = "none";
     document.getElementById("mainOptions").style.display = "none";
-
+    
     document.getElementById("faqView").innerHTML = `
       <h2>FAQ</h2>
       <ul>
@@ -300,6 +396,9 @@ document.addEventListener('DOMContentLoaded', function() {
     return `${adj}${noun}${num}`;
   }
 
+  // -------------------------
+  // Global quiz variables and functions
+  // -------------------------
   let allQuestions = [];
   let selectedCategory = "";
   let answeredIds = [];
@@ -308,6 +407,22 @@ document.addEventListener('DOMContentLoaded', function() {
   let score = 0;
   let currentFeedbackQuestionId = "";
   let currentFeedbackQuestionText = "";
+
+  function updateProgress() {
+    const progressPercent = totalQuestions > 0 ? (currentQuestion / totalQuestions) * 100 : 0;
+    document.getElementById("progressBar").style.width = progressPercent + "%";
+    document.getElementById("questionProgress").textContent = `${currentQuestion} / ${totalQuestions}`;
+    document.getElementById("scoreDisplay").textContent = `Score: ${score}`;
+    localStorage.setItem("quizProgress", JSON.stringify({
+      quizData: allQuestions,
+      currentQuestion,
+      score,
+      answeredIds,
+      filterMode: window.filterMode,
+      selectedCategory
+    }));
+    updateUserCompositeScore();
+  }
 
   function loadQuestions(options = {}) {
     console.log("Loading questions with options:", options);
@@ -532,6 +647,9 @@ document.addEventListener('DOMContentLoaded', function() {
     updateUserCompositeScore();
   }
 
+  // -------------------------
+  // Event Listeners for modals and menu buttons
+  // -------------------------
   document.getElementById("customQuizBtn").addEventListener("click", function() {
     window.filterMode = "all";
     closeSideMenu();
