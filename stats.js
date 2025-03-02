@@ -114,7 +114,7 @@ async function displayPerformance() {
   });
 }
 
-// Load leaderboard data for overall scores
+// Load leaderboard data for overall scores - UPDATED for 250 question cap
 async function loadOverallData() {
   const currentUid = window.auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
@@ -126,7 +126,8 @@ async function loadOverallData() {
       const totalAnswered = data.stats.totalAnswered || 0;
       const totalCorrect = data.stats.totalCorrect || 0;
       const accuracy = totalAnswered ? totalCorrect / totalAnswered : 0;
-      const normTotal = Math.min(totalAnswered, 100) / 100;
+      // Updated to cap at 250 questions
+      const normTotal = Math.min(totalAnswered, 250) / 250;
       const longestStreak = (data.streaks && data.streaks.longestStreak) ? data.streaks.longestStreak : 0;
       const normStreak = Math.min(longestStreak, 30) / 30;
       const compositeScore = Math.round(((accuracy * 0.5) + (normTotal * 0.3) + (normStreak * 0.2)) * 100);
