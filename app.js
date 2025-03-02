@@ -1,6 +1,59 @@
 // Main app initialization
 window.addEventListener('load', function() {
-  // Set up event listeners once the page is loaded
+  // Initialize user menu with username
+  updateUserMenu();
+  
+  // Score circle click => open user menu
+  document.getElementById("scoreCircle").addEventListener("click", function() {
+    document.getElementById("userMenu").classList.add("open");
+    document.getElementById("menuOverlay").classList.add("show");
+  });
+  
+  // User menu close button
+  document.getElementById("userMenuClose").addEventListener("click", function() {
+    closeUserMenu();
+  });
+  
+  // Performance from user menu
+  document.getElementById("performanceItemUser").addEventListener("click", function() {
+    closeUserMenu();
+    displayPerformance();
+  });
+  
+  // Bookmarks from user menu
+  document.getElementById("bookmarksFilterUser").addEventListener("click", function(e) {
+    e.preventDefault();
+    closeUserMenu();
+    // Bookmark functionality here
+  });
+  
+  // Reset progress from user menu
+  document.getElementById("resetProgressUser").addEventListener("click", async function(e) {
+    e.preventDefault();
+    const confirmReset = confirm("Are you sure you want to reset all progress?");
+    if (!confirmReset) return;
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    try {
+      await window.runTransaction(window.db, async (transaction) => {
+        const userDoc = await transaction.get(userDocRef);
+        if (userDoc.exists()) {
+          let data = userDoc.data();
+          data.answeredQuestions = {};
+          data.stats = { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0 };
+          data.streaks = { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
+          transaction.set(userDocRef, data, { merge: true });
+        }
+      });
+      alert("Progress has been reset!");
+      updateUserCompositeScore();
+      updateUserMenu();
+    } catch (error) {
+      console.error("Error resetting progress:", error);
+      alert("There was an error resetting your progress.");
+    }
+    closeUserMenu();
+  });
   
   // CUSTOM QUIZ BUTTON => show modal
   document.getElementById("customQuizBtn").addEventListener("click", function() {
@@ -82,11 +135,7 @@ window.addEventListener('load', function() {
     showLeaderboard();
   });
   
-  // PERFORMANCE
-  document.getElementById("performanceItem").addEventListener("click", function() {
-    closeSideMenu();
-    displayPerformance();
-  });
+  // PERFORMANCE (removed from left menu, now only in user menu)
   
   // FAQ
   document.getElementById("faqItem").addEventListener("click", function() {
@@ -126,37 +175,15 @@ window.addEventListener('load', function() {
   
   document.getElementById("menuOverlay").addEventListener("click", function() {
     closeSideMenu();
+    closeUserMenu();
   });
   
-  // RESET PROGRESS
-  document.getElementById("resetProgress").addEventListener("click", async function(e) {
-    e.preventDefault();
-    const confirmReset = confirm("Are you sure you want to reset all progress?");
-    if (!confirmReset) return;
-    const uid = window.auth.currentUser.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
-    try {
-      await window.runTransaction(window.db, async (transaction) => {
-        const userDoc = await transaction.get(userDocRef);
-        if (userDoc.exists()) {
-          let data = userDoc.data();
-          data.answeredQuestions = {};
-          data.stats = { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0 };
-          data.streaks = { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
-          transaction.set(userDocRef, data, { merge: true });
-        }
-      });
-      alert("Progress has been reset!");
-    } catch (error) {
-      console.error("Error resetting progress:", error);
-      alert("There was an error resetting your progress.");
-    }
-    closeSideMenu();
-  });
+  // RESET PROGRESS (removed from left menu, now only in user menu)
   
   // Logo click => go to main menu
   document.getElementById("logoClick").addEventListener("click", function() {
     closeSideMenu();
+    closeUserMenu();
     document.getElementById("aboutView").style.display = "none";
     document.getElementById("faqView").style.display = "none";
     document.querySelector(".swiper").style.display = "none";
