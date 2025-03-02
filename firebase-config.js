@@ -33,4 +33,12 @@ signInAnonymously(auth)
 // Make Firestore functions globally available
 window.analytics = analytics;
 window.logEvent = logEvent;
-window.db
+window.db = db;
+window.auth = auth;
+window.doc = doc;
+window.runTransaction = runTransaction;
+window.getDoc = getDoc;
+window.addDoc = addDoc;
+window.collection = collection;
+window.serverTimestamp = serverTimestamp;
+window.getDocs = getDocs;
