@@ -226,45 +226,71 @@ function generateRandomName() {
   return `${adj}${noun}${num}`;
 }
 
-// Bookmark functions
+// Bookmark functions - enhanced for toggling
 async function getBookmarks() {
   if (!window.auth || !window.auth.currentUser) {
     console.log("User not authenticated for getBookmarks");
     return [];
   }
   
-  const uid = window.auth.currentUser.uid;
-  const userDocRef = window.doc(window.db, 'users', uid);
-  const userDocSnap = await window.getDoc(userDocRef);
-  if(userDocSnap.exists()){
-    const data = userDocSnap.data();
-    return data.bookmarks || [];
+  try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDocSnap = await window.getDoc(userDocRef);
+    if(userDocSnap.exists()){
+      const data = userDocSnap.data();
+      return data.bookmarks || [];
+    }
+  } catch (error) {
+    console.error("Error getting bookmarks:", error);
   }
   return [];
 }
 
+// Toggle a bookmark (add if not present, remove if present)
 async function toggleBookmark(questionId) {
   if (!window.auth || !window.auth.currentUser) {
     console.log("User not authenticated for toggleBookmark");
     return false;
   }
   
-  const uid = window.auth.currentUser.uid;
-  const userDocRef = window.doc(window.db, 'users', uid);
   try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    
     await window.runTransaction(window.db, async (transaction) => {
       const userDoc = await transaction.get(userDocRef);
       let data = userDoc.exists() ? userDoc.data() : {};
       let bookmarks = data.bookmarks || [];
-      if (!bookmarks.includes(questionId)) {
+      
+      // Check if the question is already bookmarked
+      const index = bookmarks.indexOf(questionId);
+      
+      // If not bookmarked, add it
+      if (index === -1) {
         bookmarks.push(questionId);
+      } 
+      // If already bookmarked, remove it (true toggle functionality)
+      else {
+        bookmarks.splice(index, 1);
       }
+      
       transaction.set(userDocRef, { bookmarks: bookmarks }, { merge: true });
     });
+    
+    // Get the updated bookmarks list
     const updatedBookmarks = await getBookmarks();
-    return updatedBookmarks.includes(questionId);
-  } catch (e) {
-    console.error("Error toggling bookmark:", e);
+    const isBookmarked = updatedBookmarks.includes(questionId);
+    
+    // Update the current slide's bookmark attribute
+    const currentSlide = document.querySelector(`.swiper-slide[data-id="${questionId}"]`);
+    if (currentSlide) {
+      currentSlide.dataset.bookmarked = isBookmarked ? "true" : "false";
+    }
+    
+    return isBookmarked;
+  } catch (error) {
+    console.error("Error toggling bookmark:", error);
     return false;
   }
 }
