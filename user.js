@@ -133,7 +133,7 @@ async function updateQuestionStats(questionId, isCorrect) {
   }
 }
 
-// Update composite score from Firestore stats
+// Update composite score from Firestore stats - UPDATED to cap at 250 questions
 async function updateUserCompositeScore() {
   if (!window.auth || !window.auth.currentUser || !window.db) {
     console.log("Auth or DB not initialized for updateUserCompositeScore");
@@ -149,7 +149,8 @@ async function updateUserCompositeScore() {
       const totalAnswered = data.stats?.totalAnswered || 0;
       const totalCorrect = data.stats?.totalCorrect || 0;
       const accuracy = totalAnswered ? totalCorrect / totalAnswered : 0;
-      const normTotal = Math.min(totalAnswered, 100) / 100;
+      // Updated cap from 100 to 250
+      const normTotal = Math.min(totalAnswered, 250) / 250;
       const longestStreak = (data.streaks && data.streaks.longestStreak) ? data.streaks.longestStreak : 0;
       const normStreak = Math.min(longestStreak, 30) / 30;
       const composite = Math.round(((accuracy * 0.5) + (normTotal * 0.3) + (normStreak * 0.2)) * 100);
