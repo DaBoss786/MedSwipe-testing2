@@ -1,283 +1,497 @@
 // Main app initialization
 window.addEventListener('load', function() {
-  // Initialize user menu with username
-  updateUserMenu();
+  // Make sure Firebase auth is ready before trying to update user data
+  const checkAuthAndInit = function() {
+    if (window.auth && window.auth.currentUser) {
+      // Initialize user menu with username
+      updateUserMenu();
+    } else {
+      // If auth isn't ready yet, check again in 1 second
+      setTimeout(checkAuthAndInit, 1000);
+    }
+  };
+  
+  // Start checking for auth
+  checkAuthAndInit();
   
   // Score circle click => open user menu
-  document.getElementById("scoreCircle").addEventListener("click", function() {
-    document.getElementById("userMenu").classList.add("open");
-    document.getElementById("menuOverlay").classList.add("show");
-  });
+  const scoreCircle = document.getElementById("scoreCircle");
+  if (scoreCircle) {
+    scoreCircle.addEventListener("click", function() {
+      const userMenu = document.getElementById("userMenu");
+      const menuOverlay = document.getElementById("menuOverlay");
+      if (userMenu && menuOverlay) {
+        userMenu.classList.add("open");
+        menuOverlay.classList.add("show");
+      }
+    });
+  }
   
   // User menu close button
-  document.getElementById("userMenuClose").addEventListener("click", function() {
-    closeUserMenu();
-  });
+  const userMenuClose = document.getElementById("userMenuClose");
+  if (userMenuClose) {
+    userMenuClose.addEventListener("click", function() {
+      closeUserMenu();
+    });
+  }
   
   // Performance from user menu
-  document.getElementById("performanceItemUser").addEventListener("click", function() {
-    closeUserMenu();
-    displayPerformance();
-  });
+  const performanceItemUser = document.getElementById("performanceItemUser");
+  if (performanceItemUser) {
+    performanceItemUser.addEventListener("click", function() {
+      closeUserMenu();
+      displayPerformance();
+    });
+  }
   
   // Bookmarks from user menu
-  document.getElementById("bookmarksFilterUser").addEventListener("click", function(e) {
-    e.preventDefault();
-    closeUserMenu();
-    // Bookmark functionality here
-  });
+  const bookmarksFilterUser = document.getElementById("bookmarksFilterUser");
+  if (bookmarksFilterUser) {
+    bookmarksFilterUser.addEventListener("click", function(e) {
+      e.preventDefault();
+      closeUserMenu();
+      // Bookmark functionality here
+    });
+  }
   
   // Reset progress from user menu
-  document.getElementById("resetProgressUser").addEventListener("click", async function(e) {
-    e.preventDefault();
-    const confirmReset = confirm("Are you sure you want to reset all progress?");
-    if (!confirmReset) return;
-    const uid = window.auth.currentUser.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
-    try {
-      await window.runTransaction(window.db, async (transaction) => {
-        const userDoc = await transaction.get(userDocRef);
-        if (userDoc.exists()) {
-          let data = userDoc.data();
-          data.answeredQuestions = {};
-          data.stats = { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0 };
-          data.streaks = { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
-          transaction.set(userDocRef, data, { merge: true });
-        }
-      });
-      alert("Progress has been reset!");
-      updateUserCompositeScore();
-      updateUserMenu();
-    } catch (error) {
-      console.error("Error resetting progress:", error);
-      alert("There was an error resetting your progress.");
-    }
-    closeUserMenu();
-  });
+  const resetProgressUser = document.getElementById("resetProgressUser");
+  if (resetProgressUser) {
+    resetProgressUser.addEventListener("click", async function(e) {
+      e.preventDefault();
+      const confirmReset = confirm("Are you sure you want to reset all progress?");
+      if (!confirmReset) return;
+      
+      if (!window.auth || !window.auth.currentUser) {
+        alert("User not authenticated. Please try again later.");
+        return;
+      }
+      
+      const uid = window.auth.currentUser.uid;
+      const userDocRef = window.doc(window.db, 'users', uid);
+      try {
+        await window.runTransaction(window.db, async (transaction) => {
+          const userDoc = await window.getDoc(userDocRef);
+          if (userDoc.exists()) {
+            let data = userDoc.data();
+            data.answeredQuestions = {};
+            data.stats = { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0 };
+            data.streaks = { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
+            transaction.set(userDocRef, data, { merge: true });
+          }
+        });
+        alert("Progress has been reset!");
+        updateUserCompositeScore();
+        updateUserMenu();
+      } catch (error) {
+        console.error("Error resetting progress:", error);
+        alert("There was an error resetting your progress.");
+      }
+      closeUserMenu();
+    });
+  }
   
   // CUSTOM QUIZ BUTTON => show modal
-  document.getElementById("customQuizBtn").addEventListener("click", function() {
-    window.filterMode = "all";
-    closeSideMenu();
-    document.getElementById("aboutView").style.display = "none";
-    document.getElementById("faqView").style.display = "none";
-    document.getElementById("customQuizForm").style.display = "block";
-  });
+  const customQuizBtn = document.getElementById("customQuizBtn");
+  if (customQuizBtn) {
+    customQuizBtn.addEventListener("click", function() {
+      window.filterMode = "all";
+      closeSideMenu();
+      document.getElementById("aboutView").style.display = "none";
+      document.getElementById("faqView").style.display = "none";
+      document.getElementById("customQuizForm").style.display = "block";
+    });
+  }
   
   // RANDOM QUIZ BUTTON => show modal
-  document.getElementById("randomQuizBtn").addEventListener("click", function() {
-    window.filterMode = "all";
-    closeSideMenu();
-    document.getElementById("aboutView").style.display = "none";
-    document.getElementById("faqView").style.display = "none";
-    document.getElementById("randomQuizForm").style.display = "block";
-  });
+  const randomQuizBtn = document.getElementById("randomQuizBtn");
+  if (randomQuizBtn) {
+    randomQuizBtn.addEventListener("click", function() {
+      window.filterMode = "all";
+      closeSideMenu();
+      document.getElementById("aboutView").style.display = "none";
+      document.getElementById("faqView").style.display = "none";
+      document.getElementById("randomQuizForm").style.display = "block";
+    });
+  }
   
   // START QUIZ (Custom) => hide modal, load quiz
-  document.getElementById("startCustomQuiz").addEventListener("click", function() {
-    let category = document.getElementById("categorySelect").value;
-    let numQuestions = parseInt(document.getElementById("customNumQuestions").value) || 10;
-    let includeAnswered = document.getElementById("includeAnsweredCheckbox").checked;
-    document.getElementById("customQuizForm").style.display = "none";
-    loadQuestions({
-      type: 'custom',
-      category: category,
-      num: numQuestions,
-      includeAnswered: includeAnswered
+  const startCustomQuiz = document.getElementById("startCustomQuiz");
+  if (startCustomQuiz) {
+    startCustomQuiz.addEventListener("click", function() {
+      const categorySelect = document.getElementById("categorySelect");
+      const customNumQuestions = document.getElementById("customNumQuestions");
+      const includeAnsweredCheckbox = document.getElementById("includeAnsweredCheckbox");
+      
+      let category = categorySelect ? categorySelect.value : "";
+      let numQuestions = customNumQuestions ? parseInt(customNumQuestions.value) || 10 : 10;
+      let includeAnswered = includeAnsweredCheckbox ? includeAnsweredCheckbox.checked : false;
+      
+      const customQuizForm = document.getElementById("customQuizForm");
+      if (customQuizForm) {
+        customQuizForm.style.display = "none";
+      }
+      
+      loadQuestions({
+        type: 'custom',
+        category: category,
+        num: numQuestions,
+        includeAnswered: includeAnswered
+      });
     });
-  });
+  }
   
   // CANCEL QUIZ (Custom)
-  document.getElementById("cancelCustomQuiz").addEventListener("click", function() {
-    document.getElementById("customQuizForm").style.display = "none";
-  });
+  const cancelCustomQuiz = document.getElementById("cancelCustomQuiz");
+  if (cancelCustomQuiz) {
+    cancelCustomQuiz.addEventListener("click", function() {
+      const customQuizForm = document.getElementById("customQuizForm");
+      if (customQuizForm) {
+        customQuizForm.style.display = "none";
+      }
+    });
+  }
   
   // START QUIZ (Random) => hide modal, load quiz
-  document.getElementById("startRandomQuiz").addEventListener("click", function() {
-    let numQuestions = parseInt(document.getElementById("randomNumQuestions").value) || 10;
-    let includeAnswered = document.getElementById("includeAnsweredRandomCheckbox").checked;
-    document.getElementById("randomQuizForm").style.display = "none";
-    loadQuestions({
-      type: 'random',
-      num: numQuestions,
-      includeAnswered: includeAnswered
+  const startRandomQuiz = document.getElementById("startRandomQuiz");
+  if (startRandomQuiz) {
+    startRandomQuiz.addEventListener("click", function() {
+      const randomNumQuestions = document.getElementById("randomNumQuestions");
+      const includeAnsweredRandomCheckbox = document.getElementById("includeAnsweredRandomCheckbox");
+      
+      let numQuestions = randomNumQuestions ? parseInt(randomNumQuestions.value) || 10 : 10;
+      let includeAnswered = includeAnsweredRandomCheckbox ? includeAnsweredRandomCheckbox.checked : false;
+      
+      const randomQuizForm = document.getElementById("randomQuizForm");
+      if (randomQuizForm) {
+        randomQuizForm.style.display = "none";
+      }
+      
+      loadQuestions({
+        type: 'random',
+        num: numQuestions,
+        includeAnswered: includeAnswered
+      });
     });
-  });
+  }
   
   // CANCEL QUIZ (Random)
-  document.getElementById("cancelRandomQuiz").addEventListener("click", function() {
-    document.getElementById("randomQuizForm").style.display = "none";
-  });
+  const cancelRandomQuiz = document.getElementById("cancelRandomQuiz");
+  if (cancelRandomQuiz) {
+    cancelRandomQuiz.addEventListener("click", function() {
+      const randomQuizForm = document.getElementById("randomQuizForm");
+      if (randomQuizForm) {
+        randomQuizForm.style.display = "none";
+      }
+    });
+  }
   
   // BOOKMARKS => now simply close the menu
-  document.getElementById("bookmarksFilter").addEventListener("click", function(e) {
-    e.preventDefault();
-    closeSideMenu();
-  });
+  const bookmarksFilter = document.getElementById("bookmarksFilter");
+  if (bookmarksFilter) {
+    bookmarksFilter.addEventListener("click", function(e) {
+      e.preventDefault();
+      closeSideMenu();
+    });
+  }
   
   // START NEW QUIZ from side menu
-  document.getElementById("startNewQuiz").addEventListener("click", function() {
-    closeSideMenu();
-    window.filterMode = "all";
-    document.querySelector(".swiper").style.display = "none";
-    document.getElementById("bottomToolbar").style.display = "none";
-    document.getElementById("iconBar").style.display = "none";
-    document.getElementById("performanceView").style.display = "none";
-    document.getElementById("leaderboardView").style.display = "none";
-    document.getElementById("faqView").style.display = "none";
-    document.getElementById("aboutView").style.display = "none";
-    document.getElementById("mainOptions").style.display = "flex";
-  });
+  const startNewQuiz = document.getElementById("startNewQuiz");
+  if (startNewQuiz) {
+    startNewQuiz.addEventListener("click", function() {
+      closeSideMenu();
+      window.filterMode = "all";
+      
+      const swiperElement = document.querySelector(".swiper");
+      if (swiperElement) swiperElement.style.display = "none";
+      
+      const bottomToolbar = document.getElementById("bottomToolbar");
+      if (bottomToolbar) bottomToolbar.style.display = "none";
+      
+      const iconBar = document.getElementById("iconBar");
+      if (iconBar) iconBar.style.display = "none";
+      
+      const performanceView = document.getElementById("performanceView");
+      if (performanceView) performanceView.style.display = "none";
+      
+      const leaderboardView = document.getElementById("leaderboardView");
+      if (leaderboardView) leaderboardView.style.display = "none";
+      
+      const faqView = document.getElementById("faqView");
+      if (faqView) faqView.style.display = "none";
+      
+      const aboutView = document.getElementById("aboutView");
+      if (aboutView) aboutView.style.display = "none";
+      
+      const mainOptions = document.getElementById("mainOptions");
+      if (mainOptions) mainOptions.style.display = "flex";
+    });
+  }
   
   // LEADERBOARD
-  document.getElementById("leaderboardItem").addEventListener("click", function() {
-    closeSideMenu();
-    showLeaderboard();
-  });
+  const leaderboardItem = document.getElementById("leaderboardItem");
+  if (leaderboardItem) {
+    leaderboardItem.addEventListener("click", function() {
+      closeSideMenu();
+      showLeaderboard();
+    });
+  }
   
   // FAQ
-  document.getElementById("faqItem").addEventListener("click", function() {
-    closeSideMenu();
-    showFAQ();
-  });
+  const faqItem = document.getElementById("faqItem");
+  if (faqItem) {
+    faqItem.addEventListener("click", function() {
+      closeSideMenu();
+      showFAQ();
+    });
+  }
   
   // ABOUT US
-  document.getElementById("aboutItem").addEventListener("click", function() {
-    closeSideMenu();
-    showAbout();
-  });
+  const aboutItem = document.getElementById("aboutItem");
+  if (aboutItem) {
+    aboutItem.addEventListener("click", function() {
+      closeSideMenu();
+      showAbout();
+    });
+  }
   
   // CONTACT US
-  document.getElementById("contactItem").addEventListener("click", function() {
-    closeSideMenu();
-    document.querySelector(".swiper").style.display = "none";
-    document.getElementById("bottomToolbar").style.display = "none";
-    document.getElementById("iconBar").style.display = "none";
-    document.getElementById("performanceView").style.display = "none";
-    document.getElementById("leaderboardView").style.display = "none";
-    document.getElementById("aboutView").style.display = "none";
-    document.getElementById("faqView").style.display = "none";
-    document.getElementById("mainOptions").style.display = "none";
-    showContactModal();
-  });
+  const contactItem = document.getElementById("contactItem");
+  if (contactItem) {
+    contactItem.addEventListener("click", function() {
+      closeSideMenu();
+      
+      const swiperElement = document.querySelector(".swiper");
+      if (swiperElement) swiperElement.style.display = "none";
+      
+      const bottomToolbar = document.getElementById("bottomToolbar");
+      if (bottomToolbar) bottomToolbar.style.display = "none";
+      
+      const iconBar = document.getElementById("iconBar");
+      if (iconBar) iconBar.style.display = "none";
+      
+      const performanceView = document.getElementById("performanceView");
+      if (performanceView) performanceView.style.display = "none";
+      
+      const leaderboardView = document.getElementById("leaderboardView");
+      if (leaderboardView) leaderboardView.style.display = "none";
+      
+      const aboutView = document.getElementById("aboutView");
+      if (aboutView) aboutView.style.display = "none";
+      
+      const faqView = document.getElementById("faqView");
+      if (faqView) faqView.style.display = "none";
+      
+      const mainOptions = document.getElementById("mainOptions");
+      if (mainOptions) mainOptions.style.display = "none";
+      
+      showContactModal();
+    });
+  }
   
   // Side menu toggling - this is the crucial part that was causing the issue
-  document.getElementById("menuToggle").addEventListener("click", function() {
-    document.getElementById("sideMenu").classList.add("open");
-    document.getElementById("menuOverlay").classList.add("show");
-  });
+  const menuToggle = document.getElementById("menuToggle");
+  if (menuToggle) {
+    menuToggle.addEventListener("click", function() {
+      const sideMenu = document.getElementById("sideMenu");
+      const menuOverlay = document.getElementById("menuOverlay");
+      
+      if (sideMenu) sideMenu.classList.add("open");
+      if (menuOverlay) menuOverlay.classList.add("show");
+    });
+  }
   
-  document.getElementById("menuClose").addEventListener("click", function() {
-    closeSideMenu();
-  });
+  const menuClose = document.getElementById("menuClose");
+  if (menuClose) {
+    menuClose.addEventListener("click", function() {
+      closeSideMenu();
+    });
+  }
   
-  document.getElementById("menuOverlay").addEventListener("click", function() {
-    closeSideMenu();
-    closeUserMenu();
-  });
+  const menuOverlay = document.getElementById("menuOverlay");
+  if (menuOverlay) {
+    menuOverlay.addEventListener("click", function() {
+      closeSideMenu();
+      closeUserMenu();
+    });
+  }
   
   // Logo click => go to main menu
-  document.getElementById("logoClick").addEventListener("click", function() {
-    closeSideMenu();
-    closeUserMenu();
-    document.getElementById("aboutView").style.display = "none";
-    document.getElementById("faqView").style.display = "none";
-    document.querySelector(".swiper").style.display = "none";
-    document.getElementById("bottomToolbar").style.display = "none";
-    document.getElementById("iconBar").style.display = "none";
-    document.getElementById("performanceView").style.display = "none";
-    document.getElementById("leaderboardView").style.display = "none";
-    document.getElementById("mainOptions").style.display = "flex";
-  });
+  const logoClick = document.getElementById("logoClick");
+  if (logoClick) {
+    logoClick.addEventListener("click", function() {
+      closeSideMenu();
+      closeUserMenu();
+      
+      const aboutView = document.getElementById("aboutView");
+      if (aboutView) aboutView.style.display = "none";
+      
+      const faqView = document.getElementById("faqView");
+      if (faqView) faqView.style.display = "none";
+      
+      const swiperElement = document.querySelector(".swiper");
+      if (swiperElement) swiperElement.style.display = "none";
+      
+      const bottomToolbar = document.getElementById("bottomToolbar");
+      if (bottomToolbar) bottomToolbar.style.display = "none";
+      
+      const iconBar = document.getElementById("iconBar");
+      if (iconBar) iconBar.style.display = "none";
+      
+      const performanceView = document.getElementById("performanceView");
+      if (performanceView) performanceView.style.display = "none";
+      
+      const leaderboardView = document.getElementById("leaderboardView");
+      if (leaderboardView) leaderboardView.style.display = "none";
+      
+      const mainOptions = document.getElementById("mainOptions");
+      if (mainOptions) mainOptions.style.display = "flex";
+    });
+  }
   
   // FEEDBACK button
-  document.getElementById("feedbackButton").addEventListener("click", function() {
-    const questionId = getCurrentQuestionId();
-    const questionSlide = document.querySelector(`.swiper-slide[data-id="${questionId}"]`);
-    let questionText = "";
-    if (questionSlide) {
-      const questionElem = questionSlide.querySelector(".question");
-      if (questionElem) {
-        questionText = questionElem.textContent.trim();
+  const feedbackButton = document.getElementById("feedbackButton");
+  if (feedbackButton) {
+    feedbackButton.addEventListener("click", function() {
+      const questionId = getCurrentQuestionId();
+      const questionSlide = document.querySelector(`.swiper-slide[data-id="${questionId}"]`);
+      let questionText = "";
+      if (questionSlide) {
+        const questionElem = questionSlide.querySelector(".question");
+        if (questionElem) {
+          questionText = questionElem.textContent.trim();
+        }
       }
-    }
-    currentFeedbackQuestionId = questionId || "";
-    currentFeedbackQuestionText = questionText || "";
-    document.getElementById("feedbackQuestionInfo").textContent = `Feedback for Q: ${currentFeedbackQuestionText}`;
-    document.getElementById("feedbackModal").style.display = "flex";
-  });
+      currentFeedbackQuestionId = questionId || "";
+      currentFeedbackQuestionText = questionText || "";
+      
+      const feedbackQuestionInfo = document.getElementById("feedbackQuestionInfo");
+      if (feedbackQuestionInfo) {
+        feedbackQuestionInfo.textContent = `Feedback for Q: ${currentFeedbackQuestionText}`;
+      }
+      
+      const feedbackModal = document.getElementById("feedbackModal");
+      if (feedbackModal) {
+        feedbackModal.style.display = "flex";
+      }
+    });
+  }
   
   // FEEDBACK modal close
-  document.getElementById("closeFeedbackModal").addEventListener("click", function() {
-    document.getElementById("feedbackModal").style.display = "none";
-  });
+  const closeFeedbackModal = document.getElementById("closeFeedbackModal");
+  if (closeFeedbackModal) {
+    closeFeedbackModal.addEventListener("click", function() {
+      const feedbackModal = document.getElementById("feedbackModal");
+      if (feedbackModal) {
+        feedbackModal.style.display = "none";
+      }
+    });
+  }
   
   // FEEDBACK submit
-  document.getElementById("submitFeedback").addEventListener("click", async function() {
-    const feedbackText = document.getElementById("feedbackText").value.trim();
-    if (!feedbackText) {
-      alert("Please enter your feedback.");
-      return;
-    }
-    try {
-      await window.addDoc(window.collection(window.db, "feedback"), {
-        questionId: currentFeedbackQuestionId,
-        questionText: currentFeedbackQuestionText,
-        feedback: feedbackText,
-        timestamp: window.serverTimestamp()
-      });
-      alert("Thank you for your feedback!");
-      document.getElementById("feedbackText").value = "";
-      document.getElementById("feedbackModal").style.display = "none";
-    } catch (error) {
-      console.error("Error submitting feedback:", error);
-      alert("There was an error submitting your feedback. Please try again later.");
-    }
-  });
+  const submitFeedback = document.getElementById("submitFeedback");
+  if (submitFeedback) {
+    submitFeedback.addEventListener("click", async function() {
+      const feedbackText = document.getElementById("feedbackText");
+      if (!feedbackText || !feedbackText.value.trim()) {
+        alert("Please enter your feedback.");
+        return;
+      }
+      
+      try {
+        await window.addDoc(window.collection(window.db, "feedback"), {
+          questionId: currentFeedbackQuestionId,
+          questionText: currentFeedbackQuestionText,
+          feedback: feedbackText.value.trim(),
+          timestamp: window.serverTimestamp()
+        });
+        alert("Thank you for your feedback!");
+        
+        if (feedbackText) {
+          feedbackText.value = "";
+        }
+        
+        const feedbackModal = document.getElementById("feedbackModal");
+        if (feedbackModal) {
+          feedbackModal.style.display = "none";
+        }
+      } catch (error) {
+        console.error("Error submitting feedback:", error);
+        alert("There was an error submitting your feedback. Please try again later.");
+      }
+    });
+  }
   
   // FAVORITE button
-  document.getElementById("favoriteButton").addEventListener("click", async function() {
-    let questionId = getCurrentQuestionId();
-    if (!questionId) return;
-    let bookmarks = await getBookmarks();
-    if (!bookmarks.includes(questionId.trim())) {
-      await toggleBookmark(questionId.trim());
-      document.getElementById("favoriteButton").innerText = "★";
-      document.getElementById("favoriteButton").style.color = "blue";
-    }
-  });
+  const favoriteButton = document.getElementById("favoriteButton");
+  if (favoriteButton) {
+    favoriteButton.addEventListener("click", async function() {
+      let questionId = getCurrentQuestionId();
+      if (!questionId) return;
+      
+      let bookmarks = await getBookmarks();
+      if (!bookmarks.includes(questionId.trim())) {
+        await toggleBookmark(questionId.trim());
+        favoriteButton.innerText = "★";
+        favoriteButton.style.color = "blue";
+      }
+    });
+  }
   
   // CONTACT modal buttons
-  document.getElementById("submitContact").addEventListener("click", async function() {
-    const email = document.getElementById("contactEmail").value.trim();
-    const message = document.getElementById("contactMessage").value.trim();
-    
-    if (!message) {
-      alert("Please enter your message.");
-      return;
-    }
-    
-    try {
-      await window.addDoc(window.collection(window.db, "contact"), {
-        email: email,
-        message: message,
-        timestamp: window.serverTimestamp(),
-        userId: window.auth.currentUser.uid
-      });
-      alert("Thank you for contacting us!");
-      document.getElementById("contactEmail").value = "";
-      document.getElementById("contactMessage").value = "";
-      document.getElementById("contactModal").style.display = "none";
-    } catch (error) {
-      console.error("Error submitting contact:", error);
-      alert("There was an error submitting your message. Please try again later.");
-    }
-  });
+  const submitContact = document.getElementById("submitContact");
+  if (submitContact) {
+    submitContact.addEventListener("click", async function() {
+      const contactEmail = document.getElementById("contactEmail");
+      const contactMessage = document.getElementById("contactMessage");
+      
+      const email = contactEmail ? contactEmail.value.trim() : "";
+      const message = contactMessage ? contactMessage.value.trim() : "";
+      
+      if (!message) {
+        alert("Please enter your message.");
+        return;
+      }
+      
+      try {
+        if (!window.auth || !window.auth.currentUser) {
+          alert("User not authenticated. Please try again later.");
+          return;
+        }
+        
+        await window.addDoc(window.collection(window.db, "contact"), {
+          email: email,
+          message: message,
+          timestamp: window.serverTimestamp(),
+          userId: window.auth.currentUser.uid
+        });
+        alert("Thank you for contacting us!");
+        
+        if (contactEmail) contactEmail.value = "";
+        if (contactMessage) contactMessage.value = "";
+        
+        const contactModal = document.getElementById("contactModal");
+        if (contactModal) {
+          contactModal.style.display = "none";
+        }
+      } catch (error) {
+        console.error("Error submitting contact:", error);
+        alert("There was an error submitting your message. Please try again later.");
+      }
+    });
+  }
   
-  document.getElementById("closeContactModal").addEventListener("click", function() {
-    document.getElementById("contactModal").style.display = "none";
-  });
+  const closeContactModal = document.getElementById("closeContactModal");
+  if (closeContactModal) {
+    closeContactModal.addEventListener("click", function() {
+      const contactModal = document.getElementById("contactModal");
+      if (contactModal) {
+        contactModal.style.display = "none";
+      }
+    });
+  }
 
-  // Update the composite score on load
-  updateUserCompositeScore();
+  // We'll only update the scores when Firebase auth is ready
+  // Instead of calling it here directly
+  // updateUserCompositeScore();
 });
