@@ -33,9 +33,46 @@ document.addEventListener('DOMContentLoaded', function() {
   let questionStartTime = 0;
   let sessionStartTime = Date.now();
 
-  // -------------------------
-  // Functions that must be available globally
-  // -------------------------
+  // Function to close the side menu
+  function closeSideMenu() {
+    document.getElementById("sideMenu").classList.remove("open");
+    document.getElementById("menuOverlay").classList.remove("show");
+  }
+  window.closeSideMenu = closeSideMenu; // Attach to window
+
+  // Helper to get current question id from the active slide.
+  function getCurrentQuestionId() {
+    if (!window.mySwiper) return null;
+    let activeIndex = window.mySwiper.activeIndex;
+    let currentSlide;
+    if (activeIndex % 2 !== 0) {
+      currentSlide = window.mySwiper.slides[activeIndex - 1];
+    } else {
+      currentSlide = window.mySwiper.slides[activeIndex];
+    }
+    return currentSlide && currentSlide.dataset ? currentSlide.dataset.id : null;
+  }
+
+  // Reset favorite icon for new questions.
+  async function updateFavoriteIcon() {
+    let favoriteButton = document.getElementById("favoriteButton");
+    favoriteButton.innerText = "☆";
+    favoriteButton.style.color = "";
+  }
+
+  // Attach event listener for favorite button.
+  document.getElementById("favoriteButton").addEventListener("click", async function() {
+    let questionId = getCurrentQuestionId();
+    if (!questionId) return;
+    let bookmarks = await window.getBookmarks();
+    if (!bookmarks.includes(questionId.trim())) {
+      await window.toggleBookmark(questionId.trim());
+      document.getElementById("favoriteButton").innerText = "★";
+      document.getElementById("favoriteButton").style.color = "blue";
+    }
+  });
+
+  // Global functions that must be available to other parts of the code.
   async function updateUserCompositeScore() {
     try {
       const uid = window.auth.currentUser.uid;
@@ -161,6 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
       console.error("Error updating question stats:", error);
     }
   }
+  window.updateQuestionStats = updateQuestionStats;
 
   // -------------------------
   // Other function declarations
