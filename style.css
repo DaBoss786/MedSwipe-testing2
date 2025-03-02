@@ -1,1 +1,630 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Roboto', sans-serif;
+  color: #333;
+  background: linear-gradient(to bottom right, #F3FAFF, #E6F0FA);
+}
+/* Top Toolbar */
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50px;
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  z-index: 1500;
+}
+.toolbar-left, .toolbar-center, .toolbar-right {
+  flex: 1;
+}
+.toolbar-left { text-align: left; }
+.toolbar-center { text-align: center; }
+.toolbar-right {
+  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  margin-right: 17px;
+}
+/* Circle for Composite Score */
+#scoreCircle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #0C72D3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1rem;
+}
+.menu-button {
+  font-size: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333;
+  transition: transform 0.2s ease;
+}
+.menu-button:hover {
+  transform: scale(1.1);
+}
+.logo img {
+  max-height: 40px;
+  cursor: pointer;
+}
+/* Icon Bar */
+#iconBar {
+  position: fixed;
+  top: 50px;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  background-color: #fff;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  z-index: 1450;
+}
+#iconBar button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  margin: 0 15px;
+  color: #0056b3;
+  transition: color 0.2s ease;
+}
+#iconBar button:hover {
+  color: #003f7f;
+}
+/* Main Options (Landing View) */
+#mainOptions {
+  margin-top: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#mainOptions button {
+  font-size: 1.2rem;
+  padding: 12px 20px;
+  margin: 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #fff;
+  width: 220px;
+  transition: background-color 0.2s ease;
+  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+}
+#mainOptions button:hover {
+  background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
+}
+/* Swiper Container */
+.swiper {
+  display: none;
+  width: 100%;
+  height: calc(100% - 50px - 40px - 50px);
+  min-height: calc(100vh - 140px);
+  margin-top: 90px;
+}
+.swiper-slide {
+  animation: fadeIn 0.5s ease-in-out;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  box-sizing: border-box;
+  padding-top: 20px;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* Bottom Toolbar */
+#bottomToolbar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
+  box-shadow: 0 -1px 3px rgba(0,0,0,0.1);
+  z-index: 1500;
+}
+#progressBarContainer {
+  flex: 1;
+  height: 10px;
+  background-color: #ccc;
+  border-radius: 5px;
+  margin-right: 10px;
+  overflow: hidden;
+}
+#progressBar {
+  height: 100%;
+  width: 0%;
+  background-color: #0056b3;
+  border-radius: 5px;
+  transition: width 0.3s ease;
+}
+#questionProgress {
+  font-size: 0.9rem;
+  color: #0056b3;
+  margin-right: 10px;
+  min-width: 50px;
+  text-align: center;
+}
+#scoreDisplay {
+  font-size: 0.9rem;
+  color: #0056b3;
+  min-width: 60px;
+  text-align: right;
+}
+/* Modal Forms */
+.modalForm {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  padding: 20px;
+  z-index: 2100;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  width: 90%;
+  max-width: 400px;
+}
+.modalForm h2 {
+  margin-bottom: 10px;
+  color: #0056b3;
+  text-align: center;
+}
+.modalForm .formGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+}
+.modalForm .formGroup label {
+  font-size: 0.9rem;
+  color: #333;
+  margin-bottom: 5px;
+}
+.modalForm .formGroup select,
+.modalForm .formGroup input {
+  width: 100%;
+  padding: 8px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.modalForm .btnRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+.modalForm button {
+  margin-left: 10px;
+  padding: 8px 15px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #0056b3;
+  color: #fff;
+  transition: background-color 0.2s ease;
+}
+.modalForm button:hover {
+  background-color: #004a95;
+}
+.modalForm button.cancel {
+  background-color: #aaa;
+}
+/* Performance View */
+#performanceView {
+  display: none;
+  margin-top: 90px;
+  padding: 20px;
+}
+#performanceView h2 {
+  text-align: center;
+  color: #0056b3;
+}
+#performanceView p, #performanceView div {
+  font-size: 1rem;
+  color: #333;
+  margin: 5px 0;
+}
+#performanceView button {
+  margin-top: 20px;
+  padding: 8px 15px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #0056b3;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+#performanceView button:hover {
+  background-color: #004a95;
+}
+/* Category Breakdown Progress Bars */
+.category-item {
+  margin: 10px 0;
+}
+.progress-bar-container {
+  width: 100%;
+  background-color: #ccc;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-top: 5px;
+  height: 20px;
+}
+.progress-bar {
+  height: 100%;
+  background-color: #28a745;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+/* Additional hint on explanation slide */
+.swipe-next-hint {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: #666;
+}
+/* Quiz Card Styles */
+.card {
+  position: relative;
+  background: #fff;
+  border-radius: 6px;
+  padding: 20px 15px 15px 15px;
+  margin: 10px auto;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  text-align: center;
+}
+.question {
+  white-space: pre-line;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.option-btn {
+  padding: 6px;
+  border: 1px solid #0056b3;
+  background: #fff;
+  color: #0056b3;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.3s ease;
+}
+.option-btn:hover {
+  background: #0056b3;
+  color: #fff;
+}
+.option-btn.correct {
+  background-color: #28a745;
+  color: #fff;
+}
+.option-btn.incorrect {
+  background-color: #dc3545;
+  color: #fff;
+}
+.option-btn:disabled {
+  cursor: not-allowed;
+}
+.swipe-hint {
+  font-size: 0.85rem;
+  margin-top: 8px;
+  color: #666;
+  display: none;
+}
+.answer {
+  white-space: pre-line;
+  font-size: 1rem;
+  color: #333;
+  margin-top: 10px;
+  text-align: left;
+}
+.question-image {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 10px;
+  border-radius: 6px;
+}
+/* Side Menu */
+#sideMenu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(5px);
+  box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease-in-out;
+  z-index: 1600;
+  padding: 20px;
+}
+#sideMenu.open {
+  transform: translateX(0);
+}
+#menuHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+#menuTitle {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #0056b3;
+}
+#menuClose {
+  font-size: 1.5rem;
+  color: #0056b3;
+  transition: color 0.2s ease;
+  cursor: pointer;
+}
+#menuClose:hover {
+  color: #003f7f;
+}
+/* Menu Overlay */
+#menuOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.4);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out;
+  z-index: 1599;
+}
+#menuOverlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+/* Menu List Items */
+#menuList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+#menuList > li {
+  margin-bottom: 15px;
+  padding: 10px 15px;
+  font-size: 1.1rem;
+  color: #0056b3;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+#menuList > li:hover {
+  background: rgba(0, 86, 179, 0.1);
+}
+#menuList > li a {
+  text-decoration: none;
+  color: #0056b3;
+  font-size: 1.1rem;
+}
+/* Leaderboard View */
+#leaderboardView {
+  display: none;
+  padding: 20px;
+  margin-top: 90px;
+}
+#leaderboardView h2 {
+  text-align: center;
+  color: #0056b3;
+}
+#leaderboardTabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.leaderboard-tab {
+  margin: 0 10px;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  background: #0C72D3;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+.leaderboard-tab.active {
+  background: #0056b3;
+}
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.leaderboard-table th, .leaderboard-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+.leaderboard-table th {
+  background-color: #f2f2f2;
+}
+.leaderboard-back-btn {
+  margin-top: 20px;
+  padding: 8px 15px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #0056b3;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.leaderboard-back-btn:hover {
+  background-color: #004a95;
+}
+/* Start New Quiz Button */
+.start-quiz-btn {
+  font-size: 1.2rem;
+  padding: 12px 20px;
+  margin: 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #fff;
+  width: 220px;
+  transition: background-color 0.2s ease;
+  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+}
+.start-quiz-btn:hover {
+  background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
+}
+/* About Us View */
+#aboutView {
+  display: none;
+  padding: 20px;
+  margin-top: 90px;
+}
+#aboutView h2 {
+  text-align: center;
+  color: #0056b3;
+}
+#aboutView p {
+  font-size: 1rem;
+  color: #333;
+  margin: 10px 0;
+  line-height: 1.5;
+}
+#aboutView button {
+  margin-top: 20px;
+  padding: 8px 15px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #0056b3;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+#aboutView button:hover {
+  background-color: #004a95;
+}
+/* FAQ View */
+#faqView {
+  display: none;
+  padding: 20px;
+  margin-top: 90px;
+}
+#faqView h2 {
+  text-align: center;
+  color: #0056b3;
+}
+#faqView p, #faqView li {
+  font-size: 1rem;
+  color: #333;
+  margin: 10px 0;
+  line-height: 1.5;
+}
+#faqView ul {
+  list-style: decimal;
+  padding-left: 20px;
+}
+#faqView button {
+  margin-top: 20px;
+  padding: 8px 15px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #0056b3;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+#faqView button:hover {
+  background-color: #004a95;
+}
+/* Contact Us Modal */
+#contactModal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 1800;
+  justify-content: center;
+  align-items: center;
+}
+#contactModal > div {
+  background: #fff;
+  padding: 20px;
+  border-radius: 6px;
+  width: 90%;
+  max-width: 400px;
+}
+#contactModal h3 {
+  margin-bottom: 10px;
+  color: #0056b3;
+  text-align: center;
+}
+#contactModal p {
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 10px;
+}
+#contactModal label {
+  font-size: 0.9rem;
+  color: #333;
+  margin-bottom: 5px;
+  display: block;
+}
+#contactModal input[type="email"],
+#contactModal textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  font-size: 1rem;
+}
+#contactModal button {
+  padding: 8px 15px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #0056b3;
+  color: #fff;
+  transition: background-color 0.2s ease;
+}
+#contactModal button:hover {
+  background-color: #004a95;
+}
 
