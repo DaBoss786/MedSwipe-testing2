@@ -431,19 +431,36 @@ window.addEventListener('load', function() {
     });
   }
   
-  // FAVORITE button
+  // FAVORITE button (BOOKMARK functionality)
   const favoriteButton = document.getElementById("favoriteButton");
   if (favoriteButton) {
     favoriteButton.addEventListener("click", async function() {
       let questionId = getCurrentQuestionId();
       if (!questionId) return;
       
-      let bookmarks = await getBookmarks();
-      if (!bookmarks.includes(questionId.trim())) {
-        await toggleBookmark(questionId.trim());
+      const wasToggled = await toggleBookmark(questionId.trim());
+      if (wasToggled) {
         favoriteButton.innerText = "★";
-        favoriteButton.style.color = "blue";
+        favoriteButton.style.color = "#007BFF"; // Blue
+      } else {
+        favoriteButton.innerText = "☆";
+        favoriteButton.style.color = "";
       }
+    });
+  }
+  
+  // BOOKMARKS from user menu - start a bookmarks-only quiz
+  const bookmarksFilterUser = document.getElementById("bookmarksFilterUser");
+  if (bookmarksFilterUser) {
+    bookmarksFilterUser.addEventListener("click", function(e) {
+      e.preventDefault();
+      closeUserMenu();
+      
+      // Start a quiz with only bookmarked questions
+      loadQuestions({
+        bookmarksOnly: true,
+        num: 50 // Large number to include all bookmarks
+      });
     });
   }
   
