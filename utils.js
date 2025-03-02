@@ -6,6 +6,9 @@ window.filterMode = "all";
 
 // Shuffle array (randomize item order)
 function shuffleArray(array) {
+  if (!array || !Array.isArray(array)) {
+    return [];
+  }
   return array.sort(() => Math.random() - 0.5);
 }
 
@@ -45,19 +48,27 @@ function leaderboardTabsHTML(activeTab) {
 
 // Close the side menu (left)
 function closeSideMenu() {
-  document.getElementById("sideMenu").classList.remove("open");
-  document.getElementById("menuOverlay").classList.remove("show");
+  const sideMenu = document.getElementById("sideMenu");
+  const menuOverlay = document.getElementById("menuOverlay");
+  
+  if (sideMenu) sideMenu.classList.remove("open");
+  if (menuOverlay) menuOverlay.classList.remove("show");
 }
 
 // Close the user menu (right)
 function closeUserMenu() {
-  document.getElementById("userMenu").classList.remove("open");
-  document.getElementById("menuOverlay").classList.remove("show");
+  const userMenu = document.getElementById("userMenu");
+  const menuOverlay = document.getElementById("menuOverlay");
+  
+  if (userMenu) userMenu.classList.remove("open");
+  if (menuOverlay) menuOverlay.classList.remove("show");
 }
 
 // Reset favorite icon for new questions
 async function updateFavoriteIcon() {
   let favoriteButton = document.getElementById("favoriteButton");
-  favoriteButton.innerText = "☆";
-  favoriteButton.style.color = "";
+  if (favoriteButton) {
+    favoriteButton.innerText = "☆";
+    favoriteButton.style.color = "";
+  }
 }
