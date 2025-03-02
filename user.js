@@ -86,6 +86,9 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       transaction.set(userDocRef, data, { merge: true });
     });
     console.log("Recorded answer for", questionId);
+    // Update user information after recording answer
+    updateUserCompositeScore();
+    updateUserMenu();
   } catch (error) {
     console.error("Error recording answer:", error);
   }
@@ -126,10 +129,26 @@ async function updateUserCompositeScore() {
       const longestStreak = (data.streaks && data.streaks.longestStreak) ? data.streaks.longestStreak : 0;
       const normStreak = Math.min(longestStreak, 30) / 30;
       const composite = Math.round(((accuracy * 0.5) + (normTotal * 0.3) + (normStreak * 0.2)) * 100);
+      
+      // Update both score circles
       document.getElementById("scoreCircle").textContent = composite;
+      document.getElementById("userScoreCircle").textContent = composite;
     }
   } catch (error) {
     console.error("Error updating user composite score:", error);
+  }
+}
+
+// Update the user menu with current username and score
+async function updateUserMenu() {
+  try {
+    const username = await getOrGenerateUsername();
+    document.getElementById("usernameDisplay").textContent = username;
+    
+    // Also update the composite score
+    updateUserCompositeScore();
+  } catch (error) {
+    console.error("Error updating user menu:", error);
   }
 }
 
