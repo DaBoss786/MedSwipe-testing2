@@ -76,6 +76,12 @@ html, body {
   font-weight: bold;
   font-size: 1.5rem;
   margin: 10px auto;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+#userScoreCircle:hover {
+  transform: scale(1.1);
 }
 
 .user-score-container {
