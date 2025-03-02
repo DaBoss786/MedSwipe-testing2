@@ -30,8 +30,8 @@
       </div>
     </div>
     <div class="toolbar-right">
-      <!-- Composite score circle -->
-      <div id="scoreCircle">0</div>
+      <!-- Composite score circle - now clickable -->
+      <div id="scoreCircle" class="clickable">0</div>
     </div>
   </div>
   
@@ -67,7 +67,7 @@
   <!-- About Us View -->
   <div id="aboutView"></div>
   
-  <!-- Side Menu with Close Button -->
+  <!-- Side Menu with Close Button (Left) -->
   <div id="sideMenu">
     <div id="menuHeader">
       <span id="menuTitle">Menu</span>
@@ -76,12 +76,28 @@
     <ul id="menuList">
       <li id="startNewQuiz">Start New Quiz</li>
       <li id="leaderboardItem">Leaderboard</li>
-      <li id="performanceItem">Performance</li>
-      <li><a href="#" id="bookmarksFilter">Bookmarks</a></li>
-      <li><a href="#" id="resetProgress">Reset Progress</a></li>
       <li id="faqItem">FAQ</li>
       <li id="aboutItem">About Us</li>
       <li id="contactItem">Contact Us</li>
+    </ul>
+  </div>
+  
+  <!-- User Menu with Close Button (Right) -->
+  <div id="userMenu">
+    <div id="userMenuHeader">
+      <span id="userMenuClose" style="cursor:pointer;">&times;</span>
+    </div>
+    <div id="userInfoSection">
+      <h3 id="usernameDisplay">Username</h3>
+      <div class="user-score-container">
+        <p>Composite Score</p>
+        <div id="userScoreCircle">0</div>
+      </div>
+    </div>
+    <ul id="userMenuList">
+      <li id="performanceItemUser">Performance</li>
+      <li><a href="#" id="bookmarksFilterUser">Bookmarks</a></li>
+      <li><a href="#" id="resetProgressUser">Reset Progress</a></li>
     </ul>
   </div>
   
