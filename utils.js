@@ -43,9 +43,15 @@ function leaderboardTabsHTML(activeTab) {
   `;
 }
 
-// Close the side menu
+// Close the side menu (left)
 function closeSideMenu() {
   document.getElementById("sideMenu").classList.remove("open");
+  document.getElementById("menuOverlay").classList.remove("show");
+}
+
+// Close the user menu (right)
+function closeUserMenu() {
+  document.getElementById("userMenu").classList.remove("open");
   document.getElementById("menuOverlay").classList.remove("show");
 }
 
