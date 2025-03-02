@@ -25,7 +25,7 @@ async function fetchQuestionBank() {
 }
 
 // Load questions according to quiz options
-function loadQuestions(options = {}) {
+async function loadQuestions(options = {}) {
   console.log("Loading questions with options:", options);
   Papa.parse(csvUrl, {
     download: true,
@@ -35,34 +35,71 @@ function loadQuestions(options = {}) {
       allQuestions = results.data;
       const persistentAnsweredIds = await fetchPersistentAnsweredIds();
       answeredIds = persistentAnsweredIds;
+      
+      // Start with all questions
       let filtered = allQuestions;
-      if (!options.includeAnswered) {
-        filtered = filtered.filter(q => !answeredIds.includes(q["Question"].trim()));
+      
+      // Filter by bookmarks if in bookmarks mode
+      if (options.bookmarksOnly) {
+        const bookmarks = await getBookmarks();
+        console.log("Filtering for bookmarks:", bookmarks);
+        if (bookmarks.length === 0) {
+          alert("You don't have any bookmarks yet. Star questions you want to review later!");
+          document.getElementById("mainOptions").style.display = "flex";
+          return;
+        }
+        filtered = filtered.filter(q => bookmarks.includes(q["Question"].trim()));
+      } 
+      // Otherwise apply normal filters
+      else {
+        if (!options.includeAnswered) {
+          filtered = filtered.filter(q => !answeredIds.includes(q["Question"].trim()));
+        }
+        if (options.type === 'custom' && options.category) {
+          filtered = filtered.filter(q => q["Category"] && q["Category"].trim() === options.category);
+        }
       }
-      if (options.type === 'custom' && options.category) {
-        filtered = filtered.filter(q => q["Category"] && q["Category"].trim() === options.category);
+      
+      // If we end up with no questions after filtering
+      if (filtered.length === 0) {
+        if (options.bookmarksOnly) {
+          alert("No bookmarked questions found. Star questions you want to review later!");
+        } else if (options.type === 'custom' && options.category) {
+          alert("No unanswered questions left in this category. Try including answered questions or choosing a different category.");
+        } else {
+          alert("No unanswered questions left. Try including answered questions for more practice!");
+        }
+        document.getElementById("mainOptions").style.display = "flex";
+        return;
       }
-      // Filter for bookmarks mode
+      
+      // Shuffle and slice to limit question count
       let selectedQuestions = shuffleArray(filtered);
-      if (options.num) {
+      if (options.num && options.num < selectedQuestions.length) {
         selectedQuestions = selectedQuestions.slice(0, options.num);
       }
+      
       console.log("Selected questions count:", selectedQuestions.length);
       initializeQuiz(selectedQuestions);
     },
     error: function(error) {
       console.error("Error parsing CSV:", error);
+      alert("Error loading questions. Please try again later.");
     }
   });
 }
 
 // Initialize the quiz with the selected questions
-function initializeQuiz(questions) {
+async function initializeQuiz(questions) {
   currentQuestion = 0;
   score = 0;
   totalQuestions = questions.length;
   answeredIds = [];
   updateProgress();
+  
+  // Get bookmarks to show the filled star for bookmarked questions
+  const bookmarks = await getBookmarks();
+  
   const quizSlides = document.getElementById("quizSlides");
   quizSlides.innerHTML = "";
   questions.forEach(question => {
@@ -73,6 +110,8 @@ function initializeQuiz(questions) {
     questionSlide.dataset.correct = question["Correct Answer"].trim();
     questionSlide.dataset.explanation = question["Explanation"];
     questionSlide.dataset.category = question["Category"] || "Uncategorized";
+    questionSlide.dataset.bookmarked = bookmarks.includes(qId) ? "true" : "false";
+    
     questionSlide.innerHTML = `
       <div class="card">
         <div class="question">${question["Question"]}</div>
@@ -124,6 +163,7 @@ function initializeQuiz(questions) {
     if (activeIndex % 2 === 0) {
       questionStartTime = Date.now();
       console.log("New question slide. questionStartTime updated to:", questionStartTime);
+      updateBookmarkIcon();
     }
     if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
       const prevSlide = window.mySwiper.slides[activeIndex - 1];
@@ -132,10 +172,12 @@ function initializeQuiz(questions) {
         window.mySwiper.slideNext();
       }
     }
-    updateFavoriteIcon();
   });
 
   addOptionListeners();
+  
+  // Set the initial bookmark icon state for the first question
+  updateBookmarkIcon();
 
   document.querySelector(".swiper").style.display = "block";
   document.getElementById("bottomToolbar").style.display = "flex";
@@ -144,6 +186,28 @@ function initializeQuiz(questions) {
   document.getElementById("iconBar").style.display = "flex";
   document.getElementById("aboutView").style.display = "none";
   document.getElementById("faqView").style.display = "none";
+}
+
+// Update the bookmark icon based on the current question's bookmark status
+function updateBookmarkIcon() {
+  const favoriteButton = document.getElementById("favoriteButton");
+  if (!favoriteButton) return;
+  
+  const questionId = getCurrentQuestionId();
+  if (!questionId) {
+    favoriteButton.innerText = "☆";
+    favoriteButton.style.color = "";
+    return;
+  }
+  
+  const currentSlide = document.querySelector(`.swiper-slide[data-id="${questionId}"]`);
+  if (currentSlide && currentSlide.dataset.bookmarked === "true") {
+    favoriteButton.innerText = "★";
+    favoriteButton.style.color = "#007BFF"; // Blue color for bookmarked items
+  } else {
+    favoriteButton.innerText = "☆";
+    favoriteButton.style.color = "";
+  }
 }
 
 // Add click event listeners to quiz options
