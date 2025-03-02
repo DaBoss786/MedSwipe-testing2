@@ -885,9 +885,8 @@
           const userDoc = await transaction.get(userDocRef);
           let data = userDoc.exists() ? userDoc.data() : {};
           let bookmarks = data.bookmarks || [];
-          if (bookmarks.includes(questionId)) {
-            bookmarks = bookmarks.filter(id => id !== questionId);
-          } else {
+          // If the question is not bookmarked, add it.
+          if (!bookmarks.includes(questionId)) {
             bookmarks.push(questionId);
           }
           transaction.set(userDocRef, { bookmarks: bookmarks }, { merge: true });
@@ -920,28 +919,25 @@
       return currentSlide && currentSlide.dataset ? currentSlide.dataset.id : null;
     }
     
-    // Updated updateFavoriteIcon function to change the favorite icon based on bookmark state.
+    // updateFavoriteIcon now simply resets the icon to unfilled for new questions.
     async function updateFavoriteIcon() {
-      let questionId = getCurrentQuestionId();
-      if (!questionId) return;
-      let bookmarks = await getBookmarks();
       let favoriteButton = document.getElementById("favoriteButton");
-      if (bookmarks.includes(questionId.trim())) {
-        favoriteButton.innerText = "★";
-        favoriteButton.style.color = "blue";
-      } else {
-        favoriteButton.innerText = "☆";
-        favoriteButton.style.color = "";
-      }
+      favoriteButton.innerText = "☆";
+      favoriteButton.style.color = "";
     }
     
-    // Event listener for favoriteButton click.
+    // When the user clicks the favorite icon, if the current question is not bookmarked,
+    // add it to Firebase and change the icon to a filled blue star.
     window.addEventListener('load', function() {
       document.getElementById("favoriteButton").addEventListener("click", async function() {
         let questionId = getCurrentQuestionId();
         if (!questionId) return;
-        await toggleBookmark(questionId.trim());
-        updateFavoriteIcon();
+        let bookmarks = await getBookmarks();
+        if (!bookmarks.includes(questionId.trim())) {
+          await toggleBookmark(questionId.trim());
+          document.getElementById("favoriteButton").innerText = "★";
+          document.getElementById("favoriteButton").style.color = "blue";
+        }
       });
     });
     
@@ -1597,7 +1593,7 @@
     }
     
     // The following block defines loadQuestions and related variables.
-    // Moved into global scope by attaching loadQuestions to window.
+    // Attach loadQuestions to the global window object.
     window.addEventListener('load', function() {
       let allQuestions = [];
       let filterMode = "all";
@@ -1718,6 +1714,7 @@
               window.mySwiper.slideNext();
             }
           }
+          // Reset favorite icon for the new question.
           updateFavoriteIcon();
         });
       
@@ -1872,7 +1869,7 @@
         loadQuestions({ type: 'random', num, includeAnswered });
       });
       
-      // Attach loadQuestions to the global window object to fix the ReferenceError
+      // Attach loadQuestions to the global window object to fix reference errors.
       window.loadQuestions = loadQuestions;
     });
     
