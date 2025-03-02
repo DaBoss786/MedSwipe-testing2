@@ -1,6 +1,6 @@
 // Main app initialization
 window.addEventListener('load', function() {
-  // Make sure Firebase auth is ready before trying to update user data
+  // Initialize user menu with username
   const checkAuthAndInit = function() {
     if (window.auth && window.auth.currentUser) {
       // Initialize user menu with username
@@ -24,6 +24,15 @@ window.addEventListener('load', function() {
         userMenu.classList.add("open");
         menuOverlay.classList.add("show");
       }
+    });
+  }
+  
+  // User menu score circle click => go to FAQ
+  const userScoreCircle = document.getElementById("userScoreCircle");
+  if (userScoreCircle) {
+    userScoreCircle.addEventListener("click", function() {
+      closeUserMenu();
+      showFAQ();
     });
   }
   
@@ -71,7 +80,7 @@ window.addEventListener('load', function() {
       const userDocRef = window.doc(window.db, 'users', uid);
       try {
         await window.runTransaction(window.db, async (transaction) => {
-          const userDoc = await window.getDoc(userDocRef);
+          const userDoc = await transaction.get(userDocRef);
           if (userDoc.exists()) {
             let data = userDoc.data();
             data.answeredQuestions = {};
