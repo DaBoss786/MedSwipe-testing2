@@ -31,6 +31,8 @@ async function displayPerformance() {
   const stats = data.stats || {};
   
   const totalAnswered = stats.totalAnswered || 0;
+  const xp = stats.xp || 0;
+  const level = stats.level || 1;
   
   let questionBank = [];
   try {
@@ -46,6 +48,15 @@ async function displayPerformance() {
   
   const totalCorrect = stats.totalCorrect || 0;
   const overallPercent = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+  
+  // Get level progress info
+  const levelThresholds = [0, 30, 75, 150, 250, 400, 600, 850, 1150, 1500, 2000, 2750, 3750, 5000, 6500];
+  const currentLevelXp = levelThresholds[level - 1] || 0;
+  const nextLevelXp = level < levelThresholds.length ? levelThresholds[level] : null;
+  
+  const xpInCurrentLevel = xp - currentLevelXp;
+  const xpRequiredForNextLevel = nextLevelXp ? nextLevelXp - currentLevelXp : 1000; // Default to 1000 if at max level
+  const levelProgress = Math.min(100, Math.floor((xpInCurrentLevel / xpRequiredForNextLevel) * 100));
   
   let categoryBreakdown = "";
   if (stats.categories) {
@@ -69,44 +80,45 @@ async function displayPerformance() {
   
   document.getElementById("performanceView").innerHTML = `
     <h2 style="text-align:center; color:#0056b3;">Performance</h2>
-    <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
-      <canvas id="overallScoreChart" width="200" height="200"></canvas>
-      <p style="font-size:1.2rem; color:#333; margin-top:10px;">
-        Overall Score: ${overallPercent}%
+    
+    <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:10px;">
+      <div class="level-progress-circle" style="width:100px; height:100px; margin:20px auto;">
+        <div class="level-circle-background"></div>
+        <div class="level-circle-progress" style="--progress: ${levelProgress}%"></div>
+        <div class="level-number" style="font-size:2rem; transform:scale(0.85);">${level}</div>
+      </div>
+      <p style="font-size:1.4rem; color:#0056b3; margin:10px 0 5px 0;">
+        ${xp} XP
       </p>
-      <p style="font-size:1rem; color:#333;">
-        Total Questions Remaining: ${remaining}
+      <p style="font-size:0.9rem; color:#666; margin-top:0;">
+        ${nextLevelXp ? `${xpInCurrentLevel}/${xpRequiredForNextLevel} XP to Level ${level + 1}` : 'Max Level Reached!'}
       </p>
     </div>
+    
+    <div style="background:#f5f5f5; border-radius:8px; padding:15px; margin:20px 0;">
+      <h3 style="margin-top:0; color:#0056b3; text-align:center;">Stats Summary</h3>
+      <p style="font-size:1rem; color:#333;">
+        Total Questions Answered: <strong>${totalAnswered}</strong>
+      </p>
+      <p style="font-size:1rem; color:#333;">
+        Correct Answers: <strong>${totalCorrect}</strong> (${overallPercent}%)
+      </p>
+      <p style="font-size:1rem; color:#333;">
+        Questions Remaining: <strong>${remaining}</strong>
+      </p>
+    </div>
+    
     <hr>
     <h3 style="text-align:center; color:#0056b3;">By Category</h3>
     ${categoryBreakdown}
     <button id="backToMain" style="margin-top:20px;">Back</button>
   `;
   
-  const ctx = document.getElementById("overallScoreChart").getContext("2d");
-  new Chart(ctx, {
-    type: "doughnut",
-    data: {
-      labels: ["Correct", "Incorrect"],
-      datasets: [{
-        data: [
-          totalCorrect,
-          totalAnswered - totalCorrect
-        ],
-        backgroundColor: ["#28a745", "#dc3545"]
-      }]
-    },
-    options: {
-      responsive: false,
-      cutout: "60%",
-      plugins: {
-        legend: {
-          display: true
-        }
-      }
-    }
-  });
+  // Set the level progress circle fill
+  const levelCircleProgress = document.querySelector("#performanceView .level-circle-progress");
+  if (levelCircleProgress) {
+    levelCircleProgress.style.setProperty('--progress', `${levelProgress}%`);
+  }
   
   document.getElementById("backToMain").addEventListener("click", function() {
     document.getElementById("performanceView").style.display = "none";
@@ -114,7 +126,7 @@ async function displayPerformance() {
   });
 }
 
-// Load leaderboard data for overall scores - UPDATED for 250 question cap
+// Load leaderboard data for XP rankings
 async function loadOverallData() {
   const currentUid = window.auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
@@ -123,26 +135,21 @@ async function loadOverallData() {
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
     if (data.stats) {
-      const totalAnswered = data.stats.totalAnswered || 0;
-      const totalCorrect = data.stats.totalCorrect || 0;
-      const accuracy = totalAnswered ? totalCorrect / totalAnswered : 0;
-      // Updated to cap at 250 questions
-      const normTotal = Math.min(totalAnswered, 250) / 250;
-      const longestStreak = (data.streaks && data.streaks.longestStreak) ? data.streaks.longestStreak : 0;
-      const normStreak = Math.min(longestStreak, 30) / 30;
-      const compositeScore = Math.round(((accuracy * 0.5) + (normTotal * 0.3) + (normStreak * 0.2)) * 100);
+      const xp = data.stats.xp || 0;
+      const level = data.stats.level || 1;
       leaderboardEntries.push({
         uid: docSnap.id,
         username: data.username || "Anonymous",
-        compositeScore: compositeScore
+        xp: xp,
+        level: level
       });
     }
   });
-  leaderboardEntries.sort((a, b) => b.compositeScore - a.compositeScore);
+  leaderboardEntries.sort((a, b) => b.xp - a.xp);
   let top10 = leaderboardEntries.slice(0,10);
   let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
   
-  let html = `<h2>Leaderboard - Composite Score</h2>`;
+  let html = `<h2>Leaderboard - XP Rankings</h2>`;
   html += leaderboardTabsHTML("overall");
   html += `
     <table class="leaderboard-table">
@@ -150,7 +157,8 @@ async function loadOverallData() {
         <tr>
           <th>Rank</th>
           <th>Name</th>
-          <th>Composite Score</th>
+          <th>Level</th>
+          <th>XP</th>
         </tr>
       </thead>
       <tbody>
@@ -161,7 +169,8 @@ async function loadOverallData() {
       <tr ${bold}>
         <td>${index + 1}</td>
         <td>${entry.username}</td>
-        <td>${entry.compositeScore}</td>
+        <td>${entry.level}</td>
+        <td>${entry.xp}</td>
       </tr>
     `;
   });
@@ -174,13 +183,15 @@ async function loadOverallData() {
         <thead>
           <tr>
             <th>Name</th>
-            <th>Composite Score</th>
+            <th>Level</th>
+            <th>XP</th>
           </tr>
         </thead>
         <tbody>
           <tr style="font-weight:bold;">
             <td>${currentUsername}</td>
-            <td>${currentUserEntry.compositeScore}</td>
+            <td>${currentUserEntry.level}</td>
+            <td>${currentUserEntry.xp}</td>
           </tr>
         </tbody>
       </table>
