@@ -9,14 +9,14 @@ function showLeaderboard() {
   document.getElementById("faqView").style.display = "none";
   document.getElementById("leaderboardView").style.display = "block";
   
-  // Use the loadOverallData function from stats.js if it exists
-  if (typeof loadOverallData === 'function') {
-    loadOverallData();
+  // Use the loadOverallData function from window object
+  if (typeof window.loadOverallData === 'function') {
+    window.loadOverallData();
   } else {
     // Fallback message if function is not available
     document.getElementById("leaderboardView").innerHTML = `
       <h2>Leaderboard</h2>
-      <p>Leaderboards are loading... Please wait.</p>
+      <p>Leaderboards are loading... Please try again in a moment.</p>
       <button class="leaderboard-back-btn" id="leaderboardBack">Back</button>
     `;
     document.getElementById("leaderboardBack").addEventListener("click", function(){
@@ -24,12 +24,7 @@ function showLeaderboard() {
       document.getElementById("mainOptions").style.display = "flex";
     });
     
-    // Try again after a delay (in case functions are still loading)
-    setTimeout(() => {
-      if (typeof loadOverallData === 'function') {
-        loadOverallData();
-      }
-    }, 1000);
+    console.log("loadOverallData function not found");
   }
 }
 
