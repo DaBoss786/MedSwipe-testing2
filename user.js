@@ -411,12 +411,20 @@ async function updateUserXP() {
       }
       
       // Update progress bars and circles
-      updateLevelProgress(progress);
+      if (typeof updateLevelProgress === 'function') {
+        updateLevelProgress(progress);
+      }
       
-      // Check for and display bonus messages
+      // Check for and display bonus messages - only if they exist AND we're not already showing notifications
       const lastBonusMessages = data.stats?.lastBonusMessages;
-      if (lastBonusMessages && Array.isArray(lastBonusMessages) && lastBonusMessages.length > 0) {
+      const notificationsExist = document.getElementById("xpNotifications") && 
+                                document.getElementById("xpNotifications").children.length > 0;
+                                
+      if (lastBonusMessages && Array.isArray(lastBonusMessages) && 
+          lastBonusMessages.length > 0 && !notificationsExist) {
+        
         showBonusMessages(lastBonusMessages);
+        
         // Clear the messages after displaying them
         await window.runTransaction(window.db, async (transaction) => {
           const userDoc = await transaction.get(userDocRef);
@@ -439,17 +447,20 @@ async function updateUserXP() {
 function showBonusMessages(messages) {
   if (!messages || messages.length === 0) return;
   
-  // Create notification container if it doesn't exist
-  let notificationContainer = document.getElementById("xpNotifications");
-  if (!notificationContainer) {
-    notificationContainer = document.createElement("div");
-    notificationContainer.id = "xpNotifications";
-    notificationContainer.style.position = "fixed";
-    notificationContainer.style.top = "70px";
-    notificationContainer.style.right = "20px";
-    notificationContainer.style.zIndex = "9999";
-    document.body.appendChild(notificationContainer);
+  // Remove existing notification container if it exists
+  let existingContainer = document.getElementById("xpNotifications");
+  if (existingContainer) {
+    existingContainer.remove();
   }
+  
+  // Create notification container
+  let notificationContainer = document.createElement("div");
+  notificationContainer.id = "xpNotifications";
+  notificationContainer.style.position = "fixed";
+  notificationContainer.style.top = "70px";
+  notificationContainer.style.right = "20px";
+  notificationContainer.style.zIndex = "9999";
+  document.body.appendChild(notificationContainer);
   
   // Create and show notifications for each message
   messages.forEach((message, index) => {
