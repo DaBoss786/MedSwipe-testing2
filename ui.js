@@ -52,7 +52,7 @@ function showAbout() {
   });
 }
 
-// Show FAQ view - UPDATED for XP system
+// Show FAQ view - UPDATED for New XP Bonus System
 function showFAQ() {
   document.querySelector(".swiper").style.display = "none";
   document.getElementById("bottomToolbar").style.display = "none";
@@ -77,14 +77,30 @@ function showFAQ() {
         <strong>How Does the XP System Work?</strong><br>
         You earn XP for every question you answer:<br>
         • 1 XP for answering a question<br>
-        • 2 additional XP for a correct answer<br>
-        • Bonus multipliers for maintaining streaks (3+ days: 1.5× multiplier, 7+ days: 2× multiplier)<br><br>
+        • 2 additional XP for a correct answer<br><br>
+        
+        Plus, you'll earn bonus XP for achievements such as:<br>
+        • Login streaks (3, 7, 14, 30, 60, or 100 days)<br>
+        • Correct answer milestones (10, 25, 50 correct answers)<br>
+        • Consecutive correct answers (5, 10, or 20 in a row)<br>
+        • Special achievements for new users<br><br>
         
         As you accumulate XP, you'll progress through levels. Each level requires more XP than the previous one, creating an ongoing challenge.
       </li>
       <li>
+        <strong>What Are Some Bonus XP Examples?</strong><br>
+        • 3-day streak: +5 XP<br>
+        • 7-day streak: +15 XP<br>
+        • First 10 questions answered: +50 XP<br>
+        • 10 correct answers: +10 XP<br>
+        • 5 correct answers in a row: +10 XP<br>
+        • First time getting 5 correct in a row: +20 XP<br>
+        
+        The higher your streaks and achievements, the bigger the XP rewards!
+      </li>
+      <li>
         <strong>What Are Streaks?</strong><br>
-        Streaks track consecutive days of app usage. Using the app at least once per day maintains your streak. Longer streaks earn you XP multipliers, making your studying more rewarding when you're consistent.
+        Streaks track consecutive days of app usage. Using the app at least once per day maintains your streak. Longer streaks earn you XP bonuses, making your studying more rewarding when you're consistent.
       </li>
       <li>
         <strong>How Do Leaderboards Work?</strong><br>
