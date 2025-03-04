@@ -34,7 +34,7 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
   const userDocRef = window.doc(window.db, 'users', uid);
   try {
     await window.runTransaction(window.db, async (transaction) => {
-      const userDoc = await transaction.get(userDocRef);
+      const userDoc = await window.getDoc(userDocRef);
       let data = userDoc.exists() ? userDoc.data() : {};
       
       // Initialize stats if needed
@@ -46,7 +46,9 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
           categories: {}, 
           totalTimeSpent: 0,
           xp: 0, // Initialize XP
-          level: 1  // Initialize level
+          level: 1,  // Initialize level
+          achievements: {}, // Initialize achievements tracking
+          currentCorrectStreak: 0 // Track consecutive correct answers
         };
       }
       
@@ -60,10 +62,27 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
         data.stats.level = 1;
       }
       
+      // Initialize achievements tracking
+      if (!data.stats.achievements) {
+        data.stats.achievements = {};
+      }
+      
+      // Initialize current correct streak
+      if (data.stats.currentCorrectStreak === undefined) {
+        data.stats.currentCorrectStreak = 0;
+      }
+      
       if (!data.answeredQuestions) {
         data.answeredQuestions = {};
       }
       if (data.answeredQuestions[questionId]) return;
+      
+      // Track consecutive correct answers
+      if (isCorrect) {
+        data.stats.currentCorrectStreak++;
+      } else {
+        data.stats.currentCorrectStreak = 0;
+      }
       
       const currentDate = new Date();
       const currentTimestamp = currentDate.getTime();
@@ -97,20 +116,36 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
         data.stats.categories[category].incorrect++;
       }
       
+      // Calculate base XP for this answer
+      let earnedXP = 1; // Base XP for answering
+      let bonusXP = 0; // Track bonus XP
+      let bonusMessages = []; // Track bonus messages
+      
+      if (isCorrect) {
+        earnedXP += 2; // Additional XP for correct answer
+      }
+      
       // Update streaks
       const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
       let streaks = data.streaks || { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
+      let streakUpdated = false;
+      
       if (streaks.lastAnsweredDate) {
         const lastDate = new Date(streaks.lastAnsweredDate);
         const normalizedCurrent = normalizeDate(currentDate);
         const normalizedLast = normalizeDate(lastDate);
         const diffDays = Math.round((normalizedCurrent - normalizedLast) / (1000 * 60 * 60 * 24));
+        
         if (diffDays === 1) {
           streaks.currentStreak += 1;
+          streakUpdated = true;
         } else if (diffDays > 1) {
           streaks.currentStreak = 1;
+          streakUpdated = true;
         }
+        
         streaks.lastAnsweredDate = currentDate.toISOString();
+        
         if (streaks.currentStreak > streaks.longestStreak) {
           streaks.longestStreak = streaks.currentStreak;
         }
@@ -118,34 +153,113 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
         streaks.lastAnsweredDate = currentDate.toISOString();
         streaks.currentStreak = 1;
         streaks.longestStreak = 1;
+        streakUpdated = true;
       }
+      
       data.streaks = streaks;
       
-      // Calculate XP for this answer
-      let earnedXP = 1; // Base XP for answering
-      if (isCorrect) {
-        earnedXP += 2; // Additional XP for correct answer
+      // ===== ACHIEVEMENT BONUSES =====
+      
+      // First 10 questions answered bonus (one-time)
+      if (data.stats.totalAnswered === 10 && !data.stats.achievements.first10Questions) {
+        bonusXP += 50;
+        bonusMessages.push("First 10 questions answered: +50 XP");
+        data.stats.achievements.first10Questions = true;
       }
       
-      // Check for streak bonuses
-      if (streaks.currentStreak >= 7) {
-        earnedXP *= 2; // Double XP for 7+ day streak
-      } else if (streaks.currentStreak >= 3) {
-        earnedXP = Math.floor(earnedXP * 1.5); // 50% bonus for 3+ day streak
+      // Using the app for 7 days straight (one-time)
+      if (streaks.currentStreak === 7 && !data.stats.achievements.first7DayStreak) {
+        bonusXP += 50;
+        bonusMessages.push("7-day streak achieved: +50 XP");
+        data.stats.achievements.first7DayStreak = true;
+      }
+      
+      // First 5 correct in a row (one-time)
+      if (data.stats.currentCorrectStreak === 5 && !data.stats.achievements.first5Correct) {
+        bonusXP += 20;
+        bonusMessages.push("First 5 correct in a row: +20 XP");
+        data.stats.achievements.first5Correct = true;
+      }
+      
+      // ===== STREAK BONUSES =====
+      
+      // Current day streak bonuses
+      if (streakUpdated) {
+        // Only award these when the streak increments
+        if (streaks.currentStreak === 3) {
+          bonusXP += 5;
+          bonusMessages.push("3-day streak: +5 XP");
+        } else if (streaks.currentStreak === 7) {
+          bonusXP += 15;
+          bonusMessages.push("7-day streak: +15 XP");
+        } else if (streaks.currentStreak === 14) {
+          bonusXP += 30;
+          bonusMessages.push("14-day streak: +30 XP");
+        } else if (streaks.currentStreak === 30) {
+          bonusXP += 75;
+          bonusMessages.push("30-day streak: +75 XP");
+        } else if (streaks.currentStreak === 60) {
+          bonusXP += 150;
+          bonusMessages.push("60-day streak: +150 XP");
+        } else if (streaks.currentStreak === 100) {
+          bonusXP += 500;
+          bonusMessages.push("100-day streak: +500 XP");
+        }
+      }
+      
+      // ===== CORRECT ANSWER MILESTONE BONUSES =====
+      
+      // Correct answer count milestones
+      if (isCorrect) {
+        if (data.stats.totalCorrect === 10) {
+          bonusXP += 10;
+          bonusMessages.push("10 correct answers: +10 XP");
+        } else if (data.stats.totalCorrect === 25) {
+          bonusXP += 25;
+          bonusMessages.push("25 correct answers: +25 XP");
+        } else if (data.stats.totalCorrect === 50) {
+          bonusXP += 75;
+          bonusMessages.push("50 correct answers: +75 XP");
+        }
+      }
+      
+      // ===== CONSECUTIVE CORRECT ANSWER BONUSES =====
+      
+      // Correct answers in a row
+      if (data.stats.currentCorrectStreak === 5) {
+        bonusXP += 10;
+        bonusMessages.push("5 correct in a row: +10 XP");
+      } else if (data.stats.currentCorrectStreak === 10) {
+        bonusXP += 25;
+        bonusMessages.push("10 correct in a row: +25 XP");
+      } else if (data.stats.currentCorrectStreak === 20) {
+        bonusXP += 75;
+        bonusMessages.push("20 correct in a row: +75 XP");
       }
       
       // Add the earned XP to user's total
-      data.stats.xp += earnedXP;
+      const totalXP = earnedXP + bonusXP;
+      data.stats.xp += totalXP;
+      
+      // Store any earned bonus messages
+      if (bonusMessages.length > 0) {
+        data.stats.lastBonusMessages = bonusMessages;
+      } else {
+        data.stats.lastBonusMessages = null;
+      }
       
       // Update level based on XP
       data.stats.level = calculateLevel(data.stats.xp);
       
       transaction.set(userDocRef, data, { merge: true });
     });
+    
     console.log("Recorded answer for", questionId);
+    
     // Update user information after recording answer
     updateUserXP();
     updateUserMenu();
+    
   } catch (error) {
     console.error("Error recording answer:", error);
   }
@@ -271,9 +385,6 @@ async function updateUserXP() {
       const scoreCircle = document.getElementById("scoreCircle");
       if (scoreCircle) {
         scoreCircle.textContent = level;
-        
-        // Set the circle fill percentage based on level progress
-        // (This would need CSS adjustments to show as a progress circle)
       }
       
       // Update XP display
@@ -299,15 +410,85 @@ async function updateUserXP() {
         }
       }
       
-      // Update level progress bar
-      const levelProgressBar = document.getElementById("levelProgressBar");
-      if (levelProgressBar) {
-        levelProgressBar.style.width = `${progress}%`;
+      // Update progress bars and circles
+      updateLevelProgress(progress);
+      
+      // Check for and display bonus messages
+      const lastBonusMessages = data.stats?.lastBonusMessages;
+      if (lastBonusMessages && Array.isArray(lastBonusMessages) && lastBonusMessages.length > 0) {
+        showBonusMessages(lastBonusMessages);
+        // Clear the messages after displaying them
+        await window.runTransaction(window.db, async (transaction) => {
+          const userDoc = await transaction.get(userDocRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData.stats) {
+              userData.stats.lastBonusMessages = null;
+              transaction.set(userDocRef, userData, { merge: true });
+            }
+          }
+        });
       }
     }
   } catch (error) {
     console.error("Error updating user XP:", error);
   }
+}
+
+// Show bonus messages as notifications
+function showBonusMessages(messages) {
+  if (!messages || messages.length === 0) return;
+  
+  // Create notification container if it doesn't exist
+  let notificationContainer = document.getElementById("xpNotifications");
+  if (!notificationContainer) {
+    notificationContainer = document.createElement("div");
+    notificationContainer.id = "xpNotifications";
+    notificationContainer.style.position = "fixed";
+    notificationContainer.style.top = "70px";
+    notificationContainer.style.right = "20px";
+    notificationContainer.style.zIndex = "9999";
+    document.body.appendChild(notificationContainer);
+  }
+  
+  // Create and show notifications for each message
+  messages.forEach((message, index) => {
+    const notification = document.createElement("div");
+    notification.className = "xp-notification";
+    notification.innerHTML = `<div class="xp-icon">✨</div>${message}`;
+    notification.style.backgroundColor = "#0056b3";
+    notification.style.color = "white";
+    notification.style.padding = "10px 15px";
+    notification.style.borderRadius = "6px";
+    notification.style.marginBottom = "10px";
+    notification.style.boxShadow = "0 2px 10px rgba(0,0,0,0.2)";
+    notification.style.display = "flex";
+    notification.style.alignItems = "center";
+    notification.style.opacity = "0";
+    notification.style.transform = "translateX(50px)";
+    notification.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+    
+    const iconDiv = notification.querySelector(".xp-icon");
+    if (iconDiv) {
+      iconDiv.style.marginRight = "10px";
+      iconDiv.style.fontSize = "1.3rem";
+    }
+    
+    notificationContainer.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+      notification.style.opacity = "1";
+      notification.style.transform = "translateX(0)";
+    }, 100 * index);
+    
+    // Remove after a delay
+    setTimeout(() => {
+      notification.style.opacity = "0";
+      notification.style.transform = "translateX(50px)";
+      setTimeout(() => notification.remove(), 500);
+    }, 5000 + 100 * index);
+  });
 }
 
 // Update the user menu with current username and score
