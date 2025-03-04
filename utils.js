@@ -39,7 +39,7 @@ function getStartOfWeek() {
 function leaderboardTabsHTML(activeTab) {
   return `
     <div id="leaderboardTabs">
-      <button class="leaderboard-tab ${activeTab === 'overall' ? 'active' : ''}" id="overallTab">Composite Score</button>
+      <button class="leaderboard-tab ${activeTab === 'overall' ? 'active' : ''}" id="overallTab">XP Rankings</button>
       <button class="leaderboard-tab ${activeTab === 'streaks' ? 'active' : ''}" id="streaksTab">Streaks</button>
       <button class="leaderboard-tab ${activeTab === 'answered' ? 'active' : ''}" id="answeredTab">Total Answered</button>
     </div>
