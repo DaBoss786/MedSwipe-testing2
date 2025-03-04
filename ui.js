@@ -8,7 +8,29 @@ function showLeaderboard() {
   document.getElementById("aboutView").style.display = "none";
   document.getElementById("faqView").style.display = "none";
   document.getElementById("leaderboardView").style.display = "block";
-  loadOverallData();
+  
+  // Use the loadOverallData function from stats.js if it exists
+  if (typeof loadOverallData === 'function') {
+    loadOverallData();
+  } else {
+    // Fallback message if function is not available
+    document.getElementById("leaderboardView").innerHTML = `
+      <h2>Leaderboard</h2>
+      <p>Leaderboards are loading... Please wait.</p>
+      <button class="leaderboard-back-btn" id="leaderboardBack">Back</button>
+    `;
+    document.getElementById("leaderboardBack").addEventListener("click", function(){
+      document.getElementById("leaderboardView").style.display = "none";
+      document.getElementById("mainOptions").style.display = "flex";
+    });
+    
+    // Try again after a delay (in case functions are still loading)
+    setTimeout(() => {
+      if (typeof loadOverallData === 'function') {
+        loadOverallData();
+      }
+    }, 1000);
+  }
 }
 
 // Show About us view
