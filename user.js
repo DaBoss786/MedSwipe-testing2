@@ -23,7 +23,7 @@ async function fetchPersistentAnsweredIds() {
   return [];
 }
 
-// Record answer in Firestore with streaks logic
+// Record answer in Firestore with XP calculation
 async function recordAnswer(questionId, category, isCorrect, timeSpent) {
   if (!window.auth || !window.auth.currentUser) {
     console.log("User not authenticated, can't record answer");
@@ -34,12 +34,32 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
   const userDocRef = window.doc(window.db, 'users', uid);
   try {
     await window.runTransaction(window.db, async (transaction) => {
-      const userDoc = await window.getDoc(userDocRef);
+      const userDoc = await transaction.get(userDocRef);
       let data = userDoc.exists() ? userDoc.data() : {};
       
+      // Initialize stats if needed
       if (!data.stats) {
-        data.stats = { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0 };
+        data.stats = { 
+          totalAnswered: 0, 
+          totalCorrect: 0, 
+          totalIncorrect: 0, 
+          categories: {}, 
+          totalTimeSpent: 0,
+          xp: 0, // Initialize XP
+          level: 1  // Initialize level
+        };
       }
+      
+      // Initialize XP if it doesn't exist
+      if (data.stats.xp === undefined) {
+        data.stats.xp = 0;
+      }
+      
+      // Initialize level if it doesn't exist
+      if (data.stats.level === undefined) {
+        data.stats.level = 1;
+      }
+      
       if (!data.answeredQuestions) {
         data.answeredQuestions = {};
       }
@@ -56,6 +76,8 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
         timestampFormatted: currentFormatted, 
         timeSpent 
       };
+      
+      // Update basic stats
       data.stats.totalAnswered++;
       if (isCorrect) {
         data.stats.totalCorrect++;
@@ -64,6 +86,7 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       }
       data.stats.totalTimeSpent = (data.stats.totalTimeSpent || 0) + timeSpent;
       
+      // Update category stats
       if (!data.stats.categories[category]) {
         data.stats.categories[category] = { answered: 0, correct: 0, incorrect: 0 };
       }
@@ -74,6 +97,7 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
         data.stats.categories[category].incorrect++;
       }
       
+      // Update streaks
       const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
       let streaks = data.streaks || { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
       if (streaks.lastAnsweredDate) {
@@ -97,15 +121,108 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       }
       data.streaks = streaks;
       
+      // Calculate XP for this answer
+      let earnedXP = 1; // Base XP for answering
+      if (isCorrect) {
+        earnedXP += 2; // Additional XP for correct answer
+      }
+      
+      // Check for streak bonuses
+      if (streaks.currentStreak >= 7) {
+        earnedXP *= 2; // Double XP for 7+ day streak
+      } else if (streaks.currentStreak >= 3) {
+        earnedXP = Math.floor(earnedXP * 1.5); // 50% bonus for 3+ day streak
+      }
+      
+      // Add the earned XP to user's total
+      data.stats.xp += earnedXP;
+      
+      // Update level based on XP
+      data.stats.level = calculateLevel(data.stats.xp);
+      
       transaction.set(userDocRef, data, { merge: true });
     });
     console.log("Recorded answer for", questionId);
     // Update user information after recording answer
-    updateUserCompositeScore();
+    updateUserXP();
     updateUserMenu();
   } catch (error) {
     console.error("Error recording answer:", error);
   }
+}
+
+// Calculate level based on XP thresholds
+function calculateLevel(xp) {
+  const levelThresholds = [
+    0,     // Level 1
+    30,    // Level 2
+    75,    // Level 3
+    150,   // Level 4
+    250,   // Level 5
+    400,   // Level 6
+    600,   // Level 7
+    850,   // Level 8
+    1150,  // Level 9
+    1500,  // Level 10
+    2000,  // Level 11
+    2750,  // Level 12
+    3750,  // Level 13
+    5000,  // Level 14
+    6500   // Level 15
+  ];
+  
+  let level = 1;
+  for (let i = 1; i < levelThresholds.length; i++) {
+    if (xp >= levelThresholds[i]) {
+      level = i + 1;
+    } else {
+      break;
+    }
+  }
+  return level;
+}
+
+// Calculate progress to next level (as percentage)
+function calculateLevelProgress(xp) {
+  const levelThresholds = [
+    0, 30, 75, 150, 250, 400, 600, 850, 1150, 1500, 2000, 2750, 3750, 5000, 6500
+  ];
+  
+  const level = calculateLevel(xp);
+  
+  // If at max level, return 100%
+  if (level >= levelThresholds.length) {
+    return 100;
+  }
+  
+  const currentLevelXp = levelThresholds[level - 1];
+  const nextLevelXp = levelThresholds[level];
+  const xpInCurrentLevel = xp - currentLevelXp;
+  const xpRequiredForNextLevel = nextLevelXp - currentLevelXp;
+  
+  return Math.min(100, Math.floor((xpInCurrentLevel / xpRequiredForNextLevel) * 100));
+}
+
+// XP info for a specific level
+function getLevelInfo(level) {
+  const levelThresholds = [
+    0, 30, 75, 150, 250, 400, 600, 850, 1150, 1500, 2000, 2750, 3750, 5000, 6500
+  ];
+  
+  // Cap at max defined level
+  const actualLevel = Math.min(level, levelThresholds.length);
+  
+  const currentLevelXp = levelThresholds[actualLevel - 1];
+  let nextLevelXp = null;
+  
+  if (actualLevel < levelThresholds.length) {
+    nextLevelXp = levelThresholds[actualLevel];
+  }
+  
+  return {
+    currentLevelXp,
+    nextLevelXp
+  };
 }
 
 // Update question stats in Firestore
@@ -133,10 +250,10 @@ async function updateQuestionStats(questionId, isCorrect) {
   }
 }
 
-// Update composite score from Firestore stats - UPDATED to cap at 250 questions
-async function updateUserCompositeScore() {
+// Update user XP display
+async function updateUserXP() {
   if (!window.auth || !window.auth.currentUser || !window.db) {
-    console.log("Auth or DB not initialized for updateUserCompositeScore");
+    console.log("Auth or DB not initialized for updateUserXP");
     return;
   }
   
@@ -146,28 +263,50 @@ async function updateUserCompositeScore() {
     const userDocSnap = await window.getDoc(userDocRef);
     if (userDocSnap.exists()) {
       const data = userDocSnap.data();
-      const totalAnswered = data.stats?.totalAnswered || 0;
-      const totalCorrect = data.stats?.totalCorrect || 0;
-      const accuracy = totalAnswered ? totalCorrect / totalAnswered : 0;
-      // Updated cap from 100 to 250
-      const normTotal = Math.min(totalAnswered, 250) / 250;
-      const longestStreak = (data.streaks && data.streaks.longestStreak) ? data.streaks.longestStreak : 0;
-      const normStreak = Math.min(longestStreak, 30) / 30;
-      const composite = Math.round(((accuracy * 0.5) + (normTotal * 0.3) + (normStreak * 0.2)) * 100);
+      const xp = data.stats?.xp || 0;
+      const level = data.stats?.level || 1;
+      const progress = calculateLevelProgress(xp);
       
-      // Update both score circles
+      // Update level display
       const scoreCircle = document.getElementById("scoreCircle");
       if (scoreCircle) {
-        scoreCircle.textContent = composite;
+        scoreCircle.textContent = level;
+        
+        // Set the circle fill percentage based on level progress
+        // (This would need CSS adjustments to show as a progress circle)
       }
       
+      // Update XP display
+      const xpDisplay = document.getElementById("xpDisplay");
+      if (xpDisplay) {
+        xpDisplay.textContent = `${xp} XP`;
+      }
+      
+      // Update user menu level display
       const userScoreCircle = document.getElementById("userScoreCircle");
       if (userScoreCircle) {
-        userScoreCircle.textContent = composite;
+        userScoreCircle.textContent = level;
+      }
+      
+      // Update user menu XP display
+      const userXpDisplay = document.getElementById("userXpDisplay");
+      if (userXpDisplay) {
+        const levelInfo = getLevelInfo(level);
+        if (levelInfo.nextLevelXp) {
+          userXpDisplay.textContent = `${xp}/${levelInfo.nextLevelXp} XP`;
+        } else {
+          userXpDisplay.textContent = `${xp} XP`;
+        }
+      }
+      
+      // Update level progress bar
+      const levelProgressBar = document.getElementById("levelProgressBar");
+      if (levelProgressBar) {
+        levelProgressBar.style.width = `${progress}%`;
       }
     }
   } catch (error) {
-    console.error("Error updating user composite score:", error);
+    console.error("Error updating user XP:", error);
   }
 }
 
@@ -185,8 +324,8 @@ async function updateUserMenu() {
       usernameDisplay.textContent = username;
     }
     
-    // Also update the composite score
-    updateUserCompositeScore();
+    // Update XP display
+    updateUserXP();
   } catch (error) {
     console.error("Error updating user menu:", error);
   }
