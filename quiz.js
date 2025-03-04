@@ -313,5 +313,9 @@ function updateProgress() {
     filterMode: window.filterMode,
     selectedCategory
   }));
-  updateUserXP(); // Changed from updateUserCompositeScore to updateUserXP
+  
+  // Use the new function name
+  if (typeof updateUserXP === 'function') {
+    updateUserXP();
+  }
 }
