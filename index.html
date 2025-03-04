@@ -30,8 +30,16 @@
       </div>
     </div>
     <div class="toolbar-right">
-      <!-- Composite score circle - now clickable -->
-      <div id="scoreCircle" class="clickable">0</div>
+      <!-- XP Display -->
+      <div id="xpDisplay">0 XP</div>
+      <!-- Level with Progress Circle (replaces the score circle) -->
+      <div class="level-circle-container">
+        <div class="level-progress-circle">
+          <div class="level-circle-background"></div>
+          <div class="level-circle-progress" id="levelCircleProgress"></div>
+          <div class="level-number clickable" id="scoreCircle">1</div>
+        </div>
+      </div>
     </div>
   </div>
   
@@ -85,13 +93,22 @@
   <!-- User Menu with Close Button (Right) -->
   <div id="userMenu">
     <div id="userMenuHeader">
+      <span id="menuTitle">Profile</span>
       <span id="userMenuClose" style="cursor:pointer;">&times;</span>
     </div>
     <div id="userInfoSection">
       <h3 id="usernameDisplay">Username</h3>
       <div class="user-score-container">
-        <p>Composite Score</p>
-        <div id="userScoreCircle">0</div>
+        <p>Level</p>
+        <div class="level-progress-circle">
+          <div class="level-circle-background"></div>
+          <div class="level-circle-progress" id="userLevelProgress"></div>
+          <div class="level-number clickable" id="userScoreCircle">1</div>
+        </div>
+        <div id="userXpDisplay">0/30 XP</div>
+        <div class="level-progress-bar-container">
+          <div class="level-progress-bar" id="levelProgressBar"></div>
+        </div>
       </div>
     </div>
     <ul id="userMenuList">
