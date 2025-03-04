@@ -35,7 +35,7 @@ function showAbout() {
   });
 }
 
-// Show FAQ view - UPDATED with new composite score explanation
+// Show FAQ view - UPDATED for XP system
 function showFAQ() {
   document.querySelector(".swiper").style.display = "none";
   document.getElementById("bottomToolbar").style.display = "none";
@@ -54,26 +54,27 @@ function showFAQ() {
       </li>
       <li>
         <strong>How Does MedSwipe Work?</strong><br>
-        MedSwipe presents ENT questions in an intuitive, swipe‑based format. As you answer, your performance is tracked using a composite score that factors in:
-        <ul>
-          <li>Accuracy: The percentage of correct answers.</li>
-          <li>Total Answered: Your overall volume of answered questions (normalized at a cap of 250 questions).</li>
-          <li>Longest Streak: Your longest run of consecutive days answering questions.</li>
-        </ul>
-        This approach rewards both knowledge and sustained engagement.
+        MedSwipe presents ENT questions in an intuitive, swipe‑based format. As you answer, you'll earn XP (experience points) to level up and compete with others on the leaderboard.
       </li>
       <li>
-        <strong>What Is the Composite Score?</strong><br>
-        Your Composite Score is calculated using a weighted formula:<br>
-        <em>Composite Score = (Accuracy × 0.5) + (Normalized Total Answered × 0.3) + (Normalized Longest Streak × 0.2)</em><br>
-        Where:<br>
-        Normalized Total Answered = min(total answered, 250) ÷ 250<br>
-        Normalized Longest Streak = min(longest streak, 30) ÷ 30<br>
-        This means that answering just a few questions perfectly won't automatically rank you at the top; sustained engagement and working through a substantial portion of our question bank is key to a high composite score.
+        <strong>How Does the XP System Work?</strong><br>
+        You earn XP for every question you answer:<br>
+        • 1 XP for answering a question<br>
+        • 2 additional XP for a correct answer<br>
+        • Bonus multipliers for maintaining streaks (3+ days: 1.5× multiplier, 7+ days: 2× multiplier)<br><br>
+        
+        As you accumulate XP, you'll progress through levels. Each level requires more XP than the previous one, creating an ongoing challenge.
       </li>
       <li>
-        <strong>Who Can Access the Leaderboards?</strong><br>
-        In our MVP, all users have access to the leaderboards and performance metrics. In the future, if we move to a freemium model, basic leaderboard data will remain free while more detailed analytics may be reserved for registered or premium users.
+        <strong>What Are Streaks?</strong><br>
+        Streaks track consecutive days of app usage. Using the app at least once per day maintains your streak. Longer streaks earn you XP multipliers, making your studying more rewarding when you're consistent.
+      </li>
+      <li>
+        <strong>How Do Leaderboards Work?</strong><br>
+        There are three leaderboards to compete on:<br>
+        • XP Rankings: Overall progress based on total experience points<br>
+        • Streaks: Longest consecutive days of app usage<br>
+        • Weekly Activity: Most questions answered in the current week
       </li>
       <li>
         <strong>Is MedSwipe Free?</strong><br>
