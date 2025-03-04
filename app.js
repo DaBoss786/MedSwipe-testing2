@@ -507,3 +507,27 @@ window.addEventListener('load', function() {
     });
   }
 });
+// Function to update the level progress circles
+function updateLevelProgress(percent) {
+  // Update the level progress circles
+  const levelCircleProgress = document.getElementById("levelCircleProgress");
+  const userLevelProgress = document.getElementById("userLevelProgress");
+  
+  if (levelCircleProgress) {
+    levelCircleProgress.style.setProperty('--progress', `${percent}%`);
+  }
+  
+  if (userLevelProgress) {
+    userLevelProgress.style.setProperty('--progress', `${percent}%`);
+  }
+}
+
+// Update user XP display function call
+window.addEventListener('load', function() {
+  // Call after Firebase auth is initialized
+  setTimeout(() => {
+    if (window.auth && window.auth.currentUser) {
+      updateUserXP();
+    }
+  }, 2000);
+});
