@@ -529,6 +529,83 @@ function updateLevelProgress(percent) {
   }
 }
 
+// Update user XP display function - modified to ensure toolbar indicator gets updated correctly
+async function updateUserXP() {
+  if (!window.auth || !window.auth.currentUser || !window.db) {
+    console.log("Auth or DB not initialized for updateUserXP");
+    return;
+  }
+  
+  try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDocSnap = await window.getDoc(userDocRef);
+    if (userDocSnap.exists()) {
+      const data = userDocSnap.data();
+      const xp = data.stats?.xp || 0;
+      const level = data.stats?.level || 1;
+      const progress = calculateLevelProgress(xp);
+      
+      // Update level display
+      const scoreCircle = document.getElementById("scoreCircle");
+      if (scoreCircle) {
+        scoreCircle.textContent = level;
+      }
+      
+      // Update XP display
+      const xpDisplay = document.getElementById("xpDisplay");
+      if (xpDisplay) {
+        xpDisplay.textContent = `${xp} XP`;
+      }
+      
+      // Update user menu level display
+      const userScoreCircle = document.getElementById("userScoreCircle");
+      if (userScoreCircle) {
+        userScoreCircle.textContent = level;
+      }
+      
+      // Update user menu XP display
+      const userXpDisplay = document.getElementById("userXpDisplay");
+      if (userXpDisplay) {
+        const levelInfo = getLevelInfo(level);
+        if (levelInfo.nextLevelXp) {
+          userXpDisplay.textContent = `${xp}/${levelInfo.nextLevelXp} XP`;
+        } else {
+          userXpDisplay.textContent = `${xp} XP`;
+        }
+      }
+      
+      // Update progress bars and circles - use our consistent function
+      updateLevelProgress(progress);
+      
+      // Check for and display bonus messages
+      const lastBonusMessages = data.stats?.lastBonusMessages;
+      const notificationsExist = document.getElementById("xpNotifications") && 
+                               document.getElementById("xpNotifications").children.length > 0;
+                               
+      if (lastBonusMessages && Array.isArray(lastBonusMessages) && 
+          lastBonusMessages.length > 0 && !notificationsExist) {
+        
+        showBonusMessages(lastBonusMessages);
+        
+        // Clear the messages after displaying them
+        await window.runTransaction(window.db, async (transaction) => {
+          const userDoc = await transaction.get(userDocRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData.stats) {
+              userData.stats.lastBonusMessages = null;
+              transaction.set(userDocRef, userData, { merge: true });
+            }
+          }
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Error updating user XP:", error);
+  }
+}
+
 // Update user XP display function call
 window.addEventListener('load', function() {
   // Call after Firebase auth is initialized
@@ -537,4 +614,7 @@ window.addEventListener('load', function() {
       updateUserXP();
     }
   }, 2000);
+
+  // Make updateUserXP available globally
+  window.updateUserXP = updateUserXP;
 });
