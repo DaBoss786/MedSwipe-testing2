@@ -23,7 +23,9 @@ async function fetchPersistentAnsweredIds() {
   return [];
 }
 
-// Record answer in Firestore with XP calculation
+// Update the recordAnswer function to detect level-ups and show animation
+// This is the part you need to modify in your user.js file
+
 async function recordAnswer(questionId, category, isCorrect, timeSpent) {
   if (!window.auth || !window.auth.currentUser) {
     console.log("User not authenticated, can't record answer");
@@ -32,7 +34,12 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
   
   const uid = window.auth.currentUser.uid;
   const userDocRef = window.doc(window.db, 'users', uid);
+  
   try {
+    let levelUp = false;
+    let newLevel = 0;
+    let totalXP = 0;
+    
     await window.runTransaction(window.db, async (transaction) => {
       const userDoc = await window.getDoc(userDocRef);
       let data = userDoc.exists() ? userDoc.data() : {};
@@ -238,8 +245,9 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       }
       
       // Add the earned XP to user's total
-      const totalXP = earnedXP + bonusXP;
-      data.stats.xp += totalXP;
+      const totalEarnedXP = earnedXP + bonusXP;
+      data.stats.xp += totalEarnedXP;
+      totalXP = data.stats.xp;
       
       // Store any earned bonus messages
       if (bonusMessages.length > 0) {
@@ -248,8 +256,17 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
         data.stats.lastBonusMessages = null;
       }
       
+      // Get old level for comparison
+      const oldLevel = data.stats.level;
+      
       // Update level based on XP
-      data.stats.level = calculateLevel(data.stats.xp);
+      newLevel = calculateLevel(data.stats.xp);
+      data.stats.level = newLevel;
+      
+      // Check if level increased
+      if (newLevel > oldLevel) {
+        levelUp = true;
+      }
       
       transaction.set(userDocRef, data, { merge: true });
     });
@@ -260,11 +277,17 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
     updateUserXP();
     updateUserMenu();
     
+    // Show level-up animation if level increased
+    if (levelUp && typeof showLevelUpAnimation === 'function') {
+      setTimeout(() => {
+        showLevelUpAnimation(newLevel, totalXP);
+      }, 1000);
+    }
+    
   } catch (error) {
     console.error("Error recording answer:", error);
   }
 }
-
 // Calculate level based on XP thresholds
 function calculateLevel(xp) {
   const levelThresholds = [
