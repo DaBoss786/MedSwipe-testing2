@@ -168,7 +168,7 @@ async function displayPerformance() {
   });
 }
 
-// Load XP Rankings leaderboard with modern card-based design
+// Load XP Rankings leaderboard with modern card-based design (XP only, no level badge)
 async function loadOverallData() {
   console.log("Loading XP rankings leaderboard data");
   const currentUid = window.auth.currentUser.uid;
@@ -227,7 +227,7 @@ async function loadOverallData() {
             <p class="username">${entry.username}</p>
           </div>
           <div class="user-stats">
-            <p class="stat-value">${entry.xp} <span class="level-badge">${entry.level}</span></p>
+            <p class="stat-value">${entry.xp}</p>
             <p class="stat-label">XP</p>
           </div>
         </li>
@@ -248,7 +248,7 @@ async function loadOverallData() {
             <p class="username">${currentUsername}</p>
           </div>
           <div class="user-stats">
-            <p class="stat-value">${currentUserEntry.xp} <span class="level-badge">${currentUserEntry.level}</span></p>
+            <p class="stat-value">${currentUserEntry.xp}</p>
             <p class="stat-label">XP</p>
           </div>
         </div>
@@ -413,7 +413,7 @@ async function loadTotalAnsweredData() {
   
   // Generate HTML with card-based layout
   let html = `
-    <h2>Leaderboard - Total Answered</h2>
+    <h2>Leaderboard - Total Answered Questions This Week</h2>
     
     <div id="leaderboardTabs">
       <button class="leaderboard-tab" id="overallTab">XP Rankings</button>
@@ -425,7 +425,7 @@ async function loadTotalAnsweredData() {
   `;
   
   if (top10.length === 0) {
-    html += `<div class="empty-state">No answer data available yet. Start answering questions to appear on the leaderboard!</div>`;
+    html += `<div class="empty-state">No questions answered this week yet. Start answering questions to appear on the leaderboard!</div>`;
   } else {
     top10.forEach((entry, index) => {
       const isCurrentUser = entry.uid === currentUid;
