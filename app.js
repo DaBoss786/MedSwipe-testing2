@@ -507,18 +507,25 @@ window.addEventListener('load', function() {
     });
   }
 });
-// Function to update the level progress circles
+
+// Function to update the level progress circles and bar
 function updateLevelProgress(percent) {
-  // Update the level progress circles
+  // Update the level progress circles using conic-gradient
   const levelCircleProgress = document.getElementById("levelCircleProgress");
   const userLevelProgress = document.getElementById("userLevelProgress");
   
   if (levelCircleProgress) {
-    levelCircleProgress.style.setProperty('--progress', `${percent}%`);
+    levelCircleProgress.style.background = `conic-gradient(#1e88e5 0% ${percent}%, transparent ${percent}% 100%)`;
   }
   
   if (userLevelProgress) {
-    userLevelProgress.style.setProperty('--progress', `${percent}%`);
+    userLevelProgress.style.background = `conic-gradient(#1e88e5 0% ${percent}%, transparent ${percent}% 100%)`;
+  }
+  
+  // Update the horizontal progress bar
+  const levelProgressBar = document.getElementById("levelProgressBar");
+  if (levelProgressBar) {
+    levelProgressBar.style.width = `${percent}%`;
   }
 }
 
