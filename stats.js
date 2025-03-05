@@ -168,13 +168,14 @@ async function displayPerformance() {
   });
 }
 
-// Load leaderboard data for XP rankings
+// Load XP Rankings leaderboard with modern card-based design
 async function loadOverallData() {
-  console.log("Loading overall leaderboard data");
+  console.log("Loading XP rankings leaderboard data");
   const currentUid = window.auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
   const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
   let leaderboardEntries = [];
+  
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
     if (data.stats) {
@@ -188,77 +189,96 @@ async function loadOverallData() {
       });
     }
   });
+  
+  // Sort by XP (descending)
   leaderboardEntries.sort((a, b) => b.xp - a.xp);
-  let top10 = leaderboardEntries.slice(0,10);
+  
+  // Get top performers and assign ranks
+  let top10 = leaderboardEntries.slice(0, 10);
+  
+  // Find current user's entry
   let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
+  let currentUserRank = leaderboardEntries.findIndex(e => e.uid === currentUid) + 1;
   
-  let html = `<h2>Leaderboard - XP Rankings</h2>`;
-  html += leaderboardTabsHTML("overall");
-  html += `
-    <table class="leaderboard-table">
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>Name</th>
-          <th>Level</th>
-          <th>XP</th>
-        </tr>
-      </thead>
-      <tbody>
+  // Generate HTML with card-based layout
+  let html = `
+    <h2>Leaderboard - XP Rankings</h2>
+    
+    <div id="leaderboardTabs">
+      <button class="leaderboard-tab active" id="overallTab">XP Rankings</button>
+      <button class="leaderboard-tab" id="streaksTab">Streaks</button>
+      <button class="leaderboard-tab" id="answeredTab">Total Answered</button>
+    </div>
+    
+    <ul class="leaderboard-entry-list">
   `;
-  top10.forEach((entry, index) => {
-    const bold = entry.uid === currentUid ? "style='font-weight:bold;'" : "";
-    html += `
-      <tr ${bold}>
-        <td>${index + 1}</td>
-        <td>${entry.username}</td>
-        <td>${entry.level}</td>
-        <td>${entry.xp}</td>
-      </tr>
-    `;
-  });
-  html += `</tbody></table>`;
   
-  if (!top10.some(e => e.uid === currentUid) && currentUserEntry) {
+  if (top10.length === 0) {
+    html += `<div class="empty-state">No leaderboard data available yet. Start answering questions to be the first on the leaderboard!</div>`;
+  } else {
+    top10.forEach((entry, index) => {
+      const isCurrentUser = entry.uid === currentUid;
+      const rank = index + 1;
+      
+      html += `
+        <li class="leaderboard-entry ${isCurrentUser ? 'current-user' : ''}">
+          <div class="rank-container rank-${rank}">${rank}</div>
+          <div class="user-info">
+            <p class="username">${entry.username}</p>
+          </div>
+          <div class="user-stats">
+            <p class="stat-value">${entry.xp} <span class="level-badge">${entry.level}</span></p>
+            <p class="stat-label">XP</p>
+          </div>
+        </li>
+      `;
+    });
+  }
+  
+  html += `</ul>`;
+  
+  // Add current user's ranking if not in top 10
+  if (currentUserEntry && !top10.some(e => e.uid === currentUid)) {
     html += `
-      <h3>Your Ranking</h3>
-      <table class="leaderboard-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Level</th>
-            <th>XP</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="font-weight:bold;">
-            <td>${currentUsername}</td>
-            <td>${currentUserEntry.level}</td>
-            <td>${currentUserEntry.xp}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="your-ranking">
+        <h3>Your Ranking</h3>
+        <div class="leaderboard-entry current-user">
+          <div class="rank-container">${currentUserRank}</div>
+          <div class="user-info">
+            <p class="username">${currentUsername}</p>
+          </div>
+          <div class="user-stats">
+            <p class="stat-value">${currentUserEntry.xp} <span class="level-badge">${currentUserEntry.level}</span></p>
+            <p class="stat-label">XP</p>
+          </div>
+        </div>
+      </div>
     `;
   }
+  
   html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
+  
   document.getElementById("leaderboardView").innerHTML = html;
   
+  // Add event listeners for tabs and back button
   document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
   document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
   document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
   
   document.getElementById("leaderboardBack").addEventListener("click", function(){
-     document.getElementById("leaderboardView").style.display = "none";
-     document.getElementById("mainOptions").style.display = "flex";
-     document.getElementById("aboutView").style.display = "none";
+    document.getElementById("leaderboardView").style.display = "none";
+    document.getElementById("mainOptions").style.display = "flex";
+    document.getElementById("aboutView").style.display = "none";
   });
 }
 
-// Load leaderboard data for streaks
+// Load Streaks leaderboard with modern card-based design
 async function loadStreaksData() {
   const currentUid = window.auth.currentUser.uid;
+  const currentUsername = await getOrGenerateUsername();
   const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
   let streakEntries = [];
+  
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
     let streak = data.streaks ? (data.streaks.currentStreak || 0) : 0;
@@ -270,51 +290,97 @@ async function loadStreaksData() {
       });
     }
   });
+  
+  // Sort by streak length (descending)
   streakEntries.sort((a, b) => b.streak - a.streak);
-  let html = `<h2>Leaderboard - Streaks</h2>`;
-  html += leaderboardTabsHTML("streaks");
-  html += `
-     <table class="leaderboard-table">
-       <thead>
-         <tr>
-           <th>Rank</th>
-           <th>Name</th>
-           <th>Streak (days)</th>
-         </tr>
-       </thead>
-       <tbody>
+  
+  // Get top performers
+  let top10 = streakEntries.slice(0, 10);
+  
+  // Find current user's entry
+  let currentUserEntry = streakEntries.find(e => e.uid === currentUid);
+  let currentUserRank = streakEntries.findIndex(e => e.uid === currentUid) + 1;
+  
+  // Generate HTML with card-based layout
+  let html = `
+    <h2>Leaderboard - Streaks</h2>
+    
+    <div id="leaderboardTabs">
+      <button class="leaderboard-tab" id="overallTab">XP Rankings</button>
+      <button class="leaderboard-tab active" id="streaksTab">Streaks</button>
+      <button class="leaderboard-tab" id="answeredTab">Total Answered</button>
+    </div>
+    
+    <ul class="leaderboard-entry-list">
   `;
-  streakEntries.forEach((entry, index) => {
-    const bold = entry.uid === currentUid ? "style='font-weight:bold;'" : "";
+  
+  if (top10.length === 0) {
+    html += `<div class="empty-state">No streak data available yet. Use the app daily to build your streak!</div>`;
+  } else {
+    top10.forEach((entry, index) => {
+      const isCurrentUser = entry.uid === currentUid;
+      const rank = index + 1;
+      
+      html += `
+        <li class="leaderboard-entry ${isCurrentUser ? 'current-user' : ''}">
+          <div class="rank-container rank-${rank}">${rank}</div>
+          <div class="user-info">
+            <p class="username">${entry.username}</p>
+          </div>
+          <div class="user-stats">
+            <p class="stat-value">${entry.streak}</p>
+            <p class="stat-label">DAYS</p>
+          </div>
+        </li>
+      `;
+    });
+  }
+  
+  html += `</ul>`;
+  
+  // Add current user's ranking if not in top 10
+  if (currentUserEntry && !top10.some(e => e.uid === currentUid)) {
     html += `
-       <tr ${bold}>
-         <td>${index + 1}</td>
-         <td>${entry.username}</td>
-         <td>${entry.streak}</td>
-       </tr>
+      <div class="your-ranking">
+        <h3>Your Ranking</h3>
+        <div class="leaderboard-entry current-user">
+          <div class="rank-container">${currentUserRank}</div>
+          <div class="user-info">
+            <p class="username">${currentUsername}</p>
+          </div>
+          <div class="user-stats">
+            <p class="stat-value">${currentUserEntry.streak}</p>
+            <p class="stat-label">DAYS</p>
+          </div>
+        </div>
+      </div>
     `;
-  });
-  html += `</tbody></table>`;
+  }
+  
   html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
+  
   document.getElementById("leaderboardView").innerHTML = html;
   
+  // Add event listeners for tabs and back button
   document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
   document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
   document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
   
   document.getElementById("leaderboardBack").addEventListener("click", function(){
-     document.getElementById("leaderboardView").style.display = "none";
-     document.getElementById("mainOptions").style.display = "flex";
-     document.getElementById("aboutView").style.display = "none";
+    document.getElementById("leaderboardView").style.display = "none";
+    document.getElementById("mainOptions").style.display = "flex";
+    document.getElementById("aboutView").style.display = "none";
   });
 }
 
-// Load leaderboard data for total answered questions
+// Load Total Answered leaderboard with modern card-based design
 async function loadTotalAnsweredData() {
   const currentUid = window.auth.currentUser.uid;
+  const currentUsername = await getOrGenerateUsername();
   const weekStart = getStartOfWeek();
   const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
   let answeredEntries = [];
+  
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
     let weeklyCount = 0;
@@ -334,41 +400,85 @@ async function loadTotalAnsweredData() {
       });
     }
   });
+  
+  // Sort by weekly count (descending)
   answeredEntries.sort((a, b) => b.weeklyCount - a.weeklyCount);
-  let html = `<h2>Leaderboard - Total Answered This Week</h2>`;
-  html += leaderboardTabsHTML("answered");
-  html += `
-     <table class="leaderboard-table">
-       <thead>
-         <tr>
-           <th>Rank</th>
-           <th>Name</th>
-           <th>Total Answered</th>
-         </tr>
-       </thead>
-       <tbody>
+  
+  // Get top performers
+  let top10 = answeredEntries.slice(0, 10);
+  
+  // Find current user's entry
+  let currentUserEntry = answeredEntries.find(e => e.uid === currentUid);
+  let currentUserRank = answeredEntries.findIndex(e => e.uid === currentUid) + 1;
+  
+  // Generate HTML with card-based layout
+  let html = `
+    <h2>Leaderboard - Total Answered</h2>
+    
+    <div id="leaderboardTabs">
+      <button class="leaderboard-tab" id="overallTab">XP Rankings</button>
+      <button class="leaderboard-tab" id="streaksTab">Streaks</button>
+      <button class="leaderboard-tab active" id="answeredTab">Total Answered</button>
+    </div>
+    
+    <ul class="leaderboard-entry-list">
   `;
-  answeredEntries.forEach((entry, index) => {
-    const bold = entry.uid === currentUid ? "style='font-weight:bold;'" : "";
+  
+  if (top10.length === 0) {
+    html += `<div class="empty-state">No answer data available yet. Start answering questions to appear on the leaderboard!</div>`;
+  } else {
+    top10.forEach((entry, index) => {
+      const isCurrentUser = entry.uid === currentUid;
+      const rank = index + 1;
+      
+      html += `
+        <li class="leaderboard-entry ${isCurrentUser ? 'current-user' : ''}">
+          <div class="rank-container rank-${rank}">${rank}</div>
+          <div class="user-info">
+            <p class="username">${entry.username}</p>
+          </div>
+          <div class="user-stats">
+            <p class="stat-value">${entry.weeklyCount}</p>
+            <p class="stat-label">QUESTIONS</p>
+          </div>
+        </li>
+      `;
+    });
+  }
+  
+  html += `</ul>`;
+  
+  // Add current user's ranking if not in top 10
+  if (currentUserEntry && !top10.some(e => e.uid === currentUid)) {
     html += `
-       <tr ${bold}>
-         <td>${index + 1}</td>
-         <td>${entry.username}</td>
-         <td>${entry.weeklyCount}</td>
-       </tr>
+      <div class="your-ranking">
+        <h3>Your Ranking</h3>
+        <div class="leaderboard-entry current-user">
+          <div class="rank-container">${currentUserRank}</div>
+          <div class="user-info">
+            <p class="username">${currentUsername}</p>
+          </div>
+          <div class="user-stats">
+            <p class="stat-value">${currentUserEntry.weeklyCount}</p>
+            <p class="stat-label">QUESTIONS</p>
+          </div>
+        </div>
+      </div>
     `;
-  });
-  html += `</tbody></table>`;
+  }
+  
   html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
+  
   document.getElementById("leaderboardView").innerHTML = html;
   
+  // Add event listeners for tabs and back button
   document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
   document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
   document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
   
   document.getElementById("leaderboardBack").addEventListener("click", function(){
-     document.getElementById("leaderboardView").style.display = "none";
-     document.getElementById("mainOptions").style.display = "flex";
-     document.getElementById("aboutView").style.display = "none";
+    document.getElementById("leaderboardView").style.display = "none";
+    document.getElementById("mainOptions").style.display = "flex";
+    document.getElementById("aboutView").style.display = "none";
   });
 }
