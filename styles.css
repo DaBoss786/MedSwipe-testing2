@@ -936,3 +936,255 @@ html, body {
 #contactModal button:hover {
   background-color: #004a95;
 }
+
+/* Modern Leaderboard Styles */
+#leaderboardView {
+  max-width: 800px;
+  margin: 90px auto 0;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+#leaderboardView h2 {
+  text-align: center;
+  color: #0056b3;
+  margin-bottom: 25px;
+  font-size: 26px;
+  font-weight: 600;
+}
+
+/* Modern tabs with pill style */
+#leaderboardTabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+  background: #f2f7ff;
+  padding: 6px;
+  border-radius: 50px;
+  max-width: 450px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.leaderboard-tab {
+  flex: 1;
+  padding: 10px 12px;
+  border: none;
+  margin: 0 3px;
+  border-radius: 50px;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.leaderboard-tab.active {
+  background: #0C72D3;
+  color: white;
+  box-shadow: 0 3px 8px rgba(12, 114, 211, 0.3);
+}
+
+.leaderboard-tab:hover:not(.active) {
+  background: rgba(12, 114, 211, 0.1);
+  color: #0C72D3;
+}
+
+/* Card-based leaderboard entries */
+.leaderboard-entry-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leaderboard-entry {
+  background: white;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-left: 5px solid transparent;
+}
+
+.leaderboard-entry:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Current user highlighting */
+.leaderboard-entry.current-user {
+  border-left-color: #0C72D3;
+  background-color: #f2f7ff;
+}
+
+/* Rank styles with medal colors for top 3 */
+.rank-container {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin-right: 15px;
+  font-weight: bold;
+  background: #f0f0f0;
+  color: #333;
+  flex-shrink: 0;
+}
+
+.rank-1 {
+  background: linear-gradient(45deg, #FFD700, #FFC800);
+  color: white;
+  box-shadow: 0 2px 5px rgba(255, 215, 0, 0.5);
+}
+
+.rank-2 {
+  background: linear-gradient(45deg, #C0C0C0, #D4D4D4);
+  color: white;
+  box-shadow: 0 2px 5px rgba(192, 192, 192, 0.5);
+}
+
+.rank-3 {
+  background: linear-gradient(45deg, #CD7F32, #E0916A);
+  color: white;
+  box-shadow: 0 2px 5px rgba(205, 127, 50, 0.5);
+}
+
+/* User info section */
+.user-info {
+  flex: 1;
+  overflow: hidden;
+}
+
+.username {
+  font-size: 17px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* Stats section */
+.user-stats {
+  margin-left: auto;
+  text-align: right;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: bold;
+  color: #0C72D3;
+  margin: 0;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+}
+
+/* Level badge */
+.level-badge {
+  display: inline-block;
+  background: #0C72D3;
+  color: white;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  text-align: center;
+  border-radius: 50%;
+  margin-left: 10px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Back button */
+.leaderboard-back-btn {
+  display: block;
+  margin: 30px auto 10px;
+  padding: 12px 25px;
+  font-size: 16px;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(45deg, #0C72D3, #66a6ff);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(12, 114, 211, 0.3);
+}
+
+.leaderboard-back-btn:hover {
+  background: linear-gradient(45deg, #66a6ff, #0C72D3);
+  box-shadow: 0 6px 15px rgba(12, 114, 211, 0.4);
+}
+
+/* Your ranking section */
+.your-ranking {
+  margin-top: 30px;
+  padding: 20px;
+  background: #f2f7ff;
+  border-radius: 10px;
+  position: relative;
+}
+
+.your-ranking h3 {
+  text-align: center;
+  color: #0056b3;
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.your-ranking .leaderboard-entry {
+  margin-bottom: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 30px 20px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  #leaderboardTabs {
+    max-width: 100%;
+  }
+  
+  .leaderboard-tab {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+  
+  .leaderboard-entry {
+    padding: 12px 15px;
+  }
+  
+  .rank-container {
+    width: 35px;
+    height: 35px;
+    margin-right: 10px;
+  }
+  
+  .username {
+    font-size: 15px;
+  }
+  
+  .stat-value {
+    font-size: 16px;
+  }
+}
