@@ -50,9 +50,11 @@
 /* Level Number */
 .level-number {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0.85);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
   width: 70%;
   height: 70%;
   display: flex;
@@ -69,11 +71,20 @@
 /* For clickable level circles */
 .level-number.clickable {
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .level-number.clickable:hover {
-  transform: translate(-50%, -50%) scale(0.9);
+  transform: scale(1.05);
+}
+
+/* User Menu XP Display */
+#userXpDisplay {
+  margin-top: 5px;
+  font-size: 0.9rem;
+  color: #0056b3;
+  font-weight: 500;
+  text-align: center;
 }
 
 /* Level Progress Bar in User Menu */
