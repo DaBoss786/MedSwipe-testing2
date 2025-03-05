@@ -507,7 +507,7 @@ window.addEventListener('load', function() {
     });
   }
 });
-// Function to update the level progress circles
+// Function to update the level progress circles and progress bar
 function updateLevelProgress(percent) {
   // Update the level progress circles
   const levelCircleProgress = document.getElementById("levelCircleProgress");
@@ -520,6 +520,12 @@ function updateLevelProgress(percent) {
   if (userLevelProgress) {
     userLevelProgress.style.setProperty('--progress', `${percent}%`);
   }
+  
+  // Update the horizontal progress bar in the user menu
+  const levelProgressBar = document.getElementById("levelProgressBar");
+  if (levelProgressBar) {
+    levelProgressBar.style.width = `${percent}%`;
+  }
 }
 
 // Update user XP display function call
@@ -530,4 +536,7 @@ window.addEventListener('load', function() {
       updateUserXP();
     }
   }, 2000);
+  
+  // Make updateUserXP available globally
+  window.updateUserXP = updateUserXP;
 });
