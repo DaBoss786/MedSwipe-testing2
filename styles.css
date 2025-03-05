@@ -43,17 +43,18 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: conic-gradient(#0C72D3 var(--progress, 0%), transparent 0%);
+  background: conic-gradient(#1e88e5 0%, transparent 0%);
   z-index: 2;
 }
 
 /* Level Number */
 .level-number {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.85);
+  width: 70%;
+  height: 70%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -63,7 +64,6 @@
   border-radius: 50%;
   font-size: 1rem;
   z-index: 3;
-  transform: scale(0.85); /* Make inner circle smaller */
 }
 
 /* For clickable level circles */
@@ -73,16 +73,7 @@
 }
 
 .level-number.clickable:hover {
-  transform: scale(0.9);
-}
-
-/* User Menu XP Display */
-#userXpDisplay {
-  margin-top: 5px;
-  font-size: 0.9rem;
-  color: #0056b3;
-  font-weight: 500;
-  text-align: center;
+  transform: translate(-50%, -50%) scale(0.9);
 }
 
 /* Level Progress Bar in User Menu */
@@ -98,7 +89,7 @@
 .level-progress-bar {
   height: 100%;
   width: 0%;
-  background-color: #0C72D3;
+  background-color: #1e88e5;
   border-radius: 4px;
   transition: width 0.5s ease;
 }
