@@ -43,7 +43,7 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: conic-gradient(#1e88e5 0%, transparent 0%);
+  background: conic-gradient(#0C72D3 var(--progress, 0%), transparent 0%);
   z-index: 2;
 }
 
@@ -52,11 +52,8 @@
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  margin: auto;
-  width: 70%;
-  height: 70%;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -66,16 +63,17 @@
   border-radius: 50%;
   font-size: 1rem;
   z-index: 3;
+  transform: scale(0.85); /* Make inner circle smaller */
 }
 
 /* For clickable level circles */
 .level-number.clickable {
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease;
 }
 
 .level-number.clickable:hover {
-  transform: scale(1.05);
+  transform: scale(0.9);
 }
 
 /* User Menu XP Display */
@@ -100,7 +98,7 @@
 .level-progress-bar {
   height: 100%;
   width: 0%;
-  background-color: #1e88e5;
+  background-color: #0C72D3;
   border-radius: 4px;
   transition: width 0.5s ease;
 }
