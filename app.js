@@ -1,10 +1,19 @@
 // Main app initialization
 window.addEventListener('load', function() {
+  // Ensure functions are globally available
+  window.updateUserXP = updateUserXP || function() {
+    console.log("updateUserXP not loaded yet");
+  };
+  
+  window.updateUserMenu = updateUserMenu || function() {
+    console.log("updateUserMenu not loaded yet");
+  };
+  
   // Initialize user menu with username
   const checkAuthAndInit = function() {
     if (window.auth && window.auth.currentUser) {
       // Initialize user menu with username
-      updateUserMenu();
+      window.updateUserMenu();
     } else {
       // If auth isn't ready yet, check again in 1 second
       setTimeout(checkAuthAndInit, 1000);
@@ -95,8 +104,10 @@ window.addEventListener('load', function() {
           }
         });
         alert("Progress has been reset!");
-        updateUserCompositeScore();
-        updateUserMenu();
+        if (typeof updateUserCompositeScore === 'function') {
+          updateUserCompositeScore();
+        }
+        window.updateUserMenu();
       } catch (error) {
         console.error("Error resetting progress:", error);
         alert("There was an error resetting your progress.");
@@ -506,8 +517,17 @@ window.addEventListener('load', function() {
       }
     });
   }
+  
+  // Clean up any existing LEVEL UP text on page load
+  const textNodes = document.querySelectorAll('body > *:not([id])');
+  textNodes.forEach(node => {
+    if (node.textContent && node.textContent.includes('LEVEL UP')) {
+      node.remove();
+    }
+  });
 });
-// Function to update the level progress circles and progress bar
+
+// Function to update the level progress circles and bar
 function updateLevelProgress(percent) {
   // Update the level progress circles
   const levelCircleProgress = document.getElementById("levelCircleProgress");
@@ -521,7 +541,7 @@ function updateLevelProgress(percent) {
     userLevelProgress.style.setProperty('--progress', `${percent}%`);
   }
   
-  // Update the horizontal progress bar in the user menu
+  // Update the horizontal progress bar
   const levelProgressBar = document.getElementById("levelProgressBar");
   if (levelProgressBar) {
     levelProgressBar.style.width = `${percent}%`;
@@ -533,10 +553,11 @@ window.addEventListener('load', function() {
   // Call after Firebase auth is initialized
   setTimeout(() => {
     if (window.auth && window.auth.currentUser) {
-      updateUserXP();
+      if (typeof updateUserXP === 'function') {
+        updateUserXP();
+      } else if (typeof window.updateUserXP === 'function') {
+        window.updateUserXP();
+      }
     }
   }, 2000);
-  
-  // Make updateUserXP available globally
-  window.updateUserXP = updateUserXP;
 });
