@@ -561,3 +561,216 @@ window.addEventListener('load', function() {
     }
   }, 2000);
 });
+// Dashboard initialization and functionality
+// Add this to your app.js file
+
+// Initialize dashboard data
+async function initializeDashboard() {
+  if (!window.auth || !window.auth.currentUser || !window.db) {
+    console.log("Auth or DB not initialized for dashboard");
+    setTimeout(initializeDashboard, 1000);
+    return;
+  }
+  
+  try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDocSnap = await window.getDoc(userDocRef);
+    
+    if (userDocSnap.exists()) {
+      const data = userDocSnap.data();
+      const stats = data.stats || {};
+      const streaks = data.streaks || { currentStreak: 0 };
+      
+      // Update level and XP display
+      const xp = stats.xp || 0;
+      const level = stats.level || 1;
+      const progress = calculateLevelProgress(xp);
+      
+      // Set level number
+      const dashboardLevel = document.getElementById("dashboardLevel");
+      if (dashboardLevel) {
+        dashboardLevel.textContent = level;
+      }
+      
+      // Set XP display
+      const dashboardXP = document.getElementById("dashboardXP");
+      if (dashboardXP) {
+        dashboardXP.textContent = `${xp} XP`;
+      }
+      
+      // Set next level info
+      const dashboardNextLevel = document.getElementById("dashboardNextLevel");
+      if (dashboardNextLevel) {
+        const levelInfo = getLevelInfo(level);
+        if (levelInfo.nextLevelXp) {
+          const xpNeeded = levelInfo.nextLevelXp - xp;
+          dashboardNextLevel.textContent = `${xpNeeded} XP to Level ${level + 1}`;
+        } else {
+          dashboardNextLevel.textContent = 'Max Level Reached!';
+        }
+      }
+      
+      // Update progress circle
+      const dashboardLevelProgress = document.getElementById("dashboardLevelProgress");
+      if (dashboardLevelProgress) {
+        dashboardLevelProgress.style.setProperty('--progress', `${progress}%`);
+      }
+      
+      // Update quick stats
+      const totalAnswered = stats.totalAnswered || 0;
+      const totalCorrect = stats.totalCorrect || 0;
+      const accuracy = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+      
+      const dashboardAnswered = document.getElementById("dashboardAnswered");
+      if (dashboardAnswered) {
+        dashboardAnswered.textContent = totalAnswered;
+      }
+      
+      const dashboardAccuracy = document.getElementById("dashboardAccuracy");
+      if (dashboardAccuracy) {
+        dashboardAccuracy.textContent = `${accuracy}%`;
+      }
+      
+      // Update streak display
+      const currentStreak = document.getElementById("currentStreak");
+      if (currentStreak) {
+        currentStreak.textContent = streaks.currentStreak || 0;
+      }
+      
+      // Generate streak calendar
+      generateStreakCalendar(data);
+    }
+  } catch (error) {
+    console.error("Error loading dashboard data:", error);
+  }
+}
+
+// Generate the streak calendar based on user data
+function generateStreakCalendar(userData) {
+  const streakCalendar = document.getElementById("streakCalendar");
+  if (!streakCalendar) return;
+  
+  // Clear existing calendar
+  streakCalendar.innerHTML = '';
+  
+  // Get dates for last 7 days
+  const today = new Date();
+  const dates = [];
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(today.getDate() - i);
+    dates.push(date);
+  }
+  
+  // Check which dates have activity
+  const activeDates = new Set();
+  if (userData.answeredQuestions) {
+    for (const key in userData.answeredQuestions) {
+      const answer = userData.answeredQuestions[key];
+      if (answer.timestamp) {
+        const answerDate = new Date(answer.timestamp);
+        // Normalize date to midnight for comparison
+        const normalizedDate = new Date(
+          answerDate.getFullYear(),
+          answerDate.getMonth(),
+          answerDate.getDate()
+        ).getTime();
+        activeDates.add(normalizedDate);
+      }
+    }
+  }
+  
+  // Create day circles
+  dates.forEach(date => {
+    const normalizedDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    ).getTime();
+    
+    const isToday = date.getDate() === today.getDate() && 
+                    date.getMonth() === today.getMonth() &&
+                    date.getFullYear() === today.getFullYear();
+                    
+    const isActive = activeDates.has(normalizedDate);
+    
+    const dayCircle = document.createElement('div');
+    dayCircle.className = `day-circle ${isActive ? 'active' : 'inactive'} ${isToday ? 'today' : ''}`;
+    dayCircle.textContent = date.getDate();
+    
+    streakCalendar.appendChild(dayCircle);
+  });
+}
+
+// Set up event listeners for dashboard
+function setupDashboardEvents() {
+  // Start Quiz button
+  const startQuizBtn = document.getElementById("startQuizBtn");
+  if (startQuizBtn) {
+    startQuizBtn.addEventListener("click", function() {
+      document.getElementById("quizSetupModal").style.display = "block";
+    });
+  }
+  
+  // Modal Start Quiz button
+  const modalStartQuiz = document.getElementById("modalStartQuiz");
+  if (modalStartQuiz) {
+    modalStartQuiz.addEventListener("click", function() {
+      const category = document.getElementById("modalCategorySelect").value;
+      const numQuestions = parseInt(document.getElementById("modalNumQuestions").value) || 10;
+      const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
+      
+      document.getElementById("quizSetupModal").style.display = "none";
+      
+      loadQuestions({
+        type: category ? 'custom' : 'random',
+        category: category,
+        num: numQuestions,
+        includeAnswered: includeAnswered
+      });
+    });
+  }
+  
+  // Modal Cancel button
+  const modalCancelQuiz = document.getElementById("modalCancelQuiz");
+  if (modalCancelQuiz) {
+    modalCancelQuiz.addEventListener("click", function() {
+      document.getElementById("quizSetupModal").style.display = "none";
+    });
+  }
+  
+  // User Progress card click - go to Performance
+  const userProgressCard = document.getElementById("userProgressCard");
+  if (userProgressCard) {
+    userProgressCard.addEventListener("click", function() {
+      displayPerformance();
+    });
+  }
+  
+  // Quick Stats card click - go to Performance
+  const quickStatsCard = document.getElementById("quickStatsCard");
+  if (quickStatsCard) {
+    quickStatsCard.addEventListener("click", function() {
+      displayPerformance();
+    });
+  }
+}
+
+// Call the setup functions when the document is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  setupDashboardEvents();
+  initializeDashboard();
+});
+
+// When user answers a question, update the dashboard
+// Add this line to the end of the recordAnswer function in user.js
+// initializeDashboard();
+
+// Call initializeDashboard when returning to the main screen
+// Add this to any functions that show the main screen, like:
+// document.getElementById("leaderboardBack").addEventListener("click", function(){
+//   document.getElementById("leaderboardView").style.display = "none";
+//   document.getElementById("mainOptions").style.display = "flex";
+//   initializeDashboard();
+// });
