@@ -275,6 +275,11 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
     updateUserXP();
     updateUserMenu();
     
+    // Update the dashboard if it exists
+    if (typeof initializeDashboard === 'function') {
+      initializeDashboard();
+    }
+    
     // Show level-up animation if level increased
     if (levelUp) {
       setTimeout(() => {
@@ -435,6 +440,11 @@ async function updateUserXP() {
       // Update progress bars and circles
       if (typeof updateLevelProgress === 'function') {
         updateLevelProgress(progress);
+      }
+      
+      // Update dashboard if it exists
+      if (typeof initializeDashboard === 'function') {
+        initializeDashboard();
       }
       
       // Check for and display bonus messages - only if they exist AND we're not already showing notifications
@@ -626,8 +636,7 @@ async function toggleBookmark(questionId) {
       // If already bookmarked, remove it (true toggle functionality)
       else {
         bookmarks.splice(index, 1);
-
-}
+      }
       
       transaction.set(userDocRef, { bookmarks: bookmarks }, { merge: true });
     });
