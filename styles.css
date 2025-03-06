@@ -1444,143 +1444,266 @@ html, body {
 #performanceLevelProgress + .level-number {
   color: #ffffff !important;
 }
-/* Dashboard Start Section */
+/* Dashboard Container */
+.dashboard-container {
+  margin-top: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 10px;
+}
+
+/* Start Quiz Button Section */
 .dashboard-start-section {
+  width: 100%;
+  margin-bottom: 15px;
   display: flex;
   justify-content: center;
-  margin-bottom: 30px;
 }
 
 .dashboard-start-btn {
-  font-size: 1.2rem;
-  padding: 15px 30px;
-  width: auto;
+  font-size: 1.1rem;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #fff;
+  width: 100%;
+  max-width: 220px;
+  transition: background-color 0.2s ease;
+  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+}
+
+.dashboard-start-btn:hover {
+  background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
 }
 
 /* Dashboard Cards Row */
 .dashboard-cards-row {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 20px;
+  flex-direction: row;
   width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0 15px;
-}
-
-/* Dashboard Card Base Styles */
-.dashboard-card {
-  flex: 1;
-  min-width: 250px;
-  max-width: 380px;
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  padding: 20px;
-  box-sizing: border-box;
-  transition: transform 0.3s ease;
-}
-
-/* User Progress Card */
-.user-progress-card .level-progress-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-}
-
-.user-progress-card .level-progress-circle.dashboard-level {
-  width: 150px;
-  height: 150px;
+  gap: 10px;
   margin-bottom: 15px;
 }
 
-.user-progress-card .level-progress-circle.dashboard-level .level-number {
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: white;
+/* Dashboard Card Common Styles */
+.dashboard-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  overflow: hidden;
+  flex: 1;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
 }
 
-.user-progress-card .level-info {
+.dashboard-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.card-header {
+  padding: 10px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #0056b3;
   text-align: center;
-  margin-top: 10px;
 }
 
-.user-progress-card .level-xp,
-.user-progress-card .level-next {
-  margin: 5px 0;
-  color: #666;
-  font-size: 0.9rem;
+.card-content {
+  padding: 12px;
 }
 
-/* Streak Calendar */
-.streak-card .streak-calendar {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.streak-calendar .day-labels {
+.card-footer {
   display: flex;
   justify-content: space-between;
-  width: 100%;
-  margin-bottom: 10px;
-}
-
-.streak-calendar .day-labels span {
-  flex: 1;
-  text-align: center;
-  color: #666;
-  font-size: 0.8rem;
-}
-
-.streak-calendar .day-circles {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 5px;
-}
-
-.streak-calendar .day-circles::before,
-.streak-calendar .day-circles::after {
-  content: '';
-  flex: 1 1 100%;
-  min-width: 100%;
-}
-
-.streak-count {
-  display: flex;
   align-items: center;
-  justify-content: center;
-  margin-bottom: 10px;
-}
-
-.streak-count span:first-child {
-  font-size: 1.2rem;
-  font-weight: bold;
-  margin-right: 5px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-top: 1px solid #eaeaea;
+  font-size: 0.8rem;
   color: #0056b3;
 }
 
-.streak-count .streak-flame {
-  font-size: 1.2rem;
+.arrow-icon {
+  font-weight: bold;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 600px) {
+/* User Progress Card */
+.level-progress-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashboard-level {
+  width: 32px;
+  height: 32px;
+  margin-right: 10px;
+}
+
+.level-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.level-xp {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #0056b3;
+}
+
+.level-next {
+  margin: 3px 0 0 0;
+  font-size: 0.7rem;
+  color: #666;
+}
+
+/* Quick Stats Card */
+.quick-stats-container {
+  display: flex;
+  justify-content: space-around;
+}
+
+.stats-item {
+  text-align: center;
+}
+
+.stats-value {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #0056b3;
+}
+
+.stats-label {
+  font-size: 0.7rem;
+  color: #666;
+}
+
+/* Streak Card */
+.streak-card {
+  width: 100%;
+}
+
+.card-header .streak-count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 5px;
+}
+
+.streak-count span {
+  margin-right: 5px;
+  font-weight: 500;
+  color: #0056b3;
+}
+
+.streak-flame {
+  font-size: 1rem;
+}
+
+.streak-calendar {
+  width: 100%;
+}
+
+.day-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 5px;
+  margin-bottom: 5px;
+}
+
+.day-labels span {
+  width: 14%;
+  text-align: center;
+  font-size: 0.7rem;
+  color: #666;
+}
+
+.day-circles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.day-circle {
+  width: 14%;
+  aspect-ratio: 1;
+  margin-bottom: 5px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  background: #eaeaea;
+  color: #666;
+}
+
+.day-circle.active {
+  background: #0C72D3;
+  color: white;
+}
+
+.day-circle.today {
+  border: 2px solid #0C72D3;
+}
+
+/* Media Queries for Responsive Design */
+@media (max-width: 480px) {
+  .dashboard-container {
+    padding: 8px;
+  }
+  
   .dashboard-cards-row {
     flex-direction: column;
-    align-items: center;
+    gap: 8px;
   }
-
-  .dashboard-card {
-    width: 90%;
-    max-width: 350px;
+  
+  .card-header h3 {
+    font-size: 0.9rem;
   }
-
-  .streak-calendar .day-circles {
-    width: 100%;
-    justify-content: space-between;
+  
+  .card-content {
+    padding: 8px;
+  }
+  
+  .card-footer {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+  
+  .stats-value {
+    font-size: 1rem;
+  }
+  
+  .stats-label {
+    font-size: 0.65rem;
+  }
+  
+  .level-xp {
+    font-size: 0.8rem;
+  }
+  
+  .level-next {
+    font-size: 0.65rem;
+  }
+  
+  .day-labels span {
+    font-size: 0.65rem;
+  }
+  
+  .day-circle {
+    font-size: 0.65rem;
   }
 }
