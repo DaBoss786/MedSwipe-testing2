@@ -1547,9 +1547,13 @@ html, body {
 }
 
 .dashboard-level {
-  width: 32px;
-  height: 32px;
+  width: 45px;
+  height: 45px;
   margin-right: 10px;
+}
+
+.dashboard-level .level-number {
+  font-size: 1.2rem;
 }
 
 .level-info {
@@ -1705,5 +1709,15 @@ html, body {
   
   .day-circle {
     font-size: 0.65rem;
+  }
+  
+  /* Make sure level circles aren't too small on mobile */
+  .dashboard-level {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .dashboard-level .level-number {
+    font-size: 1.1rem;
   }
 }
