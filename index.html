@@ -44,10 +44,121 @@
   </div>
   
   <!-- Main Options -->
-  <div id="mainOptions">
-    <button id="customQuizBtn">Custom Quiz</button>
-    <button id="randomQuizBtn">Random Quiz</button>
+  <!-- Dashboard View - Replace the current mainOptions div with this -->
+<div id="mainOptions" class="dashboard-container">
+  <!-- Top: Start Quiz Button -->
+  <div class="dashboard-start-section">
+    <button id="startQuizBtn" class="dashboard-start-btn">Start Quiz</button>
   </div>
+  
+  <!-- Middle: Info Cards Row -->
+  <div class="dashboard-cards-row">
+    <!-- User Progress Card -->
+    <div class="dashboard-card user-progress-card" id="userProgressCard">
+      <div class="card-header">
+        <h3>Your Progress</h3>
+      </div>
+      <div class="card-content">
+        <div class="level-progress-container">
+          <div class="level-progress-circle dashboard-level">
+            <div class="level-circle-background"></div>
+            <div class="level-circle-progress" id="dashboardLevelProgress"></div>
+            <div class="level-number" id="dashboardLevel">1</div>
+          </div>
+          <div class="level-info">
+            <p class="level-xp" id="dashboardXP">0 XP</p>
+            <p class="level-next" id="dashboardNextLevel">30 XP to Level 2</p>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span>View Details</span>
+        <span class="arrow-icon">→</span>
+      </div>
+    </div>
+    
+    <!-- Quick Stats Card -->
+    <div class="dashboard-card stats-card" id="quickStatsCard">
+      <div class="card-header">
+        <h3>Quick Stats</h3>
+      </div>
+      <div class="card-content">
+        <div class="quick-stats-container">
+          <div class="stats-item">
+            <div class="stats-value" id="dashboardAnswered">0</div>
+            <div class="stats-label">Questions Answered</div>
+          </div>
+          <div class="stats-item">
+            <div class="stats-value" id="dashboardAccuracy">0%</div>
+            <div class="stats-label">Accuracy</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span>View Details</span>
+        <span class="arrow-icon">→</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Bottom: Streak Calendar Card -->
+  <div class="dashboard-card streak-card">
+    <div class="card-header">
+      <h3>Activity Streak</h3>
+      <div class="streak-count">
+        <span id="currentStreak">0</span>
+        <span class="streak-flame">🔥</span>
+      </div>
+    </div>
+    <div class="card-content">
+      <div class="streak-calendar">
+        <div class="day-labels">
+          <span>M</span>
+          <span>T</span>
+          <span>W</span>
+          <span>T</span>
+          <span>F</span>
+          <span>S</span>
+          <span>S</span>
+        </div>
+        <div class="day-circles" id="streakCalendar">
+          <!-- Days will be filled in by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quiz Setup Modal -->
+<div id="quizSetupModal" class="modalForm">
+  <h2>Set Up Your Quiz</h2>
+  <div class="formGroup">
+    <label for="modalCategorySelect">Select Category</label>
+    <select id="modalCategorySelect">
+      <option value="">All Categories</option>
+      <option value="Head & Neck Surgery">Head & Neck Surgery</option>
+      <option value="Otology">Otology</option>
+      <option value="Laryngology">Laryngology</option>
+      <option value="Rhinology">Rhinology</option>
+      <option value="Pediatric ENT">Pediatric ENT</option>
+      <option value="Facial Plastics">Facial Plastics</option>
+    </select>
+  </div>
+  <div class="formGroup">
+    <label for="modalNumQuestions">Number of Questions</label>
+    <input type="number" id="modalNumQuestions" min="1" value="10">
+  </div>
+  <div class="formGroup">
+    <label>
+      <input type="checkbox" id="modalIncludeAnswered">
+      Include answered questions
+    </label>
+  </div>
+  <div class="btnRow">
+    <button id="modalStartQuiz">Start Quiz</button>
+    <button id="modalCancelQuiz" class="cancel">Cancel</button>
+  </div>
+</div>
   
   <!-- Swiper Container for Quiz -->
   <div class="swiper">
