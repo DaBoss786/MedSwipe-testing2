@@ -1444,266 +1444,117 @@ html, body {
 #performanceLevelProgress + .level-number {
   color: #ffffff !important;
 }
-/* Dashboard Styles */
-.dashboard-container {
-  margin-top: 70px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* Start Quiz Button Section */
-.dashboard-start-section {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
-  padding: 10px;
-}
-
-.dashboard-start-btn {
-  font-size: 1.4rem;
-  padding: 15px 25px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  color: #fff;
-  width: 80%;
-  max-width: 300px;
-  transition: all 0.3s ease;
-  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
-  box-shadow: 0 4px 12px rgba(12, 114, 211, 0.3);
-  position: relative;
-  overflow: hidden;
-}
-
-.dashboard-start-btn:hover {
-  background: linear-gradient(135deg, #0056b3 0%, #0C72D3 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(12, 114, 211, 0.4);
-}
-
-.dashboard-start-btn:after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: all 0.5s ease;
-}
-
-.dashboard-start-btn:hover:after {
-  left: 100%;
-}
-
-/* Cards Row Layout */
+/* Dashboard Cards Row */
 .dashboard-cards-row {
   display: flex;
-  justify-content: center;
   flex-wrap: wrap;
-  gap: 20px;
+  justify-content: center;
+  gap: 15px;
   width: 100%;
-  margin-bottom: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 15px;
 }
 
-/* Shared Card Styles */
+/* Dashboard Card Base Styles */
 .dashboard-card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-  padding: 20px;
-  transition: all 0.2s ease;
-  display: flex;
-  flex-direction: column;
   flex: 1;
   min-width: 250px;
   max-width: 350px;
-  margin-bottom: 20px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  padding: 15px;
+  box-sizing: border-box;
+  transition: transform 0.3s ease;
 }
 
 .dashboard-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
+  transform: translateY(-5px);
 }
 
-.card-header {
+/* Card Header */
+.dashboard-card .card-header {
+  text-align: center;
   margin-bottom: 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
-.card-header h3 {
-  margin: 0;
+.dashboard-card .card-header h3 {
   color: #0056b3;
-  font-size: 1.2rem;
-  font-weight: 600;
+  margin: 0;
+  font-size: 1.1rem;
 }
 
-.card-content {
-  flex-grow: 1;
+/* Card Content */
+.dashboard-card .card-content {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 10px 0;
 }
 
-.card-footer {
-  margin-top: 10px;
-  text-align: right;
-  color: #0056b3;
-  font-size: 0.9rem;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 5px;
-}
-
-.arrow-icon {
-  transition: transform 0.2s ease;
-}
-
-.dashboard-card:hover .arrow-icon {
-  transform: translateX(3px);
-}
-
-/* User Progress Card */
-.user-progress-card .card-content {
-  padding: 5px 0 15px;
-}
-
-.level-progress-container {
+/* User Progress Card Specific Styles */
+.user-progress-card .level-progress-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
 }
 
-.dashboard-level {
-  width: 80px;
-  height: 80px;
+.user-progress-card .level-progress-circle.dashboard-level {
+  width: 100px;
+  height: 100px;
   margin-bottom: 10px;
 }
 
-.dashboard-level .level-number {
-  font-size: 1.8rem;
-}
-
-.level-info {
+.user-progress-card .level-info {
   text-align: center;
+  margin-top: 10px;
 }
 
-.level-xp {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #0C72D3;
+.user-progress-card .level-xp,
+.user-progress-card .level-next {
   margin: 5px 0;
-}
-
-.level-next {
-  font-size: 0.85rem;
   color: #666;
-  margin: 0;
+  font-size: 0.9rem;
 }
 
-/* Quick Stats Card */
-.quick-stats-container {
+/* Quick Stats Card Specific Styles */
+.stats-card .quick-stats-container {
   display: flex;
   justify-content: space-around;
   width: 100%;
 }
 
-.stats-item {
+.stats-card .stats-item {
   text-align: center;
-  padding: 0 10px;
 }
 
-.stats-value {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #0C72D3;
-  margin-bottom: 5px;
+.stats-card .stats-value {
+  font-size: 1.5rem;
+  color: #0056b3;
+  font-weight: bold;
 }
 
-.stats-label {
-  font-size: 0.85rem;
+.stats-card .stats-label {
+  font-size: 0.9rem;
   color: #666;
+  margin-top: 5px;
 }
 
-/* Streak Card */
-.streak-card {
-  width: 100%;
-  max-width: 720px;
-}
-
-.streak-count {
+/* Card Footer */
+.dashboard-card .card-footer {
   display: flex;
-  align-items: center;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #0C72D3;
-}
-
-.streak-flame {
-  margin-left: 5px;
-  font-size: 1.4rem;
-}
-
-.streak-calendar {
-  width: 100%;
-  padding: 10px 0;
-}
-
-.day-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.day-labels span {
-  flex: 1;
-  text-align: center;
-  color: #666;
-  font-size: 0.85rem;
-}
-
-.day-circles {
-  display: flex;
-  justify-content: space-between;
-}
-
-.day-circle {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  transition: transform 0.2s ease;
+  align-items: center;
+  margin-top: 15px;
+  color: #0056b3;
+  cursor: pointer;
+  font-size: 0.9rem;
 }
 
-.day-circle.active {
-  background-color: #0C72D3;
-  color: white;
-}
-
-.day-circle.inactive {
-  background-color: #e0e0e0;
-  color: #666;
-}
-
-.day-circle.today {
-  border: 2px solid #0C72D3;
-}
-
-.day-circle:hover {
-  transform: scale(1.1);
+.dashboard-card .card-footer .arrow-icon {
+  margin-left: 5px;
+  font-weight: bold;
 }
 
 /* Responsive Adjustments */
@@ -1712,15 +1563,9 @@ html, body {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .dashboard-card {
-    width: 100%;
-    max-width: 100%;
-  }
-  
-  .day-circle {
-    width: 25px;
-    height: 25px;
-    font-size: 0.8rem;
+    width: 90%;
+    max-width: 350px;
   }
 }
