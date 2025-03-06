@@ -561,6 +561,149 @@ window.addEventListener('load', function() {
     }
   }, 2000);
 });
+// Add this function to your app.js file
+// This function checks if a user's streak should be reset due to inactivity
+async function checkAndUpdateStreak() {
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("User not authenticated yet");
+    return;
+  }
+  
+  try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    
+    await window.runTransaction(window.db, async (transaction) => {
+      const userDoc = await transaction.get(userDocRef);
+      if (!userDoc.exists()) return;
+      
+      const data = userDoc.data();
+      if (!data.streaks || !data.streaks.lastAnsweredDate) return;
+      
+      const currentDate = new Date();
+      const lastDate = new Date(data.streaks.lastAnsweredDate);
+      
+      // Normalize dates to remove time component
+      const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const normalizedCurrent = normalizeDate(currentDate);
+      const normalizedLast = normalizeDate(lastDate);
+      
+      // Calculate difference in days
+      const diffDays = Math.round((normalizedCurrent - normalizedLast) / (1000 * 60 * 60 * 24));
+      
+      // If more than 1 day has passed, reset the streak
+      if (diffDays > 1) {
+        console.log("Streak reset due to inactivity. Days since last activity:", diffDays);
+        data.streaks.currentStreak = 0;
+        transaction.set(userDocRef, data, { merge: true });
+        
+        // Update UI to show reset streak
+        const currentStreakElement = document.getElementById("currentStreak");
+        if (currentStreakElement) {
+          currentStreakElement.textContent = "0";
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error checking streak:", error);
+  }
+}
+
+// Call this function when the app initializes
+window.addEventListener('load', function() {
+  // Check streak after Firebase auth is initialized
+  const checkAuthAndInitStreak = function() {
+    if (window.auth && window.auth.currentUser) {
+      checkAndUpdateStreak();
+    } else {
+      // If auth isn't ready yet, check again in 1 second
+      setTimeout(checkAuthAndInitStreak, 1000);
+    }
+  };
+  
+  // Start checking for auth
+  checkAuthAndInitStreak();
+});
+
+// Add this function to your app.js file
+// This function updates the UI with the current streak
+async function updateStreakDisplay() {
+  if (!window.auth || !window.auth.currentUser) {
+    console.log("User not authenticated yet");
+    return;
+  }
+  
+  try {
+    const uid = window.auth.currentUser.uid;
+    const userDocRef = window.doc(window.db, 'users', uid);
+    const userDocSnap = await window.getDoc(userDocRef);
+    
+    if (userDocSnap.exists()) {
+      const data = userDocSnap.data();
+      const currentStreak = data.streaks?.currentStreak || 0;
+      
+      // Update the streak display in the UI
+      const currentStreakElement = document.getElementById("currentStreak");
+      if (currentStreakElement) {
+        currentStreakElement.textContent = currentStreak;
+      }
+      
+      // Update the streak calendar if it exists
+      updateStreakCalendar(data.streaks);
+    }
+  } catch (error) {
+    console.error("Error updating streak display:", error);
+  }
+}
+
+// Function to update the streak calendar
+function updateStreakCalendar(streaks) {
+  const streakCalendar = document.getElementById("streakCalendar");
+  if (!streakCalendar) return;
+  
+  // Clear existing calendar
+  streakCalendar.innerHTML = '';
+  
+  // Get today's date
+  const today = new Date();
+  const currentDay = today.getDay() || 7; // Convert Sunday (0) to 7 for easier calculation
+  
+  // Create the last 7 days (including today)
+  for (let i = 1; i <= 7; i++) {
+    const dayCircle = document.createElement("div");
+    dayCircle.className = "day-circle";
+    
+    // Calculate the date for this circle
+    const dayOffset = i - currentDay;
+    const date = new Date(today);
+    date.setDate(today.getDate() + dayOffset);
+    
+    // Check if this day is active in the streak (simplified logic)
+    // In a real implementation, you would check the specific dates in the streak
+    if (i <= currentDay && streaks && streaks.currentStreak >= currentDay - i + 1) {
+      dayCircle.classList.add("active");
+    }
+    
+    // Mark today's circle
+    if (i === currentDay) {
+      dayCircle.classList.add("today");
+    }
+    
+    // Add day number
+    dayCircle.textContent = date.getDate();
+    
+    streakCalendar.appendChild(dayCircle);
+  }
+}
+
+// Call updateStreakDisplay when the app initializes
+window.addEventListener('load', function() {
+  setTimeout(() => {
+    if (window.auth && window.auth.currentUser) {
+      updateStreakDisplay();
+    }
+  }, 2000);
+});
 // Dashboard initialization and functionality
 // Add this to your app.js file
 
