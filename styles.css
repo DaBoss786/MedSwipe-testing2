@@ -1444,3 +1444,283 @@ html, body {
 #performanceLevelProgress + .level-number {
   color: #ffffff !important;
 }
+/* Dashboard Styles */
+.dashboard-container {
+  margin-top: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Start Quiz Button Section */
+.dashboard-start-section {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  padding: 10px;
+}
+
+.dashboard-start-btn {
+  font-size: 1.4rem;
+  padding: 15px 25px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #fff;
+  width: 80%;
+  max-width: 300px;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+  box-shadow: 0 4px 12px rgba(12, 114, 211, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-start-btn:hover {
+  background: linear-gradient(135deg, #0056b3 0%, #0C72D3 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(12, 114, 211, 0.4);
+}
+
+.dashboard-start-btn:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: all 0.5s ease;
+}
+
+.dashboard-start-btn:hover:after {
+  left: 100%;
+}
+
+/* Cards Row Layout */
+.dashboard-cards-row {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+/* Shared Card Styles */
+.dashboard-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 250px;
+  max-width: 350px;
+  margin-bottom: 20px;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
+}
+
+.card-header {
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h3 {
+  margin: 0;
+  color: #0056b3;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.card-content {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.card-footer {
+  margin-top: 10px;
+  text-align: right;
+  color: #0056b3;
+  font-size: 0.9rem;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 5px;
+}
+
+.arrow-icon {
+  transition: transform 0.2s ease;
+}
+
+.dashboard-card:hover .arrow-icon {
+  transform: translateX(3px);
+}
+
+/* User Progress Card */
+.user-progress-card .card-content {
+  padding: 5px 0 15px;
+}
+
+.level-progress-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.dashboard-level {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 10px;
+}
+
+.dashboard-level .level-number {
+  font-size: 1.8rem;
+}
+
+.level-info {
+  text-align: center;
+}
+
+.level-xp {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #0C72D3;
+  margin: 5px 0;
+}
+
+.level-next {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0;
+}
+
+/* Quick Stats Card */
+.quick-stats-container {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+}
+
+.stats-item {
+  text-align: center;
+  padding: 0 10px;
+}
+
+.stats-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #0C72D3;
+  margin-bottom: 5px;
+}
+
+.stats-label {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* Streak Card */
+.streak-card {
+  width: 100%;
+  max-width: 720px;
+}
+
+.streak-count {
+  display: flex;
+  align-items: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #0C72D3;
+}
+
+.streak-flame {
+  margin-left: 5px;
+  font-size: 1.4rem;
+}
+
+.streak-calendar {
+  width: 100%;
+  padding: 10px 0;
+}
+
+.day-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.day-labels span {
+  flex: 1;
+  text-align: center;
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.day-circles {
+  display: flex;
+  justify-content: space-between;
+}
+
+.day-circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.day-circle.active {
+  background-color: #0C72D3;
+  color: white;
+}
+
+.day-circle.inactive {
+  background-color: #e0e0e0;
+  color: #666;
+}
+
+.day-circle.today {
+  border: 2px solid #0C72D3;
+}
+
+.day-circle:hover {
+  transform: scale(1.1);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 600px) {
+  .dashboard-cards-row {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .dashboard-card {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .day-circle {
+    width: 25px;
+    height: 25px;
+    font-size: 0.8rem;
+  }
+}
