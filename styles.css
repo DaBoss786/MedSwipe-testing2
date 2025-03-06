@@ -1444,14 +1444,27 @@ html, body {
 #performanceLevelProgress + .level-number {
   color: #ffffff !important;
 }
+/* Dashboard Start Section */
+.dashboard-start-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.dashboard-start-btn {
+  font-size: 1.2rem;
+  padding: 15px 30px;
+  width: auto;
+}
+
 /* Dashboard Cards Row */
 .dashboard-cards-row {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 15px;
+  gap: 20px;
   width: 100%;
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 0 15px;
 }
@@ -1460,39 +1473,16 @@ html, body {
 .dashboard-card {
   flex: 1;
   min-width: 250px;
-  max-width: 350px;
+  max-width: 380px;
   background-color: white;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  padding: 15px;
+  padding: 20px;
   box-sizing: border-box;
   transition: transform 0.3s ease;
 }
 
-.dashboard-card:hover {
-  transform: translateY(-5px);
-}
-
-/* Card Header */
-.dashboard-card .card-header {
-  text-align: center;
-  margin-bottom: 15px;
-}
-
-.dashboard-card .card-header h3 {
-  color: #0056b3;
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-/* Card Content */
-.dashboard-card .card-content {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* User Progress Card Specific Styles */
+/* User Progress Card */
 .user-progress-card .level-progress-container {
   display: flex;
   flex-direction: column;
@@ -1501,15 +1491,15 @@ html, body {
 }
 
 .user-progress-card .level-progress-circle.dashboard-level {
-  width: 120px;
-  height: 120px;
+  width: 150px;
+  height: 150px;
   margin-bottom: 15px;
 }
 
-.dashboard-start-section {
-  margin-bottom: 30px; /* Increased space below Start Quiz button */
-  display: flex;
-  justify-content: center;
+.user-progress-card .level-progress-circle.dashboard-level .level-number {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: white;
 }
 
 .user-progress-card .level-info {
@@ -1524,43 +1514,57 @@ html, body {
   font-size: 0.9rem;
 }
 
-/* Quick Stats Card Specific Styles */
-.stats-card .quick-stats-container {
+/* Streak Calendar */
+.streak-card .streak-calendar {
   display: flex;
-  justify-content: space-around;
-  width: 100%;
-}
-
-.stats-card .stats-item {
-  text-align: center;
-}
-
-.stats-card .stats-value {
-  font-size: 1.5rem;
-  color: #0056b3;
-  font-weight: bold;
-}
-
-.stats-card .stats-label {
-  font-size: 0.9rem;
-  color: #666;
-  margin-top: 5px;
-}
-
-/* Card Footer */
-.dashboard-card .card-footer {
-  display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  margin-top: 15px;
-  color: #0056b3;
-  cursor: pointer;
-  font-size: 0.9rem;
 }
 
-.dashboard-card .card-footer .arrow-icon {
-  margin-left: 5px;
+.streak-calendar .day-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.streak-calendar .day-labels span {
+  flex: 1;
+  text-align: center;
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.streak-calendar .day-circles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+}
+
+.streak-calendar .day-circles::before,
+.streak-calendar .day-circles::after {
+  content: '';
+  flex: 1 1 100%;
+  min-width: 100%;
+}
+
+.streak-count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.streak-count span:first-child {
+  font-size: 1.2rem;
   font-weight: bold;
+  margin-right: 5px;
+  color: #0056b3;
+}
+
+.streak-count .streak-flame {
+  font-size: 1.2rem;
 }
 
 /* Responsive Adjustments */
@@ -1573,5 +1577,10 @@ html, body {
   .dashboard-card {
     width: 90%;
     max-width: 350px;
+  }
+
+  .streak-calendar .day-circles {
+    width: 100%;
+    justify-content: space-between;
   }
 }
