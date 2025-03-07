@@ -1500,6 +1500,7 @@ html, body {
   flex: 1;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
+  min-width: 45%; /* Ensure cards take up enough space on small screens */
 }
 
 .dashboard-card:hover {
@@ -1669,8 +1670,9 @@ html, body {
     padding: 8px;
   }
   
+  /* Keep the dashboard cards row horizontal, even on mobile */
   .dashboard-cards-row {
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
   }
   
@@ -1711,13 +1713,27 @@ html, body {
     font-size: 0.65rem;
   }
   
-  /* Keep the level circle reasonably sized on mobile */
+  /* Make the level circle larger on mobile */
   .dashboard-level {
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
+    margin-right: 8px; /* Smaller margin on mobile */
   }
   
   .dashboard-level .level-number {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
+  }
+  
+  /* Adjust layout for the level container on mobile */
+  .level-progress-container {
+    flex-direction: row;
+    align-items: center;
+  }
+  
+  /* Ensure cards stay side by side on small screens */
+  .dashboard-card {
+    min-width: 0; /* Allow cards to shrink */
+    flex-basis: 0;
+    flex-grow: 1;
   }
 }
