@@ -1669,9 +1669,16 @@ html, body {
     padding: 8px;
   }
   
+  /* Keep the dashboard cards row horizontal on mobile */
   .dashboard-cards-row {
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
+  }
+  
+  /* Make sure cards have equal width */
+  .dashboard-card {
+    flex: 1;
+    min-width: 0;
   }
   
   .card-header h3 {
@@ -1711,13 +1718,14 @@ html, body {
     font-size: 0.65rem;
   }
   
-  /* Keep the level circle reasonably sized on mobile */
+  /* Make the level circle larger on mobile */
   .dashboard-level {
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
+    margin-right: 5px;
   }
   
   .dashboard-level .level-number {
-    font-size: 1.3rem;
+    font-size: 1.5rem;
   }
 }
