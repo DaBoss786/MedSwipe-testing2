@@ -561,8 +561,8 @@ window.addEventListener('load', function() {
     }
   }, 2000);
 });
-// Add this function to your app.js file
-// This function checks if a user's streak should be reset due to inactivity
+
+// Function to check if a user's streak should be reset due to inactivity
 async function checkAndUpdateStreak() {
   if (!window.auth || !window.auth.currentUser) {
     console.log("User not authenticated yet");
@@ -609,105 +609,7 @@ async function checkAndUpdateStreak() {
   }
 }
 
-// Call this function when the app initializes
-window.addEventListener('load', function() {
-  // Check streak after Firebase auth is initialized
-  const checkAuthAndInitStreak = function() {
-    if (window.auth && window.auth.currentUser) {
-      checkAndUpdateStreak();
-    } else {
-      // If auth isn't ready yet, check again in 1 second
-      setTimeout(checkAuthAndInitStreak, 1000);
-    }
-  };
-  
-  // Start checking for auth
-  checkAuthAndInitStreak();
-});
-
-// Add this function to your app.js file
-// This function updates the UI with the current streak
-async function updateStreakDisplay() {
-  if (!window.auth || !window.auth.currentUser) {
-    console.log("User not authenticated yet");
-    return;
-  }
-  
-  try {
-    const uid = window.auth.currentUser.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
-    const userDocSnap = await window.getDoc(userDocRef);
-    
-    if (userDocSnap.exists()) {
-      const data = userDocSnap.data();
-      const currentStreak = data.streaks?.currentStreak || 0;
-      
-      // Update the streak display in the UI
-      const currentStreakElement = document.getElementById("currentStreak");
-      if (currentStreakElement) {
-        currentStreakElement.textContent = currentStreak;
-      }
-      
-      // Update the streak calendar if it exists
-      updateStreakCalendar(data.streaks);
-    }
-  } catch (error) {
-    console.error("Error updating streak display:", error);
-  }
-}
-
-// Function to update the streak calendar
-function updateStreakCalendar(streaks) {
-  const streakCalendar = document.getElementById("streakCalendar");
-  if (!streakCalendar) return;
-  
-  // Clear existing calendar
-  streakCalendar.innerHTML = '';
-  
-  // Get today's date
-  const today = new Date();
-  const currentDay = today.getDay() || 7; // Convert Sunday (0) to 7 for easier calculation
-  
-  // Create the last 7 days (including today)
-  for (let i = 1; i <= 7; i++) {
-    const dayCircle = document.createElement("div");
-    dayCircle.className = "day-circle";
-    
-    // Calculate the date for this circle
-    const dayOffset = i - currentDay;
-    const date = new Date(today);
-    date.setDate(today.getDate() + dayOffset);
-    
-    // Check if this day is active in the streak (simplified logic)
-    // In a real implementation, you would check the specific dates in the streak
-    if (i <= currentDay && streaks && streaks.currentStreak >= currentDay - i + 1) {
-      dayCircle.classList.add("active");
-    }
-    
-    // Mark today's circle
-    if (i === currentDay) {
-      dayCircle.classList.add("today");
-    }
-    
-    // Add day number
-    dayCircle.textContent = date.getDate();
-    
-    streakCalendar.appendChild(dayCircle);
-  }
-}
-
-// Call updateStreakDisplay when the app initializes
-window.addEventListener('load', function() {
-  setTimeout(() => {
-    if (window.auth && window.auth.currentUser) {
-      updateStreakDisplay();
-    }
-  }, 2000);
-});
 // Dashboard initialization and functionality
-// Add this to your app.js file
-
-// Initialize dashboard data
 async function initializeDashboard() {
   if (!window.auth || !window.auth.currentUser || !window.db) {
     console.log("Auth or DB not initialized for dashboard");
@@ -782,68 +684,70 @@ async function initializeDashboard() {
       }
       
       // Generate streak calendar
-      generateStreakCalendar(data);
+      fixStreakCalendar(data.streaks);
     }
   } catch (error) {
     console.error("Error loading dashboard data:", error);
   }
 }
 
-// Generate the streak calendar based on user data
-function generateStreakCalendar(userData) {
+// Function to fix streak calendar alignment
+function fixStreakCalendar(streaks) {
+  // Get the streak calendar element
   const streakCalendar = document.getElementById("streakCalendar");
-  if (!streakCalendar) return;
+  if (!streakCalendar) {
+    console.error("Streak calendar element not found");
+    return;
+  }
   
-  // Clear existing calendar
+  // Clear existing circles
   streakCalendar.innerHTML = '';
   
-  // Get dates for last 7 days
+  // Get today's date
   const today = new Date();
-  const dates = [];
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(today.getDate() - i);
-    dates.push(date);
-  }
   
-  // Check which dates have activity
-  const activeDates = new Set();
-  if (userData.answeredQuestions) {
-    for (const key in userData.answeredQuestions) {
-      const answer = userData.answeredQuestions[key];
-      if (answer.timestamp) {
-        const answerDate = new Date(answer.timestamp);
-        // Normalize date to midnight for comparison
-        const normalizedDate = new Date(
-          answerDate.getFullYear(),
-          answerDate.getMonth(),
-          answerDate.getDate()
-        ).getTime();
-        activeDates.add(normalizedDate);
+  // Convert JavaScript's day (0=Sunday, 6=Saturday) to our display format (0=Monday, 6=Sunday)
+  let todayDayIndex = today.getDay() - 1; // Convert from JS day to our index
+  if (todayDayIndex < 0) todayDayIndex = 6; // Handle Sunday (becomes 6)
+  
+  console.log("Today:", today);
+  console.log("Day of week (0=Sun, 6=Sat):", today.getDay());
+  console.log("Our day index (0=Mon, 6=Sun):", todayDayIndex);
+  
+  // Generate all the days of the week
+  for (let i = 0; i < 7; i++) {
+    // Calculate the date offset from today
+    // i is the position in our display (0=Monday, 6=Sunday)
+    // todayDayIndex is today's position in our display
+    const offset = i - todayDayIndex;
+    
+    // Create the date for this position
+    const date = new Date(today);
+    date.setDate(today.getDate() + offset);
+    
+    // Create the day circle
+    const dayCircle = document.createElement("div");
+    dayCircle.className = "day-circle";
+    
+    // If this is today, add the today class
+    if (offset === 0) {
+      dayCircle.classList.add("today");
+    }
+    
+    // Check if this day is active in the streak
+    if (streaks && streaks.currentStreak > 0) {
+      const dayDiff = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+      if (dayDiff >= 0 && dayDiff < streaks.currentStreak) {
+        dayCircle.classList.add("active");
       }
     }
-  }
-  
-  // Create day circles
-  dates.forEach(date => {
-    const normalizedDate = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate()
-    ).getTime();
     
-    const isToday = date.getDate() === today.getDate() && 
-                    date.getMonth() === today.getMonth() &&
-                    date.getFullYear() === today.getFullYear();
-                    
-    const isActive = activeDates.has(normalizedDate);
-    
-    const dayCircle = document.createElement('div');
-    dayCircle.className = `day-circle ${isActive ? 'active' : 'inactive'} ${isToday ? 'today' : ''}`;
+    // Set the date number as the content
     dayCircle.textContent = date.getDate();
     
+    // Add to the calendar
     streakCalendar.appendChild(dayCircle);
-  });
+  }
 }
 
 // Set up event listeners for dashboard
@@ -900,159 +804,26 @@ function setupDashboardEvents() {
   }
 }
 
-// Call the setup functions when the document is loaded
-document.addEventListener('DOMContentLoaded', function() {
-  setupDashboardEvents();
-  initializeDashboard();
-});
-
-// When user answers a question, update the dashboard
-// Add this line to the end of the recordAnswer function in user.js
-// initializeDashboard();
-
-// Call initializeDashboard when returning to the main screen
-// Add this to any functions that show the main screen, like:
-// document.getElementById("leaderboardBack").addEventListener("click", function(){
-//   document.getElementById("leaderboardView").style.display = "none";
-//   document.getElementById("mainOptions").style.display = "flex";
-//   initializeDashboard();
-// });
-// Add this to your app.js file to fix the streak calendar day alignment
-// This function will properly initialize the streak calendar with the correct day alignment
-
-function updateStreakCalendar(streaks) {
-  const streakCalendar = document.getElementById("streakCalendar");
-  if (!streakCalendar) return;
-  
-  // Clear existing content
-  streakCalendar.innerHTML = '';
-  
-  // Get today's date
-  const today = new Date();
-  
-  // Create day circles for the current week (Mon-Sun)
-  const dayNames = ["M", "T", "W", "T", "F", "S", "S"];
-  
-  // Get today's day of week (0 = Sunday, 1 = Monday, etc.)
-  const todayDayOfWeek = today.getDay(); // 0-6
-  
-  // Calculate the date for last Monday (start of our display week)
-  const monday = new Date(today);
-  // Adjust for day of week (0 is Sunday, so we need special handling)
-  const daysToSubtract = todayDayOfWeek === 0 ? 6 : todayDayOfWeek - 1;
-  monday.setDate(today.getDate() - daysToSubtract);
-  
-  // Generate day circles for Monday through Sunday
-  for (let i = 0; i < 7; i++) {
-    const dayDate = new Date(monday);
-    dayDate.setDate(monday.getDate() + i);
-    
-    const dayCircle = document.createElement("div");
-    dayCircle.className = "day-circle";
-    
-    // Check if this day is today
-    const isToday = dayDate.getDate() === today.getDate() && 
-                   dayDate.getMonth() === today.getMonth() && 
-                   dayDate.getFullYear() === today.getFullYear();
-    
-    if (isToday) {
-      dayCircle.classList.add("today");
-    }
-    
-    // Check if this day is active in the streak
-    // (This is a simplified check - in a real implementation, you'd check streaks data)
-    const dayDiff = Math.floor((today - dayDate) / (1000 * 60 * 60 * 24));
-    if (dayDiff >= 0 && streaks && streaks.currentStreak > dayDiff) {
-      dayCircle.classList.add("active");
-    }
-    
-    // Add day number (date)
-    dayCircle.textContent = dayDate.getDate();
-    
-    streakCalendar.appendChild(dayCircle);
-  }
-}
-
-// Replace your existing streak calendar initialization code with this function
-// Call this function when the app initializes and whenever the streak updates
-
-// Example usage:
+// Initialize the app
 window.addEventListener('load', function() {
-  setTimeout(() => {
+  // Check streak after Firebase auth is initialized
+  const checkAuthAndInitAll = function() {
     if (window.auth && window.auth.currentUser) {
-      // Fetch user data and update streak calendar
-      const uid = window.auth.currentUser.uid;
-      const userDocRef = window.doc(window.db, 'users', uid);
-      window.getDoc(userDocRef).then(doc => {
-        if (doc.exists()) {
-          const userData = doc.data();
-          updateStreakCalendar(userData.streaks);
-        }
-      });
+      checkAndUpdateStreak();
+      setupDashboardEvents();
+      initializeDashboard();
+    } else {
+      // If auth isn't ready yet, check again in 1 second
+      setTimeout(checkAuthAndInitAll, 1000);
     }
+  };
+  
+  // Start checking for auth
+  checkAuthAndInitAll();
+  
+  // Also try after a delay to ensure all DOM elements are ready
+  setTimeout(function() {
+    setupDashboardEvents();
+    initializeDashboard();
   }, 2000);
-});
-// Add this function to your app.js file
-// This is a simplified solution that directly addresses the day alignment issue
-
-function fixStreakCalendar() {
-  // Get the streak calendar element
-  const streakCalendar = document.getElementById("streakCalendar");
-  if (!streakCalendar) return;
-  
-  // Clear existing circles
-  streakCalendar.innerHTML = '';
-  
-  // Check the day labels to confirm our expected order
-  const dayLabelsDiv = document.querySelector(".day-labels");
-  const labels = dayLabelsDiv ? Array.from(dayLabelsDiv.children).map(span => span.textContent) : ["M", "T", "W", "T", "F", "S", "S"];
-  
-  // Get today's date
-  const today = new Date();
-  
-  // The key part: Convert JavaScript's day (0=Sunday, 6=Saturday) 
-  // to our display format (0=Monday, 6=Sunday)
-  let todayDayIndex = today.getDay() - 1; // Convert from JS day to our index
-  if (todayDayIndex < 0) todayDayIndex = 6; // Handle Sunday (becomes 6)
-  
-  // Generate all the days of the week
-  for (let i = 0; i < 7; i++) {
-    // Calculate the date offset from today
-    // i is the position in our display (0=Monday, 6=Sunday)
-    // todayDayIndex is today's position in our display
-    const offset = i - todayDayIndex;
-    
-    // Create the date for this position
-    const date = new Date(today);
-    date.setDate(today.getDate() + offset);
-    
-    // Create the day circle
-    const dayCircle = document.createElement("div");
-    dayCircle.className = "day-circle";
-    
-    // If this is today, add the today class
-    if (offset === 0) {
-      dayCircle.classList.add("today");
-    }
-    
-    // Set the date number as the content
-    dayCircle.textContent = date.getDate();
-    
-    // Add to the calendar
-    streakCalendar.appendChild(dayCircle);
-  }
-  
-  console.log("Streak calendar fixed with direct day alignment");
-}
-
-// Call this function when the page loads
-window.addEventListener('load', function() {
-  // Try immediately
-  fixStreakCalendar();
-  
-  // Also try after a short delay to ensure DOM is fully loaded
-  setTimeout(fixStreakCalendar, 1000);
-  
-  // And try once more after auth is likely initialized
-  setTimeout(fixStreakCalendar, 2000);
 });
