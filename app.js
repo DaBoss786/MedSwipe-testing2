@@ -992,3 +992,67 @@ window.addEventListener('load', function() {
     }
   }, 2000);
 });
+// Add this function to your app.js file
+// This is a simplified solution that directly addresses the day alignment issue
+
+function fixStreakCalendar() {
+  // Get the streak calendar element
+  const streakCalendar = document.getElementById("streakCalendar");
+  if (!streakCalendar) return;
+  
+  // Clear existing circles
+  streakCalendar.innerHTML = '';
+  
+  // Check the day labels to confirm our expected order
+  const dayLabelsDiv = document.querySelector(".day-labels");
+  const labels = dayLabelsDiv ? Array.from(dayLabelsDiv.children).map(span => span.textContent) : ["M", "T", "W", "T", "F", "S", "S"];
+  
+  // Get today's date
+  const today = new Date();
+  
+  // The key part: Convert JavaScript's day (0=Sunday, 6=Saturday) 
+  // to our display format (0=Monday, 6=Sunday)
+  let todayDayIndex = today.getDay() - 1; // Convert from JS day to our index
+  if (todayDayIndex < 0) todayDayIndex = 6; // Handle Sunday (becomes 6)
+  
+  // Generate all the days of the week
+  for (let i = 0; i < 7; i++) {
+    // Calculate the date offset from today
+    // i is the position in our display (0=Monday, 6=Sunday)
+    // todayDayIndex is today's position in our display
+    const offset = i - todayDayIndex;
+    
+    // Create the date for this position
+    const date = new Date(today);
+    date.setDate(today.getDate() + offset);
+    
+    // Create the day circle
+    const dayCircle = document.createElement("div");
+    dayCircle.className = "day-circle";
+    
+    // If this is today, add the today class
+    if (offset === 0) {
+      dayCircle.classList.add("today");
+    }
+    
+    // Set the date number as the content
+    dayCircle.textContent = date.getDate();
+    
+    // Add to the calendar
+    streakCalendar.appendChild(dayCircle);
+  }
+  
+  console.log("Streak calendar fixed with direct day alignment");
+}
+
+// Call this function when the page loads
+window.addEventListener('load', function() {
+  // Try immediately
+  fixStreakCalendar();
+  
+  // Also try after a short delay to ensure DOM is fully loaded
+  setTimeout(fixStreakCalendar, 1000);
+  
+  // And try once more after auth is likely initialized
+  setTimeout(fixStreakCalendar, 2000);
+});
