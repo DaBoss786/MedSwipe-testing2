@@ -1762,3 +1762,26 @@ html, body {
     min-height: 60px; /* Slightly smaller on mobile */
   }
 }
+/* Level Up Animation Fix - Add these changes to your styles.css file */
+
+/* Adjust the level badge position to be lower */
+#levelUpBadge {
+  margin: -50px auto 0; /* Changed from -60px to -50px to lower the badge */
+}
+
+/* Add more space in the header to show "LEVEL UP" text clearly */
+#levelUpHeader {
+  padding: 20px 20px 30px; /* Increased bottom padding from 20px to 30px */
+}
+
+/* Adjust the body padding to compensate for the changed badge position */
+#levelUpBody {
+  padding: 60px 30px 30px; /* Changed from 70px to 60px */
+}
+
+/* Make the title more visible */
+#levelUpTitle {
+  margin-bottom: 10px; /* Add some margin below the title */
+  position: relative; /* Ensure it stays above other elements */
+  z-index: 5; /* Higher z-index to prevent being covered */
+}
