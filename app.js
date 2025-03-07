@@ -917,3 +917,78 @@ document.addEventListener('DOMContentLoaded', function() {
 //   document.getElementById("mainOptions").style.display = "flex";
 //   initializeDashboard();
 // });
+// Add this to app.js file - it will ensure the streak calendar is properly displayed
+// Explicitly handling the streak calendar visibility after the page loads
+
+window.addEventListener('load', function() {
+  // Function to ensure streak card is visible
+  function ensureStreakCardVisibility() {
+    const streakCard = document.querySelector('.streak-card');
+    const streakCalendar = document.getElementById('streakCalendar');
+    
+    if (streakCard) {
+      // Force display properties
+      streakCard.style.cssText = 'display: block !important; width: 100% !important; visibility: visible !important;';
+      
+      // Create streak calendar if it doesn't exist
+      if (streakCalendar && streakCalendar.children.length === 0) {
+        // Initialize the calendar with placeholder circles
+        initializeStreakCalendar();
+      }
+      
+      console.log('Streak card visibility fixed');
+    } else {
+      console.log('Streak card not found in DOM');
+    }
+  }
+  
+  // Initialize streak calendar with placeholder circles
+  function initializeStreakCalendar() {
+    const streakCalendar = document.getElementById('streakCalendar');
+    if (!streakCalendar) return;
+    
+    // Clear existing content
+    streakCalendar.innerHTML = '';
+    
+    // Get today's date
+    const today = new Date();
+    const currentDay = today.getDay() || 7; // Convert Sunday (0) to 7
+    
+    // Create day circles
+    for (let i = 1; i <= 7; i++) {
+      const dayCircle = document.createElement('div');
+      dayCircle.className = 'day-circle';
+      
+      // Calculate the date for this circle
+      const dayOffset = i - currentDay;
+      const date = new Date(today);
+      date.setDate(today.getDate() + dayOffset);
+      
+      // Mark today's circle
+      if (i === currentDay) {
+        dayCircle.classList.add('today');
+      }
+      
+      // Add day number
+      dayCircle.textContent = date.getDate();
+      
+      streakCalendar.appendChild(dayCircle);
+    }
+  }
+  
+  // Run these fixes after a short delay to ensure DOM is fully loaded
+  setTimeout(ensureStreakCardVisibility, 1000);
+  
+  // Also run when auth is initialized (user data may affect visibility)
+  const checkAuthAndFixStreak = function() {
+    if (window.auth && window.auth.currentUser) {
+      ensureStreakCardVisibility();
+    } else {
+      // If auth isn't ready yet, check again in 1 second
+      setTimeout(checkAuthAndFixStreak, 1000);
+    }
+  };
+  
+  // Start checking for auth
+  checkAuthAndFixStreak();
+});
