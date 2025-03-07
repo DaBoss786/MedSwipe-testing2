@@ -1500,7 +1500,6 @@ html, body {
   flex: 1;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
-  min-width: 45%; /* Ensure cards take up enough space on small screens */
 }
 
 .dashboard-card:hover {
@@ -1670,9 +1669,8 @@ html, body {
     padding: 8px;
   }
   
-  /* Keep the dashboard cards row horizontal, even on mobile */
   .dashboard-cards-row {
-    flex-direction: row;
+    flex-direction: column;
     gap: 8px;
   }
   
@@ -1713,137 +1711,13 @@ html, body {
     font-size: 0.65rem;
   }
   
-  /* Make the level circle larger on mobile */
+  /* Keep the level circle reasonably sized on mobile */
   .dashboard-level {
-    width: 60px;
-    height: 60px;
-    margin-right: 8px; /* Smaller margin on mobile */
+    width: 50px;
+    height: 50px;
   }
   
   .dashboard-level .level-number {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
   }
-  
-  /* Adjust layout for the level container on mobile */
-  .level-progress-container {
-    flex-direction: row;
-    align-items: center;
-  }
-  
-  /* Ensure cards stay side by side on small screens */
-  .dashboard-card {
-    min-width: 0; /* Allow cards to shrink */
-    flex-basis: 0;
-    flex-grow: 1;
-  }
-  
-  /* Explicitly ensure the streak card and calendar are visible */
-  .streak-card {
-    display: block;
-    width: 100%;
-  }
-  
-  .streak-calendar {
-    display: block;
-    width: 100%;
-  }
-  
-  .day-circles {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    width: 100%;
-  }
-}
-/* Add this to the end of your styles.css file */
-
-/* Reset visibility for all dashboard components */
-.dashboard-container, 
-.dashboard-card,
-.streak-card,
-.streak-calendar,
-.day-circles,
-.day-labels {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-/* Ensure the streak card is always visible */
-.streak-card {
-  width: 100% !important;
-  margin-top: 15px !important;
-  margin-bottom: 15px !important;
-  display: block !important;
-}
-
-/* Fix the dashboard layout for all screen sizes */
-.dashboard-container {
-  margin-top: 60px;
-  padding: 10px;
-  width: 100%;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-}
-
-/* Alternative layout approach - use a grid instead of flexbox */
-@media (max-width: 480px) {
-  .dashboard-container {
-    display: grid !important;
-    grid-template-areas:
-      "start start"
-      "progress stats"
-      "streak streak";
-    grid-template-columns: 1fr 1fr;
-    grid-gap: 10px;
-    width: 100%;
-    padding: 8px;
-  }
-  
-  .dashboard-start-section {
-    grid-area: start;
-    width: 100%;
-  }
-  
-  .dashboard-cards-row {
-    display: contents !important; /* This removes the container but keeps children */
-  }
-  
-  .user-progress-card {
-    grid-area: progress;
-  }
-  
-  .stats-card {
-    grid-area: stats;
-  }
-  
-  .streak-card {
-    grid-area: streak;
-  }
-}
-
-/* Make sure the dashboard is visible */
-#mainOptions.dashboard-container {
-  display: flex !important;
-}
-
-/* Ensure all card components are visible and properly sized */
-.card-content, .card-header, .card-footer {
-  display: block !important;
-}
-
-/* Fix calendar display */
-.streak-calendar {
-  width: 100% !important;
-}
-
-.day-circles {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  justify-content: space-between !important;
-  width: 100% !important;
 }
