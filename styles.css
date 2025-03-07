@@ -1736,4 +1736,22 @@ html, body {
     flex-basis: 0;
     flex-grow: 1;
   }
+  
+  /* Explicitly ensure the streak card and calendar are visible */
+  .streak-card {
+    display: block;
+    width: 100%;
+  }
+  
+  .streak-calendar {
+    display: block;
+    width: 100%;
+  }
+  
+  .day-circles {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    width: 100%;
+  }
 }
