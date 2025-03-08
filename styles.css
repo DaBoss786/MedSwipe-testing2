@@ -1257,7 +1257,7 @@ html, body {
 
 #levelUpHeader {
   background: linear-gradient(135deg, #0C72D3, #66a6ff);
-  padding: 20px;
+  padding: 40px 20px 40px;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -1282,15 +1282,17 @@ html, body {
   color: white;
   font-size: 28px;
   font-weight: bold;
-  margin: 0;
+  margin: 0 0 20px 0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   animation: fallIn 0.5s 0.4s both;
+  position: relative;
+  z-index: 10;
 }
 
 #levelUpBadge {
   width: 120px;
   height: 120px;
-  margin: -60px auto 0;
+  margin: -40px auto 0;
   background: #fff;
   border-radius: 50%;
   display: flex;
@@ -1309,7 +1311,7 @@ html, body {
 }
 
 #levelUpBody {
-  padding: 70px 30px 30px;
+  padding: 60px 30px 30px;
   text-align: center;
 }
 
@@ -1761,27 +1763,4 @@ html, body {
   .stats-card .card-content {
     min-height: 60px; /* Slightly smaller on mobile */
   }
-}
-/* Level Up Animation Fix - Add these changes to your styles.css file */
-
-/* Adjust the level badge position to be lower */
-#levelUpBadge {
-  margin: -50px auto 0; /* Changed from -60px to -50px to lower the badge */
-}
-
-/* Add more space in the header to show "LEVEL UP" text clearly */
-#levelUpHeader {
-  padding: 20px 20px 30px; /* Increased bottom padding from 20px to 30px */
-}
-
-/* Adjust the body padding to compensate for the changed badge position */
-#levelUpBody {
-  padding: 60px 30px 30px; /* Changed from 70px to 60px */
-}
-
-/* Make the title more visible */
-#levelUpTitle {
-  margin-bottom: 10px; /* Add some margin below the title */
-  position: relative; /* Ensure it stays above other elements */
-  z-index: 5; /* Higher z-index to prevent being covered */
 }
