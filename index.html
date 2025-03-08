@@ -44,15 +44,14 @@
   </div>
   
   <!-- Main Options -->
-<!-- Dashboard View with Leaderboard Button under Start Quiz -->
+<!-- Dashboard View with Leaderboard Preview Card -->
 <div id="mainOptions" class="dashboard-container">
-  <!-- Top: Start Quiz and Leaderboard Buttons (Vertical) -->
-  <div class="dashboard-start-section" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+  <!-- Top: Start Quiz Button -->
+  <div class="dashboard-start-section">
     <button id="startQuizBtn" class="dashboard-start-btn">Start Quiz</button>
-    <button id="dashboardLeaderboardBtn" class="dashboard-start-btn">Leaderboard</button>
   </div>
   
-  <!-- Middle: Info Cards Row -->
+  <!-- First Row: Progress and Stats Cards -->
   <div class="dashboard-cards-row">
     <!-- User Progress Card -->
     <div class="dashboard-card user-progress-card" id="userProgressCard">
@@ -102,7 +101,25 @@
     </div>
   </div>
   
-  <!-- Bottom: Streak Calendar Card -->
+  <!-- Second Row: Leaderboard Preview Card -->
+  <div class="dashboard-card leaderboard-card" id="leaderboardPreviewCard">
+    <div class="card-header">
+      <h3>XP Leaderboard</h3>
+    </div>
+    <div class="card-content">
+      <div id="leaderboardPreview">
+        <!-- Loading state -->
+        <div class="leaderboard-loading">Loading top users...</div>
+        <!-- Entries will be populated by JavaScript -->
+      </div>
+    </div>
+    <div class="card-footer">
+      <span>View Full Leaderboard</span>
+      <span class="arrow-icon">→</span>
+    </div>
+  </div>
+  
+  <!-- Third Row: Streak Calendar Card (Full Width) -->
   <div class="dashboard-card streak-card">
     <div class="card-header">
       <h3>Activity Streak</h3>
