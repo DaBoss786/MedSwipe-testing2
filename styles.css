@@ -1775,6 +1775,7 @@ html, body {
   padding: 10px 0;
 }
 
+/* Updated Leaderboard Preview Card Styles */
 .leaderboard-preview-entry {
   display: flex;
   align-items: center;
@@ -1787,19 +1788,18 @@ html, body {
 }
 
 .leaderboard-rank {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
   font-size: 0.8rem;
-  margin-right: 8px;
+  margin-right: 10px;
   flex-shrink: 0;
 }
 
-/* Adjust rank icons to match your existing style */
 .leaderboard-rank-1 {
   background: linear-gradient(45deg, #FFD700, #FFC800);
   color: white;
@@ -1818,9 +1818,12 @@ html, body {
   box-shadow: 0 2px 5px rgba(205, 127, 50, 0.3);
 }
 
+/* User info section - now as columns */
 .leaderboard-user-info {
   flex: 1;
-  overflow: hidden;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .leaderboard-username {
@@ -1829,12 +1832,15 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 60%; /* Limit width to prevent overlap */
 }
 
 .leaderboard-user-xp {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: #0C72D3;
   font-weight: 500;
+  text-align: right;
+  margin-right: 8px;
 }
 
 .current-user-entry {
@@ -1849,12 +1855,12 @@ html, body {
   }
   
   .leaderboard-user-xp {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
   }
   
   .leaderboard-rank {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     font-size: 0.7rem;
   }
 }
