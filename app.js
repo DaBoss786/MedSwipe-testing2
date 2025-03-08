@@ -609,7 +609,7 @@ async function checkAndUpdateStreak() {
   }
 }
 
-// Updated function to load leaderboard preview data with side-by-side layout
+// Function to load leaderboard preview data - fixed for desktop view
 async function loadLeaderboardPreview() {
   if (!window.auth || !window.auth.currentUser || !window.db) {
     console.log("Auth or DB not initialized for leaderboard preview");
@@ -649,7 +649,7 @@ async function loadLeaderboardPreview() {
     let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
     let showCurrentUser = currentUserRank > 3 && currentUserEntry;
     
-    // Create HTML for the preview
+    // Create HTML for the preview with well-structured entries
     let html = '';
     
     // Add top 3 entries
