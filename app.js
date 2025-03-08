@@ -609,6 +609,90 @@ async function checkAndUpdateStreak() {
   }
 }
 
+// Function to load leaderboard preview data
+async function loadLeaderboardPreview() {
+  if (!window.auth || !window.auth.currentUser || !window.db) {
+    console.log("Auth or DB not initialized for leaderboard preview");
+    return;
+  }
+  
+  const leaderboardPreview = document.getElementById("leaderboardPreview");
+  if (!leaderboardPreview) return;
+  
+  try {
+    const currentUid = window.auth.currentUser.uid;
+    const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+    let leaderboardEntries = [];
+    
+    querySnapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      if (data.stats) {
+        const xp = data.stats.xp || 0;
+        const level = data.stats.level || 1;
+        leaderboardEntries.push({
+          uid: docSnap.id,
+          username: data.username || "Anonymous",
+          xp: xp,
+          level: level
+        });
+      }
+    });
+    
+    // Sort by XP (descending)
+    leaderboardEntries.sort((a, b) => b.xp - a.xp);
+    
+    // Get top 3
+    let top3 = leaderboardEntries.slice(0, 3);
+    
+    // Find current user's position if not in top 3
+    let currentUserRank = leaderboardEntries.findIndex(e => e.uid === currentUid) + 1;
+    let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
+    let showCurrentUser = currentUserRank > 3 && currentUserEntry;
+    
+    // Create HTML for the preview
+    let html = '';
+    
+    // Add top 3 entries
+    if (top3.length === 0) {
+      html = '<div class="leaderboard-loading">No leaderboard data yet</div>';
+    } else {
+      top3.forEach((entry, index) => {
+        const isCurrentUser = entry.uid === currentUid;
+        const rank = index + 1;
+        
+        html += `
+          <div class="leaderboard-preview-entry ${isCurrentUser ? 'current-user-entry' : ''}">
+            <div class="leaderboard-rank leaderboard-rank-${rank}">${rank}</div>
+            <div class="leaderboard-user-info">
+              <div class="leaderboard-username">${entry.username}</div>
+              <div class="leaderboard-user-xp">${entry.xp} XP</div>
+            </div>
+          </div>
+        `;
+      });
+      
+      // Add current user's entry if not in top 3
+      if (showCurrentUser) {
+        html += `
+          <div class="leaderboard-preview-entry current-user-entry">
+            <div class="leaderboard-rank">${currentUserRank}</div>
+            <div class="leaderboard-user-info">
+              <div class="leaderboard-username">${currentUserEntry.username} (You)</div>
+              <div class="leaderboard-user-xp">${currentUserEntry.xp} XP</div>
+            </div>
+          </div>
+        `;
+      }
+    }
+    
+    leaderboardPreview.innerHTML = html;
+    
+  } catch (error) {
+    console.error("Error loading leaderboard preview:", error);
+    leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Error loading leaderboard</div>';
+  }
+}
+
 // Dashboard initialization and functionality
 async function initializeDashboard() {
   if (!window.auth || !window.auth.currentUser || !window.db) {
@@ -685,9 +769,74 @@ async function initializeDashboard() {
       
       // Generate streak calendar
       fixStreakCalendar(data.streaks);
+      
+      // Also load leaderboard preview
+      loadLeaderboardPreview();
     }
   } catch (error) {
     console.error("Error loading dashboard data:", error);
+  }
+}
+
+// Set up event listeners for dashboard
+function setupDashboardEvents() {
+  // Start Quiz button
+  const startQuizBtn = document.getElementById("startQuizBtn");
+  if (startQuizBtn) {
+    startQuizBtn.addEventListener("click", function() {
+      document.getElementById("quizSetupModal").style.display = "block";
+    });
+  }
+  
+  // Modal Start Quiz button
+  const modalStartQuiz = document.getElementById("modalStartQuiz");
+  if (modalStartQuiz) {
+    modalStartQuiz.addEventListener("click", function() {
+      const category = document.getElementById("modalCategorySelect").value;
+      const numQuestions = parseInt(document.getElementById("modalNumQuestions").value) || 10;
+      const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
+      
+      document.getElementById("quizSetupModal").style.display = "none";
+      
+      loadQuestions({
+        type: category ? 'custom' : 'random',
+        category: category,
+        num: numQuestions,
+        includeAnswered: includeAnswered
+      });
+    });
+  }
+  
+  // Modal Cancel button
+  const modalCancelQuiz = document.getElementById("modalCancelQuiz");
+  if (modalCancelQuiz) {
+    modalCancelQuiz.addEventListener("click", function() {
+      document.getElementById("quizSetupModal").style.display = "none";
+    });
+  }
+  
+  // User Progress card click - go to Performance
+  const userProgressCard = document.getElementById("userProgressCard");
+  if (userProgressCard) {
+    userProgressCard.addEventListener("click", function() {
+      displayPerformance();
+    });
+  }
+  
+  // Quick Stats card click - go to Performance
+  const quickStatsCard = document.getElementById("quickStatsCard");
+  if (quickStatsCard) {
+    quickStatsCard.addEventListener("click", function() {
+      displayPerformance();
+    });
+  }
+  
+  // Leaderboard Preview card click - go to Leaderboard
+  const leaderboardPreviewCard = document.getElementById("leaderboardPreviewCard");
+  if (leaderboardPreviewCard) {
+    leaderboardPreviewCard.addEventListener("click", function() {
+      showLeaderboard();
+    });
   }
 }
 
@@ -747,66 +896,6 @@ function fixStreakCalendar(streaks) {
     
     // Add to the calendar
     streakCalendar.appendChild(dayCircle);
-  }
-}
-
-// Set up event listeners for dashboard
-function setupDashboardEvents() {
-  // Start Quiz button
-  const startQuizBtn = document.getElementById("startQuizBtn");
-  if (startQuizBtn) {
-    startQuizBtn.addEventListener("click", function() {
-      document.getElementById("quizSetupModal").style.display = "block";
-    });
-  }
-   // Leaderboard button
-  const dashboardLeaderboardBtn = document.getElementById("dashboardLeaderboardBtn");
-  if (dashboardLeaderboardBtn) {
-    dashboardLeaderboardBtn.addEventListener("click", function() {
-      showLeaderboard();
-    });
-  }
-  // Modal Start Quiz button
-  const modalStartQuiz = document.getElementById("modalStartQuiz");
-  if (modalStartQuiz) {
-    modalStartQuiz.addEventListener("click", function() {
-      const category = document.getElementById("modalCategorySelect").value;
-      const numQuestions = parseInt(document.getElementById("modalNumQuestions").value) || 10;
-      const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
-      
-      document.getElementById("quizSetupModal").style.display = "none";
-      
-      loadQuestions({
-        type: category ? 'custom' : 'random',
-        category: category,
-        num: numQuestions,
-        includeAnswered: includeAnswered
-      });
-    });
-  }
-  
-  // Modal Cancel button
-  const modalCancelQuiz = document.getElementById("modalCancelQuiz");
-  if (modalCancelQuiz) {
-    modalCancelQuiz.addEventListener("click", function() {
-      document.getElementById("quizSetupModal").style.display = "none";
-    });
-  }
-  
-  // User Progress card click - go to Performance
-  const userProgressCard = document.getElementById("userProgressCard");
-  if (userProgressCard) {
-    userProgressCard.addEventListener("click", function() {
-      displayPerformance();
-    });
-  }
-  
-  // Quick Stats card click - go to Performance
-  const quickStatsCard = document.getElementById("quickStatsCard");
-  if (quickStatsCard) {
-    quickStatsCard.addEventListener("click", function() {
-      displayPerformance();
-    });
   }
 }
 
