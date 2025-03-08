@@ -609,7 +609,7 @@ async function checkAndUpdateStreak() {
   }
 }
 
-// Function to load leaderboard preview data
+// Updated function to load leaderboard preview data with side-by-side layout
 async function loadLeaderboardPreview() {
   if (!window.auth || !window.auth.currentUser || !window.db) {
     console.log("Auth or DB not initialized for leaderboard preview");
