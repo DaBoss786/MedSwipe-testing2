@@ -759,7 +759,13 @@ function setupDashboardEvents() {
       document.getElementById("quizSetupModal").style.display = "block";
     });
   }
-  
+   // Leaderboard button
+  const dashboardLeaderboardBtn = document.getElementById("dashboardLeaderboardBtn");
+  if (dashboardLeaderboardBtn) {
+    dashboardLeaderboardBtn.addEventListener("click", function() {
+      showLeaderboard();
+    });
+  }
   // Modal Start Quiz button
   const modalStartQuiz = document.getElementById("modalStartQuiz");
   if (modalStartQuiz) {
