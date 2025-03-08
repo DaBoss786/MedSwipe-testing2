@@ -1764,85 +1764,80 @@ html, body {
   .stats-card .card-content {
     min-height: 60px; /* Slightly smaller on mobile */
   }
-/* Make leaderboard card full width */
+/* Enhanced Leaderboard Preview Card Styles for Desktop */
 .leaderboard-card {
   width: 100%;
-  margin-bottom: 20px; /* Add space between leaderboard and streak card */
+  margin-bottom: 20px;
 }
 
-.leaderboard-loading {
-  text-align: center;
-  color: #666;
-  font-size: 0.9rem;
-  padding: 10px 0;
-}
-
-/* Updated Leaderboard Preview Card Styles */
 .leaderboard-preview-entry {
   display: flex;
   align-items: center;
-  padding: 8px 0;
+  padding: 8px 10px;
   border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 2px;
 }
 
 .leaderboard-preview-entry:last-child {
   border-bottom: none;
+  margin-bottom: 0;
 }
 
 .leaderboard-rank {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   margin-right: 10px;
   flex-shrink: 0;
+  color: white;
+  background-color: #999; /* Default background */
 }
 
 .leaderboard-rank-1 {
   background: linear-gradient(45deg, #FFD700, #FFC800);
-  color: white;
   box-shadow: 0 2px 5px rgba(255, 215, 0, 0.3);
 }
 
 .leaderboard-rank-2 {
   background: linear-gradient(45deg, #C0C0C0, #D4D4D4);
-  color: white;
   box-shadow: 0 2px 5px rgba(192, 192, 192, 0.3);
 }
 
 .leaderboard-rank-3 {
   background: linear-gradient(45deg, #CD7F32, #E0916A);
-  color: white;
   box-shadow: 0 2px 5px rgba(205, 127, 50, 0.3);
 }
 
-/* User info section - now as columns */
+/* User info section - ensures proper display on all devices */
 .leaderboard-user-info {
   flex: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-width: 0; /* Enables text-overflow to work */
 }
 
 .leaderboard-username {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 60%; /* Limit width to prevent overlap */
+  max-width: 65%;
+  color: #333;
 }
 
 .leaderboard-user-xp {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: #0C72D3;
   font-weight: 500;
   text-align: right;
-  margin-right: 8px;
+  margin-right: 5px;
 }
 
 .current-user-entry {
@@ -1850,19 +1845,45 @@ html, body {
   border-radius: 4px;
 }
 
-/* For mobile optimization */
+/* Loading state */
+.leaderboard-loading {
+  text-align: center;
+  color: #666;
+  font-size: 0.9rem;
+  padding: 15px 0;
+}
+
+/* Responsive adjustments */
 @media (max-width: 480px) {
   .leaderboard-username {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
   }
   
   .leaderboard-user-xp {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
   }
   
   .leaderboard-rank {
-    width: 24px;
-    height: 24px;
-    font-size: 0.7rem;
+    width: 26px;
+    height: 26px;
+    font-size: 0.8rem;
+  }
+  
+  .leaderboard-preview-entry {
+    padding: 6px 5px;
+  }
+}
+
+/* Desktop enhancements */
+@media (min-width: 768px) {
+  .leaderboard-preview-entry {
+    padding: 10px 15px;
+    margin-bottom: 4px;
+  }
+  
+  .leaderboard-rank {
+    width: 32px;
+    height: 32px;
+    margin-right: 15px;
   }
 }
