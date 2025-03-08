@@ -1764,6 +1764,7 @@ html, body {
   .stats-card .card-content {
     min-height: 60px; /* Slightly smaller on mobile */
   }
+}
 /* Enhanced Leaderboard Preview Card Styles for Desktop */
 .leaderboard-card {
   width: 100%;
