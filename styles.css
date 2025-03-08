@@ -1448,7 +1448,7 @@ html, body {
 }
 /* Dashboard Container */
 .dashboard-container {
-  margin-top: 35px;
+  margin-top: 60px; /* Reduced from 90px to give less space above Start Quiz button */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1460,11 +1460,10 @@ html, body {
 }
 
 /* Start Quiz Button Section */
+/* Top button section - reduce margin */
 .dashboard-start-section {
   width: 100%;
   margin-bottom: 15px;
-  display: flex;
-  justify-content: center;
 }
 
 .dashboard-start-btn {
