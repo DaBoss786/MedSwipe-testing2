@@ -1888,3 +1888,133 @@ html, body {
     margin-right: 15px;
   }
 }
+/* Quiz Summary Slide Styles - Add to your styles.css file */
+
+.quiz-summary-card {
+  padding: 25px 20px;
+  text-align: center;
+}
+
+.summary-header {
+  margin-bottom: 20px;
+}
+
+.summary-header h2 {
+  color: #0056b3;
+  font-size: 1.6rem;
+  margin: 0;
+}
+
+.summary-score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+
+.score-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-right: 20px;
+  margin-bottom: 15px;
+}
+
+.score-circle::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+  background: white;
+  border-radius: 50%;
+}
+
+.score-circle span {
+  position: relative;
+  z-index: 1;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #0056b3;
+}
+
+.score-text {
+  flex: 1;
+  min-width: 200px;
+  text-align: left;
+}
+
+.score-text p {
+  margin: 5px 0;
+  font-size: 1rem;
+}
+
+.summary-xp {
+  background-color: #f2f7ff;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #0C72D3;
+}
+
+.xp-header {
+  font-weight: bold;
+  color: #0C72D3;
+  text-align: left;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+}
+
+.xp-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #0C72D3;
+  margin: 5px 0;
+}
+
+.xp-bar-container {
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  margin: 10px 0;
+  overflow: hidden;
+}
+
+.xp-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #0C72D3, #66a6ff);
+  border-radius: 4px;
+  transition: width 1s ease;
+  max-width: 100%;
+}
+
+.xp-total {
+  text-align: right;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.summary-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Make the buttons look good on small screens */
+@media (max-width: 600px) {
+  .score-circle {
+    margin-right: 0;
+  }
+  
+  .score-text {
+    text-align: center;
+  }
+}
