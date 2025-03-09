@@ -409,10 +409,17 @@ function addOptionListeners() {
             loadingMessage.remove();
           }
           
-          // Automatically navigate to the summary slide after a short delay
-          setTimeout(() => {
-            window.mySwiper.slideNext();
-          }, 300);
+          // Replace the loading message with a hint to swipe up
+          const lastExplanationSlide = window.mySwiper.slides[window.mySwiper.slides.length - 2];
+          if (lastExplanationSlide) {
+            const summaryHint = document.createElement("p");
+            summaryHint.textContent = "Summary ready! Swipe up to view.";
+            summaryHint.style.textAlign = "center";
+            summaryHint.style.color = "#0056b3";
+            summaryHint.style.margin = "15px 0";
+            summaryHint.style.fontWeight = "bold";
+            lastExplanationSlide.querySelector(".card").appendChild(summaryHint);
+          }
           
           // Add event listeners to buttons
           document.getElementById("startNewQuizButton").addEventListener("click", function() {
