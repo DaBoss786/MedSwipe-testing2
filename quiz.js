@@ -93,9 +93,6 @@ async function loadQuestions(options = {}) {
 
 // Initialize the quiz with the selected questions
 async function initializeQuiz(questions) {
-  // Reset summary slide flag
-  summarySlideReady = false;
-  
   // Get starting XP before the quiz begins
   try {
     if (window.auth && window.auth.currentUser) {
@@ -113,6 +110,10 @@ async function initializeQuiz(questions) {
     console.error("Error getting starting XP:", error);
     sessionStartXP = 0;
   }
+  
+  // Reset summary slide flag
+  summarySlideReady = false;
+  
   currentQuestion = 0;
   score = 0;
   totalQuestions = questions.length;
@@ -196,20 +197,22 @@ async function initializeQuiz(questions) {
     }
   });
   
-  // Clear any existing event listeners for slide navigation
-  window.mySwiper.off('slideChangeTransitionStart');
-  
-  // Add a focused event listener that only blocks going past the last explanation
-  window.mySwiper.on('slideChangeTransitionStart', function() {
-    // Get the indices we need to check
+  // Custom handler for slides going to summary - super simple
+  window.mySwiper.on('fromEdge', function() {
+    // The last explanation slide index
     const lastExplanationIndex = totalQuestions * 2 - 1;
-    const targetIndex = window.mySwiper.activeIndex;
     
-    // Only block navigation beyond the last explanation when summary isn't ready
-    if (targetIndex > lastExplanationIndex && !summarySlideReady) {
-      console.log("Blocked navigation to summary (not ready yet)");
-      // Navigate back to the last explanation slide with no animation
-      window.mySwiper.slideTo(lastExplanationIndex, 0);
+    // If we're on the last explanation slide
+    if (window.mySwiper.activeIndex === lastExplanationIndex) {
+      // Check if the user has swiped up (attempting to go to the summary)
+      // And if the summary isn't ready yet
+      if (!summarySlideReady) {
+        // Just lock the swiper in place
+        window.mySwiper.allowSlideNext = false;
+      }
+    } else {
+      // For all other slides, allow navigation
+      window.mySwiper.allowSlideNext = true;
     }
   });
 
@@ -310,6 +313,9 @@ function addOptionListeners() {
         if (lastExplanationSlide && lastExplanationSlide.querySelector(".card")) {
           lastExplanationSlide.querySelector(".card").appendChild(loadingMessage);
         }
+        
+        // Initially block navigation to summary (in case user swipes before it's ready)
+        window.mySwiper.allowSlideNext = false;
         
         // Prepare summary slide asynchronously
         setTimeout(async () => {
@@ -417,8 +423,9 @@ function addOptionListeners() {
             lastExplanationSlide.querySelector(".card").appendChild(readyMessage);
           }
           
-          // Mark the summary slide as ready so navigation is allowed
+          // Mark the summary slide as ready and enable navigation
           summarySlideReady = true;
+          window.mySwiper.allowSlideNext = true;
           
           // Add event listeners to buttons
           document.getElementById("startNewQuizButton").addEventListener("click", function() {
