@@ -196,15 +196,20 @@ async function initializeQuiz(questions) {
     }
   });
   
-  // Add event listener to prevent premature navigation to summary
+  // Clear any existing event listeners for slide navigation
+  window.mySwiper.off('slideChangeTransitionStart');
+  
+  // Add a focused event listener that only blocks going past the last explanation
   window.mySwiper.on('slideChangeTransitionStart', function() {
-    const lastQuestionIndex = totalQuestions * 2 - 1; // Last explanation slide index
+    // Get the indices we need to check
+    const lastExplanationIndex = totalQuestions * 2 - 1;
     const targetIndex = window.mySwiper.activeIndex;
     
-    // If trying to navigate past the last explanation slide but summary isn't ready
-    if (targetIndex > lastQuestionIndex && !summarySlideReady) {
-      // Navigate back to the last explanation slide
-      window.mySwiper.slideTo(lastQuestionIndex);
+    // Only block navigation beyond the last explanation when summary isn't ready
+    if (targetIndex > lastExplanationIndex && !summarySlideReady) {
+      console.log("Blocked navigation to summary (not ready yet)");
+      // Navigate back to the last explanation slide with no animation
+      window.mySwiper.slideTo(lastExplanationIndex, 0);
     }
   });
 
@@ -291,10 +296,6 @@ function addOptionListeners() {
       await updateQuestionStats(qId, isCorrect);
       
       if (currentQuestion === totalQuestions) {
-        // Disable further navigation until summary slide is ready
-        window.mySwiper.allowSlideNext = false;
-        window.mySwiper.allowSlidePrev = false;
-        
         // Show loading indicator on last explanation slide
         const lastExplanationSlide = window.mySwiper.slides[window.mySwiper.slides.length - 1];
         const loadingMessage = document.createElement("p");
@@ -306,13 +307,11 @@ function addOptionListeners() {
         loadingMessage.style.fontWeight = "bold";
         
         // Add loading message to last explanation slide
-        if (lastExplanationSlide) {
+        if (lastExplanationSlide && lastExplanationSlide.querySelector(".card")) {
           lastExplanationSlide.querySelector(".card").appendChild(loadingMessage);
         }
         
-        // Track total XP earned in this session
-        window.sessionXP = window.sessionXP || 0;
-        
+        // Prepare summary slide asynchronously
         setTimeout(async () => {
           // Get the latest user data to calculate XP earned
           let sessionXP = 0;
@@ -395,13 +394,9 @@ function addOptionListeners() {
             </div>
           `;
           
+          // Add the summary slide to the swiper
           document.getElementById("quizSlides").appendChild(summarySlide);
-          
-          // After summary slide is fully created and appended, update Swiper and enable navigation
           window.mySwiper.update();
-          summarySlideReady = true;
-          window.mySwiper.allowSlideNext = true;
-          window.mySwiper.allowSlidePrev = true;
           
           // Remove the loading message
           const loadingMessage = document.getElementById("summaryLoadingMessage");
@@ -409,17 +404,21 @@ function addOptionListeners() {
             loadingMessage.remove();
           }
           
-          // Replace the loading message with a hint to swipe up
+          // Add a "ready" message to the last explanation slide
           const lastExplanationSlide = window.mySwiper.slides[window.mySwiper.slides.length - 2];
-          if (lastExplanationSlide) {
-            const summaryHint = document.createElement("p");
-            summaryHint.textContent = "Summary ready! Swipe up to view.";
-            summaryHint.style.textAlign = "center";
-            summaryHint.style.color = "#0056b3";
-            summaryHint.style.margin = "15px 0";
-            summaryHint.style.fontWeight = "bold";
-            lastExplanationSlide.querySelector(".card").appendChild(summaryHint);
+          if (lastExplanationSlide && lastExplanationSlide.querySelector(".card")) {
+            const readyMessage = document.createElement("p");
+            readyMessage.id = "summaryReadyMessage";
+            readyMessage.textContent = "Summary ready! Swipe up to view.";
+            readyMessage.style.textAlign = "center";
+            readyMessage.style.color = "#28a745"; // Green color to indicate ready state
+            readyMessage.style.margin = "15px 0";
+            readyMessage.style.fontWeight = "bold";
+            lastExplanationSlide.querySelector(".card").appendChild(readyMessage);
           }
+          
+          // Mark the summary slide as ready so navigation is allowed
+          summarySlideReady = true;
           
           // Add event listeners to buttons
           document.getElementById("startNewQuizButton").addEventListener("click", function() {
