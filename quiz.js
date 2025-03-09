@@ -255,22 +255,94 @@ function addOptionListeners() {
       updateProgress();
       await recordAnswer(qId, category, isCorrect, timeSpent);
       await updateQuestionStats(qId, isCorrect);
+      
       if (currentQuestion === totalQuestions) {
-        setTimeout(() => {
+        // Track total XP earned in this session
+        window.sessionXP = window.sessionXP || 0;
+        
+        setTimeout(async () => {
+          // Get the latest user data to calculate XP earned
+          let sessionXP = 0;
+          let currentLevel = 1;
+          let currentXP = 0;
+          
+          try {
+            if (window.auth && window.auth.currentUser) {
+              const uid = window.auth.currentUser.uid;
+              const userDocRef = window.doc(window.db, 'users', uid);
+              const userDocSnap = await window.getDoc(userDocRef);
+              
+              if (userDocSnap.exists()) {
+                const data = userDocSnap.data();
+                if (data.stats) {
+                  currentXP = data.stats.xp || 0;
+                  currentLevel = data.stats.level || 1;
+                  
+                  // Calculate XP earned this session (base score + any bonuses)
+                  const baseXP = score * 3; // 3 XP per correct answer (1 for attempting + 2 for correct)
+                  const incorrectXP = (totalQuestions - score); // 1 XP per incorrect answer
+                  sessionXP = baseXP + incorrectXP;
+                }
+              }
+            }
+          } catch (error) {
+            console.error("Error fetching user data for summary:", error);
+          }
+          
+          // Calculate accuracy percentage
+          const accuracy = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
+          
+          // Get appropriate message based on performance
+          let performanceMessage = "";
+          if (accuracy >= 90) {
+            performanceMessage = "Excellent work! You're mastering this material!";
+          } else if (accuracy >= 70) {
+            performanceMessage = "Great job! Keep up the good work!";
+          } else if (accuracy >= 50) {
+            performanceMessage = "Good effort! Keep practicing to improve!";
+          } else {
+            performanceMessage = "Keep practicing! You'll improve with time.";
+          }
+          
+          // Create enhanced summary slide
           const summarySlide = document.createElement("div");
           summarySlide.className = "swiper-slide";
           summarySlide.innerHTML = `
-            <div class="card">
-              <div class="answer">
-                <strong>Final Score: ${score} out of ${totalQuestions}</strong><br>
-                ${score/totalQuestions >= 0.8 ? "Great job!" : "Keep practicing!"}
+            <div class="card quiz-summary-card">
+              <div class="summary-header">
+                <h2>Quiz Complete!</h2>
               </div>
-              <button id="startNewQuizButton" class="start-quiz-btn">Start New Quiz</button>
-              <button id="leaderboardButton" class="start-quiz-btn">Leaderboards</button>
+              
+              <div class="summary-score">
+                <div class="score-circle" style="background: conic-gradient(#28a745 ${accuracy}%, #f0f0f0 0);">
+                  <span>${accuracy}%</span>
+                </div>
+                <div class="score-text">
+                  <p><strong>${score} / ${totalQuestions}</strong> correct</p>
+                  <p>${performanceMessage}</p>
+                </div>
+              </div>
+              
+              <div class="summary-xp">
+                <div class="xp-header">XP Earned This Session</div>
+                <div class="xp-value">+${sessionXP} XP</div>
+                <div class="xp-bar-container">
+                  <div class="xp-bar" style="width: ${sessionXP}%;"></div>
+                </div>
+                <div class="xp-total">Total: ${currentXP} XP (Level ${currentLevel})</div>
+              </div>
+              
+              <div class="summary-buttons">
+                <button id="startNewQuizButton" class="start-quiz-btn">Start New Quiz</button>
+                <button id="leaderboardButton" class="start-quiz-btn">View Leaderboard</button>
+              </div>
             </div>
           `;
+          
           document.getElementById("quizSlides").appendChild(summarySlide);
           window.mySwiper.update();
+          
+          // Add event listeners to buttons
           document.getElementById("startNewQuizButton").addEventListener("click", function() {
             window.filterMode = "all";
             document.getElementById("aboutView").style.display = "none";
@@ -282,6 +354,7 @@ function addOptionListeners() {
             document.getElementById("leaderboardView").style.display = "none";
             document.getElementById("mainOptions").style.display = "flex";
           });
+          
           document.getElementById("leaderboardButton").addEventListener("click", function() {
             document.getElementById("aboutView").style.display = "none";
             document.getElementById("faqView").style.display = "none";
