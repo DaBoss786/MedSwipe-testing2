@@ -8,6 +8,7 @@ let score = 0;
 let currentFeedbackQuestionId = "";
 let currentFeedbackQuestionText = "";
 let sessionStartXP = 0;
+let summarySlideReady = false;
 
 // Fetch questions from CSV
 async function fetchQuestionBank() {
@@ -92,6 +93,9 @@ async function loadQuestions(options = {}) {
 
 // Initialize the quiz with the selected questions
 async function initializeQuiz(questions) {
+  // Reset summary slide flag
+  summarySlideReady = false;
+  
   // Get starting XP before the quiz begins
   try {
     if (window.auth && window.auth.currentUser) {
@@ -191,6 +195,18 @@ async function initializeQuiz(questions) {
       }
     }
   });
+  
+  // Add event listener to prevent premature navigation to summary
+  window.mySwiper.on('slideChangeTransitionStart', function() {
+    const lastQuestionIndex = totalQuestions * 2 - 1; // Last explanation slide index
+    const targetIndex = window.mySwiper.activeIndex;
+    
+    // If trying to navigate past the last explanation slide but summary isn't ready
+    if (targetIndex > lastQuestionIndex && !summarySlideReady) {
+      // Navigate back to the last explanation slide
+      window.mySwiper.slideTo(lastQuestionIndex);
+    }
+  });
 
   addOptionListeners();
   
@@ -275,40 +291,59 @@ function addOptionListeners() {
       await updateQuestionStats(qId, isCorrect);
       
       if (currentQuestion === totalQuestions) {
+        // Disable further navigation until summary slide is ready
+        window.mySwiper.allowSlideNext = false;
+        window.mySwiper.allowSlidePrev = false;
+        
+        // Show loading indicator on last explanation slide
+        const lastExplanationSlide = window.mySwiper.slides[window.mySwiper.slides.length - 1];
+        const loadingMessage = document.createElement("p");
+        loadingMessage.id = "summaryLoadingMessage";
+        loadingMessage.textContent = "Preparing summary...";
+        loadingMessage.style.textAlign = "center";
+        loadingMessage.style.color = "#0056b3";
+        loadingMessage.style.margin = "15px 0";
+        loadingMessage.style.fontWeight = "bold";
+        
+        // Add loading message to last explanation slide
+        if (lastExplanationSlide) {
+          lastExplanationSlide.querySelector(".card").appendChild(loadingMessage);
+        }
+        
         // Track total XP earned in this session
         window.sessionXP = window.sessionXP || 0;
         
         setTimeout(async () => {
-  // Get the latest user data to calculate XP earned
-  let sessionXP = 0;
-  let currentLevel = 1;
-  let currentXP = 0;
-  
-  try {
-    if (window.auth && window.auth.currentUser) {
-      const uid = window.auth.currentUser.uid;
-      const userDocRef = window.doc(window.db, 'users', uid);
-      const userDocSnap = await window.getDoc(userDocRef);
-      
-      if (userDocSnap.exists()) {
-        const data = userDocSnap.data();
-        if (data.stats) {
-          currentXP = data.stats.xp || 0;
-          currentLevel = data.stats.level || 1;
+          // Get the latest user data to calculate XP earned
+          let sessionXP = 0;
+          let currentLevel = 1;
+          let currentXP = 0;
           
-          // Calculate actual XP earned by comparing end XP with start XP
-          sessionXP = currentXP - sessionStartXP;
-          console.log("Quiz XP calculation:", currentXP, "-", sessionStartXP, "=", sessionXP);
-        }
-      }
-    }
-  } catch (error) {
-    console.error("Error fetching user data for summary:", error);
-    // Fallback to base calculation if there's an error
-    const baseXP = score * 3;
-    const incorrectXP = (totalQuestions - score);
-    sessionXP = baseXP + incorrectXP;
-  }
+          try {
+            if (window.auth && window.auth.currentUser) {
+              const uid = window.auth.currentUser.uid;
+              const userDocRef = window.doc(window.db, 'users', uid);
+              const userDocSnap = await window.getDoc(userDocRef);
+              
+              if (userDocSnap.exists()) {
+                const data = userDocSnap.data();
+                if (data.stats) {
+                  currentXP = data.stats.xp || 0;
+                  currentLevel = data.stats.level || 1;
+                  
+                  // Calculate actual XP earned by comparing end XP with start XP
+                  sessionXP = currentXP - sessionStartXP;
+                  console.log("Quiz XP calculation:", currentXP, "-", sessionStartXP, "=", sessionXP);
+                }
+              }
+            }
+          } catch (error) {
+            console.error("Error fetching user data for summary:", error);
+            // Fallback to base calculation if there's an error
+            const baseXP = score * 3;
+            const incorrectXP = (totalQuestions - score);
+            sessionXP = baseXP + incorrectXP;
+          }
           
           // Calculate accuracy percentage
           const accuracy = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
@@ -361,7 +396,23 @@ function addOptionListeners() {
           `;
           
           document.getElementById("quizSlides").appendChild(summarySlide);
+          
+          // After summary slide is fully created and appended, update Swiper and enable navigation
           window.mySwiper.update();
+          summarySlideReady = true;
+          window.mySwiper.allowSlideNext = true;
+          window.mySwiper.allowSlidePrev = true;
+          
+          // Remove the loading message
+          const loadingMessage = document.getElementById("summaryLoadingMessage");
+          if (loadingMessage) {
+            loadingMessage.remove();
+          }
+          
+          // Automatically navigate to the summary slide after a short delay
+          setTimeout(() => {
+            window.mySwiper.slideNext();
+          }, 300);
           
           // Add event listeners to buttons
           document.getElementById("startNewQuizButton").addEventListener("click", function() {
