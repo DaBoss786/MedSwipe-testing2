@@ -7,6 +7,7 @@ let totalQuestions = 0;
 let score = 0;
 let currentFeedbackQuestionId = "";
 let currentFeedbackQuestionText = "";
+let sessionStartXP = 0;
 
 // Fetch questions from CSV
 async function fetchQuestionBank() {
@@ -91,6 +92,23 @@ async function loadQuestions(options = {}) {
 
 // Initialize the quiz with the selected questions
 async function initializeQuiz(questions) {
+  // Get starting XP before the quiz begins
+  try {
+    if (window.auth && window.auth.currentUser) {
+      const uid = window.auth.currentUser.uid;
+      const userDocRef = window.doc(window.db, 'users', uid);
+      const userDocSnap = await window.getDoc(userDocRef);
+      
+      if (userDocSnap.exists()) {
+        const data = userDocSnap.data();
+        sessionStartXP = data.stats?.xp || 0;
+        console.log("Quiz starting XP:", sessionStartXP);
+      }
+    }
+  } catch (error) {
+    console.error("Error getting starting XP:", error);
+    sessionStartXP = 0;
+  }
   currentQuestion = 0;
   score = 0;
   totalQuestions = questions.length;
@@ -261,33 +279,36 @@ function addOptionListeners() {
         window.sessionXP = window.sessionXP || 0;
         
         setTimeout(async () => {
-          // Get the latest user data to calculate XP earned
-          let sessionXP = 0;
-          let currentLevel = 1;
-          let currentXP = 0;
+  // Get the latest user data to calculate XP earned
+  let sessionXP = 0;
+  let currentLevel = 1;
+  let currentXP = 0;
+  
+  try {
+    if (window.auth && window.auth.currentUser) {
+      const uid = window.auth.currentUser.uid;
+      const userDocRef = window.doc(window.db, 'users', uid);
+      const userDocSnap = await window.getDoc(userDocRef);
+      
+      if (userDocSnap.exists()) {
+        const data = userDocSnap.data();
+        if (data.stats) {
+          currentXP = data.stats.xp || 0;
+          currentLevel = data.stats.level || 1;
           
-          try {
-            if (window.auth && window.auth.currentUser) {
-              const uid = window.auth.currentUser.uid;
-              const userDocRef = window.doc(window.db, 'users', uid);
-              const userDocSnap = await window.getDoc(userDocRef);
-              
-              if (userDocSnap.exists()) {
-                const data = userDocSnap.data();
-                if (data.stats) {
-                  currentXP = data.stats.xp || 0;
-                  currentLevel = data.stats.level || 1;
-                  
-                  // Calculate XP earned this session (base score + any bonuses)
-                  const baseXP = score * 3; // 3 XP per correct answer (1 for attempting + 2 for correct)
-                  const incorrectXP = (totalQuestions - score); // 1 XP per incorrect answer
-                  sessionXP = baseXP + incorrectXP;
-                }
-              }
-            }
-          } catch (error) {
-            console.error("Error fetching user data for summary:", error);
-          }
+          // Calculate actual XP earned by comparing end XP with start XP
+          sessionXP = currentXP - sessionStartXP;
+          console.log("Quiz XP calculation:", currentXP, "-", sessionStartXP, "=", sessionXP);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching user data for summary:", error);
+    // Fallback to base calculation if there's an error
+    const baseXP = score * 3;
+    const incorrectXP = (totalQuestions - score);
+    sessionXP = baseXP + incorrectXP;
+  }
           
           // Calculate accuracy percentage
           const accuracy = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
