@@ -8,7 +8,6 @@ let score = 0;
 let currentFeedbackQuestionId = "";
 let currentFeedbackQuestionText = "";
 let sessionStartXP = 0;
-let summarySlideReady = false;
 
 // Fetch questions from CSV
 async function fetchQuestionBank() {
@@ -111,9 +110,6 @@ async function initializeQuiz(questions) {
     sessionStartXP = 0;
   }
   
-  // Reset summary slide flag
-  summarySlideReady = false;
-  
   currentQuestion = 0;
   score = 0;
   totalQuestions = questions.length;
@@ -177,42 +173,29 @@ async function initializeQuiz(questions) {
     direction: 'vertical',
     loop: false,
     mousewheel: true,
-    touchReleaseOnEdges: true
+    touchReleaseOnEdges: true,
+    allowSlidePrev: true,
+    allowSlideNext: true
   });
 
+  // Basic slideChange handler - just handle question slides and bookmark updates
   window.mySwiper.on('slideChangeTransitionEnd', function() {
     const activeIndex = window.mySwiper.activeIndex;
     const previousIndex = window.mySwiper.previousIndex;
+    
+    // Handle question slides
     if (activeIndex % 2 === 0) {
       questionStartTime = Date.now();
-      console.log("New question slide. questionStartTime updated to:", questionStartTime);
       updateBookmarkIcon();
     }
+    
+    // Auto-skip if question not answered
     if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
       const prevSlide = window.mySwiper.slides[activeIndex - 1];
       const card = prevSlide.querySelector('.card');
       if (!card.classList.contains('answered')) {
         window.mySwiper.slideNext();
       }
-    }
-  });
-  
-  // Custom handler for slides going to summary - super simple
-  window.mySwiper.on('fromEdge', function() {
-    // The last explanation slide index
-    const lastExplanationIndex = totalQuestions * 2 - 1;
-    
-    // If we're on the last explanation slide
-    if (window.mySwiper.activeIndex === lastExplanationIndex) {
-      // Check if the user has swiped up (attempting to go to the summary)
-      // And if the summary isn't ready yet
-      if (!summarySlideReady) {
-        // Just lock the swiper in place
-        window.mySwiper.allowSlideNext = false;
-      }
-    } else {
-      // For all other slides, allow navigation
-      window.mySwiper.allowSlideNext = true;
     }
   });
 
@@ -314,9 +297,6 @@ function addOptionListeners() {
           lastExplanationSlide.querySelector(".card").appendChild(loadingMessage);
         }
         
-        // Initially block navigation to summary (in case user swipes before it's ready)
-        window.mySwiper.allowSlideNext = false;
-        
         // Prepare summary slide asynchronously
         setTimeout(async () => {
           // Get the latest user data to calculate XP earned
@@ -367,7 +347,7 @@ function addOptionListeners() {
           
           // Create enhanced summary slide
           const summarySlide = document.createElement("div");
-          summarySlide.className = "swiper-slide";
+          summarySlide.className = "swiper-slide summary-slide"; // Add the summary-slide class
           summarySlide.innerHTML = `
             <div class="card quiz-summary-card">
               <div class="summary-header">
@@ -400,34 +380,44 @@ function addOptionListeners() {
             </div>
           `;
           
-          // Add the summary slide to the swiper
+          // Add the summary slide
           document.getElementById("quizSlides").appendChild(summarySlide);
+          
+          // Add custom click handler to the last explanation slide
+          const lastExplanationSlide = window.mySwiper.slides[window.mySwiper.slides.length - 2];
+          if (lastExplanationSlide) {
+            // Remove the loading message
+            const loadingMessage = document.getElementById("summaryLoadingMessage");
+            if (loadingMessage) {
+              loadingMessage.remove();
+            }
+          
+            // Add a button instead of a message
+            const viewSummaryButton = document.createElement("button");
+            viewSummaryButton.textContent = "View Summary";
+            viewSummaryButton.style.padding = "10px 20px";
+            viewSummaryButton.style.backgroundColor = "#0056b3";
+            viewSummaryButton.style.color = "white";
+            viewSummaryButton.style.border = "none";
+            viewSummaryButton.style.borderRadius = "5px";
+            viewSummaryButton.style.margin = "20px auto";
+            viewSummaryButton.style.display = "block";
+            viewSummaryButton.style.cursor = "pointer";
+            
+            // Add click handler to navigate to summary slide
+            viewSummaryButton.addEventListener("click", function() {
+              // Go directly to the summary slide index
+              const summaryIndex = window.mySwiper.slides.length - 1;
+              window.mySwiper.slideTo(summaryIndex);
+            });
+            
+            lastExplanationSlide.querySelector(".card").appendChild(viewSummaryButton);
+          }
+          
+          // Update swiper to recognize new slide
           window.mySwiper.update();
           
-          // Remove the loading message
-          const loadingMessage = document.getElementById("summaryLoadingMessage");
-          if (loadingMessage) {
-            loadingMessage.remove();
-          }
-          
-          // Add a "ready" message to the last explanation slide
-          const lastExplanationSlide = window.mySwiper.slides[window.mySwiper.slides.length - 2];
-          if (lastExplanationSlide && lastExplanationSlide.querySelector(".card")) {
-            const readyMessage = document.createElement("p");
-            readyMessage.id = "summaryReadyMessage";
-            readyMessage.textContent = "Summary ready! Swipe up to view.";
-            readyMessage.style.textAlign = "center";
-            readyMessage.style.color = "#28a745"; // Green color to indicate ready state
-            readyMessage.style.margin = "15px 0";
-            readyMessage.style.fontWeight = "bold";
-            lastExplanationSlide.querySelector(".card").appendChild(readyMessage);
-          }
-          
-          // Mark the summary slide as ready and enable navigation
-          summarySlideReady = true;
-          window.mySwiper.allowSlideNext = true;
-          
-          // Add event listeners to buttons
+          // Add event listeners to summary slide buttons
           document.getElementById("startNewQuizButton").addEventListener("click", function() {
             window.filterMode = "all";
             document.getElementById("aboutView").style.display = "none";
