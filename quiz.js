@@ -282,6 +282,9 @@ function addOptionListeners() {
       await updateQuestionStats(qId, isCorrect);
       
       if (currentQuestion === totalQuestions) {
+        // Store current index to prevent unwanted scrolling later
+        const currentIndex = window.mySwiper.activeIndex;
+        
         // Calculate the index of the last explanation slide
         const lastQuestionIndex = (totalQuestions - 1) * 2; // Index of the last question
         const lastExplanationIndex = lastQuestionIndex + 1; // Index of its explanation
@@ -424,6 +427,17 @@ function addOptionListeners() {
           
           // Update swiper to recognize new slide
           window.mySwiper.update();
+          
+          // Temporarily detach events to prevent any unexpected scrolling
+          window.mySwiper.detachEvents();
+          setTimeout(() => {
+            window.mySwiper.attachEvents();
+          }, 100);
+          
+          // Ensure we stay on the current slide
+          if (window.mySwiper.activeIndex !== currentIndex) {
+            window.mySwiper.slideTo(currentIndex, 0);
+          }
           
           // Add event listeners to summary slide buttons
           document.getElementById("startNewQuizButton").addEventListener("click", function() {
