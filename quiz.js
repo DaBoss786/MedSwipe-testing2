@@ -282,18 +282,23 @@ function addOptionListeners() {
       await updateQuestionStats(qId, isCorrect);
       
       if (currentQuestion === totalQuestions) {
-        // Show loading indicator on last explanation slide
-        const lastExplanationSlide = window.mySwiper.slides[window.mySwiper.slides.length - 1];
-        const loadingMessage = document.createElement("p");
-        loadingMessage.id = "summaryLoadingMessage";
-        loadingMessage.textContent = "Preparing summary...";
-        loadingMessage.style.textAlign = "center";
-        loadingMessage.style.color = "#0056b3";
-        loadingMessage.style.margin = "15px 0";
-        loadingMessage.style.fontWeight = "bold";
+        // Calculate the index of the last explanation slide
+        const lastQuestionIndex = (totalQuestions - 1) * 2; // Index of the last question
+        const lastExplanationIndex = lastQuestionIndex + 1; // Index of its explanation
         
-        // Add loading message to last explanation slide
+        // Show loading indicator on last explanation slide
+        const lastExplanationSlide = window.mySwiper.slides[lastExplanationIndex];
+        
         if (lastExplanationSlide && lastExplanationSlide.querySelector(".card")) {
+          const loadingMessage = document.createElement("p");
+          loadingMessage.id = "summaryLoadingMessage";
+          loadingMessage.textContent = "Preparing summary...";
+          loadingMessage.style.textAlign = "center";
+          loadingMessage.style.color = "#0056b3";
+          loadingMessage.style.margin = "15px 0";
+          loadingMessage.style.fontWeight = "bold";
+          
+          // Add loading message to last explanation slide
           lastExplanationSlide.querySelector(".card").appendChild(loadingMessage);
         }
         
@@ -383,8 +388,11 @@ function addOptionListeners() {
           // Add the summary slide
           document.getElementById("quizSlides").appendChild(summarySlide);
           
-          // Add custom click handler to the last explanation slide
-          const lastExplanationSlide = window.mySwiper.slides[window.mySwiper.slides.length - 2];
+          // Get the last explanation slide again to add the button
+          const lastQuestionIndex = (totalQuestions - 1) * 2; // Index of the last question
+          const lastExplanationIndex = lastQuestionIndex + 1; // Index of its explanation
+          const lastExplanationSlide = window.mySwiper.slides[lastExplanationIndex];
+          
           if (lastExplanationSlide) {
             // Remove the loading message
             const loadingMessage = document.getElementById("summaryLoadingMessage");
