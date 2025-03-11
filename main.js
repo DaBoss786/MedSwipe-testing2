@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </li>
         <li>
           <strong>How Do I Provide Feedback?</strong><br>
-          Use the in‑app feedback button to let us know what you think or if you encounter any issues. Your input is crucial for our continued improvement.
+          Use the "Contact Us" button in the menu to let us know what you think or if you encounter any issues. Your input is crucial for our continued improvement.
         </li>
       </ul>
       <button id="faqBack" class="start-quiz-btn">Back</button>
