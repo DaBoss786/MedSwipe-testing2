@@ -315,6 +315,7 @@ async function prepareSummary() {
     let sessionXP = 0;
     let currentLevel = 1;
     let currentXP = 0;
+    let levelProgress = 0; // Added for level progress calculation
     
     if (window.auth && window.auth.currentUser) {
       const uid = window.auth.currentUser.uid;
@@ -327,13 +328,46 @@ async function prepareSummary() {
           currentXP = data.stats.xp || 0;
           currentLevel = data.stats.level || 1;
           
-          // Calculate actual XP earned by comparing end XP with start XP
+           // Calculate actual XP earned by comparing end XP with start XP
           sessionXP = currentXP - sessionStartXP;
           console.log("Quiz XP calculation:", currentXP, "-", sessionStartXP, "=", sessionXP);
+
+          // Calculate level progress percentage
+          // First, determine XP thresholds for current and next levels
+          const levelThresholds = [
+            0,     // Level 1
+            30,    // Level 2
+            75,    // Level 3
+            150,   // Level 4
+            250,   // Level 5
+            400,   // Level 6
+            600,   // Level 7
+            850,   // Level 8
+            1150,  // Level 9
+            1500,  // Level 10
+            2000,  // Level 11
+            2750,  // Level 12
+            3750,  // Level 13
+            5000,  // Level 14
+            6500   // Level 15
+          ];
+          
+          const currentLevelXP = levelThresholds[currentLevel - 1] || 0;
+          const nextLevelXP = currentLevel < levelThresholds.length ? levelThresholds[currentLevel] : null;
+          
+          if (nextLevelXP !== null) {
+            const xpInCurrentLevel = currentXP - currentLevelXP;
+            const xpRequiredForNextLevel = nextLevelXP - currentLevelXP;
+            levelProgress = Math.min(100, Math.floor((xpInCurrentLevel / xpRequiredForNextLevel) * 100));
+            console.log("Level progress calculation:", xpInCurrentLevel, "/", xpRequiredForNextLevel, "=", levelProgress + "%");
+          } else {
+            // Max level reached
+            levelProgress = 100;
+          }
         }
       }
     }
-    
+      
     // Calculate accuracy percentage
     const accuracy = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
     
@@ -354,6 +388,7 @@ async function prepareSummary() {
       sessionXP,
       currentLevel,
       currentXP,
+      levelProgress, // Store the calculated level progress
       accuracy,
       performanceMessage
     };
@@ -384,6 +419,7 @@ function showSummary() {
     sessionXP: score * 3 + (totalQuestions - score), // Fallback calculation
     currentLevel: 1,
     currentXP: 0,
+    levelProgress: 0, // Default to 0 if not calculated
     accuracy: totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0,
     performanceMessage: "Quiz complete!"
   };
@@ -411,7 +447,8 @@ function showSummary() {
         <div class="xp-header">XP Earned This Session</div>
         <div class="xp-value">+${data.sessionXP} XP</div>
         <div class="xp-bar-container">
-          <div class="xp-bar" style="width: ${data.sessionXP}%;"></div>
+          <!-- Use the levelProgress value for the XP bar width instead of sessionXP -->
+          <div class="xp-bar" style="width: ${data.levelProgress}%;"></div>
         </div>
         <div class="xp-total">Total: ${data.currentXP} XP (Level ${data.currentLevel})</div>
       </div>
