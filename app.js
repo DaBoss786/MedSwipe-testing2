@@ -610,6 +610,7 @@ async function checkAndUpdateStreak() {
 }
 
 // Function to load leaderboard preview data - fixed for desktop view
+// Function to load leaderboard preview data with weekly XP rankings
 async function loadLeaderboardPreview() {
   if (!window.auth || !window.auth.currentUser || !window.db) {
     console.log("Auth or DB not initialized for leaderboard preview");
@@ -624,16 +625,31 @@ async function loadLeaderboardPreview() {
     const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
     let leaderboardEntries = [];
     
+    // Get the start of the current week for filtering
+    const weekStart = getStartOfWeek();
+    
     querySnapshot.forEach(docSnap => {
       const data = docSnap.data();
       if (data.stats) {
-        const xp = data.stats.xp || 0;
-        const level = data.stats.level || 1;
+        // Calculate weekly XP instead of using total XP
+        let weeklyXP = 0;
+        
+        // Calculate XP from questions answered this week
+        if (data.answeredQuestions) {
+          for (const questionId in data.answeredQuestions) {
+            const answer = data.answeredQuestions[questionId];
+            if (answer.timestamp && answer.timestamp >= weekStart) {
+              // Basic XP calculation: 1 for answering, 2 more if correct
+              weeklyXP += 1 + (answer.isCorrect ? 2 : 0);
+            }
+          }
+        }
+        
+        // Add user to leaderboard entries with their weekly XP
         leaderboardEntries.push({
           uid: docSnap.id,
           username: data.username || "Anonymous",
-          xp: xp,
-          level: level
+          xp: weeklyXP
         });
       }
     });
@@ -651,6 +667,9 @@ async function loadLeaderboardPreview() {
     
     // Create HTML for the preview with well-structured entries
     let html = '';
+    
+    // Add a small "Weekly" indicator to show these are weekly rankings
+    html += '<div class="leaderboard-preview-header">Weekly Rankings</div>';
     
     // Add top 3 entries
     if (top3.length === 0) {
