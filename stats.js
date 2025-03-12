@@ -168,19 +168,38 @@ async function displayPerformance() {
   });
 }
 
-// Load XP Rankings leaderboard with modern card-based design (XP only, no level badge)
-async function loadOverallData() {
-  console.log("Loading XP rankings leaderboard data");
+// Load XP Rankings leaderboard with weekly/all-time toggle
+async function loadOverallData(timeRange = 'weekly') {
+  console.log(`Loading XP rankings leaderboard data (${timeRange})`);
   const currentUid = window.auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
   const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
   let leaderboardEntries = [];
   
+  // Get the start of the current week for filtering
+  const weekStart = getStartOfWeek();
+  
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
     if (data.stats) {
-      const xp = data.stats.xp || 0;
+      let xp = data.stats.xp || 0;
       const level = data.stats.level || 1;
+      
+      // For weekly view, calculate XP gained this week
+      if (timeRange === 'weekly' && data.answeredQuestions) {
+        // Reset XP to count only this week's activity
+        xp = 0;
+        
+        // Loop through answered questions and sum XP from this week
+        for (const questionId in data.answeredQuestions) {
+          const answer = data.answeredQuestions[questionId];
+          if (answer.timestamp && answer.timestamp >= weekStart) {
+            // Basic XP calculation: 1 for answering, 2 more if correct
+            xp += 1 + (answer.isCorrect ? 2 : 0);
+          }
+        }
+      }
+      
       leaderboardEntries.push({
         uid: docSnap.id,
         username: data.username || "Anonymous",
@@ -200,7 +219,7 @@ async function loadOverallData() {
   let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
   let currentUserRank = leaderboardEntries.findIndex(e => e.uid === currentUid) + 1;
   
-  // Generate HTML with card-based layout
+  // Generate HTML with timeRange toggle buttons
   let html = `
     <h2>Leaderboard - XP Rankings</h2>
     
@@ -208,6 +227,12 @@ async function loadOverallData() {
       <button class="leaderboard-tab active" id="overallTab">XP Rankings</button>
       <button class="leaderboard-tab" id="streaksTab">Streaks</button>
       <button class="leaderboard-tab" id="answeredTab">Total Answered</button>
+    </div>
+    
+    <!-- Time range tabs - only visible on XP Rankings tab -->
+    <div id="timeRangeTabs">
+      <button class="time-range-tab ${timeRange === 'weekly' ? 'active' : ''}" id="weeklyTimeTab">Weekly</button>
+      <button class="time-range-tab ${timeRange === 'alltime' ? 'active' : ''}" id="alltimeTimeTab">All Time</button>
     </div>
     
     <ul class="leaderboard-entry-list">
@@ -261,9 +286,24 @@ async function loadOverallData() {
   document.getElementById("leaderboardView").innerHTML = html;
   
   // Add event listeners for tabs and back button
-  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
-  document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
-  document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
+  document.getElementById("overallTab").addEventListener("click", function(){ 
+    // Stay on XP Rankings but preserve the current time range
+    loadOverallData(timeRange); 
+  });
+  document.getElementById("streaksTab").addEventListener("click", function(){ 
+    loadStreaksData(); 
+  });
+  document.getElementById("answeredTab").addEventListener("click", function(){ 
+    loadTotalAnsweredData(); 
+  });
+  
+  // Add event listeners for the time range tabs (only visible on XP Rankings)
+  document.getElementById("weeklyTimeTab").addEventListener("click", function(){ 
+    loadOverallData('weekly'); 
+  });
+  document.getElementById("alltimeTimeTab").addEventListener("click", function(){ 
+    loadOverallData('alltime'); 
+  });
   
   document.getElementById("leaderboardBack").addEventListener("click", function(){
     document.getElementById("leaderboardView").style.display = "none";
@@ -272,7 +312,7 @@ async function loadOverallData() {
   });
 }
 
-// Load Streaks leaderboard with modern card-based design
+// Load Streaks leaderboard (no time range tabs)
 async function loadStreaksData() {
   const currentUid = window.auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
@@ -282,7 +322,7 @@ async function loadStreaksData() {
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
     let streak = data.streaks ? (data.streaks.currentStreak || 0) : 0;
-    if (streak > 0) {
+    if (streak > 0 || true) { // Include all users for comprehensive leaderboard
       streakEntries.push({
         uid: docSnap.id,
         username: data.username || "Anonymous",
@@ -301,7 +341,7 @@ async function loadStreaksData() {
   let currentUserEntry = streakEntries.find(e => e.uid === currentUid);
   let currentUserRank = streakEntries.findIndex(e => e.uid === currentUid) + 1;
   
-  // Generate HTML with card-based layout
+  // Generate HTML without time range tabs
   let html = `
     <h2>Leaderboard - Streaks</h2>
     
@@ -362,7 +402,7 @@ async function loadStreaksData() {
   document.getElementById("leaderboardView").innerHTML = html;
   
   // Add event listeners for tabs and back button
-  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
+  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData('weekly'); });
   document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
   document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
   
@@ -373,7 +413,7 @@ async function loadStreaksData() {
   });
 }
 
-// Load Total Answered leaderboard with modern card-based design
+// Load Total Answered leaderboard (no time range tabs)
 async function loadTotalAnsweredData() {
   const currentUid = window.auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
@@ -392,13 +432,13 @@ async function loadTotalAnsweredData() {
         }
       }
     }
-    if (weeklyCount > 0) {
-      answeredEntries.push({
-        uid: docSnap.id,
-        username: data.username || "Anonymous",
-        weeklyCount: weeklyCount
-      });
-    }
+    
+    // Include all users for comprehensive leaderboard
+    answeredEntries.push({
+      uid: docSnap.id,
+      username: data.username || "Anonymous",
+      weeklyCount: weeklyCount
+    });
   });
   
   // Sort by weekly count (descending)
@@ -411,7 +451,7 @@ async function loadTotalAnsweredData() {
   let currentUserEntry = answeredEntries.find(e => e.uid === currentUid);
   let currentUserRank = answeredEntries.findIndex(e => e.uid === currentUid) + 1;
   
-  // Generate HTML with card-based layout
+  // Generate HTML without time range tabs
   let html = `
     <h2>Leaderboard - Total Answered Questions This Week</h2>
     
@@ -472,7 +512,7 @@ async function loadTotalAnsweredData() {
   document.getElementById("leaderboardView").innerHTML = html;
   
   // Add event listeners for tabs and back button
-  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
+  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData('weekly'); });
   document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
   document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
   
@@ -481,4 +521,34 @@ async function loadTotalAnsweredData() {
     document.getElementById("mainOptions").style.display = "flex";
     document.getElementById("aboutView").style.display = "none";
   });
+}
+
+// Default function to show leaderboard
+function showLeaderboard() {
+  document.querySelector(".swiper").style.display = "none";
+  document.getElementById("bottomToolbar").style.display = "none";
+  document.getElementById("iconBar").style.display = "none";
+  document.getElementById("performanceView").style.display = "none";
+  document.getElementById("mainOptions").style.display = "none";
+  document.getElementById("aboutView").style.display = "none";
+  document.getElementById("faqView").style.display = "none";
+  document.getElementById("leaderboardView").style.display = "block";
+  
+  // Use the loadOverallData function with 'weekly' as default
+  if (typeof window.loadOverallData === 'function') {
+    window.loadOverallData('weekly');
+  } else {
+    // Fallback message if function is not available
+    document.getElementById("leaderboardView").innerHTML = `
+      <h2>Leaderboard</h2>
+      <p>Leaderboards are loading... Please try again in a moment.</p>
+      <button class="leaderboard-back-btn" id="leaderboardBack">Back</button>
+    `;
+    document.getElementById("leaderboardBack").addEventListener("click", function(){
+      document.getElementById("leaderboardView").style.display = "none";
+      document.getElementById("mainOptions").style.display = "flex";
+    });
+    
+    console.log("loadOverallData function not found");
+  }
 }
