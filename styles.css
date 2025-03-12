@@ -2023,3 +2023,32 @@ html, body {
     text-align: center;
   }
 }
+/* Time Range Tabs for Leaderboard */
+.time-range-tab {
+  background: #f0f0f0;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 20px;
+  margin: 0 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  color: #666;
+}
+
+.time-range-tab:hover {
+  background: rgba(12, 114, 211, 0.1);
+  color: #0C72D3;
+}
+
+.time-range-tab.active {
+  background: #0C72D3;
+  color: white;
+  box-shadow: 0 2px 5px rgba(12, 114, 211, 0.3);
+}
+
+#timeRangeTabs {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0 20px;
+}
