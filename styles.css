@@ -284,7 +284,8 @@ html, body {
 
 /* Main Options (Landing View) */
 #mainOptions {
-  margin-top: 90px;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1448,7 +1449,7 @@ html, body {
 }
 /* Dashboard Container */
 .dashboard-container {
-  margin-top: 30px; /* Further reduced from 60px to give less space above Start Quiz button */
+  margin-top: 30px; /* Return to original value */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1460,12 +1461,16 @@ html, body {
 }
 
 /* Start Quiz Button Section */
-/* Top button section - reduce margin */
+/* Position the Start Quiz button closer to top */
 .dashboard-start-section {
+  position: static; /* Reset positioning */
+  top: auto;
+  left: auto;
+  right: auto;
   width: 100%;
-  margin-bottom: 15px;
   display: flex;
   justify-content: center;
+  margin-bottom: 15px;
 }
 
 .dashboard-start-btn {
@@ -1475,10 +1480,10 @@ html, body {
   border-radius: 6px;
   cursor: pointer;
   color: #fff;
-  width: 100%;
-  max-width: 220px;
+  width: 220px;
   transition: background-color 0.2s ease;
   background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+  margin-top: -5px; /* Move button up slightly */
 }
 
 .dashboard-start-btn:hover {
@@ -1488,7 +1493,7 @@ html, body {
 /* Dashboard Cards Row */
 .dashboard-cards-row {
   display: flex;
-  flex-direction: row;
+  flex-direction: row; /* Ensure cards stay side-by-side */
   width: 100%;
   gap: 10px;
   margin-bottom: 15px;
