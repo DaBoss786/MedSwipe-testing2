@@ -169,36 +169,18 @@ async function displayPerformance() {
 }
 
 // Load XP Rankings leaderboard with weekly/all-time toggle
-async function loadOverallData(timeRange = 'weekly') {
-  console.log(`Loading XP rankings leaderboard data (${timeRange})`);
+async function loadOverallData() {
+  console.log(`Loading XP rankings leaderboard data`);
   const currentUid = window.auth.currentUser.uid;
   const currentUsername = await getOrGenerateUsername();
   const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
   let leaderboardEntries = [];
-  
-  // Get the start of the current week for filtering
-  const weekStart = getStartOfWeek();
   
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
     if (data.stats) {
       let xp = data.stats.xp || 0;
       const level = data.stats.level || 1;
-      
-      // For weekly view, calculate XP gained this week
-      if (timeRange === 'weekly' && data.answeredQuestions) {
-        // Reset XP to count only this week's activity
-        xp = 0;
-        
-        // Loop through answered questions and sum XP from this week
-        for (const questionId in data.answeredQuestions) {
-          const answer = data.answeredQuestions[questionId];
-          if (answer.timestamp && answer.timestamp >= weekStart) {
-            // Basic XP calculation: 1 for answering, 2 more if correct
-            xp += 1 + (answer.isCorrect ? 2 : 0);
-          }
-        }
-      }
       
       leaderboardEntries.push({
         uid: docSnap.id,
@@ -219,7 +201,7 @@ async function loadOverallData(timeRange = 'weekly') {
   let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
   let currentUserRank = leaderboardEntries.findIndex(e => e.uid === currentUid) + 1;
   
-  // Generate HTML with timeRange toggle buttons
+  // Generate HTML without timeRange toggle buttons
   let html = `
     <h2>Leaderboard - XP Rankings</h2>
     
@@ -227,12 +209,6 @@ async function loadOverallData(timeRange = 'weekly') {
       <button class="leaderboard-tab active" id="overallTab">XP Rankings</button>
       <button class="leaderboard-tab" id="streaksTab">Streaks</button>
       <button class="leaderboard-tab" id="answeredTab">Total Answered</button>
-    </div>
-    
-    <!-- Time range tabs - only visible on XP Rankings tab -->
-    <div id="timeRangeTabs">
-      <button class="time-range-tab ${timeRange === 'weekly' ? 'active' : ''}" id="weeklyTimeTab">Weekly</button>
-      <button class="time-range-tab ${timeRange === 'alltime' ? 'active' : ''}" id="alltimeTimeTab">All Time</button>
     </div>
     
     <ul class="leaderboard-entry-list">
@@ -287,22 +263,13 @@ async function loadOverallData(timeRange = 'weekly') {
   
   // Add event listeners for tabs and back button
   document.getElementById("overallTab").addEventListener("click", function(){ 
-    // Stay on XP Rankings but preserve the current time range
-    loadOverallData(timeRange); 
+    loadOverallData(); 
   });
   document.getElementById("streaksTab").addEventListener("click", function(){ 
     loadStreaksData(); 
   });
   document.getElementById("answeredTab").addEventListener("click", function(){ 
     loadTotalAnsweredData(); 
-  });
-  
-  // Add event listeners for the time range tabs (only visible on XP Rankings)
-  document.getElementById("weeklyTimeTab").addEventListener("click", function(){ 
-    loadOverallData('weekly'); 
-  });
-  document.getElementById("alltimeTimeTab").addEventListener("click", function(){ 
-    loadOverallData('alltime'); 
   });
   
   document.getElementById("leaderboardBack").addEventListener("click", function(){
