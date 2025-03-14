@@ -354,13 +354,16 @@
   <script src="ui.js"></script>
   <script src="app.js"></script>
   <script>
+  // Register the service worker
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-      navigator.serviceWorker.register('/sw.js').then(function(registration) {
-        console.log('ServiceWorker registration successful');
-      }, function(err) {
-        console.log('ServiceWorker registration failed: ', err);
-      });
+      navigator.serviceWorker.register('/pwabuilder-sw.js')
+        .then(function(registration) {
+          console.log('Service Worker registered successfully with scope: ', registration.scope);
+        })
+        .catch(function(err) {
+          console.log('Service Worker registration failed: ', err);
+        });
     });
   }
 </script>
