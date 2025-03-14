@@ -1,0 +1,16 @@
+{
+  "name": "MedSwipe",
+  "theme_color": "#000000",
+  "background_color": "#000000",
+  "short_name": "MedSwipe",
+  "id": "MedSwipe786",
+  "description": "MedSwipe is a dynamic, swipe-based quiz app designed specifically for medical professionals and learners. Our goal is to improve medical education by offering a casual, engaging alternative to the traditional, regimented board review resources and question banks.",
+  "display_override": [
+    "standalone",
+    "window-controls-overlay"
+  ],
+  "categories": [
+    "education",
+    "health"
+  ]
+}
