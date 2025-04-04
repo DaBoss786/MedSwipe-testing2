@@ -1,5 +1,17 @@
 // Show leaderboard view
 function showLeaderboard() {
+  // Check if user is registered
+  if (window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous) {
+    // Show registration benefits modal instead for guest users
+    if (typeof window.showRegistrationBenefitsModal === 'function') {
+      window.showRegistrationBenefitsModal();
+    } else {
+      alert("Leaderboards are only available for registered users. Please create a free account to access this feature.");
+    }
+    return;
+  }
+  
+  // Continue with showing leaderboard for registered users
   document.querySelector(".swiper").style.display = "none";
   document.getElementById("bottomToolbar").style.display = "none";
   document.getElementById("iconBar").style.display = "none";

@@ -20,6 +20,87 @@
   <link rel="manifest" href="/manifest.json">
 </head>
 <body>
+  <!-- Splash Screen Container -->
+<div id="splashScreen" class="splash-screen">
+  <div class="splash-content">
+    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="splash-logo">
+    <div class="splash-loader">
+      <div class="loading-bar"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Welcome Screen Container -->
+<div id="welcomeScreen" class="welcome-screen">
+  <div class="welcome-content">
+    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="welcome-logo">
+    <h1 class="welcome-tagline">Swipe. Learn. Master Medicine.</h1>
+    <div class="welcome-buttons">
+      <button id="startLearningBtn" class="welcome-primary-btn">Start Learning</button>
+      <button id="existingAccountBtn" class="welcome-secondary-btn">I Already Have an Account</button>
+    </div>
+  </div>
+</div>
+
+  <!-- Onboarding Loading Screen -->
+<div id="onboardingLoadingScreen" class="loading-screen">
+  <div class="loading-content">
+    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="loading-logo">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">Curating your questions...</p>
+  </div>
+</div>
+
+  <!-- Login Screen Container -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-content">
+    <div class="login-header">
+      <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="login-logo">
+      <h1 class="login-title">Welcome Back</h1>
+    </div>
+
+    <form id="loginScreenForm" class="login-form">
+      <div class="form-group">
+        <label for="loginScreenEmail">Email</label>
+        <input type="email" id="loginScreenEmail" required autocomplete="email">
+        <div class="form-error" id="emailError"></div>
+      </div>
+      
+      <div class="form-group">
+        <label for="loginScreenPassword">Password</label>
+        <div class="password-container">
+          <input type="password" id="loginScreenPassword" required autocomplete="current-password">
+          <button type="button" class="password-toggle" id="passwordToggle" aria-label="Toggle password visibility">
+            <i class="eye-icon">👁️</i>
+          </button>
+        </div>
+        <div class="form-error" id="passwordError"></div>
+      </div>
+      
+      <div class="login-actions">
+        <button type="submit" id="loginScreenSubmit" class="login-button" disabled>Log In</button>
+        <a href="#" id="forgotPasswordLink" class="login-link">Forgot Password?</a>
+      </div>
+    </form>
+    
+    <div class="login-divider">
+      <span>or</span>
+    </div>
+    
+    <div class="login-alternative-options">
+      <button id="createAccountBtn" class="secondary-button">Create Account</button>
+      <button id="continueAsGuestBtn" class="auth-secondary-btn" onclick="document.getElementById('registrationBenefitsModal').style.display='none'; document.getElementById('mainOptions').style.display='flex';">Continue as Guest</button>
+    </div>
+    
+    <div id="loginScreenError" class="login-error-message"></div>
+  </div>
+  
+  <div class="login-loader" id="loginLoader">
+    <div class="spinner"></div>
+    <p>Logging in...</p>
+  </div>
+</div>
+  
   <!-- Top Toolbar -->
   <div class="toolbar">
     <div class="toolbar-left">
@@ -27,7 +108,7 @@
     </div>
     <div class="toolbar-center">
       <div class="logo" id="logoClick">
-        <img src="MedSwipe Logo.jpg" alt="MedSwipe Logo">
+        <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo">
       </div>
     </div>
     <div class="toolbar-right">
@@ -102,6 +183,28 @@
     </div>
   </div>
   
+  <!-- Review Queue Card (full width) -->
+  <div class="dashboard-card review-queue-card" id="reviewQueueCard" style="width: 100%; margin-bottom: 20px;">
+    <div class="card-header">
+      <h3>Review Queue</h3>
+    </div>
+    <div class="card-content">
+      <div id="reviewQueueContent" class="review-queue-content">
+        <div class="review-stats">
+          <div class="review-count" id="reviewCount">0</div>
+          <div class="review-label">questions due for review</div>
+        </div>
+        <div class="review-progress-container">
+          <div class="review-progress-bar" id="reviewProgressBar"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer">
+      <span>Start Review</span>
+      <span class="arrow-icon">→</span>
+    </div>
+  </div>
+  
   <!-- Second Row: Leaderboard Preview Card (full width) -->
   <div class="dashboard-card leaderboard-card" id="leaderboardPreviewCard" style="width: 100%; margin-bottom: 20px;">
     <div class="card-header">
@@ -168,11 +271,18 @@
     <input type="number" id="modalNumQuestions" min="1" value="10">
   </div>
   <div class="formGroup">
-    <label>
-      <input type="checkbox" id="modalIncludeAnswered">
-      Include answered questions
-    </label>
-  </div>
+  <label>
+    <input type="checkbox" id="modalIncludeAnswered">
+    Include answered questions
+  </label>
+</div>
+  <div class="formGroup">
+  <label>
+    <input type="checkbox" id="modalSpacedRepetition">
+    Enable Spaced Repetition
+  </label>
+  <p class="formHelper">Mix new questions with questions due for review</p>
+</div>
   <div class="btnRow">
     <button id="modalStartQuiz">Start Quiz</button>
     <button id="modalCancelQuiz" class="cancel">Cancel</button>
@@ -338,21 +448,27 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   
   <!-- Firebase SDK -->
-  <script type="module" src="firebase-config.js"></script>
-  
-  <!-- Include Swiper JS -->
-  <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
-  
-  <!-- Chart.js for the doughnut chart -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
-  <!-- App Scripts -->
-  <script src="utils.js"></script>
-  <script src="user.js"></script>
-  <script src="quiz.js"></script>
-  <script src="stats.js"></script>
-  <script src="ui.js"></script>
-  <script src="app.js"></script>
+<script type="module" src="firebase-config.js"></script>
+
+<!-- Auth Scripts - Must be loaded after Firebase -->
+<script src="auth.js"></script>
+<script src="user-profile.js"></script>
+
+<!-- Include Swiper JS -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
+
+<!-- Chart.js for the doughnut chart -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- App Scripts -->
+<script src="utils.js"></script>
+<script src="user.js"></script>
+<script src="quiz.js"></script>
+<script src="stats.js"></script>
+<script src="ui.js"></script>
+<script src="login-screen.js"></script>
+<script src="app.js"></script>
+<script src="tos-privacy.js"></script>  
   <script>
   // Register the service worker
   if ('serviceWorker' in navigator) {
@@ -367,6 +483,177 @@
     });
   }
 </script>
+<!-- Terms of Service Modal -->
+<div id="termsOfServiceModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Terms of Use – MedSwipe</h2>
+      <span class="close-modal">&times;</span>
+    </div>
+    <div class="modal-body">
+      <p>Effective Date: March 2025</p>
+      <p>By using MedSwipe, you agree to the following terms:</p>
+      
+      <h3>Use of the App</h3>
+      <ul>
+        <li>MedSwipe is an educational tool for healthcare professionals. It does not provide medical advice.</li>
+        <li>You are responsible for keeping your login credentials secure.</li>
+      </ul>
+      
+      <h3>Intellectual Property</h3>
+      <ul>
+        <li>All app content (questions, explanations, analytics) is owned by MedSwipe and may not be copied, redistributed, or used for commercial purposes without permission.</li>
+      </ul>
+      
+      <h3>CME Disclaimer</h3>
+      <ul>
+        <li>CME credits are only available to registered users through eligible, accredited modules.</li>
+      </ul>
+      
+      <h3>Termination</h3>
+      <ul>
+        <li>We may suspend access to users who violate these terms or misuse the platform.</li>
+      </ul>
+      
+      <h3>Limitation of Liability</h3>
+      <ul>
+        <li>MedSwipe is not liable for decisions made based on app content. Always refer to professional guidelines and clinical judgment.</li>
+      </ul>
+      
+      <p>Contact us: <a href="mailto:medswipeapp@gmail.com">medswipeapp@gmail.com</a></p>
+    </div>
+  </div>
+</div>
 
+<!-- Privacy Policy Modal -->
+<div id="privacyPolicyModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Privacy Policy – MedSwipe</h2>
+      <span class="close-modal">&times;</span>
+    </div>
+    <div class="modal-body">
+      <p>Effective Date: March 2025</p>
+      <p>MedSwipe ("we", "our", or "us") respects your privacy. This Privacy Policy explains how we collect, use, and protect your information when you use our app.</p>
+      
+      <h3>Information We Collect</h3>
+      <ul>
+        <li><strong>Personal Information:</strong> When you register or sign in using Apple, Google, or email, we collect your name (if provided), email address, and authentication token.</li>
+        <li><strong>Usage Data:</strong> We collect anonymous data on how you interact with the app (e.g., questions answered, categories used) to improve the user experience.</li>
+      </ul>
+      
+      <h3>How We Use Your Information</h3>
+      <ul>
+        <li>To create and manage your account</li>
+        <li>To track your learning progress and analytics</li>
+        <li>To improve app functionality and content</li>
+        <li>To communicate with you about app updates, features, or educational resources (you may unsubscribe at any time)</li>
+      </ul>
+      
+      <h3>Sharing</h3>
+      <ul>
+        <li>We do not sell or share your personal information with third parties, except trusted service providers like Firebase and analytics tools, solely for the purpose of delivering our services.</li>
+      </ul>
+      
+      <h3>Data Security</h3>
+      <ul>
+        <li>We use secure technologies and best practices to protect your data.</li>
+      </ul>
+      
+      <h3>Your Rights</h3>
+      <ul>
+        <li>You may request to access, modify, or delete your data by contacting us at <a href="mailto:medswipeapp@gmail.com">medswipeapp@gmail.com</a>.</li>
+      </ul>
+      
+      <h3>Changes to This Policy</h3>
+      <ul>
+        <li>We may update this policy periodically. Continued use of the app constitutes acceptance of any changes.</li>
+      </ul>
+      
+      <p>Contact us: <a href="mailto:medswipeapp@gmail.com">medswipeapp@gmail.com</a></p>
+    </div>
+  </div>
+</div>
+
+ <!-- Forgot Password Modal -->
+<div id="forgotPasswordModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Reset Password</h2>
+      <span class="close-modal">&times;</span>
+    </div>
+    <div class="modal-body">
+      <p>Enter your email address below and we'll send you a link to reset your password.</p>
+      
+      <form id="forgotPasswordForm">
+        <div class="form-group">
+          <label for="resetEmail">Email Address</label>
+          <input type="email" id="resetEmail" required placeholder="Enter your email">
+          <div class="form-error" id="resetEmailError"></div>
+        </div>
+        
+        <div id="resetMessage" class="reset-message"></div>
+        
+        <div class="form-buttons">
+          <button type="submit" id="sendResetLinkBtn" class="auth-primary-btn">Send Reset Link</button>
+          <button type="button" id="cancelResetBtn" class="auth-secondary-btn">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div> 
+
+<!-- Registration Benefits Modal -->
+<div id="registrationBenefitsModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Unlock More with a Free Account</h2>
+      <span class="close-modal">&times;</span>
+    </div>
+    <div class="modal-body">
+      <p>You're just getting started! Create a free account in seconds to unlock these benefits:</p>
+      
+      <div class="benefits-list">
+        <div class="benefit-item">
+          <div class="benefit-icon">🏆</div>
+          <div class="benefit-text">
+            <h3>Leaderboards & Rankings</h3>
+            <p>Compare your progress with other medical professionals</p>
+          </div>
+        </div>
+        
+        <div class="benefit-item">
+          <div class="benefit-icon">🔄</div>
+          <div class="benefit-text">
+            <h3>Spaced Repetition Learning</h3>
+            <p>Optimize your learning with our intelligent review system</p>
+          </div>
+        </div>
+        
+        <div class="benefit-item">
+          <div class="benefit-icon">📊</div>
+          <div class="benefit-text">
+            <h3>Subject-Specific Analytics</h3>
+            <p>Track your performance across different subspecialties</p>
+          </div>
+        </div>
+        
+        <div class="benefit-item">
+          <div class="benefit-icon">💾</div>
+          <div class="benefit-text">
+            <h3>Save Your Progress</h3>
+            <p>Never lose your progress, even when switching devices</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="registration-options">
+        <button id="createAccountBenefitsBtn" class="auth-primary-btn">Create Free Account</button>
+        <button id="continueAsGuestBtn" class="auth-secondary-btn" onclick="document.getElementById('registrationBenefitsModal').style.display='none'; document.getElementById('mainOptions').style.display='flex';">Continue as Guest</button>
+      </div>
+    </div>
+  </div>
+</div>
+  
 </body>
 </html>

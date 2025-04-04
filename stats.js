@@ -65,23 +65,35 @@ async function displayPerformance() {
   const levelProgress = Math.min(100, Math.floor((xpInCurrentLevel / xpRequiredForNextLevel) * 100));
   
   let categoryBreakdown = "";
-  if (stats.categories) {
-    categoryBreakdown = Object.keys(stats.categories).map(cat => {
-      const c = stats.categories[cat];
-      const answered = c.answered;
-      const correct = c.correct;
-      const percent = answered > 0 ? Math.round((correct / answered) * 100) : 0;
-      return `
-        <div class="category-item">
-          <strong>${cat}</strong>: ${correct}/${answered} (${percent}%)
-          <div class="progress-bar-container">
-            <div class="progress-bar" style="width: ${percent}%"></div>
+
+  // Only show detailed category breakdown for registered users
+  if (window.auth && window.auth.currentUser && !window.auth.currentUser.isAnonymous) {
+    if (stats.categories) {
+      categoryBreakdown = Object.keys(stats.categories).map(cat => {
+        const c = stats.categories[cat];
+        const answered = c.answered;
+        const correct = c.correct;
+        const percent = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+        return `
+          <div class="category-item">
+            <strong>${cat}</strong>: ${correct}/${answered} (${percent}%)
+            <div class="progress-bar-container">
+              <div class="progress-bar" style="width: ${percent}%"></div>
+            </div>
           </div>
-        </div>
-      `;
-    }).join("");
+        `;
+      }).join("");
+    } else {
+      categoryBreakdown = "<p>No category data available.</p>";
+    }
   } else {
-    categoryBreakdown = "<p>No category data available.</p>";
+    // For guest users, show registration prompt
+    categoryBreakdown = `
+      <div class="guest-analytics-prompt">
+        <p>Subject-specific analytics are available for registered users only.</p>
+        <button id="registerForAnalyticsBtn" class="start-quiz-btn">Create Free Account</button>
+      </div>
+    `;
   }
   
   document.getElementById("performanceView").innerHTML = `
@@ -166,6 +178,19 @@ async function displayPerformance() {
     document.getElementById("performanceView").style.display = "none";
     document.getElementById("mainOptions").style.display = "flex";
   });
+  
+  // Add event listener for the register button in guest analytics prompt
+  const registerBtn = document.getElementById('registerForAnalyticsBtn');
+  if (registerBtn) {
+    registerBtn.addEventListener('click', function() {
+      document.getElementById("performanceView").style.display = "none";
+      if (typeof window.showRegistrationBenefitsModal === 'function') {
+        window.showRegistrationBenefitsModal();
+      } else if (typeof window.showRegisterForm === 'function') {
+        window.showRegisterForm();
+      }
+    });
+  }
 }
 
 // Load XP Rankings leaderboard with weekly/all-time toggle
@@ -178,7 +203,8 @@ async function loadOverallData() {
   
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
-    if (data.stats) {
+    // Only include EXPLICITLY registered users
+    if (data.stats && data.isRegistered === true) {
       let xp = data.stats.xp || 0;
       const level = data.stats.level || 1;
       
@@ -288,8 +314,9 @@ async function loadStreaksData() {
   
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
-    let streak = data.streaks ? (data.streaks.currentStreak || 0) : 0;
-    if (streak > 0 || true) { // Include all users for comprehensive leaderboard
+    // Only include EXPLICITLY registered users
+    if (data.isRegistered === true) {
+      let streak = data.streaks ? (data.streaks.currentStreak || 0) : 0;
       streakEntries.push({
         uid: docSnap.id,
         username: data.username || "Anonymous",
@@ -369,7 +396,7 @@ async function loadStreaksData() {
   document.getElementById("leaderboardView").innerHTML = html;
   
   // Add event listeners for tabs and back button
-  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData('weekly'); });
+  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
   document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
   document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
   
@@ -390,22 +417,24 @@ async function loadTotalAnsweredData() {
   
   querySnapshot.forEach(docSnap => {
     const data = docSnap.data();
-    let weeklyCount = 0;
-    if (data.answeredQuestions) {
-      for (const key in data.answeredQuestions) {
-        const answer = data.answeredQuestions[key];
-        if (answer.timestamp && answer.timestamp >= weekStart) {
-          weeklyCount++;
+    // Only include EXPLICITLY registered users
+    if (data.isRegistered === true) {
+      let weeklyCount = 0;
+      if (data.answeredQuestions) {
+        for (const key in data.answeredQuestions) {
+          const answer = data.answeredQuestions[key];
+          if (answer.timestamp && answer.timestamp >= weekStart) {
+            weeklyCount++;
+          }
         }
       }
+      
+      answeredEntries.push({
+        uid: docSnap.id,
+        username: data.username || "Anonymous",
+        weeklyCount: weeklyCount
+      });
     }
-    
-    // Include all users for comprehensive leaderboard
-    answeredEntries.push({
-      uid: docSnap.id,
-      username: data.username || "Anonymous",
-      weeklyCount: weeklyCount
-    });
   });
   
   // Sort by weekly count (descending)
@@ -479,7 +508,7 @@ async function loadTotalAnsweredData() {
   document.getElementById("leaderboardView").innerHTML = html;
   
   // Add event listeners for tabs and back button
-  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData('weekly'); });
+  document.getElementById("overallTab").addEventListener("click", function(){ loadOverallData(); });
   document.getElementById("streaksTab").addEventListener("click", function(){ loadStreaksData(); });
   document.getElementById("answeredTab").addEventListener("click", function(){ loadTotalAnsweredData(); });
   
@@ -492,6 +521,18 @@ async function loadTotalAnsweredData() {
 
 // Default function to show leaderboard
 function showLeaderboard() {
+  // Check if user is registered
+  if (window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous) {
+    // Show registration benefits modal instead for guest users
+    if (typeof window.showRegistrationBenefitsModal === 'function') {
+      window.showRegistrationBenefitsModal();
+    } else {
+      alert("Leaderboards are only available for registered users. Please create a free account to access this feature.");
+    }
+    return;
+  }
+  
+  // Continue with showing leaderboard for registered users
   document.querySelector(".swiper").style.display = "none";
   document.getElementById("bottomToolbar").style.display = "none";
   document.getElementById("iconBar").style.display = "none";
@@ -501,9 +542,9 @@ function showLeaderboard() {
   document.getElementById("faqView").style.display = "none";
   document.getElementById("leaderboardView").style.display = "block";
   
-  // Use the loadOverallData function with 'weekly' as default
+  // Use the loadOverallData function from window object
   if (typeof window.loadOverallData === 'function') {
-    window.loadOverallData('weekly');
+    window.loadOverallData();
   } else {
     // Fallback message if function is not available
     document.getElementById("leaderboardView").innerHTML = `

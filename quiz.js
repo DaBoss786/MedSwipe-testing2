@@ -28,6 +28,7 @@ async function fetchQuestionBank() {
 // Load questions according to quiz options
 async function loadQuestions(options = {}) {
   console.log("Loading questions with options:", options);
+  window.isOnboardingQuiz = options.isOnboarding || false;
   Papa.parse(csvUrl, {
     download: true,
     header: true,
@@ -36,6 +37,12 @@ async function loadQuestions(options = {}) {
       allQuestions = results.data;
       const persistentAnsweredIds = await fetchPersistentAnsweredIds();
       answeredIds = persistentAnsweredIds;
+
+      // Check if spaced repetition mode is enabled
+      if (options.spacedRepetition) {
+        await loadQuestionsWithSpacedRepetition(options, allQuestions, answeredIds);
+        return;
+      }
       
       // Start with all questions
       let filtered = allQuestions;
@@ -90,10 +97,116 @@ async function loadQuestions(options = {}) {
   });
 }
 
+// Add this function to quiz.js
+async function loadQuestionsWithSpacedRepetition(options, allQuestions, answeredIds) {
+  try {
+    // Check if the user is anonymous/guest
+    if (window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous) {
+      console.log("Guest user attempted to use spaced repetition");
+      
+      // Disable spaced repetition for guest users
+      options.spacedRepetition = false;
+      
+      // Show registration benefits modal
+      if (typeof window.showRegistrationBenefitsModal === 'function') {
+        window.showRegistrationBenefitsModal();
+      } else {
+        alert("Spaced repetition is available for registered users only. Please create a free account to access this feature.");
+      }
+      
+      // Fall back to regular mode
+      loadQuestions(options);
+      return;
+    }
+    // Get user's spaced repetition data
+    const spacedRepetitionData = await fetchSpacedRepetitionData();
+    if (!spacedRepetitionData) {
+      console.log("No spaced repetition data available, falling back to regular mode");
+      // Fall back to regular mode if no spaced repetition data
+      options.spacedRepetition = false;
+      loadQuestions(options);
+      return;
+    }
+    
+    const now = new Date();
+    
+    // Get questions due for review
+    const dueQuestionIds = Object.keys(spacedRepetitionData).filter(qId => {
+  const data = spacedRepetitionData[qId];
+  const nextReviewDate = new Date(data.nextReviewDate);
+  console.log("Question ID:", qId);
+  console.log("Next review date:", nextReviewDate);
+  console.log("Current date:", now);
+  console.log("Is due?", nextReviewDate <= now);
+  return nextReviewDate <= now;
+});
+    
+    console.log(`Found ${dueQuestionIds.length} questions due for review`);
+    
+    // Get unanswered questions (excluding those already due for review)
+    const unansweredQuestions = allQuestions.filter(q => {
+      const qId = q["Question"].trim();
+      return !answeredIds.includes(qId) && !dueQuestionIds.includes(qId);
+    });
+    
+    // Get due review questions
+    const dueReviewQuestions = allQuestions.filter(q => {
+      const qId = q["Question"].trim();
+      return dueQuestionIds.includes(qId);
+    });
+    
+    console.log(`Found ${unansweredQuestions.length} unanswered questions`);
+    console.log(`Found ${dueReviewQuestions.length} due review questions`);
+    
+    // Apply category filter if needed
+    let filteredUnanswered = unansweredQuestions;
+    let filteredDueReview = dueReviewQuestions;
+    
+    if (options.type === 'custom' && options.category) {
+      filteredUnanswered = filteredUnanswered.filter(q => q["Category"] && q["Category"].trim() === options.category);
+      filteredDueReview = filteredDueReview.filter(q => q["Category"] && q["Category"].trim() === options.category);
+    }
+    
+    // Shuffle both arrays
+    let shuffledUnanswered = shuffleArray(filteredUnanswered);
+    let shuffledDueReview = shuffleArray(filteredDueReview);
+    
+    // Calculate how many to take from each group
+    const totalQuestionsNeeded = options.num || 10;
+    const dueReviewCount = Math.min(shuffledDueReview.length, totalQuestionsNeeded);
+    const unansweredCount = Math.min(shuffledUnanswered.length, totalQuestionsNeeded - dueReviewCount);
+    
+    // Take the needed questions
+    const selectedDueReview = shuffledDueReview.slice(0, dueReviewCount);
+    const selectedUnanswered = shuffledUnanswered.slice(0, unansweredCount);
+    
+    // Combine and shuffle again
+    const combinedQuestions = shuffleArray([...selectedDueReview, ...selectedUnanswered]);
+    
+    console.log(`Selected ${combinedQuestions.length} total questions for spaced repetition quiz`);
+    
+    if (combinedQuestions.length === 0) {
+      alert("No questions available for review or learning at this time. Try disabling spaced repetition or check back later.");
+      document.getElementById("mainOptions").style.display = "flex";
+      return;
+    }
+    
+    // Initialize the quiz with the selected questions
+    initializeQuiz(combinedQuestions);
+    
+  } catch (error) {
+    console.error("Error in spaced repetition mode:", error);
+    alert("There was an error loading questions. Please try again.");
+    document.getElementById("mainOptions").style.display = "flex";
+  }
+}
+
 // Initialize the quiz with the selected questions
 async function initializeQuiz(questions) {
   // Get starting XP before the quiz begins
   try {
+    const isOnboardingQuiz = window.isOnboardingQuiz || false;
+    console.log("Initializing quiz, isOnboarding:", isOnboardingQuiz);
     if (window.auth && window.auth.currentUser) {
       const uid = window.auth.currentUser.uid;
       const userDocRef = window.doc(window.db, 'users', uid);
@@ -205,6 +318,7 @@ async function initializeQuiz(questions) {
   document.getElementById("iconBar").style.display = "flex";
   document.getElementById("aboutView").style.display = "none";
   document.getElementById("faqView").style.display = "none";
+  ensureEventListenersAttached(); // Add this line
 }
 
 // Update the bookmark icon based on the current question's bookmark status
@@ -262,16 +376,89 @@ function addOptionListeners() {
       if (answerSlide) {
         // If this is the last question, add a "View Summary" button directly to the explanation
         if (currentQuestion + 1 === totalQuestions) {
-          answerSlide.querySelector('.card').innerHTML = `
-            <div class="answer">
-              <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
-              Correct Answer: ${correct}<br>
-              ${explanation}
-            </div>
-            <button id="viewSummaryBtn" style="display:block; margin:20px auto; padding:10px 20px; background-color:#0056b3; color:white; border:none; border-radius:5px; cursor:pointer;">
-              Loading Summary...
-            </button>
-          `;
+          // Check if this is the onboarding quiz (window flag set in loadQuestions)
+          if (window.isOnboardingQuiz) {
+            answerSlide.querySelector('.card').innerHTML = `
+              <div class="answer">
+                <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
+                Correct Answer: ${correct}<br>
+                ${explanation}
+              </div>
+              <div class="difficulty-buttons">
+                <p class="difficulty-prompt">How difficult was this question?</p>
+                <div class="difficulty-btn-container">
+                  <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
+                  <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
+                  <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
+                </div>
+              </div>
+              <button id="viewSummaryBtn" style="display:block; margin:20px auto; padding:10px 20px; background-color:#0056b3; color:white; border:none; border-radius:5px; cursor:pointer;">
+                Continue
+              </button>
+            `;
+          } else {
+            // Regular quiz with summary button
+            answerSlide.querySelector('.card').innerHTML = `
+              <div class="answer">
+                <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
+                Correct Answer: ${correct}<br>
+                ${explanation}
+              </div>
+              <div class="difficulty-buttons">
+                <p class="difficulty-prompt">How difficult was this question?</p>
+                <div class="difficulty-btn-container">
+                  <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
+                  <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
+                  <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
+                </div>
+              </div>
+              <button id="viewSummaryBtn" style="display:block; margin:20px auto; padding:10px 20px; background-color:#0056b3; color:white; border:none; border-radius:5px; cursor:pointer;">
+                Loading Summary...
+              </button>
+            `;
+          }
+          
+          // Add click handlers for difficulty buttons
+          const difficultyButtons = answerSlide.querySelectorAll('.difficulty-btn');
+          difficultyButtons.forEach(btn => {
+            btn.addEventListener('click', async function() {
+              // Remove selected class from all buttons
+              difficultyButtons.forEach(b => b.classList.remove('selected'));
+              // Add selected class to clicked button
+              this.classList.add('selected');
+              
+              const difficulty = this.getAttribute('data-difficulty');
+              const questionId = questionSlide.dataset.id;
+              
+              // Calculate next review date based on difficulty and correctness
+              let nextReviewInterval = 1; // Default 1 day
+              
+              if (isCorrect) {
+                if (difficulty === 'easy') {
+                  nextReviewInterval = 7; // 7 days
+                } else if (difficulty === 'medium') {
+                  nextReviewInterval = 3; // 3 days
+                } else if (difficulty === 'hard') {
+                  nextReviewInterval = 1; // 1 day
+                }
+              } else {
+                // If answered incorrectly, review it soon regardless of rating
+                nextReviewInterval = 1; // 1 day
+              }
+              
+              // Store the spaced repetition data
+              await updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval);
+              
+              // Show feedback to the user
+              const feedbackEl = document.createElement('p');
+              feedbackEl.className = 'review-scheduled';
+              feedbackEl.textContent = `Review scheduled in ${nextReviewInterval} ${nextReviewInterval === 1 ? 'day' : 'days'}`;
+              this.closest('.difficulty-buttons').appendChild(feedbackEl);
+              
+              // Disable all buttons after selection
+              difficultyButtons.forEach(b => b.disabled = true);
+            });
+          });
           
           // Process the answer
           currentQuestion++;
@@ -282,8 +469,30 @@ function addOptionListeners() {
           await recordAnswer(qId, category, isCorrect, timeSpent);
           await updateQuestionStats(qId, isCorrect);
           
-          // Prepare and show the summary button once data is loaded
-          prepareSummary();
+          // For onboarding quiz, prepare to show registration benefits
+          if (window.isOnboardingQuiz) {
+            const viewSummaryBtn = document.getElementById('viewSummaryBtn');
+            if (viewSummaryBtn) {
+              viewSummaryBtn.textContent = "Continue";
+              viewSummaryBtn.addEventListener('click', function() {
+                // Hide the quiz
+                document.querySelector(".swiper").style.display = "none";
+                document.getElementById("bottomToolbar").style.display = "none";
+                document.getElementById("iconBar").style.display = "none";
+                
+                // Show the registration benefits modal
+                if (typeof window.showRegistrationBenefitsModal === 'function') {
+                  window.showRegistrationBenefitsModal();
+                } else {
+                  // Fallback if function isn't available
+                  document.getElementById("mainOptions").style.display = "flex";
+                }
+              });
+            }
+          } else {
+            // Prepare regular summary for normal quizzes
+            prepareSummary();
+          }
         } else {
           // Regular question (not the last one)
           answerSlide.querySelector('.card').innerHTML = `
@@ -292,8 +501,58 @@ function addOptionListeners() {
               Correct Answer: ${correct}<br>
               ${explanation}
             </div>
+            <div class="difficulty-buttons">
+              <p class="difficulty-prompt">How difficult was this question?</p>
+              <div class="difficulty-btn-container">
+                <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
+                <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
+                <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
+              </div>
+            </div>
             <p class="swipe-next-hint">Swipe up for next question</p>
           `;
+          
+          // Add click handlers for difficulty buttons
+          const difficultyButtons = answerSlide.querySelectorAll('.difficulty-btn');
+          difficultyButtons.forEach(btn => {
+            btn.addEventListener('click', async function() {
+              // Remove selected class from all buttons
+              difficultyButtons.forEach(b => b.classList.remove('selected'));
+              // Add selected class to clicked button
+              this.classList.add('selected');
+              
+              const difficulty = this.getAttribute('data-difficulty');
+              const questionId = questionSlide.dataset.id;
+              
+              // Calculate next review date based on difficulty and correctness
+              let nextReviewInterval = 1; // Default 1 day
+              
+              if (isCorrect) {
+                if (difficulty === 'easy') {
+                  nextReviewInterval = 7; // 7 days
+                } else if (difficulty === 'medium') {
+                  nextReviewInterval = 3; // 3 days
+                } else if (difficulty === 'hard') {
+                  nextReviewInterval = 1; // 1 day
+                }
+              } else {
+                // If answered incorrectly, review it soon regardless of rating
+                nextReviewInterval = 1; // 1 day
+              }
+              
+              // Store the spaced repetition data
+              await updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval);
+              
+              // Show feedback to the user
+              const feedbackEl = document.createElement('p');
+              feedbackEl.className = 'review-scheduled';
+              feedbackEl.textContent = `Review scheduled in ${nextReviewInterval} ${nextReviewInterval === 1 ? 'day' : 'days'}`;
+              this.closest('.difficulty-buttons').appendChild(feedbackEl);
+              
+              // Disable all buttons after selection
+              difficultyButtons.forEach(b => b.disabled = true);
+            });
+          });
           
           currentQuestion++;
           if (isCorrect) { score++; }
@@ -480,6 +739,7 @@ function showSummary() {
     document.getElementById("performanceView").style.display = "none";
     document.getElementById("leaderboardView").style.display = "none";
     document.getElementById("mainOptions").style.display = "flex";
+    ensureEventListenersAttached(); // Add this line
   });
   
   document.getElementById("leaderboardButton").addEventListener("click", function() {
@@ -492,6 +752,7 @@ function showSummary() {
     document.getElementById("faqView").style.display = "none";
     document.getElementById("mainOptions").style.display = "none";
     showLeaderboard();
+    ensureEventListenersAttached(); // Add this line
   });
 }
 
