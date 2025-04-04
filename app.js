@@ -1256,6 +1256,7 @@ async function countDueReviews() {
   }
 }
 
+// Function to update the Review Queue card in the dashboard
 async function updateReviewQueue() {
   const reviewCount = document.getElementById("reviewCount");
   const reviewQueueContent = document.getElementById("reviewQueueContent");
@@ -1267,69 +1268,80 @@ async function updateReviewQueue() {
   const isAnonymous = window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous;
   
   if (isAnonymous) {
-    // Guest user - show registration prompt
-    reviewQueueContent.innerHTML = `
-      <div class="review-empty-state guest-analytics-prompt">
-        <p>Spaced repetition review is available for registered users only.</p>
-        <p>Create a free account to unlock this feature!</p>
-      </div>
-    `;
-    reviewCount.textContent = "0";
-    reviewProgressBar.style.width = "0%";
+    // Guest user - show registration prompt instead of reviews
     
+    // Clear existing content first
+    reviewQueueContent.innerHTML = '';
+    
+    // Create registration prompt
+    const registrationPrompt = document.createElement("div");
+    registrationPrompt.className = "review-empty-state guest-analytics-prompt";
+    registrationPrompt.innerHTML = `
+      <p>Spaced repetition review is available for registered users only.</p>
+      <p>Create a free account to unlock this feature!</p>
+    `;
+    
+    // Add to the content
+    reviewQueueContent.appendChild(registrationPrompt);
+    
+    // Update footer text
     const footerText = document.querySelector("#reviewQueueCard .card-footer span:first-child");
     if (footerText) {
       footerText.textContent = "Register to Access";
     }
+    
+    // Reset count and progress bar
+    reviewCount.textContent = "0";
+    reviewProgressBar.style.width = "0%";
+    
     return;
   }
   
-  // Registered user logic
-  try {
-    const { dueCount, nextReviewDate } = await countDueReviews();
-    
-    // Update count and progress bar
+  // Regular functionality for registered users continues below
+  // Get count of due reviews
+  const { dueCount, nextReviewDate } = await countDueReviews();
+  
+  if (dueCount > 0) {
+    // Update the count and progress bar
     reviewCount.textContent = dueCount;
+    
+    // Simple progress calculation - assuming most people won't have more than 20 reviews
     const progressPercent = Math.min(100, (dueCount / 20) * 100);
     reviewProgressBar.style.width = `${progressPercent}%`;
     
-    // Update content based on due count
-    if (dueCount > 0) {
-      reviewQueueContent.innerHTML = `
-        <div class="review-stats">
-          <div class="review-count">${dueCount}</div>
-          <div class="review-label">questions due for review</div>
-        </div>
-        <div class="review-progress-container">
-          <div class="review-progress-bar" style="width: ${progressPercent}%"></div>
-        </div>
-      `;
-    } else {
-      reviewQueueContent.innerHTML = `
-        <div class="review-empty-state">
-          <p>No questions due for review today.</p>
-          ${nextReviewDate ? 
-            `<p>Next scheduled review: <span class="next-review-date">${nextReviewDate.toLocaleDateString()}</span></p>` : 
-            '<p>Complete more quizzes to start your spaced repetition journey.</p>'
-          }
-        </div>
-      `;
+    // Clear any previous empty state message
+    const existingEmptyState = reviewQueueContent.querySelector(".review-empty-state");
+    if (existingEmptyState) {
+      existingEmptyState.remove();
     }
-    
-    // Ensure the footer shows 'Start Review'
-    const footerText = document.querySelector("#reviewQueueCard .card-footer span:first-child");
-    if (footerText) {
-      footerText.textContent = "Start Review";
-    }
-  } catch (error) {
-    console.error("Error updating review queue:", error);
-    reviewQueueContent.innerHTML = `
-      <div class="review-empty-state">
-        <p>Error loading review queue</p>
-      </div>
-    `;
+  } else {
+    // No reviews due - show empty state
     reviewCount.textContent = "0";
     reviewProgressBar.style.width = "0%";
+    
+    // Check if empty state message already exists
+    let emptyState = reviewQueueContent.querySelector(".review-empty-state");
+    
+    if (!emptyState) {
+      // Create empty state message
+      emptyState = document.createElement("div");
+      emptyState.className = "review-empty-state";
+      
+      if (nextReviewDate) {
+        const formattedDate = nextReviewDate.toLocaleDateString();
+        emptyState.innerHTML = `No reviews due today.<br>Next review: <span class="next-review-date">${formattedDate}</span>`;
+      } else {
+        emptyState.textContent = "No reviews scheduled. Complete more quizzes to add reviews.";
+      }
+      
+      // Insert after review stats
+      const reviewStats = reviewQueueContent.querySelector(".review-stats");
+      if (reviewStats) {
+        reviewStats.insertAdjacentElement('afterend', emptyState);
+      } else {
+        reviewQueueContent.appendChild(emptyState);
+      }
+    }
   }
 }
 
