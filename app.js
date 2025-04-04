@@ -1256,7 +1256,8 @@ async function countDueReviews() {
   }
 }
 
-function updateReviewQueue() {
+// Function to update the Review Queue card in the dashboard
+async function updateReviewQueue() {
   const reviewCount = document.getElementById("reviewCount");
   const reviewQueueContent = document.getElementById("reviewQueueContent");
   const reviewProgressBar = document.getElementById("reviewProgressBar");
@@ -1308,35 +1309,40 @@ function updateReviewQueue() {
     const progressPercent = Math.min(100, (dueCount / 20) * 100);
     reviewProgressBar.style.width = `${progressPercent}%`;
     
-    // Update content with more detailed review information
-    reviewQueueContent.innerHTML = `
-      <div class="review-stats">
-        <div class="review-count">${dueCount}</div>
-        <div class="review-label">questions due for review</div>
-      </div>
-      <div class="review-progress-container">
-        <div class="review-progress-bar" style="width: ${progressPercent}%"></div>
-      </div>
-    `;
+    // Clear any previous empty state message
+    const existingEmptyState = reviewQueueContent.querySelector(".review-empty-state");
+    if (existingEmptyState) {
+      existingEmptyState.remove();
+    }
   } else {
     // No reviews due - show empty state
     reviewCount.textContent = "0";
     reviewProgressBar.style.width = "0%";
     
-    // Create detailed empty state message for registered users
-    reviewQueueContent.innerHTML = `
-      <div class="review-empty-state">
-        <p>No questions due for review today.</p>
-        ${nextReviewDate ? 
-          `<p>Next scheduled review: <span class="next-review-date">${nextReviewDate.toLocaleDateString()}</span></p>` : 
-          '<p>Complete more quizzes to start your spaced repetition journey.</p>'
-        }
-      </div>
-    `;
+    // Check if empty state message already exists
+    let emptyState = reviewQueueContent.querySelector(".review-empty-state");
+    
+    if (!emptyState) {
+      // Create empty state message
+      emptyState = document.createElement("div");
+      emptyState.className = "review-empty-state";
+      
+      if (nextReviewDate) {
+        const formattedDate = nextReviewDate.toLocaleDateString();
+        emptyState.innerHTML = `No reviews due today.<br>Next review: <span class="next-review-date">${formattedDate}</span>`;
+      } else {
+        emptyState.textContent = "No reviews scheduled. Complete more quizzes to add reviews.";
+      }
+      
+      // Insert after review stats
+      const reviewStats = reviewQueueContent.querySelector(".review-stats");
+      if (reviewStats) {
+        reviewStats.insertAdjacentElement('afterend', emptyState);
+      } else {
+        reviewQueueContent.appendChild(emptyState);
+      }
+    }
   }
-  
-  // Ensure review queue looks consistent and informative
-  reviewQueueContent.classList.add('review-queue-content');
 }
 
 // Set up event listeners for dashboard
