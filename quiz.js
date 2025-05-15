@@ -86,11 +86,14 @@ async function loadQuestions(options = {}) {
 
         // 1. Filter for CME Eligible if it's a CME quiz
         if (options.quizType === 'cme') {
-            filteredQuestions = filteredQuestions.filter(q =>
-                q["CME Eligible"] && q["CME Eligible"].trim().toLowerCase() === 'yes'
-            );
-            console.log("Questions after CME Eligible filter:", filteredQuestions.length);
-        }
+          filteredQuestions = filteredQuestions.filter(q => {
+              const cmeEligibleValue = q["CME Eligible"];
+              // Handle both boolean true and string "yes" (case-insensitive)
+              return (typeof cmeEligibleValue === 'boolean' && cmeEligibleValue === true) ||
+                     (typeof cmeEligibleValue === 'string' && String(cmeEligibleValue).trim().toLowerCase() === 'yes');
+          });
+          console.log("Questions after CME Eligible filter:", filteredQuestions.length);
+      }
 
         // 2. Filter by Bookmarks (only if specified, overrides other filters except CME eligibility)
         if (options.bookmarksOnly) {
