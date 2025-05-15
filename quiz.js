@@ -360,9 +360,10 @@ async function initializeQuiz(questions, quizType = 'regular') {
     questionSlide.dataset.explanation = question["Explanation"];
     questionSlide.dataset.category = question["Category"] || "Uncategorized";
     questionSlide.dataset.bookmarked = bookmarks.includes(qId) ? "true" : "false";
-    questionSlide.dataset.cmeEligible = (question["CME Eligible"] && question["CME Eligible"].trim().toLowerCase() === 'yes') ? "true" : "false";
-
-    const isCME = question["CME Eligible"] && question["CME Eligible"].trim().toLowerCase() === 'yes';
+    const cmeEligibleValue = question["CME Eligible"];
+  const isCME = typeof cmeEligibleValue === 'boolean' ? cmeEligibleValue : (cmeEligibleValue && String(cmeEligibleValue).trim().toLowerCase() === 'yes');
+  
+  questionSlide.dataset.cmeEligible = isCME ? "true" : "false";
 
     questionSlide.innerHTML = `
       <div class="card">
