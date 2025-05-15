@@ -3579,7 +3579,12 @@ async function populateCmeCategoryDropdown() {
         const allQuestions = await fetchQuestionBank(); // Assuming fetchQuestionBank is globally available or defined in this file
 
         // Filter for CME eligible questions first
-        const cmeEligibleQuestions = allQuestions.filter(q => q["CME Eligible"] && q["CME Eligible"].trim().toLowerCase() === 'yes');
+        const cmeEligibleQuestions = allQuestions.filter(q => {
+          const cmeEligibleValue = q["CME Eligible"];
+          // Handle both boolean true and string "yes" (case-insensitive)
+          return (typeof cmeEligibleValue === 'boolean' && cmeEligibleValue === true) ||
+                 (typeof cmeEligibleValue === 'string' && cmeEligibleValue.trim().toLowerCase() === 'yes');
+      });
 
         // Get unique categories from CME-eligible questions
         const categories = [...new Set(cmeEligibleQuestions
@@ -3666,9 +3671,12 @@ async function loadCmeDashboardData() {
       const uniqueCmeAnsweredCount = Object.keys(cmeAnsweredQuestionsMap).length; // Count unique answered
 
       // --- Process Question Bank Data ---
-      const cmeEligibleQuestions = allQuestions.filter(q =>
-          q["CME Eligible"] && q["CME Eligible"].trim().toLowerCase() === 'yes'
-      );
+      const cmeEligibleQuestions = allQuestions.filter(q => {
+        const cmeEligibleValue = q["CME Eligible"];
+        // Handle both boolean true and string "yes" (case-insensitive)
+        return (typeof cmeEligibleValue === 'boolean' && cmeEligibleValue === true) ||
+               (typeof cmeEligibleValue === 'string' && cmeEligibleValue.trim().toLowerCase() === 'yes');
+    });
       const totalCmeEligibleInBank = cmeEligibleQuestions.length;
 
       // --- Calculate Remaining Questions ---
