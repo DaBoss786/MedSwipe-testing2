@@ -4314,3 +4314,206 @@ html, body {
 #cmeHistoryModalBody {
     padding-bottom: 20px;
 }
+
+/* ========================== */
+/* == New Paywall Screen CSS == */
+/* ========================== */
+
+.paywall-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #f0f4f8; /* Light neutral background */
+  z-index: 9600; /* High z-index, below onboarding loading but above most things */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; /* Center content vertically */
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto; /* Allow scrolling on smaller screens */
+  text-align: center;
+}
+
+.paywall-content {
+  width: 100%;
+  max-width: 700px; /* Max width for the content area */
+  margin: auto; /* Center the content block */
+}
+
+.paywall-logo {
+  width: 150px; /* Adjust as needed */
+  max-width: 40%;
+  margin-bottom: 20px;
+}
+
+.paywall-title {
+  font-size: 1.8rem; /* Adjust as needed */
+  font-weight: 600;
+  color: #0C72D3; /* MedSwipe blue */
+  margin-bottom: 10px;
+}
+
+.paywall-subtitle {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 30px;
+}
+
+.paywall-options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Space between cards */
+}
+
+.paywall-option-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  text-align: left; /* Align text inside cards to the left */
+  position: relative; /* For badge positioning */
+  border: 1px solid #e0e0e0;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.paywall-option-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.paywall-option-card h2 {
+  font-size: 1.4rem;
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.paywall-option-card .price-highlight {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #0C72D3;
+  margin-bottom: 15px;
+  display: block;
+}
+
+.paywall-option-card .price-details {
+  font-size: 0.9rem;
+  font-weight: normal;
+  color: #777;
+}
+
+.paywall-option-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px 0;
+}
+
+.paywall-option-card li {
+  font-size: 0.95rem;
+  color: #444;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.paywall-option-card .check-icon {
+  color: #28a745; /* Green check */
+  margin-right: 8px;
+  font-weight: bold;
+}
+.paywall-option-card .cross-icon {
+  color: #dc3545; /* Red cross */
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+
+.paywall-select-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #fff;
+  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  margin-top: 15px;
+}
+
+.paywall-select-btn:hover {
+  background: linear-gradient(135deg, #0056b3 0%, #0C72D3 100%);
+}
+
+.paywall-continue-guest-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #0C72D3;
+  background-color: #ffffff;
+  border: 1px solid #0C72D3;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  margin-top: 15px;
+}
+
+.paywall-continue-guest-btn:hover {
+  background-color: #e6f0fa; /* Light blue hover */
+}
+
+.card-badge {
+  position: absolute;
+  top: -10px; /* Position slightly above the card */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ffc107; /* Yellow for popular */
+  color: #333;
+  padding: 5px 15px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  border-radius: 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Specific card styling if needed */
+.board-review-card {
+  border-top: 4px solid #0C72D3; /* Blue accent */
+}
+.cme-module-card {
+  border-top: 4px solid #28a745; /* Green accent */
+}
+.free-access-card {
+  border-top: 4px solid #6c757d; /* Grey accent */
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 600px) {
+  .paywall-title {
+    font-size: 1.5rem;
+  }
+  .paywall-subtitle {
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+  }
+  .paywall-option-card {
+    padding: 20px;
+  }
+  .paywall-option-card h2 {
+    font-size: 1.2rem;
+  }
+  .paywall-option-card .price-highlight {
+    font-size: 1.1rem;
+  }
+  .paywall-select-btn, .paywall-continue-guest-btn {
+    font-size: 1rem;
+    padding: 10px;
+  }
+}

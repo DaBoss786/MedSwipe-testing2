@@ -106,6 +106,56 @@
     <p>Logging in...</p>
   </div>
 </div>
+
+<!-- ========================== -->
+<!-- == New Paywall Screen == -->
+<!-- ========================== -->
+<div id="newPaywallScreen" class="paywall-screen" style="display: none;">
+  <div class="paywall-content">
+    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="paywall-logo">
+    <h1 class="paywall-title">Choose Your MedSwipe Experience</h1>
+    <p class="paywall-subtitle">Select the plan that best fits your learning goals.</p>
+
+    <div class="paywall-options-container">
+      <!-- Option 1: Board Review Access -->
+      <div class="paywall-option-card board-review-card">
+        <div class="card-badge popular-badge">MOST POPULAR</div>
+        <h2>Board Review Access</h2>
+        <p class="price-highlight">$X one-time <span class="price-details">(or subscription)</span></p>
+        <ul>
+          <li><span class="check-icon">✔</span> 300+ board-style questions</li>
+          <li><span class="check-icon">✔</span> Leaderboards, spaced repetition</li>
+          <li><span class="check-icon">✔</span> Lifetime access</li> <!-- This will be updated to subscription later -->
+        </ul>
+        <button id="unlockBoardReviewBtn" class="paywall-select-btn">Select Plan</button>
+      </div>
+
+      <!-- Option 2: CME Module -->
+      <div class="paywall-option-card cme-module-card">
+        <h2>CME Module</h2>
+        <p class="price-highlight">$179/year <span class="price-details">or $8 per credit</span></p>
+        <ul>
+          <li><span class="check-icon">✔</span> Includes everything in Board Review</li>
+          <li><span class="check-icon">✔</span> Earn up to 25 AMA PRA Category 1 CME Credits</li>
+          <li><span class="check-icon">✔</span> Track credits & download certificates</li>
+        </ul>
+        <button id="exploreCmeModuleBtn" class="paywall-select-btn">Select Plan</button>
+      </div>
+
+      <!-- Option 3: Free Access -->
+      <div class="paywall-option-card free-access-card">
+        <h2>Free Access <span class="price-details">(limited features)</span></h2>
+        <ul>
+          <li><span class="check-icon">✔</span> 50+ anatomy & general ENT questions</li>
+          <li><span class="check-icon">✔</span> Basic quiz functionality</li>
+          <li><span class="cross-icon">✖</span> No leaderboards or advanced analytics</li>
+          <li><span class="cross-icon">✖</span> No spaced repetition</li>
+        </ul>
+        <button id="continueFreeAccessBtn" class="paywall-continue-guest-btn">Continue as Guest</button>
+      </div>
+    </div>
+  </div>
+</div>
   
   <!-- Top Toolbar -->
   <div class="toolbar">
