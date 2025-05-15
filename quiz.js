@@ -622,9 +622,20 @@ function addOptionListeners() {
                               if (swiperElement) swiperElement.style.display = "none";
                               if (bottomToolbar) bottomToolbar.style.display = "none";
                               if (iconBar) iconBar.style.display = "none";
-                              if (typeof window.showRegistrationBenefitsModal === 'function') {
-                                  window.showRegistrationBenefitsModal();
-                              }
+                                                        // Hide quiz elements
+                          const mainOptions = document.getElementById("mainOptions"); // Get main options
+                          if (mainOptions) mainOptions.style.display = "none"; // Ensure main options are hidden
+
+                          // Show the new paywall screen
+                          const newPaywallScreen = document.getElementById("newPaywallScreen");
+                          if (newPaywallScreen) {
+                              newPaywallScreen.style.display = "flex"; // Or "block" if you prefer
+                              console.log("Showing new paywall screen after onboarding.");
+                          } else {
+                              console.error("New paywall screen element not found!");
+                              // Fallback: show main options if paywall is missing
+                              if (mainOptions) mainOptions.style.display = "flex";
+                          }
                           });
                           // --- End Onboarding Action ---
 
