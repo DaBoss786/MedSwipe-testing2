@@ -4251,3 +4251,47 @@ if (cmeLearnMoreModal) {
        }
    });
 }
+
+// --- Board Review Pricing Screen Tab Logic ---
+const brMonthlyBtn = document.getElementById('brMonthlyBtn');
+const br3MonthBtn = document.getElementById('br3MonthBtn');
+const brAnnualBtn = document.getElementById('brAnnualBtn');
+
+const brMonthlyContent = document.getElementById('brMonthlyContent');
+const br3MonthContent = document.getElementById('br3MonthContent');
+const brAnnualContent = document.getElementById('brAnnualContent');
+
+// Helper function to update view
+function updateBoardReviewPricingView(selectedPlan) {
+    // Content visibility
+    if (brMonthlyContent) brMonthlyContent.style.display = (selectedPlan === 'monthly') ? 'block' : 'none';
+    if (br3MonthContent) br3MonthContent.style.display = (selectedPlan === '3-month') ? 'block' : 'none';
+    if (brAnnualContent) brAnnualContent.style.display = (selectedPlan === 'annual') ? 'block' : 'none';
+
+    // Button active states
+    if (brMonthlyBtn) brMonthlyBtn.classList.toggle('active', selectedPlan === 'monthly');
+    if (br3MonthBtn) br3MonthBtn.classList.toggle('active', selectedPlan === '3-month');
+    if (brAnnualBtn) brAnnualBtn.classList.toggle('active', selectedPlan === 'annual');
+
+    console.log(`Board Review pricing view updated to: ${selectedPlan}`);
+}
+
+// Event Listeners for tab buttons
+if (brMonthlyBtn) {
+    brMonthlyBtn.addEventListener('click', function() {
+        updateBoardReviewPricingView('monthly');
+    });
+}
+
+if (br3MonthBtn) {
+    br3MonthBtn.addEventListener('click', function() {
+        updateBoardReviewPricingView('3-month');
+    });
+}
+
+if (brAnnualBtn) {
+    brAnnualBtn.addEventListener('click', function() {
+        updateBoardReviewPricingView('annual');
+    });
+}
+// --- End Board Review Pricing Screen Tab Logic ---
