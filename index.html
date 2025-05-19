@@ -156,6 +156,63 @@
     </div>
   </div>
 </div>
+
+<!-- =================================== -->
+<!-- == Board Review Pricing Screen == -->
+<!-- =================================== -->
+<div id="boardReviewPricingScreen" class="pricing-screen-general" style="display: none;">
+  <button id="boardReviewPricingBackBtn" class="cme-back-btn">← Back to Plans</button> <!-- Re-use cme-back-btn style -->
+
+  <div class="pricing-content-general">
+    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="pricing-logo-general">
+    <h1 class="pricing-title-general">Board Review Access</h1>
+    <p class="pricing-subtitle-general">Unlock the full question bank, leaderboards, and advanced analytics.</p>
+
+    <div class="pricing-toggle-general">
+      <button id="brMonthlyBtn" class="toggle-btn-general">MONTHLY</button>
+      <button id="br3MonthBtn" class="toggle-btn-general">3-MONTH</button>
+      <button id="brAnnualBtn" class="toggle-btn-general active">ANNUAL</button> <!-- Annual active by default -->
+    </div>
+
+    <!-- Monthly Plan Details -->
+    <div id="brMonthlyContent" class="pricing-plan-content" style="display: none;">
+      <div class="price-display-general">$15<span class="price-interval-general">/month</span></div>
+      <ul class="feature-list-general">
+        <li><span class="check-icon">✔</span> Full Question Bank Access</li>
+        <li><span class="check-icon">✔</span> Leaderboards & Spaced Repetition</li>
+        <li><span class="check-icon">✔</span> Advanced Category Analytics</li>
+        <li><span class="check-icon">✔</span> Billed monthly, cancel anytime</li>
+      </ul>
+      <button id="checkoutBrMonthlyBtn" class="auth-primary-btn pricing-checkout-btn-general">Subscribe Monthly</button>
+    </div>
+
+    <!-- 3-Month Plan Details -->
+    <div id="br3MonthContent" class="pricing-plan-content" style="display: none;">
+      <div class="price-display-general">$40<span class="price-interval-general">/3 months</span></div>
+      <p class="price-savings-general">(Save over 10% vs. monthly!)</p>
+      <ul class="feature-list-general">
+        <li><span class="check-icon">✔</span> Full Question Bank Access</li>
+        <li><span class="check-icon">✔</span> Leaderboards & Spaced Repetition</li>
+        <li><span class="check-icon">✔</span> Advanced Category Analytics</li>
+        <li><span class="check-icon">✔</span> Billed every 3 months, auto-renews</li>
+      </ul>
+      <button id="checkoutBr3MonthBtn" class="auth-primary-btn pricing-checkout-btn-general">Subscribe 3-Month</button>
+    </div>
+
+    <!-- Annual Plan Details -->
+    <div id="brAnnualContent" class="pricing-plan-content" style="display: block;"> <!-- Visible by default -->
+      <div class="price-display-general">$149<span class="price-interval-general">/year</span></div>
+      <p class="price-savings-general">(Best Value! Save over 15% vs. monthly!)</p>
+      <ul class="feature-list-general">
+        <li><span class="check-icon">✔</span> Full Question Bank Access</li>
+        <li><span class="check-icon">✔</span> Leaderboards & Spaced Repetition</li>
+        <li><span class="check-icon">✔</span> Advanced Category Analytics</li>
+        <li><span class="check-icon">✔</span> Billed annually, auto-renews</li>
+      </ul>
+      <button id="checkoutBrAnnualBtn" class="auth-primary-btn pricing-checkout-btn-general">Subscribe Annually</button>
+    </div>
+  </div>
+</div>
   
   <!-- Top Toolbar -->
   <div class="toolbar">

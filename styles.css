@@ -4517,3 +4517,174 @@ html, body {
     padding: 10px;
   }
 }
+
+/* ===================================== */
+/* == General Pricing Screen Styles == */
+/* ===================================== */
+
+.pricing-screen-general {
+  display: none; /* Hidden by default */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #f8f9fa; /* Consistent light background */
+  z-index: 9700; /* High z-index */
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  display: flex; /* Using flex for main layout */
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Back button styling (re-uses .cme-back-btn if suitable, or define new) */
+/* .cme-back-btn is already defined, ensure it's suitable or create a new one */
+/* Example: #boardReviewPricingBackBtn {} */
+
+.pricing-content-general {
+  width: 100%;
+  max-width: 550px; /* Slightly wider for more content */
+  margin-top: 60px; /* Space for back button */
+  padding-bottom: 30px; /* Space at the bottom */
+}
+
+.pricing-logo-general {
+  width: 130px; /* Adjust as needed */
+  max-width: 35%;
+  margin-bottom: 15px;
+}
+
+.pricing-title-general {
+  font-size: 1.7rem; /* Adjust as needed */
+  font-weight: 600;
+  color: #0C72D3;
+  margin-bottom: 8px;
+}
+
+.pricing-subtitle-general {
+  font-size: 0.95rem;
+  color: #555;
+  margin-bottom: 25px;
+  max-width: 450px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pricing-toggle-general {
+  display: inline-flex;
+  border: 1px solid #0C72D3;
+  border-radius: 50px;
+  overflow: hidden;
+  background-color: #fff;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.toggle-btn-general {
+  padding: 10px 20px; /* Adjust padding */
+  border: none;
+  background-color: transparent;
+  color: #0C72D3;
+  cursor: pointer;
+  font-size: 0.9rem; /* Adjust font size */
+  font-weight: 500;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  border-radius: 0; /* Remove individual radius */
+}
+
+.toggle-btn-general.active {
+  background-color: #0C72D3;
+  color: #fff;
+  border-radius: 50px; /* Apply radius only to active */
+  box-shadow: 0 2px 5px rgba(12, 114, 211, 0.3);
+}
+
+.pricing-plan-content {
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 25px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+  border: 1px solid #e7e7e7;
+}
+
+.price-display-general {
+  font-size: 2.5rem; /* Large price */
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.price-interval-general {
+  font-size: 1rem;
+  font-weight: normal;
+  color: #666;
+  margin-left: 5px;
+}
+
+.price-savings-general {
+  font-size: 0.9rem;
+  color: #28a745; /* Green for savings */
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.feature-list-general {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 25px 0;
+  text-align: left;
+  display: inline-block; /* To center the block of list items */
+}
+
+.feature-list-general li {
+  font-size: 1rem; /* Standard feature text size */
+  color: #444;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.feature-list-general .check-icon { /* Re-use existing check-icon style */
+  color: #28a745;
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+.pricing-checkout-btn-general {
+  /* Re-uses .auth-primary-btn styles, can add specifics if needed */
+  width: 100%;
+  max-width: 320px; /* Max width for checkout button */
+  padding: 14px; /* Generous padding */
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .pricing-content-general {
+    margin-top: 50px; /* Ensure back button doesn't overlap */
+  }
+  .pricing-title-general {
+    font-size: 1.5rem;
+  }
+  .pricing-subtitle-general {
+    font-size: 0.9rem;
+  }
+  .toggle-btn-general {
+    padding: 8px 15px;
+    font-size: 0.85rem;
+  }
+  .price-display-general {
+    font-size: 2rem;
+  }
+  .feature-list-general li {
+    font-size: 0.9rem;
+  }
+  .pricing-checkout-btn-general {
+    font-size: 1rem;
+    padding: 12px;
+  }
+}
