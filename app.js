@@ -602,23 +602,32 @@ function showLoginForm(fromWelcomeScreen = false) {
 window.showLoginForm = showLoginForm;
 
 // Function to show the registration form modal
-function showRegisterForm() {
+// Function to show the registration form modal
+function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter, default to 'dashboard'
   // Create registration modal if it doesn't exist
   let registerModal = document.getElementById('registerModal');
-  
+  let modalTitle = "Create MedSwipe Account"; // Default title
+
+  if (nextStep === 'board_review_pricing') {
+    modalTitle = "Register for Board Review Access";
+  } else if (nextStep === 'cme_pricing') {
+    modalTitle = "Register for CME Module Access";
+  }
+  // Add more conditions here if you have other registration flows in the future
+
   if (!registerModal) {
     registerModal = document.createElement('div');
     registerModal.id = 'registerModal';
     registerModal.className = 'auth-modal';
-    
+
     registerModal.innerHTML = `
   <div class="auth-modal-content">
     <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="auth-logo">
-    <h2>Create MedSwipe Account</h2>
+    <h2 id="registerModalTitle">${modalTitle}</h2> {/* Use an ID for the title */}
     <div id="registerError" class="auth-error"></div>
     <form id="registerForm">
       <div class="form-group">
-        <label for="registerUsername">Username</label>
+        <label for="registerUsername">Username (for Leaderboards)</label> {/* Updated label */}
         <input type="text" id="registerUsername" required>
       </div>
       <div class="form-group">
@@ -643,15 +652,15 @@ function showRegisterForm() {
         <small>Password must be at least 6 characters</small>
       </div>
       <div class="form-group terms-container">
-  <div class="terms-checkbox">
-    <input type="checkbox" id="agreeTerms" required>
-    <label for="agreeTerms">
-      I agree to the <a href="#" id="registerViewTOS">Terms of Service</a> and 
-      <a href="#" id="registerViewPrivacy">Privacy Policy</a>
-    </label>
-  </div>
-  <div class="form-error" id="termsError"></div>
-</div>
+        <div class="terms-checkbox">
+          <input type="checkbox" id="agreeTerms" required>
+          <label for="agreeTerms">
+            I agree to the <a href="#" id="registerViewTOS">Terms of Service</a> and
+            <a href="#" id="registerViewPrivacy">Privacy Policy</a>
+          </label>
+        </div>
+        <div class="form-error" id="termsError"></div>
+      </div>
       <div class="auth-buttons">
         <button type="submit" class="auth-primary-btn">Create Account</button>
         <button type="button" id="goToLoginBtn" class="auth-secondary-btn">I Already Have an Account</button>
@@ -660,56 +669,143 @@ function showRegisterForm() {
     <button id="closeRegisterBtn" class="auth-close-btn">×</button>
   </div>
 `;
-    
+
     document.body.appendChild(registerModal);
-    
+
     // Add event listeners
     document.getElementById('registerForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      
+
       const username = document.getElementById('registerUsername').value;
       const email = document.getElementById('registerEmail').value;
       const password = document.getElementById('registerPassword').value;
       const experience = document.getElementById('registerExperience').value;
       const errorElement = document.getElementById('registerError');
-      
+
       try {
         errorElement.textContent = '';
-        
+
         if (window.authState.user && window.authState.user.isAnonymous) {
-          // Upgrade anonymous user
           await window.authFunctions.upgradeAnonymousUser(email, password, username, experience);
         } else {
-          // Create new user
           await window.authFunctions.registerUser(email, password, username, experience);
         }
-        
-        // Success - close modal and show dashboard
+
+        // Success - close modal and redirect based on nextStep
         registerModal.style.display = 'none';
-        document.getElementById('mainOptions').style.display = 'flex';
-        ensureEventListenersAttached(); // Add this line
+
+        if (nextStep === 'board_review_pricing') {
+          const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
+          if (boardReviewPricingScreen) {
+            boardReviewPricingScreen.style.display = 'flex';
+            if (typeof updateBoardReviewPricingView === 'function') {
+                updateBoardReviewPricingView('annual'); // Default to annual view
+            }
+          } else {
+            console.error("Board Review Pricing Screen not found after registration!");
+            document.getElementById('mainOptions').style.display = 'flex'; // Fallback
+          }
+        } else if (nextStep === 'cme_pricing') {
+          // Logic for CME pricing screen (we'll connect this later)
+          const cmePricingScreen = document.getElementById("cmePricingScreen"); // Assuming this ID exists
+          if (cmePricingScreen) {
+              cmePricingScreen.style.display = 'flex';
+              // Potentially call a function to set its default view, e.g., updateCmePricingView('annual');
+          } else {
+              console.error("CME Pricing Screen not found after registration!");
+              document.getElementById('mainOptions').style.display = 'flex'; // Fallback
+          }
+        } else { // Default to dashboard
+          document.getElementById('mainOptions').style.display = 'flex';
+        }
+        ensureEventListenersAttached();
       } catch (error) {
-        // Show error message
         errorElement.textContent = getAuthErrorMessage(error);
       }
     });
-    
+
     document.getElementById('goToLoginBtn').addEventListener('click', function() {
       registerModal.style.display = 'none';
-      showLoginForm();
+      showLoginForm(); // Consider passing nextStep here too if login should also redirect
     });
-    
+
     document.getElementById('closeRegisterBtn').addEventListener('click', function() {
       registerModal.style.display = 'none';
-      document.getElementById('mainOptions').style.display = 'flex';
+      // If closed, should probably go back to the paywall or main options
+      const newPaywallScreen = document.getElementById("newPaywallScreen");
+      if (newPaywallScreen && newPaywallScreen.style.display === 'none') { // if paywall was hidden to show reg form
+        document.getElementById('mainOptions').style.display = 'flex'; // Default to main options
+      } else if (newPaywallScreen) {
+        newPaywallScreen.style.display = 'flex'; // Or back to paywall if it was the entry point
+      } else {
+        document.getElementById('mainOptions').style.display = 'flex';
+      }
+    });
+  } else {
+    // Modal already exists, just update its title
+    const titleElement = document.getElementById('registerModalTitle');
+    if (titleElement) {
+      titleElement.textContent = modalTitle;
+    }
+    // Also update the submit handler to use the current 'nextStep'
+    // This requires removing the old listener and adding a new one, or storing 'nextStep' globally for the handler.
+    // For simplicity here, we'll re-attach if the modal is re-shown with a different nextStep.
+    // A more robust way is to store nextStep in a way the submit handler can access it.
+    // Let's assume for now the modal is created fresh or title is updated.
+    // The submit handler inside the `if (!registerModal)` block will capture the `nextStep` from its closure.
+    // If `showRegisterForm` is called again for an existing modal, we need to ensure the `nextStep` for the submit is updated.
+    // This is a bit tricky without restructuring how `nextStep` is passed to the event listener.
+    // A quick way: store it on the modal element itself.
+    registerModal.dataset.nextStep = nextStep;
+
+    // Re-get the form and re-attach the submit listener to capture the new nextStep
+    const form = document.getElementById('registerForm');
+    const newForm = form.cloneNode(true); // Clone to remove old listeners
+    form.parentNode.replaceChild(newForm, form);
+
+    newForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const currentNextStep = registerModal.dataset.nextStep || 'dashboard'; // Get stored nextStep
+
+      const username = document.getElementById('registerUsername').value;
+      const email = document.getElementById('registerEmail').value;
+      const password = document.getElementById('registerPassword').value;
+      const experience = document.getElementById('registerExperience').value;
+      const errorElement = document.getElementById('registerError');
+
+      try {
+        errorElement.textContent = '';
+        if (window.authState.user && window.authState.user.isAnonymous) {
+          await window.authFunctions.upgradeAnonymousUser(email, password, username, experience);
+        } else {
+          await window.authFunctions.registerUser(email, password, username, experience);
+        }
+        registerModal.style.display = 'none';
+
+        if (currentNextStep === 'board_review_pricing') {
+          const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
+          if (boardReviewPricingScreen) {
+            boardReviewPricingScreen.style.display = 'flex';
+            if (typeof updateBoardReviewPricingView === 'function') { updateBoardReviewPricingView('annual'); }
+          } else { document.getElementById('mainOptions').style.display = 'flex'; }
+        } else if (currentNextStep === 'cme_pricing') {
+          const cmePricingScreen = document.getElementById("cmePricingScreen");
+          if (cmePricingScreen) { cmePricingScreen.style.display = 'flex'; }
+          else { document.getElementById('mainOptions').style.display = 'flex'; }
+        } else { document.getElementById('mainOptions').style.display = 'flex'; }
+        ensureEventListenersAttached();
+      } catch (error) {
+        errorElement.textContent = getAuthErrorMessage(error);
+      }
     });
   }
-  
+
   // Show the modal
   registerModal.style.display = 'flex';
 }
 
-window.showRegisterForm = showRegisterForm;
+window.showRegisterForm = showRegisterForm; // Ensure it's globally available
+
 
 // Helper function to get user-friendly error messages
 function getAuthErrorMessage(error) {
@@ -4295,3 +4391,56 @@ if (brAnnualBtn) {
     });
 }
 // --- End Board Review Pricing Screen Tab Logic ---
+
+// --- Event Listener for New Paywall "Unlock Board Review Access" Button ---
+const unlockBoardReviewBtn = document.getElementById("unlockBoardReviewBtn");
+
+if (unlockBoardReviewBtn) {
+    unlockBoardReviewBtn.addEventListener("click", function() {
+        console.log("Paywall 'Unlock Board Review Access' button clicked.");
+
+        const newPaywallScreen = document.getElementById("newPaywallScreen");
+        const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
+
+        // Hide the main paywall first
+        if (newPaywallScreen) {
+            newPaywallScreen.style.display = "none";
+        }
+
+        // Check authentication state
+        // Assuming window.authState.isRegistered is accurately maintained
+        if (window.authState && window.authState.isRegistered) {
+            // User is already registered, go directly to Board Review Pricing Screen
+            console.log("User is registered. Showing Board Review Pricing Screen.");
+            if (boardReviewPricingScreen) {
+                boardReviewPricingScreen.style.display = "flex"; // Or "block"
+                // Ensure the default view (e.g., annual) is active if not already handled
+                if (typeof updateBoardReviewPricingView === 'function') {
+                    updateBoardReviewPricingView('annual'); // Or your desired default
+                }
+            } else {
+                console.error("Board Review Pricing Screen not found!");
+                // Fallback: show main options if pricing screen is missing
+                const mainOptions = document.getElementById("mainOptions");
+                if (mainOptions) mainOptions.style.display = "flex";
+            }
+        } else {
+            // User is a guest or not yet registered, show the registration modal
+            console.log("User is a guest. Showing registration form for Board Review.");
+            // We'll call showRegisterForm, but we need a way to redirect after success.
+            // For now, showRegisterForm will handle its own post-registration logic (which currently goes to main dashboard).
+            // We will modify showRegisterForm in the NEXT step to handle different post-registration destinations.
+            if (typeof showRegisterForm === 'function') {
+                // Pass a parameter to indicate the next step after registration
+                showRegisterForm('board_review_pricing');
+            } else {
+                console.error("showRegisterForm function not found!");
+                // Fallback: if registration form function is missing, maybe show main options or an error
+                const mainOptions = document.getElementById("mainOptions");
+                if (mainOptions) mainOptions.style.display = "flex";
+            }
+        }
+    });
+} else {
+    console.error("Button with ID 'unlockBoardReviewBtn' not found.");
+}
