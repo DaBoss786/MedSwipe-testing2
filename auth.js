@@ -14,51 +14,35 @@ import {
   signInAnonymously,
   signOut,
   updateProfile
-  // Note: sendPasswordResetEmail is not used in this file, so not imported here
-} from './firebase-config.js'; // Adjust path if needed (e.g., '../firebase-config.js')
+} from './firebase-config.js';
 
-// --- Import helper functions if they are defined elsewhere (e.g., app.js or utils.js) ---
-// Make sure cleanupOnLogout is defined and accessible, or import it if it's in another module.
-// If it's in app.js and not exported, you might need to move it to utils.js and export/import it.
-// For now, assuming it might be globally available or needs to be imported:
-// import { cleanupOnLogout } from './app.js'; // Example path
-
-// Global reference to the auth state listener
-let authStateListener = null;
-
-// Auth state management - accessible throughout the app via window.authState
-// We keep this on window for now as other modules might rely on it directly.
-// A better long-term solution might be a dedicated state management module.
 window.authState = {
 user: null,
 isRegistered: false,
 isLoading: true
 };
 
-/**
-* Initialize authentication system and set up listeners
-* This should be called once when the app starts
-*/
+let authStateListener = null;
+
+// --- Helper function for a small delay ---
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function initAuth() {
-// Use the imported auth and db variables directly
 if (!auth || !db) {
-  console.error("Firebase auth or db instance not available from import. Check firebase-config.js. Retrying...");
+  console.error("Firebase auth or db instance not available. Retrying...");
   setTimeout(initAuth, 500);
   return;
 }
+console.log("Initializing auth system");
 
-console.log("Initializing auth system (using imported services)");
-
-// Set up auth state listener using imported functions
 authStateListener = onAuthStateChanged(auth, async (user) => {
   console.log("Auth state changed:", user ? user.uid : 'No user');
-  window.authState.isLoading = true; // Set loading true while processing
+  window.authState.isLoading = true;
 
   if (user) {
-    // User is signed in
-    window.authState.user = user; // Store user object
-
-    // --- MODIFIED SECTION: Streamlined Document Creation/Update in onAuthStateChanged ---
+    window.authState.user = user;
     const userDocRef = doc(db, 'users', user.uid);
     const userDocSnap = await getDoc(userDocRef);
 
@@ -71,58 +55,50 @@ authStateListener = onAuthStateChanged(auth, async (user) => {
             username: user.isAnonymous ? generateGuestUsername() : (user.displayName || user.email || `User_${user.uid.substring(0,5)}`),
             email: user.email || null,
             createdAt: serverTimestamp(),
-            isRegistered: !user.isAnonymous, // Set based on current auth type
-            // Initialize all default structures
+            isRegistered: !user.isAnonymous,
             stats: { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0, xp: 0, level: 1, achievements: {}, currentCorrectStreak: 0 },
             streaks: { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 },
             bookmarks: [],
             cmeStats: { totalAnswered: 0, totalCorrect: 0, eligibleAnswerCount: 0, creditsEarned: 0.00, creditsClaimed: 0.00 },
             cmeAnsweredQuestions: {},
             cmeClaimHistory: []
-            // 'experience' will be added by registerUser or upgradeAnonymousUser
         };
     } else {
-        // Document exists, check if isRegistered flag needs correction based on current auth state
         const existingData = userDocSnap.data();
         console.log(`User document for ${user.uid} found by onAuthStateChanged. Current isAnonymous: ${user.isAnonymous}, Stored isRegistered: ${existingData.isRegistered}`);
         if (existingData.isRegistered !== !user.isAnonymous) {
             console.log(`Correcting isRegistered flag for user ${user.uid} from ${existingData.isRegistered} to ${!user.isAnonymous}.`);
             userDataForWrite.isRegistered = !user.isAnonymous;
         }
-        // If it's an anonymous user signing in and the doc exists, ensure username is guest-like if not set or not already guest-like
         if (user.isAnonymous && (!existingData.username || (!existingData.username.startsWith("Curious") && !existingData.username.startsWith("Guest") && !existingData.username.startsWith("Medical") && !existingData.username.startsWith("Swift") && !existingData.username.startsWith("Learning") && !existingData.username.startsWith("Aspiring")))) {
             console.log(`User ${user.uid} is anonymous and existing username "${existingData.username}" is not guest-like. Setting to guest name.`);
             userDataForWrite.username = generateGuestUsername();
         }
     }
 
-    // Perform the write operation if it's a new document or if there are fields to update
     if (isNewUserDocument || Object.keys(userDataForWrite).length > 0) {
+        // --- ADDED DELAY for new, non-anonymous users ---
+        if (isNewUserDocument && !user.isAnonymous) {
+            console.log(`Delaying Firestore write for new registered user ${user.uid} in onAuthStateChanged by 300ms`);
+            await sleep(300); // Small delay
+        }
+        // --- END ADDED DELAY ---
         try {
-            await setDoc(userDocRef, userDataForWrite, { merge: true }); // Always merge
+            await setDoc(userDocRef, userDataForWrite, { merge: true });
             console.log(`User document for ${user.uid} ${isNewUserDocument ? 'created' : 'updated'} successfully by onAuthStateChanged.`);
         } catch (error) {
             console.error(`Error ${isNewUserDocument ? 'creating' : 'updating'} user document for ${user.uid} in onAuthStateChanged:`, error);
         }
     }
-    // --- END MODIFIED SECTION ---
-
-    // Update local authState.isRegistered based on the definitive source (user.isAnonymous)
-    // This ensures window.authState.isRegistered is correct even before Firestore write completes or if it fails.
     window.authState.isRegistered = !user.isAnonymous;
 
-
   } else {
-    // No user is signed in, reset auth state
     window.authState.user = null;
     window.authState.isRegistered = false;
     console.log("No user signed in. Attempting anonymous sign-in...");
-
-    // Automatically sign in anonymously
     try {
       await signInAnonymously(auth);
       console.log("Signed in anonymously.");
-      // The onAuthStateChanged listener will trigger again for the new anonymous user
     } catch (error) {
       console.error("Error signing in anonymously:", error);
       window.authState.isLoading = false;
@@ -168,25 +144,23 @@ try {
   await updateProfile(user, { displayName: username });
 
   const userDocRef = doc(db, 'users', user.uid);
-  // --- MODIFIED SECTION: Simplified write in registerUser ---
-  // onAuthStateChanged will handle the creation of the basic document structure.
-  // This function now focuses on adding/merging registration-specific details.
+
+  // --- ADDED DELAY ---
+  console.log(`Delaying Firestore write in registerUser for ${user.uid} by 300ms`);
+  await sleep(300);
+  // --- END ADDED DELAY ---
+
   await setDoc(userDocRef, {
     username: username,
     email: email,
     experience: experience,
-    isRegistered: true, // Explicitly mark as registered
+    isRegistered: true,
     updatedAt: serverTimestamp()
-    // Basic stats, streaks, bookmarks, cmeStats are initialized by onAuthStateChanged
-  }, { merge: true }); // Merge is crucial here
-  // --- END MODIFIED SECTION ---
-
+  }, { merge: true });
   console.log(`Registered user ${user.uid} and updated Firestore with registration details.`);
 
-  // Update local state immediately as onAuthStateChanged might have a slight delay
-  // or might have already run for the new user before this setDoc completes.
   window.authState.user = user;
-  window.authState.isRegistered = true; // Ensure local state reflects registration
+  window.authState.isRegistered = true;
   window.dispatchEvent(new CustomEvent('authStateChanged', { detail: { ...window.authState, isRegistered: true } }));
 
   return user;
@@ -240,7 +214,6 @@ try {
     console.log("Fetched data for anonymous user to carry over.");
   } else {
      console.warn("No existing document found for anonymous user during upgrade, will start fresh for new user.");
-     // Initialize default data if needed, though onAuthStateChanged should handle this for the new user
       originalUserData = {
           stats: { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0, xp: 0, level: 1, achievements: {}, currentCorrectStreak: 0 },
           streaks: { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 },
@@ -264,40 +237,35 @@ try {
   console.log("Updated profile for new user.");
 
   const newUserDocRef = doc(db, 'users', newUser.uid);
-  // --- MODIFIED SECTION: Simplified write in upgradeAnonymousUser ---
-  // onAuthStateChanged will handle the creation of the basic document structure for newUser.
-  // This function now focuses on merging registration-specific details and carrying over old data.
   const newRegisteredUserData = {
-      // Carry over essential data from the anonymous profile
       stats: originalUserData.stats || { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0, xp: 0, level: 1, achievements: {}, currentCorrectStreak: 0 },
       streaks: originalUserData.streaks || { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 },
       bookmarks: originalUserData.bookmarks || [],
       cmeStats: originalUserData.cmeStats || { totalAnswered: 0, totalCorrect: 0, eligibleAnswerCount: 0, creditsEarned: 0.00, creditsClaimed: 0.00 },
       cmeAnsweredQuestions: originalUserData.cmeAnsweredQuestions || {},
       cmeClaimHistory: originalUserData.cmeClaimHistory || [],
-      // Add new registration details
       username: username,
       email: email,
       experience: experience,
-      isRegistered: true,     // CRITICAL: Mark as registered
+      isRegistered: true,
       updatedAt: serverTimestamp(),
       previousAnonymousUid: anonymousUid,
-      // Let createdAt be handled by onAuthStateChanged if it's a truly new doc for newUser,
-      // or if originalUserData.createdAt existed, it's already in ...originalUserData.
   };
-  if (originalUserData.createdAt) { // Explicitly preserve if it existed
+  if (originalUserData.createdAt) {
     newRegisteredUserData.createdAt = originalUserData.createdAt;
   }
 
-  await setDoc(newUserDocRef, newRegisteredUserData, { merge: true }); // Merge is crucial
-  // --- END MODIFIED SECTION ---
+  // --- ADDED DELAY ---
+  console.log(`Delaying Firestore write in upgradeAnonymousUser for ${newUser.uid} by 300ms`);
+  await sleep(300);
+  // --- END ADDED DELAY ---
+
+  await setDoc(newUserDocRef, newRegisteredUserData, { merge: true });
   console.log(`Copied data and updated document for new user ${newUser.uid} with registration details.`);
 
-  // Update local state immediately
   window.authState.user = newUser;
   window.authState.isRegistered = true;
   window.dispatchEvent(new CustomEvent('authStateChanged', { detail: { ...window.authState, isRegistered: true } }));
-
 
   return newUser;
 
