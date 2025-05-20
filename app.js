@@ -602,7 +602,6 @@ function showLoginForm(fromWelcomeScreen = false) {
 window.showLoginForm = showLoginForm;
 
 // Function to show the registration form modal
-// Function to show the registration form modal
 function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter, default to 'dashboard'
   // Create registration modal if it doesn't exist
   let registerModal = document.getElementById('registerModal');
@@ -612,6 +611,8 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
     modalTitle = "Register for Board Review Access";
   } else if (nextStep === 'cme_pricing') {
     modalTitle = "Register for CME Module Access";
+  } else if (nextStep === 'cme_info') { // <<< NEW CONDITION FOR TITLE
+    modalTitle = "Register to Explore CME Module";
   }
   // Add more conditions here if you have other registration flows in the future
 
@@ -627,7 +628,7 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
     <div id="registerError" class="auth-error"></div>
     <form id="registerForm">
       <div class="form-group">
-        <label for="registerUsername">Username (for Leaderboards)</label> 
+        <label for="registerUsername">Username (for Leaderboards)</label>
         <input type="text" id="registerUsername" required>
       </div>
       <div class="form-group">
@@ -706,14 +707,20 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
             document.getElementById('mainOptions').style.display = 'flex'; // Fallback
           }
         } else if (nextStep === 'cme_pricing') {
-          // Logic for CME pricing screen (we'll connect this later)
-          const cmePricingScreen = document.getElementById("cmePricingScreen"); // Assuming this ID exists
+          const cmePricingScreen = document.getElementById("cmePricingScreen"); 
           if (cmePricingScreen) {
               cmePricingScreen.style.display = 'flex';
-              // Potentially call a function to set its default view, e.g., updateCmePricingView('annual');
           } else {
               console.error("CME Pricing Screen not found after registration!");
               document.getElementById('mainOptions').style.display = 'flex'; // Fallback
+          }
+        } else if (nextStep === 'cme_info') { // <<< NEW CONDITION FOR REDIRECTION
+          const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+          if (cmeInfoScreen) {
+            cmeInfoScreen.style.display = 'flex';
+          } else {
+            console.error("CME Info Screen not found after registration for CME explore!");
+            document.getElementById('mainOptions').style.display = 'flex'; // Fallback
           }
         } else { // Default to dashboard
           document.getElementById('mainOptions').style.display = 'flex';
@@ -726,17 +733,16 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
 
     document.getElementById('goToLoginBtn').addEventListener('click', function() {
       registerModal.style.display = 'none';
-      showLoginForm(); // Consider passing nextStep here too if login should also redirect
+      showLoginForm();
     });
 
     document.getElementById('closeRegisterBtn').addEventListener('click', function() {
       registerModal.style.display = 'none';
-      // If closed, should probably go back to the paywall or main options
       const newPaywallScreen = document.getElementById("newPaywallScreen");
-      if (newPaywallScreen && newPaywallScreen.style.display === 'none') { // if paywall was hidden to show reg form
-        document.getElementById('mainOptions').style.display = 'flex'; // Default to main options
+      if (newPaywallScreen && newPaywallScreen.style.display === 'none') { 
+        document.getElementById('mainOptions').style.display = 'flex';
       } else if (newPaywallScreen) {
-        newPaywallScreen.style.display = 'flex'; // Or back to paywall if it was the entry point
+        newPaywallScreen.style.display = 'flex';
       } else {
         document.getElementById('mainOptions').style.display = 'flex';
       }
@@ -747,25 +753,16 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
     if (titleElement) {
       titleElement.textContent = modalTitle;
     }
-    // Also update the submit handler to use the current 'nextStep'
-    // This requires removing the old listener and adding a new one, or storing 'nextStep' globally for the handler.
-    // For simplicity here, we'll re-attach if the modal is re-shown with a different nextStep.
-    // A more robust way is to store nextStep in a way the submit handler can access it.
-    // Let's assume for now the modal is created fresh or title is updated.
-    // The submit handler inside the `if (!registerModal)` block will capture the `nextStep` from its closure.
-    // If `showRegisterForm` is called again for an existing modal, we need to ensure the `nextStep` for the submit is updated.
-    // This is a bit tricky without restructuring how `nextStep` is passed to the event listener.
-    // A quick way: store it on the modal element itself.
-    registerModal.dataset.nextStep = nextStep;
+    registerModal.dataset.nextStep = nextStep; // Store nextStep on the modal
 
     // Re-get the form and re-attach the submit listener to capture the new nextStep
     const form = document.getElementById('registerForm');
-    const newForm = form.cloneNode(true); // Clone to remove old listeners
+    const newForm = form.cloneNode(true); 
     form.parentNode.replaceChild(newForm, form);
 
     newForm.addEventListener('submit', async function(e) {
       e.preventDefault();
-      const currentNextStep = registerModal.dataset.nextStep || 'dashboard'; // Get stored nextStep
+      const currentNextStep = registerModal.dataset.nextStep || 'dashboard'; 
 
       const username = document.getElementById('registerUsername').value;
       const email = document.getElementById('registerEmail').value;
@@ -787,12 +784,28 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
           if (boardReviewPricingScreen) {
             boardReviewPricingScreen.style.display = 'flex';
             if (typeof updateBoardReviewPricingView === 'function') { updateBoardReviewPricingView('annual'); }
-          } else { document.getElementById('mainOptions').style.display = 'flex'; }
-        } else if (currentNextStep === 'cme_pricing') {
+          } else {
+            console.error("Board Review Pricing Screen not found after re-registration!");
+            document.getElementById('mainOptions').style.display = 'flex'; 
+          }
+        } else if (currentNextStep === 'cme_pricing') { 
           const cmePricingScreen = document.getElementById("cmePricingScreen");
           if (cmePricingScreen) { cmePricingScreen.style.display = 'flex'; }
-          else { document.getElementById('mainOptions').style.display = 'flex'; }
-        } else { document.getElementById('mainOptions').style.display = 'flex'; }
+          else {
+            console.error("CME Pricing Screen not found after re-registration!");
+            document.getElementById('mainOptions').style.display = 'flex'; 
+          }
+        } else if (currentNextStep === 'cme_info') { // <<< CORRECTED REDIRECTION LOGIC
+          const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+          if (cmeInfoScreen) {
+            cmeInfoScreen.style.display = 'flex';
+          } else {
+            console.error("CME Info Screen not found after re-registration for CME explore!");
+            document.getElementById('mainOptions').style.display = 'flex'; 
+          }
+        } else { 
+          document.getElementById('mainOptions').style.display = 'flex'; 
+        }
         ensureEventListenersAttached();
       } catch (error) {
         errorElement.textContent = getAuthErrorMessage(error);
@@ -804,8 +817,7 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
   registerModal.style.display = 'flex';
 }
 
-window.showRegisterForm = showRegisterForm; // Ensure it's globally available
-
+window.showRegisterForm = showRegisterForm;
 
 // Helper function to get user-friendly error messages
 function getAuthErrorMessage(error) {
@@ -4384,6 +4396,50 @@ if (brAnnualBtn) {
 }
 // --- End Board Review Pricing Screen Tab Logic ---
 
+// --- Event Listener for New Paywall "Explore CME Module" Button ---
+const exploreCmeModuleBtn = document.getElementById("exploreCmeModuleBtn");
+
+if (exploreCmeModuleBtn) {
+    exploreCmeModuleBtn.addEventListener("click", function() {
+        console.log("Paywall 'Explore CME Module' button clicked.");
+
+        const newPaywallScreen = document.getElementById("newPaywallScreen");
+        const cmeInfoScreen = document.getElementById("cmeInfoScreen"); // Your existing CME Info Screen
+
+        // Hide the main paywall first
+        if (newPaywallScreen) {
+            newPaywallScreen.style.display = "none";
+        }
+
+        // Check authentication state
+        if (window.authState && window.authState.isRegistered) {
+            // User is already registered, go directly to CME Info Screen
+            console.log("User is registered. Showing CME Info Screen.");
+            if (cmeInfoScreen) {
+                cmeInfoScreen.style.display = "flex";
+            } else {
+                console.error("CME Info Screen not found!");
+                const mainOptions = document.getElementById("mainOptions");
+                if (mainOptions) mainOptions.style.display = "flex"; // Fallback
+            }
+        } else {
+            // User is a guest, show the registration modal, then go to CME Info Screen
+            console.log("User is a guest. Showing registration form for CME Module.");
+            if (typeof showRegisterForm === 'function') {
+                // Pass 'cme_info' as the next step.
+                // We need to modify showRegisterForm to handle this new nextStep.
+                showRegisterForm('cme_info');
+            } else {
+                console.error("showRegisterForm function not found!");
+                const mainOptions = document.getElementById("mainOptions");
+                if (mainOptions) mainOptions.style.display = "flex"; // Fallback
+            }
+        }
+    });
+} else {
+    console.error("Button with ID 'exploreCmeModuleBtn' not found.");
+}
+
 // --- Event Listener for New Paywall "Unlock Board Review Access" Button ---
 const unlockBoardReviewBtn = document.getElementById("unlockBoardReviewBtn");
 
@@ -4436,3 +4492,28 @@ if (unlockBoardReviewBtn) {
 } else {
     console.error("Button with ID 'unlockBoardReviewBtn' not found.");
 }
+
+// --- Board Review Pricing Screen - Back Button Logic ---
+const boardReviewPricingBackBtn = document.getElementById('boardReviewPricingBackBtn');
+if (boardReviewPricingBackBtn) {
+    boardReviewPricingBackBtn.addEventListener('click', function() {
+        console.log("Board Review Pricing screen 'Back to Plans' button clicked.");
+        const boardReviewPricingScreen = document.getElementById('boardReviewPricingScreen');
+        const newPaywallScreen = document.getElementById('newPaywallScreen');
+
+        if (boardReviewPricingScreen) {
+            boardReviewPricingScreen.style.display = 'none';
+        }
+        if (newPaywallScreen) {
+            newPaywallScreen.style.display = 'flex'; // Show the main paywall
+        } else {
+            console.error("New Paywall Screen not found when going back from BR Pricing.");
+            // Fallback to main options if paywall is missing
+            const mainOptions = document.getElementById("mainOptions");
+            if (mainOptions) mainOptions.style.display = 'flex';
+        }
+    });
+} else {
+    console.error("Board Review Pricing Back Button not found.");
+}
+// --- End Board Review Pricing Screen - Back Button Logic ---
