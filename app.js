@@ -623,11 +623,11 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
     registerModal.innerHTML = `
   <div class="auth-modal-content">
     <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="auth-logo">
-    <h2 id="registerModalTitle">${modalTitle}</h2> {/* Use an ID for the title */}
+    <h2 id="registerModalTitle">${modalTitle}</h2>
     <div id="registerError" class="auth-error"></div>
     <form id="registerForm">
       <div class="form-group">
-        <label for="registerUsername">Username (for Leaderboards)</label> {/* Updated label */}
+        <label for="registerUsername">Username (for Leaderboards)</label> 
         <input type="text" id="registerUsername" required>
       </div>
       <div class="form-group">
@@ -2487,13 +2487,12 @@ function forceReinitializeDashboard() {
       setTimeout(() => {
         setupDashboardEventListenersExplicitly();
         
-        // Debug overlays after setup is complete
-        setTimeout(() => {
-          debugOverlays();
-          
-          // Clear debugging styles after we've seen the debug output
-          setTimeout(clearDebugStyles, 500);
-        }, 200);
+        // --- COMMENT OUT OR DELETE THESE LINES ---
+    // setTimeout(() => {
+    //   debugOverlays();
+    //   setTimeout(clearDebugStyles, 500);
+    // }, 200);
+    // --- END OF COMMENT OUT/DELETE ---
       }, 50);
     }, 50);
   }
@@ -2608,27 +2607,23 @@ function setupDashboardEventListenersExplicitly() {
 }
 
 // Add this function to app.js
-function debugOverlays() {
-  console.log("Debugging overlays...");
-  
-  // Temporary debugging code to highlight overlays
-  document.querySelectorAll('*').forEach(el => {
-    if (window.getComputedStyle(el).position === 'fixed' && 
-        el.id !== 'mainOptions' && 
-        !el.classList.contains('toolbar')) {
-      el.style.backgroundColor = 'rgba(255,0,0,0.2)';
-      console.log('Potential overlay:', el);
-    }
-  });
-  
-  // Also debug z-index values
-  document.querySelectorAll('*').forEach(el => {
-    const zIndex = window.getComputedStyle(el).zIndex;
-    if (zIndex !== 'auto' && zIndex > 10) {
-      console.log('High z-index element:', el, 'z-index:', zIndex);
-    }
-  });
-}
+// function debugOverlays() {
+//   console.log("Debugging overlays...");
+//   document.querySelectorAll('*').forEach(el => {
+//     if (window.getComputedStyle(el).position === 'fixed' && 
+//         el.id !== 'mainOptions' && 
+//         !el.classList.contains('toolbar')) {
+//       el.style.backgroundColor = 'rgba(255,0,0,0.2)';
+//       console.log('Potential overlay:', el);
+//     }
+//   });
+//   document.querySelectorAll('*').forEach(el => {
+//     const zIndex = window.getComputedStyle(el).zIndex;
+//     if (zIndex !== 'auto' && zIndex > 10) {
+//       console.log('High z-index element:', el, 'z-index:', zIndex);
+//     }
+//   });
+// }
 
 // Add this function to your app.js to properly hide all screens
 function ensureAllScreensHidden(exceptScreenId) {
@@ -2654,18 +2649,15 @@ function ensureAllScreensHidden(exceptScreenId) {
   });
 }
 
-// Add this function to your app.js
-function clearDebugStyles() {
-  console.log("Clearing debug background colors...");
-  
-  // Remove the red background color from all elements
-  document.querySelectorAll('*').forEach(el => {
-    if (el.style.backgroundColor === 'rgba(255, 0, 0, 0.2)') {
-      el.style.backgroundColor = '';
-      console.log(`Cleared debug background from: ${el.id || el.tagName}`);
-    }
-  });
-}
+// function clearDebugStyles() {
+//   console.log("Clearing debug background colors...");
+//   document.querySelectorAll('*').forEach(el => {
+//     if (el.style.backgroundColor === 'rgba(255, 0, 0, 0.2)') {
+//       el.style.backgroundColor = '';
+//       console.log(`Cleared debug background from: ${el.id || el.tagName}`);
+//     }
+//   });
+// }
 
 // Add this function to your auth.js or app.js file
 async function cleanupOnLogout() {
