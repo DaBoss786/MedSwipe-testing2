@@ -51,5 +51,7 @@ export {
   updateProfile, 
   sendPasswordResetEmail, 
   getIdToken,
-  httpsCallable
+  httpsCallable,
+  EmailAuthProvider,
+  linkWithCredential
 };
