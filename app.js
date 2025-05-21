@@ -4103,6 +4103,10 @@ if (payPerCreditTabBtn && annualContent && payPerCreditContent) {
 const STRIPE_ANNUAL_PRICE_ID = 'price_1RFkDtR9wwfN8hwye6csyxWu'; // Replace with your actual Annual Price ID (price_...)
 // New unit-price for credits:
 const STRIPE_CREDIT_PRICE_ID = 'price_1RKXlYR9wwfN8hwyGznI4iXS'; // ← paste your new Price ID
+// --- NEW Board Review Price IDs ---
+const STRIPE_BR_MONTHLY_PRICE_ID = 'price_1RQiFiR9wwfN8hwyGhlAd29R'; // <<< PASTE YOUR ID HERE
+const STRIPE_BR_3MONTH_PRICE_ID = 'price_1RQiFiR9wwfN8hwyfe3FD3VK';   // <<< PASTE YOUR ID HERE
+const STRIPE_BR_ANNUAL_PRICE_ID = 'price_1RQiFiR9wwfN8hwy4PrQYwvj';    // <<< PASTE YOUR ID HERE
 
 // ---
 
@@ -4517,3 +4521,121 @@ if (boardReviewPricingBackBtn) {
     console.error("Board Review Pricing Back Button not found.");
 }
 // --- End Board Review Pricing Screen - Back Button Logic ---
+
+// --- Event Listeners for Board Review Pricing Screen Checkout Buttons ---
+
+// Helper function for Board Review Checkout
+async function handleBoardReviewCheckout(priceId, planName, tierName) { // Added tierName
+  console.log(`Requesting Board Review checkout for ${planName} (Tier: ${tierName}) with Price ID: ${priceId}`);
+
+  const user = window.authFunctions.getCurrentUser();
+  if (!user || user.isAnonymous) {
+      alert("Please ensure you are fully registered and logged in before subscribing.");
+      // Optionally, redirect to login/registration or show the main paywall
+      // e.g., showLoginForm();
+      // or document.getElementById('newPaywallScreen').style.display = 'flex';
+      return;
+  }
+  // Ensure createCheckoutSessionFunction is available (it's imported in app.js from firebase-config.js)
+  if (!window.stripe || !createCheckoutSessionFunction) {
+      alert('Error: Payment system not ready. Please refresh.');
+      console.error('Stripe object or createCheckoutSessionFunction reference missing.');
+      return;
+  }
+
+  // Get all Board Review checkout buttons to manage their state
+  const brCheckoutButtons = [
+      document.getElementById("checkoutBrMonthlyBtn"),
+      document.getElementById("checkoutBr3MonthBtn"),
+      document.getElementById("checkoutBrAnnualBtn")
+  ];
+
+  // Disable all BR checkout buttons and show loading text on the clicked one
+  let clickedButton = null;
+  brCheckoutButtons.forEach(btn => {
+      if(btn) {
+          btn.disabled = true;
+          // Identify which button was clicked to set its text specifically
+          if ( (planName === 'Board Review Monthly' && btn.id === "checkoutBrMonthlyBtn") ||
+               (planName === 'Board Review 3-Month' && btn.id === "checkoutBr3MonthBtn") ||
+               (planName === 'Board Review Annual' && btn.id === "checkoutBrAnnualBtn") ) {
+              btn.textContent = 'Preparing...';
+              clickedButton = btn;
+          } else {
+              btn.style.opacity = 0.7; // Dim other buttons
+          }
+      }
+  });
+
+  try {
+      console.log("Forcing ID token refresh for Board Review checkout...");
+      await getIdToken(user, true); // Ensure fresh token (getIdToken is from firebase-config.js)
+      console.log("ID token refreshed.");
+
+      console.log("Calling createStripeCheckoutSession function for user:", user.uid, "Price ID:", priceId, "Plan:", planName, "Tier:", tierName);
+      const result = await createCheckoutSessionFunction({
+          priceId: priceId,
+          planName: planName, // Pass planName for metadata
+          tier: tierName      // Pass tier for metadata
+      });
+      const sessionId = result.data.sessionId;
+      console.log("Received Session ID for Board Review:", sessionId);
+
+      if (!sessionId) { throw new Error("Cloud function did not return a Session ID for Board Review."); }
+
+      if (clickedButton) clickedButton.textContent = 'Redirecting...';
+      const { error } = await window.stripe.redirectToCheckout({ sessionId: sessionId });
+
+      if (error) {
+          console.error("Stripe redirectToCheckout error for Board Review:", error);
+          alert(`Could not redirect to checkout: ${error.message}`);
+      }
+  } catch (error) {
+      console.error(`Error during Board Review checkout for ${planName}:`, error);
+      let message = `Could not prepare checkout for ${planName}. Please try again.`;
+      if (error.code && error.message) { message = `Error: ${error.message}`; }
+      else if (error.message) { message = error.message; }
+      alert(message);
+  } finally {
+      // Re-enable buttons and restore original text
+      const originalTexts = ['Subscribe Monthly', 'Subscribe 3-Month', 'Subscribe Annually'];
+      brCheckoutButtons.forEach((btn, index) => {
+          if(btn) {
+              btn.disabled = false;
+              btn.textContent = originalTexts[index];
+              btn.style.opacity = 1; // Restore opacity
+          }
+      });
+  }
+}
+
+// Monthly Board Review Checkout
+const checkoutBrMonthlyBtn = document.getElementById("checkoutBrMonthlyBtn");
+if (checkoutBrMonthlyBtn) {
+  checkoutBrMonthlyBtn.addEventListener("click", function() {
+      handleBoardReviewCheckout(STRIPE_BR_MONTHLY_PRICE_ID, 'Board Review Monthly', 'board_review');
+  });
+} else {
+  console.error("Board Review Monthly Checkout button (#checkoutBrMonthlyBtn) not found.");
+}
+
+// 3-Month Board Review Checkout
+const checkoutBr3MonthBtn = document.getElementById("checkoutBr3MonthBtn");
+if (checkoutBr3MonthBtn) {
+  checkoutBr3MonthBtn.addEventListener("click", function() {
+      handleBoardReviewCheckout(STRIPE_BR_3MONTH_PRICE_ID, 'Board Review 3-Month', 'board_review');
+  });
+} else {
+  console.error("Board Review 3-Month Checkout button (#checkoutBr3MonthBtn) not found.");
+}
+
+// Annual Board Review Checkout
+const checkoutBrAnnualBtn = document.getElementById("checkoutBrAnnualBtn");
+if (checkoutBrAnnualBtn) {
+  checkoutBrAnnualBtn.addEventListener("click", function() {
+      handleBoardReviewCheckout(STRIPE_BR_ANNUAL_PRICE_ID, 'Board Review Annual', 'board_review');
+  });
+} else {
+  console.error("Board Review Annual Checkout button (#checkoutBrAnnualBtn) not found.");
+}
+// --- End Board Review Checkout Button Listeners ---

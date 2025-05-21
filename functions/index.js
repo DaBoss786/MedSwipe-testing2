@@ -384,7 +384,7 @@ exports.stripeWebhookHandler = onRequest(
 // --- End Stripe Webhook Handler ---
 
 
-// --- createStripeCheckoutSession (Updated to v2 and using process.env) ---
+// --- createStripeCheckoutSession (Updated to v2 and using process.env with enhanced metadata) ---
 exports.createStripeCheckoutSession = onCall(
   {
     region: "us-central1", // Or your preferred region
@@ -392,7 +392,7 @@ exports.createStripeCheckoutSession = onCall(
     secrets: ["STRIPE_SECRET_KEY"] // Declare the secret needed
   },
   async (request) => { // Use request parameter for v2
-    logger.log("createStripeCheckoutSession called.");
+    logger.log("createStripeCheckoutSession called with data:", request.data);
 
     // 1. Auth check (using request.auth)
     if (!request.auth) {
@@ -402,68 +402,84 @@ exports.createStripeCheckoutSession = onCall(
     const uid = request.auth.uid; // Get UID from request.auth
     logger.log(`Authenticated user: ${uid}`);
 
-    // 2. Validate priceId (using request.data)
-    const priceId = request.data.priceId; // Get priceId from request.data
-    const quantity = request.data.quantity || 1;
+    // 2. Validate inputs (priceId, planName, tier, quantity)
+    const priceId = request.data.priceId;
+    const clientPlanName = request.data.planName; // Plan name from client
+    const clientTier = request.data.tier;       // Tier from client
+    let quantity = request.data.quantity || 1;   // Quantity, defaults to 1
 
-// Basic validation for quantity (optional but good practice)
-if (typeof quantity !== 'number' || !Number.isInteger(quantity) || quantity < 1) {
-    logger.warn(`Invalid quantity received: ${request.data.quantity}. Defaulting to 1.`);
-    quantity = 1; // Reset to 1 if invalid data received
-}
-if (!priceId || typeof priceId !== "string") {
-  logger.error("Validation failed: Invalid Price ID.", { data: request.data });
-  throw new HttpsError("invalid-argument", "A valid Price ID must be provided.");
-}
-logger.log(`Received Price ID: ${priceId}, Quantity: ${quantity}`); 
+    if (!priceId || typeof priceId !== "string") {
+      logger.error("Validation failed: Invalid Price ID.", { data: request.data });
+      throw new HttpsError("invalid-argument", "A valid Price ID must be provided.");
+    }
+    // Basic validation for quantity (especially for 'payment' mode)
+    if (typeof quantity !== 'number' || !Number.isInteger(quantity) || quantity < 1) {
+        logger.warn(`Invalid quantity received: ${request.data.quantity}. Defaulting to 1 for safety.`);
+        quantity = 1;
+    }
+    logger.log(`Received Price ID: ${priceId}, PlanName: ${clientPlanName}, Tier: ${clientTier}, Quantity: ${quantity}`);
 
     // 3. Initialize Stripe Client using environment variable populated by 'secrets'
     const secretKey = process.env.STRIPE_SECRET_KEY; // Access the secret
-    if (!secretKey) { // Check if the secret was actually populated
+    if (!secretKey) {
       logger.error("CRITICAL: Stripe secret key is missing from environment. Check secret configuration and deployment.");
       throw new HttpsError("internal", "Server configuration error [SK].");
     }
     const stripeClient = stripe(secretKey); // Initialize Stripe here
     logger.info("Stripe client initialized successfully within createCheckout handler.");
 
-    // 4. Define URLs (Consider making these configurable later)
-    const YOUR_APP_BASE_URL = "https://daboss786.github.io/MedSwipe-testing"; // <<< Double-check this URL is correct
-    const successUrl = `${YOUR_APP_BASE_URL}/checkout-success.html`; // Example success page
-    const cancelUrl = `${YOUR_APP_BASE_URL}/checkout-cancel.html`;   // Example cancel page
-    let sessionMode = 'subscription'; // Default to subscription mode
+    // 4. Define URLs
+    const YOUR_APP_BASE_URL = "https://daboss786.github.io/MedSwipe-testing2"; // Ensure this is correct
+    const successUrl = `${YOUR_APP_BASE_URL}/checkout-success.html`;
+    const cancelUrl = `${YOUR_APP_BASE_URL}/checkout-cancel.html`;
 
-    // IMPORTANT: Replace 'price_xxxxxxxxxxxxxxx' below with your ACTUAL $8 credit price ID
-    const creditPriceIdFromStripe = 'price_1RKXlYR9wwfN8hwyGznI4iXS'; // <<< PASTE YOUR $8 PRICE ID HERE
-    
+    // Determine session mode based on priceId (e.g., one-time vs. subscription)
+    let sessionMode = 'subscription'; // Default to subscription mode
+    const creditPriceIdFromStripe = 'price_1RKXlYR9wwfN8hwyGznI4iXS'; // Your CME credit price ID
+
     if (priceId === creditPriceIdFromStripe) {
-        sessionMode = 'payment'; // Set mode to 'payment' for the one-time credit purchase
-        logger.info(`Detected Credit Price ID (${priceId}), setting mode to 'payment'.`);
+        sessionMode = 'payment';
+        logger.info(`Detected Credit Price ID (${priceId}), setting mode to 'payment'. Quantity will be ${quantity}.`);
     } else {
-        logger.info(`Detected Subscription Price ID (${priceId}), setting mode to 'subscription'.`);
+        quantity = 1; // Subscriptions always have quantity 1 for the plan itself
+        logger.info(`Detected Subscription Price ID (${priceId}), setting mode to 'subscription'. Quantity forced to 1.`);
     }
 
     // 5. Create session
     try {
-      logger.log(`Creating Stripe session for user ${uid} with price ${priceId}`);
-      const session = await stripeClient.checkout.sessions.create({
+      logger.log(`Creating Stripe session for user ${uid} with price ${priceId}, mode: ${sessionMode}, quantity: ${quantity}`);
+      const sessionParams = {
         payment_method_types: ["card"],
-        mode: sessionMode, // Use the dynamic mode ('payment' or 'subscription')
-        // --- CHANGE THIS LINE ---
-        line_items: [{ price: priceId, quantity: quantity }], // Use the dynamic quantity
-        client_reference_id: uid, // Use client_reference_id for passing UID
+        mode: sessionMode,
+        line_items: [{ price: priceId, quantity: quantity }],
+        client_reference_id: uid,
         success_url: successUrl,
         cancel_url: cancelUrl,
-        // Optionally pass plan name if needed by webhook immediately
-        // metadata: {
-        //    planName: request.data.planName // Assuming client sends planName along with priceId
-        // }
-      });
+        metadata: {
+            planName: clientPlanName || (sessionMode === 'subscription' ? 'Subscription' : 'One-time Purchase'),
+            tier: clientTier || (sessionMode === 'subscription' ? 'unknown_subscription_tier' : 'credits_purchase')
+            // You can add more metadata if needed, e.g., productType: 'board_review_sub'
+        }
+      };
+      
+      // For subscriptions, you might want to enable trial periods or allow promotion codes
+      // if (sessionMode === 'subscription') {
+      //   sessionParams.subscription_data = {
+      //     // trial_period_days: 7, // Example: 7-day trial
+      //   };
+      //   sessionParams.allow_promotion_codes = true;
+      // }
 
-      logger.log(`Stripe session created: ${session.id}`);
+
+      const session = await stripeClient.checkout.sessions.create(sessionParams);
+
+      logger.log(`Stripe session created: ${session.id} with metadata:`, session.metadata);
       return { sessionId: session.id }; // Return only the session ID
     } catch (error) {
       logger.error("Stripe session creation failed:", error);
-      throw new HttpsError("internal", "Failed to create Stripe checkout session.", error.message);
+      // Provide more specific error details if available from Stripe
+      const stripeErrorMessage = error.raw ? error.raw.message : error.message;
+      throw new HttpsError("internal", `Failed to create Stripe checkout session: ${stripeErrorMessage}`);
     }
   }
 ); // End createStripeCheckoutSession
