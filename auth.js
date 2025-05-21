@@ -1,302 +1,331 @@
-// auth.js - Authentication functionality for MedSwipe
+// auth.js – Authentication functionality for MedSwipe
+// ----------------------------------------------------
 
 // --- Import necessary functions directly from firebase-config ---
 import {
-  auth, // Firebase Auth instance
-  db,   // Firestore instance
+  auth,                     // Firebase Auth instance
+  db,                       // Firestore instance
   doc,
   getDoc,
   setDoc,
   serverTimestamp,
   onAuthStateChanged,
-  createUserWithEmailAndPassword,
+  createUserWithEmailAndPassword, // For direct registration
   signInWithEmailAndPassword,
   signInAnonymously,
   signOut,
-  updateProfile
+  updateProfile,
+  // --- Added for linkWithCredential ---
+  EmailAuthProvider,
+  linkWithCredential
+  // --- End added ---
 } from './firebase-config.js';
 
-window.authState = {
-user: null,
-isRegistered: false,
-isLoading: true
-};
-
+// ----------------------------------------------------
+// Global reference to the auth state listener
 let authStateListener = null;
 
-// --- Helper function for a small delay ---
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+// Auth state management
+window.authState = {
+  user: null,
+  isRegistered: false,
+  isLoading: true
+};
+
+// ----------------------------------------------------
+// Helper: generate a guest-style username
+function generateGuestUsername() {
+  const adjectives = ['Curious', 'Medical', 'Swift', 'Learning', 'Aspiring'];
+  const nouns      = ['Learner', 'Student', 'User', 'Doctor', 'Practitioner'];
+  const adj  = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const noun = nouns[Math.floor(Math.random() * nouns.length)];
+  const num  = Math.floor(Math.random() * 9000) + 1000;
+  return `${adj}${noun}${num}`;
 }
 
+// ----------------------------------------------------
+// Initialize authentication system and set up listeners
 function initAuth() {
-if (!auth || !db) {
-  console.error("Firebase auth or db instance not available. Retrying...");
-  setTimeout(initAuth, 500);
-  return;
-}
-console.log("Initializing auth system");
+  if (!auth || !db) {
+    console.error('Firebase auth or db instance not available. Retrying…');
+    setTimeout(initAuth, 500);
+    return;
+  }
 
-authStateListener = onAuthStateChanged(auth, async (user) => {
-  console.log("Auth state changed:", user ? user.uid : 'No user');
-  window.authState.isLoading = true;
+  console.log('Initializing auth system');
 
-  if (user) {
-    window.authState.user = user;
-    const userDocRef = doc(db, 'users', user.uid);
-    const userDocSnap = await getDoc(userDocRef);
+  authStateListener = onAuthStateChanged(auth, async (user) => {
+    console.log(
+      'Auth state changed:',
+      user ? `${user.uid} (isAnonymous: ${user?.isAnonymous})` : 'No user'
+    );
 
-    let userDataForWrite = {};
-    let isNewUserDocument = !userDocSnap.exists();
+    window.authState.isLoading = true;
 
-    if (isNewUserDocument) {
-        console.log(`User document for ${user.uid} not found by onAuthStateChanged, preparing to create...`);
+    if (user) {
+      // ---------- Signed-in path ----------
+      window.authState.user = user;
+
+      const userDocRef  = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      let   userDataForWrite    = {};
+      const isNewUserDocument   = !userDocSnap.exists();
+      const currentIsRegistered = !user.isAnonymous; // true if email/password
+
+      if (isNewUserDocument) {
+        console.log(`User doc for ${user.uid} not found, creating…`);
         userDataForWrite = {
-            username: user.isAnonymous ? generateGuestUsername() : (user.displayName || user.email || `User_${user.uid.substring(0,5)}`),
-            email: user.email || null,
-            createdAt: serverTimestamp(),
-            isRegistered: !user.isAnonymous,
-            stats: { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0, xp: 0, level: 1, achievements: {}, currentCorrectStreak: 0 },
-            streaks: { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 },
-            bookmarks: [],
-            cmeStats: { totalAnswered: 0, totalCorrect: 0, eligibleAnswerCount: 0, creditsEarned: 0.00, creditsClaimed: 0.00 },
-            cmeAnsweredQuestions: {},
-            cmeClaimHistory: []
+          username: user.isAnonymous
+            ? generateGuestUsername()
+            : (user.displayName || user.email || `User_${user.uid.substring(0, 5)}`),
+          email:       user.email || null,  // null for anonymous
+          createdAt:   serverTimestamp(),
+          isRegistered: currentIsRegistered,
+
+          // Default stats scaffold
+          stats: {
+            totalAnswered: 0,
+            totalCorrect:  0,
+            totalIncorrect: 0,
+            categories: {},
+            totalTimeSpent: 0,
+            xp: 0,
+            level: 1,
+            achievements: {},
+            currentCorrectStreak: 0
+          },
+          streaks: {
+            lastAnsweredDate: null,
+            currentStreak: 0,
+            longestStreak: 0
+          },
+          bookmarks: [],
+
+          cmeStats: {
+            totalAnswered: 0,
+            totalCorrect:  0,
+            eligibleAnswerCount: 0,
+            creditsEarned:  0.0,
+            creditsClaimed: 0.0
+          },
+          cmeAnsweredQuestions: {},
+          cmeClaimHistory: []
         };
-    } else {
+
+        if (currentIsRegistered && user.email) {
+          userDataForWrite.email = user.email;
+        }
+      } else {
+        // ---- Existing Firestore user doc ----
         const existingData = userDocSnap.data();
-        console.log(`User document for ${user.uid} found by onAuthStateChanged. Current isAnonymous: ${user.isAnonymous}, Stored isRegistered: ${existingData.isRegistered}`);
-        if (existingData.isRegistered !== !user.isAnonymous) {
-            console.log(`Correcting isRegistered flag for user ${user.uid} from ${existingData.isRegistered} to ${!user.isAnonymous}.`);
-            userDataForWrite.isRegistered = !user.isAnonymous;
-        }
-        if (user.isAnonymous && (!existingData.username || (!existingData.username.startsWith("Curious") && !existingData.username.startsWith("Guest") && !existingData.username.startsWith("Medical") && !existingData.username.startsWith("Swift") && !existingData.username.startsWith("Learning") && !existingData.username.startsWith("Aspiring")))) {
-            console.log(`User ${user.uid} is anonymous and existing username "${existingData.username}" is not guest-like. Setting to guest name.`);
-            userDataForWrite.username = generateGuestUsername();
-        }
-    }
+        console.log(
+          `Found user doc for ${user.uid}. isAnonymous=${user.isAnonymous}, stored isRegistered=${existingData.isRegistered}`
+        );
 
-    if (isNewUserDocument || Object.keys(userDataForWrite).length > 0) {
-        // --- ADDED DELAY for new, non-anonymous users ---
-        if (isNewUserDocument && !user.isAnonymous) {
-            console.log(`Delaying Firestore write for new registered user ${user.uid} in onAuthStateChanged by 300ms`);
-            await sleep(300); // Small delay
+        // Sync the isRegistered flag if it changed
+        if (existingData.isRegistered !== currentIsRegistered) {
+          console.log(`Correcting isRegistered for ${user.uid}`);
+          userDataForWrite.isRegistered = currentIsRegistered;
         }
-        // --- END ADDED DELAY ---
+
+        // Update email if newly registered
+        if (currentIsRegistered && user.email && existingData.email !== user.email) {
+          userDataForWrite.email = user.email;
+        }
+
+        // Ensure anonymous users keep a guest-style username
+        if (
+          user.isAnonymous &&
+          (!existingData.username ||
+            !/^((Curious|Medical|Swift|Learning|Aspiring)(Learner|Student|User|Doctor|Practitioner))/.test(
+              existingData.username
+            ))
+        ) {
+          userDataForWrite.username = generateGuestUsername();
+        }
+      }
+
+      // Write new or updated fields if needed
+      if (isNewUserDocument || Object.keys(userDataForWrite).length > 0) {
         try {
-            await setDoc(userDocRef, userDataForWrite, { merge: true });
-            console.log(`User document for ${user.uid} ${isNewUserDocument ? 'created' : 'updated'} successfully by onAuthStateChanged.`);
-        } catch (error) {
-            console.error(`Error ${isNewUserDocument ? 'creating' : 'updating'} user document for ${user.uid} in onAuthStateChanged:`, error);
+          await setDoc(userDocRef, userDataForWrite, { merge: true });
+          console.log(
+            `User doc ${isNewUserDocument ? 'created' : 'updated'} for ${user.uid}`
+          );
+        } catch (err) {
+          console.error('Error writing user doc:', err);
         }
-    }
-    window.authState.isRegistered = !user.isAnonymous;
+      }
 
-  } else {
-    window.authState.user = null;
-    window.authState.isRegistered = false;
-    console.log("No user signed in. Attempting anonymous sign-in...");
-    try {
-      await signInAnonymously(auth);
-      console.log("Signed in anonymously.");
-    } catch (error) {
-      console.error("Error signing in anonymously:", error);
+      window.authState.isRegistered = currentIsRegistered;
+    } else {
+      // ---------- No user signed in ----------
+      window.authState.user        = null;
+      window.authState.isRegistered = false;
+
+      console.log('No user signed in – attempting anonymous sign-in…');
+      try {
+        await signInAnonymously(auth);
+        console.log('Signed in anonymously.');
+      } catch (err) {
+        console.error('Anonymous sign-in error:', err);
+        window.authState.isLoading = false;
+      }
+    }
+
+    if (window.authState.user || !user) {
       window.authState.isLoading = false;
     }
-  }
 
-  if (window.authState.user || !user) {
-       window.authState.isLoading = false;
-  }
+    window.dispatchEvent(
+      new CustomEvent('authStateChanged', {
+        detail: {
+          user:        window.authState.user,
+          isRegistered: window.authState.isRegistered,
+          isLoading:   window.authState.isLoading
+        }
+      })
+    );
+  });
 
-  window.dispatchEvent(new CustomEvent('authStateChanged', {
-    detail: {
-        user: window.authState.user,
-        isRegistered: window.authState.isRegistered,
-        isLoading: window.authState.isLoading
-     }
-  }));
-  console.log("Dispatched authStateChanged event:", window.authState);
-});
-
-return () => {
-  if (authStateListener) {
-    console.log("Cleaning up auth state listener.");
-    authStateListener();
-    authStateListener = null;
-  }
-};
+  return () => {
+    if (authStateListener) {
+      console.log('Cleaning up auth state listener.');
+      authStateListener();
+      authStateListener = null;
+    }
+  };
 }
 
+// ----------------------------------------------------
+// Convenience accessors
 function isUserRegistered() {
-return window.authState.isRegistered;
+  return window.authState.isRegistered;
 }
-
 function getCurrentUser() {
-return window.authState.user;
+  return window.authState.user;
 }
 
+// ----------------------------------------------------
+// Direct email/password registration (not upgrade)
 async function registerUser(email, password, username, experience) {
-try {
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-  const user = userCredential.user;
+  try {
+    console.log(`registerUser: creating ${email}`);
+    const { user } = await createUserWithEmailAndPassword(auth, email, password);
 
-  await updateProfile(user, { displayName: username });
+    await updateProfile(user, { displayName: username });
 
-  const userDocRef = doc(db, 'users', user.uid);
+    const userDocRef = doc(db, 'users', user.uid);
+    await setDoc(
+      userDocRef,
+      {
+        username,
+        email,
+        experience,
+        isRegistered: true,
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    );
 
-  // --- ADDED DELAY ---
-  console.log(`Delaying Firestore write in registerUser for ${user.uid} by 300ms`);
-  await sleep(300);
-  // --- END ADDED DELAY ---
+    window.authState.user        = user;
+    window.authState.isRegistered = true;
 
-  await setDoc(userDocRef, {
-    username: username,
-    email: email,
-    experience: experience,
-    isRegistered: true,
-    updatedAt: serverTimestamp()
-  }, { merge: true });
-  console.log(`Registered user ${user.uid} and updated Firestore with registration details.`);
+    window.dispatchEvent(
+      new CustomEvent('authStateChanged', {
+        detail: { ...window.authState, isRegistered: true }
+      })
+    );
 
-  window.authState.user = user;
-  window.authState.isRegistered = true;
-  window.dispatchEvent(new CustomEvent('authStateChanged', { detail: { ...window.authState, isRegistered: true } }));
-
-  return user;
-} catch (error) {
-  console.error("Error registering user:", error);
-  throw error;
+    return user;
+  } catch (err) {
+    console.error('registerUser error:', err);
+    throw err;
+  }
 }
+
+// ----------------------------------------------------
+// Upgrade currently anonymous user to permanent account
+async function upgradeAnonymousUser(email, password, username, experience) {
+  const anonUser = auth.currentUser;
+
+  if (!anonUser || !anonUser.isAnonymous) {
+    throw new Error('No anonymous user to upgrade.');
+  }
+
+  console.log(`Linking anonymous UID ${anonUser.uid} to ${email}…`);
+
+  try {
+    const cred = EmailAuthProvider.credential(email, password);
+    const { user: upgradedUser } = await linkWithCredential(anonUser, cred);
+
+    await updateProfile(upgradedUser, { displayName: username });
+
+    const userDocRef = doc(db, 'users', upgradedUser.uid);
+    await setDoc(
+      userDocRef,
+      {
+        username,
+        email,
+        experience,
+        isRegistered: true,
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    );
+
+    window.authState.user        = upgradedUser;
+    window.authState.isRegistered = true;
+
+    window.dispatchEvent(
+      new CustomEvent('authStateChanged', {
+        detail: { ...window.authState, user: upgradedUser, isRegistered: true }
+      })
+    );
+
+    return upgradedUser;
+  } catch (err) {
+    console.error('upgradeAnonymousUser error:', err);
+    throw err;
+  }
 }
 
+// ----------------------------------------------------
+// Login / logout helpers
 async function loginUser(email, password) {
-try {
-  const userCredential = await signInWithEmailAndPassword(auth, email, password);
-  return userCredential.user;
-} catch (error) {
-  console.error("Error logging in:", error);
-  throw error;
-}
+  try {
+    const { user } = await signInWithEmailAndPassword(auth, email, password);
+    return user;
+  } catch (err) {
+    console.error('loginUser error:', err);
+    throw err;
+  }
 }
 
 async function logoutUser() {
-try {
-  if (typeof cleanupOnLogout === 'function') {
-      await cleanupOnLogout();
-  } else {
-      console.warn("cleanupOnLogout function not found during logout.");
-  }
-  await signOut(auth);
-  console.log("User logged out successfully. Anonymous sign-in will be attempted.");
-} catch (error) {
-  console.error("Error signing out:", error);
-  throw error;
-}
-}
-
-async function upgradeAnonymousUser(email, password, username, experience) {
-const currentUser = auth.currentUser;
-
-if (!currentUser || !currentUser.isAnonymous) {
-  throw new Error("No anonymous user is currently signed in to upgrade.");
-}
-const anonymousUid = currentUser.uid;
-console.log(`Attempting to upgrade anonymous user: ${anonymousUid}`);
-
-let originalUserData = {};
-
-try {
-  const userDocRef = doc(db, 'users', anonymousUid);
-  const userDocSnap = await getDoc(userDocRef);
-  if (userDocSnap.exists()) {
-    originalUserData = userDocSnap.data();
-    console.log("Fetched data for anonymous user to carry over.");
-  } else {
-     console.warn("No existing document found for anonymous user during upgrade, will start fresh for new user.");
-      originalUserData = {
-          stats: { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0, xp: 0, level: 1, achievements: {}, currentCorrectStreak: 0 },
-          streaks: { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 },
-          bookmarks: [],
-          cmeStats: { totalAnswered: 0, totalCorrect: 0, eligibleAnswerCount: 0, creditsEarned: 0.00, creditsClaimed: 0.00 },
-          cmeAnsweredQuestions: {},
-          cmeClaimHistory: []
-      };
-  }
-
-  console.log("Signing out anonymous user before upgrade...");
-  await signOut(auth);
-  console.log("Anonymous user signed out.");
-
-  console.log("Creating new registered account...");
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-  const newUser = userCredential.user;
-  console.log(`New registered user created: ${newUser.uid}`);
-
-  await updateProfile(newUser, { displayName: username });
-  console.log("Updated profile for new user.");
-
-  const newUserDocRef = doc(db, 'users', newUser.uid);
-  const newRegisteredUserData = {
-      stats: originalUserData.stats || { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0, xp: 0, level: 1, achievements: {}, currentCorrectStreak: 0 },
-      streaks: originalUserData.streaks || { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 },
-      bookmarks: originalUserData.bookmarks || [],
-      cmeStats: originalUserData.cmeStats || { totalAnswered: 0, totalCorrect: 0, eligibleAnswerCount: 0, creditsEarned: 0.00, creditsClaimed: 0.00 },
-      cmeAnsweredQuestions: originalUserData.cmeAnsweredQuestions || {},
-      cmeClaimHistory: originalUserData.cmeClaimHistory || [],
-      username: username,
-      email: email,
-      experience: experience,
-      isRegistered: true,
-      updatedAt: serverTimestamp(),
-      previousAnonymousUid: anonymousUid,
-  };
-  if (originalUserData.createdAt) {
-    newRegisteredUserData.createdAt = originalUserData.createdAt;
-  }
-
-  // --- ADDED DELAY ---
-  console.log(`Delaying Firestore write in upgradeAnonymousUser for ${newUser.uid} by 300ms`);
-  await sleep(300);
-  // --- END ADDED DELAY ---
-
-  await setDoc(newUserDocRef, newRegisteredUserData, { merge: true });
-  console.log(`Copied data and updated document for new user ${newUser.uid} with registration details.`);
-
-  window.authState.user = newUser;
-  window.authState.isRegistered = true;
-  window.dispatchEvent(new CustomEvent('authStateChanged', { detail: { ...window.authState, isRegistered: true } }));
-
-  return newUser;
-
-} catch (error) {
-  console.error("Error upgrading anonymous user:", error);
-  console.log("Upgrade failed, attempting to sign back in anonymously...");
   try {
-    await signInAnonymously(auth);
-  } catch (signInError) {
-    console.error("Failed to sign back in anonymously after upgrade error:", signInError);
+    if (typeof cleanupOnLogout === 'function') {
+      await cleanupOnLogout(); // defined elsewhere
+    }
+    await signOut(auth);
+    console.log('Logged out – anonymous sign-in will run via onAuthStateChanged.');
+  } catch (err) {
+    console.error('logoutUser error:', err);
+    throw err;
   }
-  throw error;
-}
 }
 
-function generateGuestUsername() {
-const adjectives = ["Curious", "Medical", "Swift", "Learning", "Aspiring"];
-const nouns = ["Learner", "Student", "User", "Doctor", "Practitioner"];
-const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
-const noun = nouns[Math.floor(Math.random() * nouns.length)];
-const num = Math.floor(Math.random() * 9000) + 1000;
-return `${adj}${noun}${num}`;
-}
-
+// ----------------------------------------------------
+// Expose functions globally if needed by UI scripts
 window.authFunctions = {
-isUserRegistered,
-getCurrentUser,
-registerUser,
-loginUser,
-logoutUser,
-upgradeAnonymousUser
+  isUserRegistered,
+  getCurrentUser,
+  registerUser,
+  loginUser,
+  logoutUser,
+  upgradeAnonymousUser
 };
 
+// Kick things off
 initAuth();
