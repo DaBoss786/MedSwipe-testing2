@@ -199,521 +199,220 @@ exports.generateCmeCertificate = onCall({
   }
 });
 
-// --- Stripe Webhook Handler (Fully Updated) ---
-exports.stripeWebhookHandler = onRequest(
-  {
-    region: "us-central1",
-    timeoutSeconds: 120,
-    memory: "256MiB",
-    secrets: ["STRIPE_WEBHOOK_SECRET", "STRIPE_SECRET_KEY"],
-  },
-  async (req, res) => {
-    const webhookSecretValue = process.env.STRIPE_WEBHOOK_SECRET;
-    const secretKeyValue = process.env.STRIPE_SECRET_KEY;
-
-    if (!secretKeyValue) {
-      logger.error(
-        "CRITICAL: Stripe secret key is missing from environment for webhook."
-      );
-      res.status(500).send("Webhook Error: Server configuration error (SK).");
-      return;
-    }
-
-    const stripeClient = stripe(secretKeyValue);
-
-    if (!webhookSecretValue) {
-      logger.error(
-        "CRITICAL: Webhook secret is missing from environment for webhook."
-      );
-      res.status(500).send("Webhook Error: Server configuration error (WHS).");
-      return;
-    }
-
-    logger.info(`stripeWebhookHandler received request: ${req.method} ${req.path}`);
-
-    // --- Health check endpoint ---
-    if (req.method === "GET") {
-      logger.info("Health check: OK.");
-      res.writeHead(200, { "Content-Type": "text/plain" });
-      res.end("OK");
-      return;
-    }
-
-    // --- Verify signature & construct event ---
-    let event;
-    try {
-      event = stripeClient.webhooks.constructEvent(
-        req.rawBody,
-        req.headers["stripe-signature"],
-        webhookSecretValue
-      );
-      logger.info(`Webhook event: ${event.id}, Type: ${event.type}`);
-    } catch (err) {
-      logger.error(`Webhook signature verification failed: ${err.message}`, {
-        error: err,
-      });
-      res.status(400).send(`Webhook Error: ${err.message}`);
-      return;
-    }
-
-    // --- Main processing ---
-    try {
-      if (event.type === "checkout.session.completed") {
-        const session = event.data.object;
-        logger.info(
-          `Processing checkout.session.completed: ${session.id}, Mode: ${session.mode}, Payment: ${session.payment_status}`
-        );
-
-        const uid = session.client_reference_id;
-        const paid = session.payment_status === "paid";
-        const stripeCustomerId = session.customer;
-        const metadata = session.metadata || {};
-
-        let tier = metadata.tier;
-        let planName = metadata.planName;
-
-        logger.info(
-          `Webhook: checkout.session.completed - UID: ${uid}, Session Tier: ${tier}, Session PlanName: ${planName}, StripeCustID: ${stripeCustomerId}`
-        );
-
-        if (paid && uid) {
-          const userRef = admin.firestore().collection("users").doc(uid);
-          let userDataToUpdate = {
-            stripeCustomerId: stripeCustomerId || null,
-            isRegistered: true,
-          };
-
-          // --- SUBSCRIPTION MODE ---
-          if (session.mode === "subscription") {
-            const stripeSubscriptionId = session.subscription; // Subscription ID
-
-            if (stripeSubscriptionId && stripeCustomerId) {
-              logger.info(
-                `Webhook: Processing subscription - User: ${uid}, SubID: ${stripeSubscriptionId}`
-              );
-
-              let currentPeriodEndTimestamp = null;
-              let subscriptionObject = null;
-
+/*  ────────────────────────────────────────────────────────────────
+    Stripe Webhook Handler – FULLY REPLACED
+    Handles:
+      • Board-Review subscription   (tier = "board_review")
+      • CME-Annual  subscription    (tier = "cme_annual")
+      • One-time CME-Credit bundle  (tier = "cme_credit")
+    ──────────────────────────────────────────────────────────────── */
+    exports.stripeWebhookHandler = onRequest(
+      {
+        region: "us-central1",
+        timeoutSeconds: 120,
+        memory: "256MiB",
+        secrets: ["STRIPE_WEBHOOK_SECRET", "STRIPE_SECRET_KEY"],
+      },
+      async (req, res) => {
+        /* ── 0.  ENV & BASIC GUARDS ─────────────────────────────── */
+        const stripeSecret  = process.env.STRIPE_SECRET_KEY;
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+        if (!stripeSecret || !webhookSecret) {
+          logger.error("Stripe keys missing from environment");
+          return res.status(500).send("Server mis-configured.");
+        }
+        const stripeClient = stripe(stripeSecret);
+    
+        /* health-check ping */
+        if (req.method === "GET") return res.status(200).send("OK");
+    
+        /* ── 1.  VERIFY SIGNATURE ───────────────────────────────── */
+        let event;
+        try {
+          event = stripeClient.webhooks.constructEvent(
+            req.rawBody,
+            req.headers["stripe-signature"],
+            webhookSecret
+          );
+        } catch (err) {
+          logger.error("⚠️  Webhook sig verification failed:", err.message);
+          return res.status(400).send(`Webhook Error: ${err.message}`);
+        }
+    
+        /* ── 2.  HANDLE checkout.session.completed ─────────────── */
+        if (event.type !== "checkout.session.completed") {
+          logger.info(`Ignoring event ${event.type}`);
+          return res.status(200).send("Ignored");
+        }
+    
+        const session   = event.data.object;
+        const uid       = session.client_reference_id;
+        const tier      = session.metadata?.tier      || "unknown";
+        const planName  = session.metadata?.planName  || "Subscription";
+        const paid      = session.payment_status === "paid";
+        const custId    = session.customer;
+    
+        logger.info(`➡️  ${session.id} | tier=${tier} | mode=${session.mode}`);
+    
+        if (!uid || !paid) {
+          logger.warn("No uid or not paid – aborting Firestore write.");
+          return res.status(200).send("No-op");
+        }
+    
+        const userRef = admin.firestore().collection("users").doc(uid);
+        const updates = {
+          stripeCustomerId: custId,
+          isRegistered: true,
+        };
+    
+        /* ── 3A.  SUBSCRIPTION MODE (Board-Review / CME-Annual) ───*/
+        if (session.mode === "subscription") {
+          const subId = session.subscription;
+          if (!subId) {
+            logger.error("No subscription ID on session");
+            return res.status(200).send("No subId");
+          }
+    
+          /* fetch subscription with items[] (new API stores dates there) */
+          let subscription;
+          try {
+            subscription = await stripeClient.subscriptions.retrieve(subId, {
+              expand: ["items"],
+            });
+          } catch (err) {
+            logger.error("Sub fetch failed:", err);
+            return res.status(200).send("Sub fetch failed");
+          }
+    
+          const item0          = subscription.items?.data?.[0] || {};
+          const startUnix      = item0.current_period_start ?? subscription.current_period_start;
+          const endUnix        = item0.current_period_end   ?? subscription.current_period_end;
+          const startTS        = startUnix ? admin.firestore.Timestamp.fromMillis(startUnix * 1000) : null;
+          const endTS          = endUnix   ? admin.firestore.Timestamp.fromMillis(endUnix   * 1000) : null;
+    
+          if (tier === "board_review") {
+            Object.assign(updates, {
+              boardReviewActive: true,
+              boardReviewTier: planName,
+              boardReviewSubscriptionId: subId,
+              boardReviewSubscriptionStartDate: startTS ?? admin.firestore.FieldValue.serverTimestamp(),
+              boardReviewSubscriptionEndDate: endTS,
+            });
+          } else if (tier === "cme_annual") {
+            Object.assign(updates, {
+              cmeSubscriptionActive: true,
+              cmeSubscriptionPlan: planName,
+              cmeSubscriptionId: subId,
+              cmeSubscriptionStartDate: startTS ?? admin.firestore.FieldValue.serverTimestamp(),
+              cmeSubscriptionEndDate: endTS,
+            });
+          } else {
+            logger.warn(`Unhandled subscription tier "${tier}"`);
+          }
+    
+        /* ── 3B.  PAYMENT MODE (one-time CME-CREDIT bundle) ─────── */
+        } else if (session.mode === "payment") {
+          if (tier !== "cme_credits") {
+            logger.warn(`Unhandled payment tier "${tier}"`);
+          } else {
+            /* how many credits? → metadata.credits OR line-items quantity */
+            let credits = parseInt(session.metadata?.credits ?? "0", 10);
+            if (!credits) {
               try {
-                subscriptionObject = await stripeClient.subscriptions.retrieve(
-                  stripeSubscriptionId,
-                  {
-                    expand: ["items", "latest_invoice.payment_intent"],
-                  }
+                const items = await stripeClient.checkout.sessions.listLineItems(
+                  session.id,
+                  { limit: 1 }
                 );
-                logger.info(
-                  `Webhook: Retrieved Stripe Subscription object for ${stripeSubscriptionId}. Status: ${subscriptionObject.status}`
-                );
-
-                // Fallback: get tier/planName from subscription metadata
-                if (!tier && subscriptionObject.metadata?.tier) {
-                  tier = subscriptionObject.metadata.tier;
-                  logger.info(
-                    `Webhook: Tier updated from subscription metadata: ${tier}`
-                  );
-                }
-                if (!planName && subscriptionObject.metadata?.planName) {
-                  planName = subscriptionObject.metadata.planName;
-                  logger.info(
-                    `Webhook: PlanName updated from subscription metadata: ${planName}`
-                  );
-                }
-
-                // Determine period end
-                let periodEndUnixTimestamp = null;
-                if (
-                  subscriptionObject.items?.data?.length > 0 &&
-                  subscriptionObject.items.data[0].period
-                ) {
-                  periodEndUnixTimestamp =
-                    subscriptionObject.items.data[0].period.end;
-                } else if (subscriptionObject.current_period_end) {
-                  logger.warn(
-                    `Webhook: Using fallback subscription.current_period_end for SubID: ${stripeSubscriptionId}`
-                  );
-                  periodEndUnixTimestamp = subscriptionObject.current_period_end;
-                }
-
-                if (periodEndUnixTimestamp) {
-                  currentPeriodEndTimestamp = admin.firestore.Timestamp.fromDate(
-                    new Date(periodEndUnixTimestamp * 1000)
-                  );
-                  logger.info(
-                    `Webhook: Subscription ${stripeSubscriptionId} effective period_end: ${new Date(
-                      periodEndUnixTimestamp * 1000
-                    ).toISOString()}`
-                  );
-                } else {
-                  logger.warn(
-                    `Webhook: Subscription ${stripeSubscriptionId} is missing a period end.`
-                  );
-                }
-              } catch (subError) {
-                logger.error(
-                  `Webhook: Error retrieving Stripe subscription ${stripeSubscriptionId}:`,
-                  subError
-                );
+                credits = items.data?.[0]?.quantity ?? 1;
+              } catch (err) {
+                credits = 1; // fallback
               }
-
-              // --- Board Review tier ---
-              if (tier === "board_review") {
-                userDataToUpdate.boardReviewActive = true;
-                userDataToUpdate.boardReviewTier =
-                  planName || "Board Review Subscription";
-                userDataToUpdate.boardReviewSubscriptionId = stripeSubscriptionId;
-                userDataToUpdate.boardReviewSubscriptionStartDate =
-                  admin.firestore.FieldValue.serverTimestamp();
-                if (currentPeriodEndTimestamp) {
-                  userDataToUpdate.boardReviewSubscriptionEndDate =
-                    currentPeriodEndTimestamp;
-                }
-
-                // --- CME Annual tier ---
-              } else if (tier === "cme_annual") {
-                userDataToUpdate.cmeSubscriptionActive = true;
-                userDataToUpdate.cmeSubscriptionPlan =
-                  planName || "CME Annual Subscription";
-                userDataToUpdate.cmeSubscriptionId = stripeSubscriptionId;
-                userDataToUpdate.cmeSubscriptionStartDate =
-                  admin.firestore.FieldValue.serverTimestamp();
-                if (currentPeriodEndTimestamp) {
-                  userDataToUpdate.cmeSubscriptionEndDate =
-                    currentPeriodEndTimestamp;
-                }
-
-                // --- Unknown tier ---
-              } else {
-                logger.warn(
-                  `Webhook: Unhandled subscription tier: '${tier}' for session ${session.id}. PlanName: ${planName}`
-                );
-              }
-            } else {
-              logger.warn(
-                `Webhook: Skipping subscription update for session ${session.id}. Missing SubID (${stripeSubscriptionId}) or CustID (${stripeCustomerId}).`
-              );
             }
-
-            // --- PAYMENT MODE (one-time credits) ---
-          } else if (session.mode === "payment") {
-            if (tier === "cme_credits") {
-              let purchasedQuantity = 0;
-
-              // Try to read line items directly
-              if (
-                session.line_items?.data?.length > 0
-              ) {
-                purchasedQuantity = session.line_items.data[0].quantity || 0;
-              } else {
-                // Fallback: re-fetch session with expanded line items
-                try {
-                  const retrievedSession =
-                    await stripeClient.checkout.sessions.retrieve(session.id, {
-                      expand: ["line_items"],
-                    });
-                  if (retrievedSession.line_items?.data?.length > 0) {
-                    purchasedQuantity =
-                      retrievedSession.line_items.data[0].quantity || 0;
-                  }
-                } catch (retrieveError) {
-                  logger.error(
-                    `Error re-fetching session ${session.id} for line items:`,
-                    retrieveError
-                  );
-                }
-              }
-
-              if (purchasedQuantity > 0) {
-                userDataToUpdate.cmeCreditsAvailable =
-                  admin.firestore.FieldValue.increment(purchasedQuantity);
-                logger.info(
-                  `Webhook: Prepared CME Credits update for ${uid}, Qty: ${purchasedQuantity}`
-                );
-              } else {
-                logger.warn(
-                  `Webhook: Skipping CME Credits update for session ${session.id}, zero quantity.`
-                );
-              }
-            } else {
-              logger.warn(
-                `Webhook: Unhandled payment tier: '${tier}' for session ${session.id}. PlanName: ${planName}`
-              );
-            }
-          } else {
-            logger.warn(
-              `Webhook: Unhandled session mode: ${session.mode} for session ${session.id}`
-            );
-          }
-
-          // --- Commit updates to Firestore (if any meaningful) ---
-          const hasMeaningfulUpdates =
-            Object.keys(userDataToUpdate).some(
-              (key) => !["stripeCustomerId", "isRegistered"].includes(key)
-            ) || userDataToUpdate.cmeCreditsAvailable;
-
-          if (
-            hasMeaningfulUpdates ||
-            userDataToUpdate.stripeCustomerId !== undefined ||
-            userDataToUpdate.isRegistered !== undefined
-          ) {
-            await userRef.set(userDataToUpdate, { merge: true });
-            logger.info(
-              `Webhook: Firestore updated for user: ${uid}. Data:`,
-              JSON.stringify(userDataToUpdate)
-            );
-          } else {
-            logger.info(
-              `Webhook: No specific tier-based Firestore updates for user: ${uid}.`
-            );
+            Object.assign(updates, {
+              cmeCreditsAvailable: admin.firestore.FieldValue.increment(credits),
+              lastCmeCreditPurchase: admin.firestore.Timestamp.now(),
+            });
           }
         } else {
-          logger.warn(
-            `Webhook: Skipping Firestore update for session ${session.id}. Not paid or UID missing. Paid=${paid}, UID=${uid}.`
-          );
+          logger.warn(`Unhandled session mode "${session.mode}"`);
         }
-
-        // --- SUBSCRIPTION DELETE / UPDATE EVENTS ---
-      } else if (
-        event.type === "customer.subscription.deleted" ||
-        event.type === "customer.subscription.updated"
-      ) {
-        const subscription = event.data.object;
-        const customerId = subscription.customer;
-        const subscriptionStatus = subscription.status;
-        const subscriptionId = subscription.id;
-        const cancelAtPeriodEnd = subscription.cancel_at_period_end;
-        const currentPeriodEndFromEvent = subscription.current_period_end
-          ? admin.firestore.Timestamp.fromDate(
-              new Date(subscription.current_period_end * 1000)
-            )
-          : null;
-
-        const subMetadata = subscription.metadata || {};
-        const subTier = subMetadata.tier;
-
-        logger.info(
-          `Webhook: Processing ${event.type}: CustID: ${customerId}, SubID: ${subscriptionId}, Status: ${subscriptionStatus}, CancelAtEnd: ${cancelAtPeriodEnd}, SubTier: ${subTier}`
-        );
-
-        // Find Firestore user(s) with this customerId
-        const usersRef = admin.firestore().collection("users");
-        const querySnapshot = await usersRef
-          .where("stripeCustomerId", "==", customerId)
-          .get();
-
-        if (!querySnapshot.empty) {
-          querySnapshot.forEach(async (userDoc) => {
-            logger.info(
-              `Webhook: Found user ${userDoc.id} for subscription event for customer ${customerId}.`
-            );
-
-            const userData = userDoc.data();
-            let updates = {};
-
-            const isActiveNow =
-              subscriptionStatus === "active" || subscriptionStatus === "trialing";
-            const willDeactivate =
-              subscriptionStatus === "canceled" ||
-              subscriptionStatus === "unpaid" ||
-              cancelAtPeriodEnd;
-
-            // Determine which subscription this event corresponds to
-            let effectiveTier = subTier;
-            if (!effectiveTier) {
-              if (userData.boardReviewSubscriptionId === subscriptionId)
-                effectiveTier = "board_review";
-              else if (userData.cmeSubscriptionId === subscriptionId)
-                effectiveTier = "cme_annual";
-              logger.info(
-                `Webhook: Tier for SubID ${subscriptionId} determined by matching stored IDs: ${effectiveTier}`
-              );
-            }
-
-            if (
-              effectiveTier === "board_review" &&
-              userData.boardReviewSubscriptionId === subscriptionId
-            ) {
-              updates.boardReviewActive = isActiveNow && !willDeactivate;
-              if (currentPeriodEndFromEvent)
-                updates.boardReviewSubscriptionEndDate = currentPeriodEndFromEvent;
-            } else if (
-              effectiveTier === "cme_annual" &&
-              userData.cmeSubscriptionId === subscriptionId
-            ) {
-              updates.cmeSubscriptionActive = isActiveNow && !willDeactivate;
-              if (currentPeriodEndFromEvent)
-                updates.cmeSubscriptionEndDate = currentPeriodEndFromEvent;
-            } else {
-              logger.warn(
-                `Webhook: Subscription ID ${subscriptionId} from event did not match a known subscription type or tier for user ${userDoc.id}.`
-              );
-            }
-
-            if (Object.keys(updates).length > 0) {
-              await userDoc.ref.update(updates);
-              logger.info(
-                `Webhook: Updated Firestore for user ${userDoc.id} from ${event.type}:`,
-                updates
-              );
-            }
-          });
-        } else {
-          logger.warn(
-            `Webhook: No user found with Stripe CustID ${customerId} for event ${event.type}.`
-          );
-        }
-
-        // --- OTHER EVENT TYPES ---
-      } else {
-        logger.info(`Received unhandled event type: ${event.type}`);
+    
+        /* ── 4.  WRITE TO FIRESTORE ─────────────────────────────── */
+        await userRef.set(updates, { merge: true });
+        logger.info(`✅  Firestore updated for ${uid}`);
+        return res.status(200).send("OK");
       }
-
-      res.status(200).json({ received: true, eventId: event.id });
-    } catch (err) {
-      logger.error(
-        `Webhook handler error for event ${event?.id}, type ${event?.type}: ${err.message}`,
-        { error: err, stack: err.stack }
-      );
-      res
-        .status(500)
-        .send(`Webhook Error: Internal error processing event ${event?.id}.`);
-    }
-  }
-);
-
-
-
-// --- createStripeCheckoutSession (Updated) ---
-exports.createStripeCheckoutSession = onCall(
-  {
-    region: "us-central1",
-    memory: "256MiB",
-    secrets: ["STRIPE_SECRET_KEY"],
-  },
-  async (request) => {
-    logger.log("createStripeCheckoutSession called with data:", request.data);
-
-    // --- Authentication check ---
-    if (!request.auth) {
-      logger.error("Authentication failed: No auth context.");
-      throw new HttpsError(
-        "unauthenticated",
-        "You must be logged in to start a checkout."
-      );
-    }
-    const uid = request.auth.uid;
-    logger.log(`Authenticated user: ${uid}`);
-
-    // --- Validate client-supplied data ---
-    const priceId = request.data.priceId;
-    const clientPlanName = request.data.planName;
-    const clientTier = request.data.tier;
-    let quantity = request.data.quantity || 1;
-
-    if (!priceId || typeof priceId !== "string") {
-      logger.error("Validation failed: Invalid Price ID.", {
-        data: request.data,
-      });
-      throw new HttpsError("invalid-argument", "A valid Price ID must be provided.");
-    }
-
-    if (
-      typeof quantity !== "number" ||
-      !Number.isInteger(quantity) ||
-      quantity < 1
-    ) {
-      logger.warn(`Invalid quantity received: ${request.data.quantity}. Defaulting to 1.`);
-      quantity = 1;
-    }
-
-    logger.log(
-      `Received Price ID: ${priceId}, PlanName: ${clientPlanName}, Tier: ${clientTier}, Quantity: ${quantity}`
     );
-
-    // --- Initialize Stripe ---
-    const secretKey = process.env.STRIPE_SECRET_KEY;
-    if (!secretKey) {
-      logger.error("CRITICAL: Stripe secret key is missing from environment.");
-      throw new HttpsError("internal", "Server configuration error [SK].");
-    }
-    const stripeClient = stripe(secretKey);
-    logger.info("Stripe client initialized for createCheckoutSession.");
-
-    // --- URLs ---
-    const YOUR_APP_BASE_URL = "https://daboss786.github.io/MedSwipe-testing2";
-    const successUrl = `${YOUR_APP_BASE_URL}/checkout-success.html`;
-    const cancelUrl = `${YOUR_APP_BASE_URL}/checkout-cancel.html?tier=${encodeURIComponent(
-      clientTier || ""
-    )}`; // Pass tier back to cancel URL
-
-    // --- Determine session mode ---
-    let sessionMode = "subscription";
-    const creditPriceIdFromStripe = "price_1RKXlYR9wwfN8hwyGznI4iXS"; // CME Credit Price ID
-
-    if (priceId === creditPriceIdFromStripe) {
-      sessionMode = "payment";
-      logger.info(
-        `Detected Credit Price ID (${priceId}), setting mode to 'payment'.`
-      );
-    } else {
-      quantity = 1; // Subscriptions always have quantity 1
-      logger.info(
-        `Detected Subscription Price ID (${priceId}), setting mode to 'subscription'.`
-      );
-    }
-
-    try {
-      logger.log(
-        `Creating Stripe session for user ${uid} with price ${priceId}, mode: ${sessionMode}, quantity: ${quantity}`
-      );
-
-      const sessionParams = {
-        payment_method_types: ["card"],
-        mode: sessionMode,
-        line_items: [{ price: priceId, quantity }],
-        client_reference_id: uid,
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        metadata: {
-          planName:
-            clientPlanName ||
-            (sessionMode === "subscription" ? "Subscription" : "One-time Purchase"),
-          tier:
-            clientTier ||
-            (sessionMode === "subscription"
-              ? "unknown_subscription_tier"
-              : "credits_purchase"),
-        },
-      };
-
-      if (sessionMode === "subscription") {
-        sessionParams.subscription_data = {
+    
+    
+    
+    /*  ────────────────────────────────────────────────────────────────
+        createStripeCheckoutSession – FULLY REPLACED
+        Builds sessions for:
+          • Board-Review subscription
+          • CME-Annual  subscription
+          • CME-Credit  one-time bundle (quantity ≥1)
+        ──────────────────────────────────────────────────────────────── */
+    exports.createStripeCheckoutSession = onCall(
+      {
+        region: "us-central1",
+        memory: "256MiB",
+        secrets: ["STRIPE_SECRET_KEY"],
+      },
+      async (req) => {
+        if (!req.auth) {
+          throw new HttpsError("unauthenticated", "Login required.");
+        }
+        const uid        = req.auth.uid;
+        const priceId    = req.data.priceId;        // required
+        const planName   = req.data.planName || "Subscription";
+        const tier       = req.data.tier;           // required on client
+        let   quantity   = req.data.quantity || 1;  // only for credits
+    
+        if (!priceId || typeof priceId !== "string")
+          throw new HttpsError("invalid-argument", "priceId missing.");
+    
+        if (!tier || typeof tier !== "string")
+          throw new HttpsError("invalid-argument", "tier missing.");
+    
+        /* Detect mode – anything with tier === cme_credit → payment */
+        const creditPriceId = "price_1RKXlYR9wwfN8hwyGznI4iXS"; // <-- your one-time price
+        const mode = tier === "cme_credits" || priceId === creditPriceId
+          ? "payment"
+          : "subscription";
+    
+        /* subscriptions always quantity 1 */
+        if (mode === "subscription") quantity = 1;
+    
+        const stripeClient = stripe(process.env.STRIPE_SECRET_KEY);
+        const APP_URL      = "https://daboss786.github.io/MedSwipe-testing2";
+    
+        const params = {
+          mode,
+          payment_method_types: ["card"],
+          client_reference_id: uid,
+          line_items: [{ price: priceId, quantity }],
+          success_url: `${APP_URL}/checkout-success.html`,
+          cancel_url : `${APP_URL}/checkout-cancel.html?tier=${encodeURIComponent(tier)}`,
           metadata: {
-            // Add to subscription_data for direct access on subscription object
-            planName: clientPlanName || "Subscription",
-            tier: clientTier || "unknown_subscription_tier",
+            planName,
+            tier,
+            ...(mode === "payment" ? { credits: String(quantity) } : {}),
           },
         };
+    
+        if (mode === "subscription") {
+          params.subscription_data = {
+            metadata: { planName, tier },
+          };
+        }
+    
+        const session = await stripeClient.checkout.sessions.create(params);
+        logger.info(`🟢 session ${session.id} | mode=${mode} | tier=${tier}`);
+        return { sessionId: session.id };
       }
-
-      const session = await stripeClient.checkout.sessions.create(sessionParams);
-      logger.log(`Stripe session created: ${session.id} with session metadata:`, session.metadata);
-
-      if (sessionMode === "subscription" && session.subscription) {
-        logger.info(`Associated Stripe Subscription ID: ${session.subscription}`);
-      }
-
-      return { sessionId: session.id };
-    } catch (error) {
-      logger.error("Stripe session creation failed:", error);
-      const stripeErrorMessage = error.raw ? error.raw.message : error.message;
-      throw new HttpsError(
-        "internal",
-        `Failed to create Stripe checkout session: ${stripeErrorMessage}`
-      );
-    }
-  }
-);
+    );
+    
 
 
 // --- Callable Function to Create Stripe Customer Portal Session ---
