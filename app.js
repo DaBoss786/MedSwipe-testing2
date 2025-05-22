@@ -4111,165 +4111,196 @@ const STRIPE_BR_ANNUAL_PRICE_ID = 'price_1RQiFiR9wwfN8hwy4PrQYwvj';    // <<< PA
 // ---
 
     // Checkout Button
-    // --- Listener for ANNUAL Subscription Button ---
-const cmeCheckoutAnnualBtn = document.getElementById("cmeCheckoutAnnualBtn"); // <<< Use the NEW ID we set in HTML
+// --- Listener for CME ANNUAL Subscription Button (Corrected with Metadata) ---
+const cmeCheckoutAnnualBtn = document.getElementById("cmeCheckoutAnnualBtn");
+
 if (cmeCheckoutAnnualBtn) {
-    cmeCheckoutAnnualBtn.addEventListener("click", async function() {
-        // --- Keep the Price ID simple ---
-        const selectedPriceId = STRIPE_ANNUAL_PRICE_ID; // <<< ALWAYS use the Annual ID here
-        const planName = 'Annual'; // <<< Set plan name directly
+  cmeCheckoutAnnualBtn.addEventListener("click", async function () {
+    const selectedPriceId = STRIPE_ANNUAL_PRICE_ID;   // CME Annual Price ID
+    const planNameForMeta = "CME Annual Subscription"; // Descriptive name for metadata
+    const tierForMeta = "cme_annual";                  // Specific tier for metadata
 
-        console.log(`Requesting checkout session for ${planName} plan with Price ID: ${selectedPriceId}`);
+    console.log(
+      `Requesting CME checkout for ${planNameForMeta} (Tier: ${tierForMeta}) with Price ID: ${selectedPriceId}`
+    );
 
-        // --- Keep your existing Auth checks ---
-        const user = window.authFunctions.getCurrentUser();
-        if (!user || user.isAnonymous) {
-            alert("Please register or log in fully before purchasing a subscription.");
-            console.warn("Checkout attempted by anonymous user.");
-            return;
-        }
-        if (!window.stripe || !createCheckoutSessionFunction) {
-            alert('Error: Payment system or function reference not ready. Please refresh.');
-            console.error('Stripe object or callable function reference missing.');
-            return;
-        }
-        // --- End Auth checks ---
+    const user = window.authFunctions.getCurrentUser();
+    if (!user || user.isAnonymous) {
+      alert("Please register or log in fully before purchasing a subscription.");
+      console.warn(
+        "CME Annual checkout attempted by anonymous or non-logged-in user."
+      );
+      return;
+    }
 
-        // Disable button
-        cmeCheckoutAnnualBtn.disabled = true;
-        cmeCheckoutAnnualBtn.textContent = 'Preparing Checkout...';
+    if (!window.stripe || !createCheckoutSessionFunction) {
+      alert("Error: Payment system not ready. Please refresh.");
+      console.error(
+        "Stripe object or createCheckoutSessionFunction reference missing for CME Annual."
+      );
+      return;
+    }
 
-        try {
-            // --- FORCE TOKEN REFRESH (Keep this) ---
-            console.log("Forcing ID token refresh...");
-            await getIdToken(user, true); // Pass true to force refresh
-            console.log("ID token refreshed.");
-            // --- END TOKEN REFRESH ---
+    cmeCheckoutAnnualBtn.disabled = true;
+    cmeCheckoutAnnualBtn.textContent = "Preparing Checkout…";
 
-            // Call the Cloud Function - Pass only the Annual Price ID
-            console.log("Calling createStripeCheckoutSession function for user:", user.uid);
-            const result = await createCheckoutSessionFunction({ priceId: selectedPriceId }); // <<< Pass ONLY priceId
-            const sessionId = result.data.sessionId;
-            console.log("Received Session ID:", sessionId);
+    try {
+      console.log("Forcing ID token refresh for CME Annual checkout…");
+      await getIdToken(user, true);
+      console.log("ID token refreshed.");
 
-            if (!sessionId) { throw new Error("Cloud function did not return a Session ID."); }
+      console.log(
+        "Calling createStripeCheckoutSession for CME Annual. User:",
+        user.uid
+      );
+      const result = await createCheckoutSessionFunction({
+        priceId: selectedPriceId,
+        planName: planNameForMeta, // <<< ADDED
+        tier: tierForMeta,         // <<< ADDED
+      });
 
-            // Redirect using the Session ID (Keep this)
-            cmeCheckoutAnnualBtn.textContent = 'Redirecting...';
-            const { error } = await window.stripe.redirectToCheckout({ sessionId: sessionId });
+      const sessionId = result.data.sessionId;
+      console.log("Received Session ID for CME Annual:", sessionId);
 
-            // Handle redirect error (Keep this)
-            if (error) {
-                console.error("Stripe redirectToCheckout error:", error);
-                alert(`Could not redirect to checkout: ${error.message}`);
-                cmeCheckoutAnnualBtn.disabled = false;
-                cmeCheckoutAnnualBtn.textContent = 'Subscribe Annually'; // Reset text
-            }
+      if (!sessionId) {
+        throw new Error(
+          "Cloud function did not return a Session ID for CME Annual."
+        );
+      }
 
-        } catch (error) {
-            // Handle function call error (Keep this)
-            console.error("Error during Annual checkout:", error);
-            let message = "Could not prepare Annual checkout. Please try again.";
-             if (error.code && error.message) { message = `Error: ${error.message}`; }
-             else if (error.message) { message = error.message; }
-            alert(message);
-            cmeCheckoutAnnualBtn.disabled = false;
-            cmeCheckoutAnnualBtn.textContent = 'Subscribe Annually'; // Reset text
-        }
-    });
+      cmeCheckoutAnnualBtn.textContent = "Redirecting…";
+      const { error } = await window.stripe.redirectToCheckout({ sessionId });
+
+      if (error) {
+        console.error("Stripe redirectToCheckout error for CME Annual:", error);
+        alert(`Could not redirect to checkout: ${error.message}`);
+        cmeCheckoutAnnualBtn.disabled = false;
+        cmeCheckoutAnnualBtn.textContent = "Subscribe Annually";
+      }
+    } catch (error) {
+      console.error("Error during CME Annual checkout:", error);
+      let message = "Could not prepare CME Annual checkout. Please try again.";
+      if (error.code && error.message) {
+        message = `Error: ${error.message}`;
+      } else if (error.message) {
+        message = error.message;
+      }
+      alert(message);
+      cmeCheckoutAnnualBtn.disabled = false;
+      cmeCheckoutAnnualBtn.textContent = "Subscribe Annually";
+    }
+  });
 } else {
-    console.error("CME Annual Checkout button (#cmeCheckoutAnnualBtn) not found.");
+  console.error(
+    "CME Annual Checkout button (#cmeCheckoutAnnualBtn) not found."
+  );
 }
 
-// --- Listener for BUY CREDITS Button ---
+// --- Listener for CME BUY CREDITS Button (Corrected with Metadata) ---
 const cmeBuyCreditsBtn = document.getElementById("cmeBuyCreditsBtn");
+
 if (cmeBuyCreditsBtn) {
-    cmeBuyCreditsBtn.addEventListener("click", async function() {
-        // Get the quantity chosen by the user
-        const quantityInput = document.getElementById('creditQty');
-        let quantity = 1; // Default quantity
-        if (quantityInput) {
-            // Use Number() for conversion, handle potential errors
-            const parsedValue = Number(quantityInput.value);
-            if (!isNaN(parsedValue)) {
-                 quantity = parsedValue;
-            }
-        }
+  cmeBuyCreditsBtn.addEventListener("click", async function () {
+    const quantityInput = document.getElementById("creditQty");
+    let quantity = 1;
 
-        // Validate quantity
-        if (!Number.isInteger(quantity) || quantity < 1 || quantity > 25) {
-            alert("Please enter a whole number of credits between 1 and 25.");
-            // Optionally reset the input value
-            if(quantityInput) quantityInput.value = '1';
-            return; // Stop if invalid
-        }
+    if (quantityInput) {
+      const parsedValue = Number(quantityInput.value);
+      if (
+        !isNaN(parsedValue) &&
+        parsedValue >= 1 &&
+        parsedValue <= 25 &&
+        Number.isInteger(parsedValue)
+      ) {
+        quantity = parsedValue;
+      } else {
+        alert("Please enter a whole number of credits between 1 and 25.");
+        if (quantityInput) quantityInput.value = "1"; // Reset to default
+        return;
+      }
+    }
 
-        const selectedPriceId = STRIPE_CREDIT_PRICE_ID; // <<< Use the NEW Credit Price ID
+    const selectedPriceId = STRIPE_CREDIT_PRICE_ID; // CME Credit Price ID
+    const planNameForMeta = `CME Credits Purchase (${quantity})`; // Descriptive
+    const tierForMeta = "cme_credits"; // Specific tier
 
-        console.log(`Requesting checkout session for ${quantity} credits with Price ID: ${selectedPriceId}`);
+    console.log(
+      `Requesting CME Credits checkout for ${quantity} credits (Tier: ${tierForMeta}) with Price ID: ${selectedPriceId}`
+    );
 
-        // --- Keep your existing Auth checks ---
-        const user = window.authFunctions.getCurrentUser();
-         if (!user || user.isAnonymous) {
-             alert("Please register or log in fully before purchasing credits.");
-             console.warn("Credit purchase attempted by anonymous user.");
-             return;
-         }
-        if (!window.stripe || !createCheckoutSessionFunction) {
-            alert('Error: Payment system or function reference not ready. Please refresh.');
-            console.error('Stripe object or callable function reference missing.');
-            return;
-        }
-        // --- End Auth checks ---
+    const user = window.authFunctions.getCurrentUser();
+    if (!user || user.isAnonymous) {
+      alert("Please register or log in fully before purchasing credits.");
+      console.warn(
+        "CME Credits purchase attempted by anonymous or non-logged-in user."
+      );
+      return;
+    }
 
-        // Disable button
-        cmeBuyCreditsBtn.disabled = true;
-        cmeBuyCreditsBtn.textContent = 'Preparing Purchase...';
+    if (!window.stripe || !createCheckoutSessionFunction) {
+      alert("Error: Payment system not ready. Please refresh.");
+      console.error(
+        "Stripe object or createCheckoutSessionFunction reference missing for CME Credits."
+      );
+      return;
+    }
 
-        try {
-            // --- FORCE TOKEN REFRESH (Keep this) ---
-            console.log("Forcing ID token refresh...");
-            await getIdToken(user, true);
-            console.log("ID token refreshed.");
-            // --- END TOKEN REFRESH ---
+    cmeBuyCreditsBtn.disabled = true;
+    cmeBuyCreditsBtn.textContent = "Preparing Purchase…";
 
-            // Call the Cloud Function - Pass the CREDIT Price ID AND the quantity
-            console.log("Calling createStripeCheckoutSession function for user:", user.uid);
-            const result = await createCheckoutSessionFunction({
-                priceId: selectedPriceId, // <<< Pass the Credit Price ID
-                quantity: quantity       // <<< Pass the quantity
-            });
-            const sessionId = result.data.sessionId;
-            console.log("Received Session ID:", sessionId);
+    try {
+      console.log("Forcing ID token refresh for CME Credits purchase…");
+      await getIdToken(user, true);
+      console.log("ID token refreshed.");
 
-            if (!sessionId) { throw new Error("Cloud function did not return a Session ID."); }
+      console.log(
+        "Calling createStripeCheckoutSession for CME Credits. User:",
+        user.uid
+      );
+      const result = await createCheckoutSessionFunction({
+        priceId: selectedPriceId,
+        quantity,
+        planName: planNameForMeta, // <<< ADDED
+        tier: tierForMeta,         // <<< ADDED
+      });
 
-            // Redirect using the Session ID (Keep this)
-            cmeBuyCreditsBtn.textContent = 'Redirecting...';
-            const { error } = await window.stripe.redirectToCheckout({ sessionId: sessionId });
+      const sessionId = result.data.sessionId;
+      console.log("Received Session ID for CME Credits:", sessionId);
 
-            // Handle redirect error (Keep this)
-            if (error) {
-                console.error("Stripe redirectToCheckout error:", error);
-                alert(`Could not redirect to checkout: ${error.message}`);
-                cmeBuyCreditsBtn.disabled = false;
-                cmeBuyCreditsBtn.textContent = 'Buy Credits'; // Reset text
-            }
+      if (!sessionId) {
+        throw new Error(
+          "Cloud function did not return a Session ID for CME Credits."
+        );
+      }
 
-        } catch (error) {
-            // Handle function call error (Keep this)
-            console.error("Error during Buy Credits checkout:", error);
-            let message = "Could not prepare purchase. Please try again.";
-             if (error.code && error.message) { message = `Error: ${error.message}`; }
-             else if (error.message) { message = error.message; }
-            alert(message);
-            cmeBuyCreditsBtn.disabled = false;
-            cmeBuyCreditsBtn.textContent = 'Buy Credits'; // Reset text
-        }
-    });
+      cmeBuyCreditsBtn.textContent = "Redirecting…";
+      const { error } = await window.stripe.redirectToCheckout({ sessionId });
+
+      if (error) {
+        console.error("Stripe redirectToCheckout error for CME Credits:", error);
+        alert(`Could not redirect to checkout: ${error.message}`);
+        cmeBuyCreditsBtn.disabled = false;
+        cmeBuyCreditsBtn.textContent = "Buy Credits";
+      }
+    } catch (error) {
+      console.error("Error during CME Credits purchase:", error);
+      let message = "Could not prepare CME Credits purchase. Please try again.";
+      if (error.code && error.message) {
+        message = `Error: ${error.message}`;
+      } else if (error.message) {
+        message = error.message;
+      }
+      alert(message);
+      cmeBuyCreditsBtn.disabled = false;
+      cmeBuyCreditsBtn.textContent = "Buy Credits";
+    }
+  });
 } else {
-    console.error("CME Buy Credits button (#cmeBuyCreditsBtn) not found.");
+  console.error(
+    "CME Buy Credits button (#cmeBuyCreditsBtn) not found."
+  );
 }
+
 
 // --- Function to Show the CME Learn More Modal ---
 function showCmeLearnMoreModal() {
