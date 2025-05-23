@@ -1759,7 +1759,7 @@ async function initializeDashboard() {
     const accessTier = window.authState?.accessTier;
 
     // Show CME card only for cme_annual or cme_credits_only tiers
-    if (isRegisteredUser && (accessTier === "cme_annual" || accessTier === "cme_credits_only") &&
+    if (window.authState.isRegistered && (accessTier === "cme_annual" || accessTier === "cme_credits_only") &&
         dashboardCmeCard && dashboardCmeAnswered && dashboardCmeAccuracy && dashboardCmeAvailable) {
 
         const cmeStats = data.cmeStats || {
@@ -2020,18 +2020,15 @@ async function updateReviewQueue() {
   const accessTier = window.authState?.accessTier;
 
   if (auth.currentUser.isAnonymous || accessTier === "free_guest") {
-    let message1 = "Spaced repetition is a premium feature.";
-    let message2 = "Upgrade your account to unlock this feature!";
-     if (auth.currentUser.isAnonymous) {
-        message1 = "Spaced repetition review is available for registered users only.";
-        message2 = "Create a free account to unlock this feature!";
-    }
+    const message1 = "Spaced repetition is a premium feature.";
+    const message2 = "Upgrade your account to unlock this feature!";
+    const buttonText = "Upgrade to Access";
 
     reviewQueueContent.innerHTML = `
       <div class="review-empty-state guest-analytics-prompt">
         <p>${message1}</p>
         <p>${message2}</p>
-        <button id="upgradeForReviewQueueBtn" class="start-quiz-btn" style="margin-top:10px;">${auth.currentUser.isAnonymous ? 'Create Free Account' : 'Upgrade to Access'}</button>
+        <button id="upgradeForReviewQueueBtn" class="start-quiz-btn" style="margin-top:10px;">${buttonText}</button>
       </div>
     `;
     reviewCountEl.textContent = "0";
@@ -2039,21 +2036,28 @@ async function updateReviewQueue() {
 
     const upgradeBtn = document.getElementById('upgradeForReviewQueueBtn');
     if (upgradeBtn) {
-      upgradeBtn.addEventListener('click', function() {
-         if (auth.currentUser.isAnonymous) {
-          if (typeof window.showRegisterForm === 'function') {
-            window.showRegisterForm('board_review_pricing'); // Or a generic paywall redirect
-          } else { console.error("showRegisterForm not found");}
+      // Remove any old listeners by cloning the button
+      const newUpgradeBtn = upgradeBtn.cloneNode(true);
+      upgradeBtn.parentNode.replaceChild(newUpgradeBtn, upgradeBtn);
+      
+      newUpgradeBtn.addEventListener('click', function() {
+        // For BOTH anonymous and registered "free_guest", go to main paywall
+        console.log("Review Queue 'Upgrade to Access' button clicked. Redirecting to paywall.");
+        ensureAllScreensHidden(); // Hide other screens
+        if (mainPaywallScreen) {
+            mainPaywallScreen.style.display = 'flex';
         } else {
-          ensureAllScreensHidden();
-          if (mainPaywallScreen) mainPaywallScreen.style.display = 'flex';
+            console.error("Main paywall screen not found!");
+            // Fallback if paywall is missing
+            const mainOptions = document.getElementById("mainOptions");
+            if (mainOptions) mainOptions.style.display = 'flex';
         }
       });
     }
 
     const footerText = document.querySelector("#reviewQueueCard .card-footer span:first-child");
     if (footerText) {
-      footerText.textContent = auth.currentUser.isAnonymous ? "Register to Access" : "Upgrade to Access";
+      footerText.textContent = "Upgrade to Access"; // Consistent footer text
     }
     return;
   }
