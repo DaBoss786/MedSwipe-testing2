@@ -2105,30 +2105,52 @@ async function updateReviewQueue() {
 // Set up event listeners for dashboard
 function setupDashboardEvents() {
   // Start Quiz button
-const startQuizBtn = document.getElementById("startQuizBtn");
-if (startQuizBtn) {
-  startQuizBtn.addEventListener("click", function() {
-    // Check if user is anonymous before showing the modal
-    const isAnonymous = auth && auth.currentUser && auth.currentUser.isAnonymous;
-    
-    // Show or hide the spaced repetition option based on user status
-    const spacedRepetitionContainer = document.querySelector('#modalSpacedRepetition').closest('.formGroup');
-    if (spacedRepetitionContainer) {
-      if (isAnonymous) {
-        // Hide the option for guest users
-        spacedRepetitionContainer.style.display = 'none';
-        // Make sure checkbox is unchecked for guest users
-        document.getElementById('modalSpacedRepetition').checked = false;
-      } else {
-        // Show the option for registered users
-        spacedRepetitionContainer.style.display = 'block';
-      }
-    }
-    
-    // Show the modal
-    document.getElementById("quizSetupModal").style.display = "block";
-  });
-}
+  const startQuizBtn = document.getElementById("startQuizBtn");
+  if (startQuizBtn) {
+      // Clone the button to remove any existing listeners first
+      const newStartQuizBtn = startQuizBtn.cloneNode(true);
+      startQuizBtn.parentNode.replaceChild(newStartQuizBtn, startQuizBtn);
+  
+      newStartQuizBtn.addEventListener("click", function() {
+          const accessTier = window.authState?.accessTier;
+          const isAnonymousUser = auth.currentUser && auth.currentUser.isAnonymous;
+  
+          const spacedRepCheckbox = document.getElementById('modalSpacedRepetition');
+          const spacedRepContainer = spacedRepCheckbox ? spacedRepCheckbox.closest('.form-group') : null; // Assuming '.form-group' is the direct parent container you want to hide/show
+  
+          if (spacedRepContainer) {
+              if (isAnonymousUser || accessTier === "free_guest") {
+                  // Hide the option for anonymous or free_guest users
+                  spacedRepContainer.style.display = 'none';
+                  if (spacedRepCheckbox) {
+                      spacedRepCheckbox.checked = false; // Ensure it's unchecked
+                  }
+                  console.log("Spaced repetition option hidden for guest/free_guest user.");
+              } else {
+                  // Show the option for tiered users ("board_review", "cme_annual", "cme_credits_only")
+                  spacedRepContainer.style.display = 'block'; // Or 'flex', or remove inline style to revert to CSS
+                  console.log("Spaced repetition option shown for tiered user.");
+              }
+          } else {
+              console.warn("Spaced repetition container or checkbox not found in quiz setup modal.");
+          }
+          
+          // Populate categories in the main quiz setup modal if not already done
+          // (Assuming you have a similar populate function for the main modal)
+          if (typeof populateCategoryDropdownForMainQuiz === 'function') {
+              populateCategoryDropdownForMainQuiz(); // You'll need to create this function if it doesn't exist
+          }
+  
+  
+          // Show the modal
+          const quizSetupModal = document.getElementById("quizSetupModal");
+          if (quizSetupModal) {
+              quizSetupModal.style.display = "block";
+          } else {
+              console.error("Quiz Setup Modal (#quizSetupModal) not found.");
+          }
+      });
+  }
   
   // Modal Start Quiz button
   const modalStartQuiz = document.getElementById("modalStartQuiz");
