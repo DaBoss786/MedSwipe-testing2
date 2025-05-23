@@ -1554,61 +1554,66 @@ async function loadLeaderboardPreview() {
     console.log("Auth or DB not initialized for leaderboard preview");
     return;
   }
-  
+
   const leaderboardPreview = document.getElementById("leaderboardPreview");
   if (!leaderboardPreview) return;
-  
-  // Check if user is anonymous (guest)
-  const isAnonymous = auth.currentUser.isAnonymous;
-  
-  // For guest users, show registration prompt instead of leaderboard
-  if (isAnonymous) {
+
+  const mainPaywallScreen = document.getElementById("newPaywallScreen"); // Get paywall screen
+
+  // Check user's access tier
+  const accessTier = window.authState?.accessTier; // Use optional chaining
+
+  if (auth.currentUser.isAnonymous || accessTier === "free_guest") {
+    let message1 = "Leaderboards are a premium feature.";
+    let message2 = "Upgrade your account to compete with others!";
+    if (auth.currentUser.isAnonymous) {
+        message1 = "Leaderboards are only available for registered users.";
+        message2 = "Create a free account to compete with others!";
+    }
+
     leaderboardPreview.innerHTML = `
       <div class="guest-analytics-prompt">
-        <p>Leaderboards are only available for registered users.</p>
-        <p>Create a free account to compete with others!</p>
-        <button id="registerForLeaderboardBtn" class="start-quiz-btn">Create Free Account</button>
+        <p>${message1}</p>
+        <p>${message2}</p>
+        <button id="upgradeForLeaderboardBtn" class="start-quiz-btn">${auth.currentUser.isAnonymous ? 'Create Free Account' : 'Upgrade to Access'}</button>
       </div>
     `;
-    
-    // Add event listener for registration button
-    const registerBtn = document.getElementById('registerForLeaderboardBtn');
-    if (registerBtn) {
-      registerBtn.addEventListener('click', function() {
-        if (typeof window.showRegistrationBenefitsModal === 'function') {
-          window.showRegistrationBenefitsModal();
-        } else if (typeof window.showRegisterForm === 'function') {
-          window.showRegisterForm();
+
+    const upgradeBtn = document.getElementById('upgradeForLeaderboardBtn');
+    if (upgradeBtn) {
+      upgradeBtn.addEventListener('click', function() {
+        if (auth.currentUser.isAnonymous) {
+          // For truly anonymous users, show registration form first
+          if (typeof window.showRegisterForm === 'function') {
+            window.showRegisterForm('board_review_pricing'); // Or a generic paywall redirect after reg
+          } else { console.error("showRegisterForm not found");}
+        } else {
+          // For registered "free_guest", go to main paywall
+          ensureAllScreensHidden(); // Hide other screens
+          if (mainPaywallScreen) mainPaywallScreen.style.display = 'flex';
         }
       });
     }
-    
-    // Also modify the card footer to reflect guest status
-    const cardFooter = document.querySelector("#leaderboardPreviewCard .card-footer");
+
+    const cardFooter = document.querySelector("#leaderboardPreviewCard .card-footer span:first-child");
     if (cardFooter) {
-      cardFooter.innerHTML = `
-        <span>Register to Access</span>
-        <span class="arrow-icon">→</span>
-      `;
+      cardFooter.textContent = auth.currentUser.isAnonymous ? "Register to Access" : "Upgrade to Access";
     }
-    
     return;
   }
-  
-   // For registered users, continue with normal leaderboard preview
+
+  // For "board_review", "cme_annual", "cme_credits_only" tiers:
   try {
     const currentUid = auth.currentUser.uid;
+    // Fetch users who are NOT free_guest for the leaderboard
     const querySnapshot = await getDocs(collection(db, 'users'));
     let leaderboardEntries = [];
-    
+
     querySnapshot.forEach(docSnap => {
       const data = docSnap.data();
-      // Only include EXPLICITLY registered users
-      if (data.stats && data.isRegistered === true) {
-        // Use total XP instead of weekly XP calculation
+      // Only include users with a paying tier for leaderboard rankings
+      if (data.stats && data.isRegistered === true && data.accessTier && data.accessTier !== "free_guest") {
         let xp = data.stats.xp || 0;
-        
-        // Add user to leaderboard entries with their total XP
         leaderboardEntries.push({
           uid: docSnap.id,
           username: data.username || "Anonymous",
@@ -1616,29 +1621,20 @@ async function loadLeaderboardPreview() {
         });
       }
     });
-    
-    // Sort by XP (descending)
+
     leaderboardEntries.sort((a, b) => b.xp - a.xp);
-    
-    // Get top 3
     let top3 = leaderboardEntries.slice(0, 3);
-    
-    // Find current user's position if not in top 3
     let currentUserRank = leaderboardEntries.findIndex(e => e.uid === currentUid) + 1;
     let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
     let showCurrentUser = currentUserRank > 3 && currentUserEntry;
-    
-    // Create HTML for the preview with well-structured entries
+
     let html = '';
-    
-    // Add top 3 entries
     if (top3.length === 0) {
-      html = '<div class="leaderboard-loading">No leaderboard data yet</div>';
+      html = '<div class="leaderboard-loading">No ranked players yet.</div>';
     } else {
       top3.forEach((entry, index) => {
         const isCurrentUser = entry.uid === currentUid;
         const rank = index + 1;
-        
         html += `
           <div class="leaderboard-preview-entry ${isCurrentUser ? 'current-user-entry' : ''}">
             <div class="leaderboard-rank leaderboard-rank-${rank}">${rank}</div>
@@ -1649,11 +1645,9 @@ async function loadLeaderboardPreview() {
           </div>
         `;
       });
-      
-      // Add current user's entry if not in top 3
       if (showCurrentUser) {
         html += `
-          <div class="leaderboard-preview-entry current-user-entry">
+          <div class.leaderboard-preview-entry current-user-entry">
             <div class="leaderboard-rank">${currentUserRank}</div>
             <div class="leaderboard-user-info">
               <div class="leaderboard-username">${currentUserEntry.username} (You)</div>
@@ -1663,9 +1657,11 @@ async function loadLeaderboardPreview() {
         `;
       }
     }
-    
     leaderboardPreview.innerHTML = html;
-    
+    const cardFooter = document.querySelector("#leaderboardPreviewCard .card-footer span:first-child");
+    if (cardFooter) {
+      cardFooter.textContent = "View Full Leaderboard";
+    }
   } catch (error) {
     console.error("Error loading leaderboard preview:", error);
     leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Error loading leaderboard</div>';
@@ -1754,97 +1750,67 @@ async function initializeDashboard() {
 
       // Also load review queue data
       updateReviewQueue();
-          // --- START: Logic for Dashboard CME Card ---
+          // --- START: Logic for Dashboard CME Card (TIER-BASED VISIBILITY) ---
     const dashboardCmeCard = document.getElementById("dashboardCmeCard");
     const dashboardCmeAnswered = document.getElementById("dashboardCmeAnswered");
     const dashboardCmeAccuracy = document.getElementById("dashboardCmeAccuracy");
     const dashboardCmeAvailable = document.getElementById("dashboardCmeAvailable");
 
-    // Check if the user is registered (not anonymous)
-    const isRegisteredUser = auth.currentUser && !auth.currentUser.isAnonymous;
+    const accessTier = window.authState?.accessTier;
 
-    if (isRegisteredUser && dashboardCmeCard && dashboardCmeAnswered && dashboardCmeAccuracy && dashboardCmeAvailable) {
-        // User is registered, try to show the card and load data
-        const cmeStats = data.cmeStats || { // Get CME stats, default to zeros
-            totalAnswered: 0,
-            totalCorrect: 0,
-            creditsEarned: 0.00,
-            creditsClaimed: 0.00
+    // Show CME card only for cme_annual or cme_credits_only tiers
+    if (isRegisteredUser && (accessTier === "cme_annual" || accessTier === "cme_credits_only") &&
+        dashboardCmeCard && dashboardCmeAnswered && dashboardCmeAccuracy && dashboardCmeAvailable) {
+
+        const cmeStats = data.cmeStats || {
+            totalAnswered: 0, totalCorrect: 0, creditsEarned: 0.00, creditsClaimed: 0.00
         };
-
-        // Calculate values needed for the card
         const uniqueAnswered = cmeStats.totalAnswered || 0;
         const uniqueCorrect = cmeStats.totalCorrect || 0;
         const uniqueAccuracy = uniqueAnswered > 0 ? Math.round((uniqueCorrect / uniqueAnswered) * 100) : 0;
         const creditsEarned = parseFloat(cmeStats.creditsEarned || 0);
         const creditsClaimed = parseFloat(cmeStats.creditsClaimed || 0);
-        const availableCredits = Math.max(0, creditsEarned - creditsClaimed).toFixed(2); // Format to 2 decimal places
+        const availableCredits = Math.max(0, creditsEarned - creditsClaimed).toFixed(2);
 
-        // Update the card's content
         dashboardCmeAnswered.textContent = uniqueAnswered;
         dashboardCmeAccuracy.textContent = `${uniqueAccuracy}%`;
         dashboardCmeAvailable.textContent = availableCredits;
+        dashboardCmeCard.style.display = "block";
+        console.log(`Displayed CME card on dashboard for user tier: ${accessTier}.`);
 
-        // Make the card visible
-        dashboardCmeCard.style.display = "block"; // Or "flex" depending on your CSS for dashboard-card
-
-        console.log("Displayed CME card on dashboard for registered user.");
-
-                // --- START: Add Click Listener for Dashboard CME Card ---
-        // First, remove any potentially existing listener to prevent duplicates if dashboard re-initializes
-        const newCard = dashboardCmeCard.cloneNode(true); // Clone the card
-        dashboardCmeCard.parentNode.replaceChild(newCard, dashboardCmeCard); // Replace old card with clone
-
-        // Add listener to the new card (the clone)
+        // --- Add Click Listener for Dashboard CME Card (No change to existing listener logic itself) ---
+        const newCard = dashboardCmeCard.cloneNode(true);
+        dashboardCmeCard.parentNode.replaceChild(newCard, dashboardCmeCard);
         newCard.addEventListener('click', async () => {
-            console.log("Dashboard CME card clicked.");
-
-            // Show a temporary loading state (optional, but good UX)
-            newCard.style.opacity = '0.7';
-            newCard.style.cursor = 'wait';
-
+            console.log("Dashboard CME card clicked by tier:", accessTier);
+            newCard.style.opacity = '0.7'; newCard.style.cursor = 'wait';
             try {
-                // Check subscription status (ensure function is available)
-                if (typeof checkUserCmeSubscriptionStatus === 'function') {
-                    const isSubscribed = await checkUserCmeSubscriptionStatus();
-                    console.log("User CME subscription status:", isSubscribed);
+                // For cme_annual or cme_credits_only, they have access.
+                // The checkUserCmeSubscriptionStatus will be true for cme_annual.
+                // For cme_credits_only, they might not have a "subscription" but have credits.
+                // The original logic of showCmeDashboard() vs showCmeInfoScreen() based on
+                // checkUserCmeSubscriptionStatus() should still largely work if we assume
+                // cme_credits_only users are treated as "not subscribed to annual plan"
+                // by checkUserCmeSubscriptionStatus.
+                // The cmeModuleBtn click handler will also need tier-based logic.
 
-                    if (isSubscribed) {
-                        // User IS subscribed - go to CME Dashboard
-                        if (typeof showCmeDashboard === 'function') {
-                            showCmeDashboard();
-                        } else {
-                            console.error("showCmeDashboard function not found!");
-                            alert("Error navigating to CME module.");
-                        }
-                    } else {
-                        // User is NOT subscribed - go to Info/Paywall screen
-                        if (typeof showCmeInfoScreen === 'function') {
-                            showCmeInfoScreen();
-                        } else {
-                            console.error("showCmeInfoScreen function not found!");
-                            alert("Error showing CME information.");
-                        }
-                    }
+                // For these tiers, they should go directly to the CME dashboard.
+                if (typeof showCmeDashboard === 'function') {
+                    showCmeDashboard();
                 } else {
-                     console.error("checkUserCmeSubscriptionStatus function not found!");
-                     alert("Error checking subscription status.");
+                    console.error("showCmeDashboard function not found!");
+                    alert("Error navigating to CME module.");
                 }
             } catch (error) {
                 console.error("Error during CME card click handling:", error);
                 alert("An error occurred. Please try again.");
             } finally {
-                // Remove loading state
-                newCard.style.opacity = '1';
-                newCard.style.cursor = 'pointer';
+                newCard.style.opacity = '1'; newCard.style.cursor = 'pointer';
             }
         });
-        // --- END: Add Click Listener for Dashboard CME Card ---
-
     } else if (dashboardCmeCard) {
-        // User is anonymous or elements not found, ensure card is hidden
         dashboardCmeCard.style.display = "none";
-        console.log("Hiding CME card on dashboard (user is anonymous or elements missing).");
+        console.log(`Hiding CME card on dashboard (user tier: ${accessTier}, or anonymous, or elements missing).`);
     }
     // --- END: Logic for Dashboard CME Card ---
 
@@ -2043,43 +2009,62 @@ async function countDueReviews() {
 
 // Function to update the Review Queue card in the dashboard
 async function updateReviewQueue() {
-  const reviewCount = document.getElementById("reviewCount");
+  const reviewCountEl = document.getElementById("reviewCount"); // Renamed for clarity
   const reviewQueueContent = document.getElementById("reviewQueueContent");
   const reviewProgressBar = document.getElementById("reviewProgressBar");
-  
-  if (!reviewCount || !reviewQueueContent || !reviewProgressBar) return;
-  
-  // Check if user is anonymous/guest
-  const isAnonymous = auth && auth.currentUser && auth.currentUser.isAnonymous;
-  
-  if (isAnonymous) {
-    // Guest user - show registration prompt
+  const mainPaywallScreen = document.getElementById("newPaywallScreen"); // Get paywall screen
+
+
+  if (!reviewCountEl || !reviewQueueContent || !reviewProgressBar) return;
+
+  const accessTier = window.authState?.accessTier;
+
+  if (auth.currentUser.isAnonymous || accessTier === "free_guest") {
+    let message1 = "Spaced repetition is a premium feature.";
+    let message2 = "Upgrade your account to unlock this feature!";
+     if (auth.currentUser.isAnonymous) {
+        message1 = "Spaced repetition review is available for registered users only.";
+        message2 = "Create a free account to unlock this feature!";
+    }
+
     reviewQueueContent.innerHTML = `
       <div class="review-empty-state guest-analytics-prompt">
-        <p>Spaced repetition review is available for registered users only.</p>
-        <p>Create a free account to unlock this feature!</p>
+        <p>${message1}</p>
+        <p>${message2}</p>
+        <button id="upgradeForReviewQueueBtn" class="start-quiz-btn" style="margin-top:10px;">${auth.currentUser.isAnonymous ? 'Create Free Account' : 'Upgrade to Access'}</button>
       </div>
     `;
-    reviewCount.textContent = "0";
+    reviewCountEl.textContent = "0";
     reviewProgressBar.style.width = "0%";
-    
+
+    const upgradeBtn = document.getElementById('upgradeForReviewQueueBtn');
+    if (upgradeBtn) {
+      upgradeBtn.addEventListener('click', function() {
+         if (auth.currentUser.isAnonymous) {
+          if (typeof window.showRegisterForm === 'function') {
+            window.showRegisterForm('board_review_pricing'); // Or a generic paywall redirect
+          } else { console.error("showRegisterForm not found");}
+        } else {
+          ensureAllScreensHidden();
+          if (mainPaywallScreen) mainPaywallScreen.style.display = 'flex';
+        }
+      });
+    }
+
     const footerText = document.querySelector("#reviewQueueCard .card-footer span:first-child");
     if (footerText) {
-      footerText.textContent = "Register to Access";
+      footerText.textContent = auth.currentUser.isAnonymous ? "Register to Access" : "Upgrade to Access";
     }
     return;
   }
-  
-  // Registered user logic
+
+  // For "board_review", "cme_annual", "cme_credits_only" tiers:
   try {
     const { dueCount, nextReviewDate } = await countDueReviews();
-    
-    // Update count and progress bar
-    reviewCount.textContent = dueCount;
-    const progressPercent = Math.min(100, (dueCount / 20) * 100);
+    reviewCountEl.textContent = dueCount;
+    const progressPercent = Math.min(100, (dueCount / 20) * 100); // Assuming 20 is a target
     reviewProgressBar.style.width = `${progressPercent}%`;
-    
-    // Update content based on due count
+
     if (dueCount > 0) {
       reviewQueueContent.innerHTML = `
         <div class="review-stats">
@@ -2094,27 +2079,21 @@ async function updateReviewQueue() {
       reviewQueueContent.innerHTML = `
         <div class="review-empty-state">
           <p>No questions due for review today.</p>
-          ${nextReviewDate ? 
-            `<p>Next scheduled review: <span class="next-review-date">${nextReviewDate.toLocaleDateString()}</span></p>` : 
+          ${nextReviewDate ?
+            `<p>Next scheduled review: <span class="next-review-date">${nextReviewDate.toLocaleDateString()}</span></p>` :
             '<p>Complete more quizzes to start your spaced repetition journey.</p>'
           }
         </div>
       `;
     }
-    
-    // Ensure the footer shows 'Start Review'
     const footerText = document.querySelector("#reviewQueueCard .card-footer span:first-child");
     if (footerText) {
       footerText.textContent = "Start Review";
     }
   } catch (error) {
     console.error("Error updating review queue:", error);
-    reviewQueueContent.innerHTML = `
-      <div class="review-empty-state">
-        <p>Error loading review queue</p>
-      </div>
-    `;
-    reviewCount.textContent = "0";
+    reviewQueueContent.innerHTML = `<div class="review-empty-state"><p>Error loading review queue</p></div>`;
+    reviewCountEl.textContent = "0";
     reviewProgressBar.style.width = "0%";
   }
 }
@@ -2194,16 +2173,25 @@ if (startQuizBtn) {
     });
   }
   
-// Leaderboard Preview Card click - go to Leaderboard
+// Leaderboard Preview Card click
 const leaderboardPreviewCard = document.getElementById("leaderboardPreviewCard");
 if (leaderboardPreviewCard) {
-    // Add listener directly to the found element
-    leaderboardPreviewCard.addEventListener('click', function() {
-        if (typeof showLeaderboard === 'function') {
-            showLeaderboard(); // Call the function to show the leaderboard
+    const newLPCard = leaderboardPreviewCard.cloneNode(true); // Clone to remove old listeners
+    leaderboardPreviewCard.parentNode.replaceChild(newLPCard, leaderboardPreviewCard);
+    newLPCard.addEventListener('click', function() {
+        const accessTier = window.authState?.accessTier;
+        const mainPaywallScreen = document.getElementById("newPaywallScreen");
+        if (auth.currentUser.isAnonymous || accessTier === "free_guest") {
+            console.log("Leaderboard card clicked by guest/free_guest. Redirecting to paywall.");
+            ensureAllScreensHidden();
+            if (mainPaywallScreen) mainPaywallScreen.style.display = 'flex';
         } else {
-            console.error("showLeaderboard function not found!");
-            alert("Error navigating to leaderboard.");
+            console.log("Leaderboard card clicked by tiered user. Showing leaderboard.");
+            if (typeof showLeaderboard === 'function') {
+                showLeaderboard();
+            } else {
+                console.error("showLeaderboard function not found!");
+            }
         }
     });
 } else {
@@ -2211,47 +2199,36 @@ if (leaderboardPreviewCard) {
 }
   
   // Review Queue card click
-const reviewQueueCard = document.getElementById("reviewQueueCard");
-if (reviewQueueCard) {
-  reviewQueueCard.addEventListener("click", async function() {
-    // Check if user is anonymous/guest
-    const isAnonymous = auth && auth.currentUser && auth.currentUser.isAnonymous;
-    
-    if (isAnonymous) {
-      console.log("Guest user attempted to access review queue");
-      
-      // Show registration benefits modal for guest users
-      if (typeof window.showRegistrationBenefitsModal === 'function') {
-        window.showRegistrationBenefitsModal();
-      } else {
-        // Fallback if function isn't available
-        alert("Spaced repetition review is available for registered users only. Please create a free account to access this feature.");
-      }
-      
-      return;
-    }
-    
-    // Original functionality for registered users continues below
-    // Get count of due reviews
-    const { dueCount } = await countDueReviews();
-    
-    if (dueCount === 0) {
-      alert("You have no questions due for review today. Good job!");
-      return;
-    }
-    
-    // We need to get the actual due question IDs
-    const dueQuestionIds = await getDueQuestionIds();
-    
-    if (dueQuestionIds.length === 0) {
-      alert("No questions found for review. Please try again later.");
-      return;
-    }
-    
-    // Load ONLY the specific due questions, not mixed with new questions
-    loadSpecificQuestions(dueQuestionIds);
-  });
-}
+  const reviewQueueCard = document.getElementById("reviewQueueCard");
+  if (reviewQueueCard) {
+      const newRQCard = reviewQueueCard.cloneNode(true); // Clone to remove old listeners
+      reviewQueueCard.parentNode.replaceChild(newRQCard, reviewQueueCard);
+      newRQCard.addEventListener('click', async function() {
+          const accessTier = window.authState?.accessTier;
+          const mainPaywallScreen = document.getElementById("newPaywallScreen");
+
+          if (auth.currentUser.isAnonymous || accessTier === "free_guest") {
+              console.log("Review Queue card clicked by guest/free_guest. Redirecting to paywall.");
+              ensureAllScreensHidden();
+              if (mainPaywallScreen) mainPaywallScreen.style.display = 'flex';
+              return;
+          }
+
+          // Original functionality for tiered users
+          console.log("Review Queue card clicked by tiered user.");
+          const { dueCount } = await countDueReviews();
+          if (dueCount === 0) {
+              alert("You have no questions due for review today. Good job!");
+              return;
+          }
+          const dueQuestionIds = await getDueQuestionIds();
+          if (dueQuestionIds.length === 0) {
+              alert("No questions found for review. Please try again later.");
+              return;
+          }
+          loadSpecificQuestions(dueQuestionIds);
+      });
+  }
 }
 
 // Function to fix streak calendar alignment
