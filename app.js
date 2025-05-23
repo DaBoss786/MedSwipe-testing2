@@ -2116,7 +2116,7 @@ function setupDashboardEvents() {
           const isAnonymousUser = auth.currentUser && auth.currentUser.isAnonymous;
   
           const spacedRepCheckbox = document.getElementById('modalSpacedRepetition');
-          const spacedRepContainer = spacedRepCheckbox ? spacedRepCheckbox.closest('.form-group') : null; // Assuming '.form-group' is the direct parent container you want to hide/show
+          const spacedRepContainer = spacedRepCheckbox ? spacedRepCheckbox.closest('.formGroup') : null; // Assuming '.form-group' is the direct parent container you want to hide/show
   
           if (spacedRepContainer) {
               if (isAnonymousUser || accessTier === "free_guest") {
