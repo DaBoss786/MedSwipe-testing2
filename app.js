@@ -259,87 +259,56 @@ if (continueFreeAccessBtn) {
 } else {
     console.error("Button with ID 'continueFreeAccessBtn' not found.");
 }
-// --- Step 3: CME Module Button Logic ---
-
-// --- MORE DEBUGGING Step 3: CME Module Button Logic ---
-
+// --- Updated CME Module Button Logic (Replaces the existing listener for #cmeModuleBtn) ---
 const cmeModuleBtn = document.getElementById("cmeModuleBtn");
 if (cmeModuleBtn) {
-    // Make the event listener async to use await
-    cmeModuleBtn.addEventListener("click", async function() {
-        console.log("--- CME Module Button Click Handler START ---");
+    // Clone the button to remove any previously attached listeners
+    const newCmeModuleBtn = cmeModuleBtn.cloneNode(true);
+    cmeModuleBtn.parentNode.replaceChild(newCmeModuleBtn, cmeModuleBtn);
 
-        // 1. Check Authentication State
-        if (!auth || !auth.currentUser) {
-            console.error("DEBUG: Auth object or currentUser is missing!");
-            alert("Authentication error. Please refresh and log in again.");
+    newCmeModuleBtn.addEventListener("click", async function() {
+        console.log("--- CME Module Button Click Handler (Tier-Based) START ---");
+
+        // Ensure authState and user are available
+        if (!window.authState || !window.authState.user) {
+            console.error("AuthState or user not available. Cannot determine CME access.");
+            // Fallback: Show info screen or prompt login
+            showCmeInfoScreen(); // Or a login prompt if appropriate
             return;
         }
-        if (auth.currentUser.isAnonymous) {
-            console.log("DEBUG: User is anonymous. Showing info screen.");
-            showCmeInfoScreen();
-            return;
-        }
 
-        const uid = auth.currentUser.uid;
-        console.log(`DEBUG: Authenticated User UID: ${uid}`);
-        const userDocRef = doc(db, 'users', uid);
+        const accessTier = window.authState.accessTier;
+        const isRegistered = window.authState.isRegistered; // Check if the user is registered (not anonymous)
 
-        try {
-            // 2. Fetch the LATEST user data directly from Firestore
-            console.log(`DEBUG: Attempting to fetch Firestore doc: users/${uid}`);
-            const userDocSnap = await getDoc(userDocRef); // Use await
+        console.log(`CME Module button clicked. User Access Tier: ${accessTier}, Is Registered: ${isRegistered}`);
 
-            let hasActiveAnnualSub = false;
-            let availableCredits = 0;
-            let rawCreditsValue; // Variable to store the raw value
-
-            if (userDocSnap.exists()) {
-                const userData = userDocSnap.data();
-                console.log("DEBUG: Successfully fetched userData:", JSON.stringify(userData)); // Log the entire data object
-
-                // 3. Read the relevant fields from the FRESH data
-                hasActiveAnnualSub = userData.cmeSubscriptionActive === true;
-                // *** CRITICAL: Read the raw value first ***
-                rawCreditsValue = userData.cmeCreditsAvailable;
-                availableCredits = userData.cmeCreditsAvailable || 0; // Default to 0
-
-                console.log(`DEBUG: Raw cmeCreditsAvailable value from Firestore:`, rawCreditsValue);
-                console.log(`DEBUG: Type of cmeCreditsAvailable: ${typeof rawCreditsValue}`);
-                console.log(`DEBUG: Parsed availableCredits value (used in check): ${availableCredits}`);
-                console.log(`DEBUG: Parsed hasActiveAnnualSub value: ${hasActiveAnnualSub}`);
-
+        if (isRegistered && (accessTier === "cme_annual" || accessTier === "cme_credits_only")) {
+            // User HAS direct access to CME content
+            console.log("Access GRANTED to CME Dashboard based on tier.");
+            if (typeof showCmeDashboard === 'function') {
+                showCmeDashboard(); // Show the actual CME content dashboard
             } else {
-                console.warn(`DEBUG: User document not found in Firestore for UID: ${uid} during access check.`);
-                showCmeInfoScreen();
-                return;
+                console.error("showCmeDashboard function is not defined!");
+                alert("Error: Could not load the CME module.");
             }
-
-            // 4. The Decision Logic - Check BOTH conditions
-            console.log(`DEBUG: Evaluating condition: (${hasActiveAnnualSub} || ${availableCredits} > 0)`);
-            if (hasActiveAnnualSub || availableCredits > 0) {
-                // User HAS access
-                console.log("DEBUG: Access GRANTED. Calling showCmeDashboard().");
-                showCmeDashboard(); // Show the actual CME content
-            } else {
-                // User does NOT have access
-                console.log("DEBUG: Access DENIED. Calling showCmeInfoScreen().");
+        } else {
+            // User does NOT have direct access (free_guest, board_review, or anonymous)
+            // Anonymous users will also fall here because isRegistered will be false.
+            console.log("Access DENIED to CME Dashboard based on tier/registration. Showing CME Info Screen.");
+            if (typeof showCmeInfoScreen === 'function') {
                 showCmeInfoScreen(); // Show the purchase/info screen
+            } else {
+                console.error("showCmeInfoScreen function is not defined!");
+                alert("Error: Could not load CME information.");
             }
-
-        } catch (err) {
-            // Handle errors during Firestore fetch
-            console.error("DEBUG: Error during Firestore fetch or processing:", err);
-            alert("Could not verify your CME access status. Please try again later.");
-        } finally {
-             console.log("--- CME Module Button Click Handler END ---");
         }
+        console.log("--- CME Module Button Click Handler (Tier-Based) END ---");
     });
-    console.log("DEBUG: Event listener attached to cmeModuleBtn."); // Confirm listener attachment
+    console.log("DEBUG: Tier-based event listener attached to cmeModuleBtn.");
 } else {
-    console.error("DEBUG: CME Module button (#cmeModuleBtn) not found during listener setup.");
+    console.error("DEBUG: CME Module button (#cmeModuleBtn) not found during tier-based listener setup.");
 }
-// --- End of MORE DEBUGGING Step 3 ---
+// --- End of Updated CME Module Button Logic ---
 
 // Add event listener for the CME Dashboard's back button
 const cmeDashboardBackBtn = document.getElementById("cmeDashboardBackBtn");
