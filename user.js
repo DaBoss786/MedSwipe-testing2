@@ -556,16 +556,74 @@ async function updateUserMenu() {
     console.log("Auth not initialized for updateUserMenu");
     return;
   }
-  
+
   try {
-    const username = await getOrGenerateUsername();
+    const username = await getOrGenerateUsername(); // You already have this
     const usernameDisplay = document.getElementById("usernameDisplay");
     if (usernameDisplay) {
       usernameDisplay.textContent = username;
     }
-    
-    // Update XP display
-    updateUserXP();
+
+    // Update XP display (already called by updateUserXP, but good to ensure it's fresh)
+    // updateUserXP(); // This will be called by recordAnswer, or on load by app.js
+
+    // --- NEW LOGIC FOR SUBSCRIBE BUTTON ---
+    const subscribeMenuItem = document.getElementById("subscribeMenuItemUser");
+    const manageSubscriptionMenuItem = document.getElementById("manageSubscriptionBtn"); // Get manage sub button
+
+    if (subscribeMenuItem && manageSubscriptionMenuItem) {
+        const accessTier = window.authState?.accessTier;
+        const isAnonymousUser = window.authState?.user?.isAnonymous;
+        const isRegistered = window.authState?.isRegistered; // Get from global state
+
+        // Visibility for "Subscribe" button
+        if (isRegistered && accessTier === "free_guest") { // Show for registered free_guest
+            subscribeMenuItem.style.display = "block"; // Or "list-item"
+        } else if (isAnonymousUser) { // Also show for anonymous users
+             subscribeMenuItem.style.display = "block";
+        }
+        else {
+            subscribeMenuItem.style.display = "none";
+        }
+
+        // Event listener for "Subscribe" button
+        // Clone to remove old listeners and attach new one
+        const newSubscribeMenuItem = subscribeMenuItem.cloneNode(true);
+        subscribeMenuItem.parentNode.replaceChild(newSubscribeMenuItem, subscribeMenuItem);
+
+        newSubscribeMenuItem.addEventListener("click", function(e) {
+            e.preventDefault();
+            console.log("User menu 'Subscribe' clicked.");
+            if (typeof closeUserMenu === 'function') closeUserMenu(); // Assumes closeUserMenu is global or imported
+            
+            // Ensure ensureAllScreensHidden is available (likely global from app.js)
+            if (typeof ensureAllScreensHidden === 'function') ensureAllScreensHidden();
+            
+            const mainPaywallScreen = document.getElementById("newPaywallScreen");
+            if (mainPaywallScreen) {
+                mainPaywallScreen.style.display = "flex";
+            } else {
+                console.error("Main paywall screen not found from user menu subscribe click.");
+                // Fallback: show main options if paywall is missing
+                const mainOptions = document.getElementById("mainOptions");
+                if (mainOptions) mainOptions.style.display = "flex";
+            }
+        });
+
+        // Visibility for "Manage Subscription" button
+        // Show if user is registered AND has a paying tier (not free_guest and not anonymous)
+        if (isRegistered && accessTier && accessTier !== "free_guest") {
+            manageSubscriptionMenuItem.style.display = "block"; // Or "list-item"
+        } else {
+            manageSubscriptionMenuItem.style.display = "none";
+        }
+
+    } else {
+        if (!subscribeMenuItem) console.warn("Subscribe menu item not found.");
+        if (!manageSubscriptionMenuItem) console.warn("Manage Subscription menu item not found.");
+    }
+    // --- END OF NEW LOGIC ---
+
   } catch (error) {
     console.error("Error updating user menu:", error);
   }

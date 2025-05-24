@@ -62,45 +62,102 @@ document.addEventListener('DOMContentLoaded', function() {
   // Update the auth state change listener to properly handle welcome screen
 window.addEventListener('authStateChanged', function(event) {
   console.log('Auth state changed in app.js:', event.detail);
+  // Log the accessTier received from the event
+  console.log('Access Tier from event.detail:', event.detail.accessTier);
+
   if (event.detail.user && event.detail.user.isAnonymous && !event.detail.isRegistered) {
+    // This condition might need review. If a user logs out, they become anonymous.
+    // cleanupOnLogout() is good here.
     cleanupOnLogout();
   }
   
-  // Once authentication is initialized and not loading
+  // Once authentication is initialized and not loading (isLoading is false)
   if (!event.detail.isLoading) {
     // Hide splash screen after 2 seconds
     setTimeout(function() {
+      const splashScreen = document.getElementById('splashScreen');
       if (splashScreen) {
         splashScreen.classList.add('fade-out');
         
-        // After splash fades out, decide where to go based on auth state
         setTimeout(function() {
           splashScreen.style.display = 'none';
           
-          // First ensure all screens are properly hidden regardless of auth state
-          ensureAllScreensHidden();
+          ensureAllScreensHidden(); // Make sure all other primary screens are hidden
           
+          const mainOptions = document.getElementById('mainOptions');
+          const welcomeScreen = document.getElementById('welcomeScreen');
+          const newPaywallScreen = document.getElementById('newPaywallScreen'); // Get paywall
+
+          // --- Smarter routing based on isRegistered and accessTier ---
+          // This logic will be expanded in a later step (Step 2.6)
+          // For now, we'll keep the existing logic but ensure updateUserMenu is called.
+
           if (event.detail.isRegistered) {
-            // Registered user - go straight to dashboard
-            console.log('User is registered, showing dashboard');
+            console.log('User is registered, showing dashboard (current logic)');
             if (mainOptions) {
               mainOptions.style.display = 'flex';
               // Use the enhanced initialization with a slightly longer delay
               setTimeout(() => {
-                forceReinitializeDashboard();
+                if (typeof forceReinitializeDashboard === 'function') {
+                    forceReinitializeDashboard(); // This should also call initializeDashboard
+                } else if (typeof initializeDashboard === 'function') {
+                    initializeDashboard(); // Fallback
+                }
               }, 100);
             }
-          } else {
-            // Guest user - show welcome screen properly
-            console.log('User is guest, showing welcome screen');
+          } else { // User is not registered (i.e., anonymous guest at this point)
+            console.log('User is guest, showing welcome screen (current logic)');
             if (welcomeScreen) {
               welcomeScreen.style.display = 'flex';
               welcomeScreen.style.opacity = '1';
             }
           }
+
+          // --- ALWAYS CALL updateUserMenu AFTER ROUTING DECISION AND UI UPDATE ---
+          // This ensures the menu reflects the latest state, including accessTier.
+          console.log('Calling updateUserMenu after UI routing decision.');
+          if (typeof window.updateUserMenu === 'function') {
+            window.updateUserMenu();
+          } else {
+            console.warn('updateUserMenu function not found on window.');
+            // If updateUserMenu is directly imported and used in app.js, you might call it directly:
+            // if (typeof updateUserMenu === 'function') updateUserMenu();
+          }
+          // Also, ensure other UI elements that depend on auth state are updated
+          if (typeof window.updateUserXP === 'function') { // If updateUserXP also updates some UI
+             window.updateUserXP();
+          }
+
+
         }, 500); // Matches the transition duration in CSS
+      } else {
+        // If splashScreen is not found, but auth is loaded, proceed with routing and menu update
+        ensureAllScreensHidden();
+        const mainOptions = document.getElementById('mainOptions');
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        // ... (add similar routing logic as above) ...
+
+        if (event.detail.isRegistered) {
+            if (mainOptions) mainOptions.style.display = 'flex';
+             setTimeout(() => {
+                if (typeof forceReinitializeDashboard === 'function') forceReinitializeDashboard();
+                else if (typeof initializeDashboard === 'function') initializeDashboard();
+              }, 100);
+        } else {
+            if (welcomeScreen) { welcomeScreen.style.display = 'flex'; welcomeScreen.style.opacity = '1';}
+        }
+        
+        console.log('Calling updateUserMenu (no splash screen path).');
+        if (typeof window.updateUserMenu === 'function') {
+            window.updateUserMenu();
+        }
+         if (typeof window.updateUserXP === 'function') {
+             window.updateUserXP();
+          }
       }
-    }, 2000);
+    }, 2000); // Delay for splash screen
+  } else {
+    console.log('Auth state still loading or event.detail.isLoading is true.');
   }
 });
   

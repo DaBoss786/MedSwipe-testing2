@@ -480,33 +480,47 @@
   </div>
   
   <!-- User Menu with Close Button (Right) -->
-  <div id="userMenu">
-    <div id="userMenuHeader">
-      <span id="menuTitle">Profile</span>
-      <span id="userMenuClose" style="cursor:pointer;">&times;</span>
-    </div>
-    <div id="userInfoSection">
-      <h3 id="usernameDisplay">Username</h3>
-      <div class="user-score-container">
-        <p>Level</p>
-        <div class="level-progress-circle">
-          <div class="level-circle-background"></div>
-          <div class="level-circle-progress" id="userLevelProgress"></div>
-          <div class="level-number clickable" id="userScoreCircle">1</div>
-        </div>
-        <div id="userXpDisplay">0/30 XP</div>
-        <div class="level-progress-bar-container">
-          <div class="level-progress-bar" id="levelProgressBar"></div>
+  <div id="userMenu"> <!-- This is the main sliding panel -->
+    <div class="user-menu-content"> <!-- Added this wrapper for better flexbox control -->
+      <div id="userMenuHeader">
+        <span id="menuTitle">Profile</span>
+        <span id="userMenuClose" style="cursor:pointer;">×</span>
+      </div>
+      <div id="userInfoSection">
+        <h3 id="usernameDisplay">Username</h3>
+        <div class="user-score-container">
+          <p>Level</p>
+          <div class="level-progress-circle">
+            <div class="level-circle-background"></div>
+            <div class="level-circle-progress" id="userLevelProgress"></div>
+            <div class="level-number clickable" id="userScoreCircle">1</div>
+          </div>
+          <div id="userXpDisplay">0/30 XP</div>
+          <div class="level-progress-bar-container">
+            <div class="level-progress-bar" id="levelProgressBar"></div>
+          </div>
         </div>
       </div>
-    </div>
-    <ul id="userMenuList">
-      <li id="performanceItemUser">Performance</li>
-      <li><a href="#" id="bookmarksFilterUser">Bookmarks</a></li>
-      <li id="cmeHistoryMenuItem">View CME Claim History</li>
-      <li id="manageSubscriptionBtn" style="display: none;">Manage Subscription</li>
-      <li><a href="#" id="resetProgressUser">Reset Progress</a></li>
-    </ul>
+      <ul id="userMenuList">
+        <li id="performanceItemUser">Performance</li>
+        <li><a href="#" id="bookmarksFilterUser">Bookmarks</a></li>
+        <li id="cmeHistoryMenuItem">View CME Claim History</li>
+        <li id="manageSubscriptionBtn" style="display: none;">Manage Subscription</li>
+        
+        <!-- ****** ADD THIS NEW MENU ITEM ****** -->
+        <li id="subscribeMenuItemUser" style="display: none;"> <!-- Initially hidden -->
+            <a href="#">
+                <span class="menu-icon" style="margin-right: 10px;">💎</span> <!-- Example icon, adjust styling -->
+                <span>Subscribe</span>
+            </a>
+        </li>
+        <!-- ****** END OF NEW MENU ITEM ****** -->
+
+        <li><a href="#" id="resetProgressUser">Reset Progress</a></li>
+        <!-- Consider adding Log Out here if it's not elsewhere -->
+        <!-- <li id="logoutUserBtn"><a href="#">Log Out</a></li> -->
+      </ul>
+    </div> <!-- End of user-menu-content -->
   </div>
   
   <!-- Menu Overlay -->
