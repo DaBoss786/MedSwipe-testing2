@@ -88,30 +88,52 @@ window.addEventListener('authStateChanged', function(event) {
           const welcomeScreen = document.getElementById('welcomeScreen');
           const newPaywallScreen = document.getElementById('newPaywallScreen'); // Get paywall
 
-          // --- Smarter routing based on isRegistered and accessTier ---
-          // This logic will be expanded in a later step (Step 2.6)
-          // For now, we'll keep the existing logic but ensure updateUserMenu is called.
-
+          // --- START: MODIFIED ROUTING LOGIC ---
           if (event.detail.isRegistered) {
-            console.log('User is registered, showing dashboard (current logic)');
-            if (mainOptions) {
-              mainOptions.style.display = 'flex';
-              // Use the enhanced initialization with a slightly longer delay
-              setTimeout(() => {
-                if (typeof forceReinitializeDashboard === 'function') {
-                    forceReinitializeDashboard(); // This should also call initializeDashboard
-                } else if (typeof initializeDashboard === 'function') {
-                    initializeDashboard(); // Fallback
+            const accessTier = event.detail.accessTier; // Get accessTier from the event
+            console.log(`Registered user. Access Tier: ${accessTier}. Routing...`);
+
+            if (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only") {
+                // Paying user or user with active credits
+                console.log('User has a paying tier or active credits. Showing main dashboard.');
+                if (mainOptions) {
+                    mainOptions.style.display = 'flex';
+                    // Use the enhanced initialization with a slightly longer delay
+                    setTimeout(() => {
+                        if (typeof forceReinitializeDashboard === 'function') {
+                            forceReinitializeDashboard();
+                        } else if (typeof initializeDashboard === 'function') {
+                            initializeDashboard();
+                        }
+                    }, 100);
+                } else {
+                    console.error("Main options element not found for paying user!");
                 }
-              }, 100);
+            } else { // accessTier is "free_guest" (or potentially undefined, treat as free_guest)
+                console.log('Registered user is "free_guest". Showing main paywall screen.');
+                if (newPaywallScreen) {
+                    newPaywallScreen.style.display = 'flex';
+                } else {
+                    console.error("New paywall screen element not found for free_guest user!");
+                    // Fallback: show welcome screen or main options if paywall is missing
+                    if (welcomeScreen) { // Prefer welcome if paywall missing for a free_guest
+                        welcomeScreen.style.display = 'flex';
+                        welcomeScreen.style.opacity = '1';
+                    } else if (mainOptions) {
+                        mainOptions.style.display = 'flex';
+                    }
+                }
             }
-          } else { // User is not registered (i.e., anonymous guest at this point)
-            console.log('User is guest, showing welcome screen (current logic)');
+        } else { // User is not registered (i.e., anonymous guest at this point)
+            console.log('User is anonymous guest. Showing welcome screen.');
             if (welcomeScreen) {
-              welcomeScreen.style.display = 'flex';
-              welcomeScreen.style.opacity = '1';
+                welcomeScreen.style.display = 'flex';
+                welcomeScreen.style.opacity = '1';
+            } else {
+                console.error("Welcome screen element not found for anonymous user!");
             }
-          }
+        }
+        // --- END: MODIFIED ROUTING LOGIC ---
 
           // --- ALWAYS CALL updateUserMenu AFTER ROUTING DECISION AND UI UPDATE ---
           // This ensures the menu reflects the latest state, including accessTier.
@@ -135,17 +157,41 @@ window.addEventListener('authStateChanged', function(event) {
         ensureAllScreensHidden();
         const mainOptions = document.getElementById('mainOptions');
         const welcomeScreen = document.getElementById('welcomeScreen');
-        // ... (add similar routing logic as above) ...
+        const newPaywallScreen = document.getElementById('newPaywallScreen');
 
+        // --- START: DUPLICATED MODIFIED ROUTING LOGIC (for no splash screen path) ---
         if (event.detail.isRegistered) {
-            if (mainOptions) mainOptions.style.display = 'flex';
-             setTimeout(() => {
-                if (typeof forceReinitializeDashboard === 'function') forceReinitializeDashboard();
-                else if (typeof initializeDashboard === 'function') initializeDashboard();
-              }, 100);
-        } else {
-            if (welcomeScreen) { welcomeScreen.style.display = 'flex'; welcomeScreen.style.opacity = '1';}
-        }
+          const accessTier = event.detail.accessTier;
+          console.log(`Registered user (no splash). Access Tier: ${accessTier}. Routing...`);
+
+          if (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only") {
+              console.log('User has a paying tier (no splash). Showing main dashboard.');
+              if (mainOptions) {
+                  mainOptions.style.display = 'flex';
+                  setTimeout(() => {
+                      if (typeof forceReinitializeDashboard === 'function') forceReinitializeDashboard();
+                      else if (typeof initializeDashboard === 'function') initializeDashboard();
+                  }, 100);
+              }
+          } else { // accessTier is "free_guest"
+              console.log('Registered user is "free_guest" (no splash). Showing main paywall screen.');
+              if (newPaywallScreen) {
+                  newPaywallScreen.style.display = 'flex';
+              } else {
+                   if (welcomeScreen) { // Fallback
+                      welcomeScreen.style.display = 'flex';
+                      welcomeScreen.style.opacity = '1';
+                  }
+              }
+          }
+      } else { // User is not registered (anonymous)
+          console.log('User is anonymous guest (no splash). Showing welcome screen.');
+          if (welcomeScreen) {
+              welcomeScreen.style.display = 'flex';
+              welcomeScreen.style.opacity = '1';
+          }
+      }
+    // --- END: DUPLICATED MODIFIED ROUTING LOGIC ---
         
         console.log('Calling updateUserMenu (no splash screen path).');
         if (typeof window.updateUserMenu === 'function') {
