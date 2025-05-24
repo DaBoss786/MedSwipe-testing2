@@ -840,17 +840,31 @@ function showSummary() {
   console.log("Showing summary...");
   
   const data = window.summaryData || {
-    sessionXP: score * 3 + (totalQuestions - score), // Fallback calculation
+    sessionXP: score * 3 + (totalQuestions - score),
     currentLevel: 1,
     currentXP: 0,
-    levelProgress: 0, // Default to 0 if not calculated
+    levelProgress: 0,
     accuracy: totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0,
     performanceMessage: "Quiz complete!"
   };
+
+  const accessTier = window.authState?.accessTier; // Get the current access tier
+  const isFreeGuest = accessTier === "free_guest"; // Check if user is free_guest
+
+  console.log(`Summary for accessTier: ${accessTier}, isFreeGuest: ${isFreeGuest}`);
   
   // Create and add the summary slide
   const summarySlide = document.createElement("div");
   summarySlide.className = "swiper-slide";
+
+  // Conditionally create the leaderboard button HTML
+  let leaderboardButtonHtml = '';
+  if (!isFreeGuest) {
+    leaderboardButtonHtml = `<button id="leaderboardButton" class="start-quiz-btn">View Leaderboard</button>`;
+  } else {
+    console.log("User is free_guest, hiding View Leaderboard button on summary.");
+  }
+
   summarySlide.innerHTML = `
     <div class="card quiz-summary-card">
       <div class="summary-header">
@@ -871,7 +885,6 @@ function showSummary() {
         <div class="xp-header">XP Earned This Session</div>
         <div class="xp-value">+${data.sessionXP} XP</div>
         <div class="xp-bar-container">
-          <!-- Use the levelProgress value for the XP bar width instead of sessionXP -->
           <div class="xp-bar" style="width: ${data.levelProgress}%;"></div>
         </div>
         <div class="xp-total">Total: ${data.currentXP} XP (Level ${data.currentLevel})</div>
@@ -879,46 +892,62 @@ function showSummary() {
       
       <div class="summary-buttons">
         <button id="startNewQuizButton" class="start-quiz-btn">Start New Quiz</button>
-        <button id="leaderboardButton" class="start-quiz-btn">View Leaderboard</button>
+        ${leaderboardButtonHtml} {/* Inject the leaderboard button HTML here */}
       </div>
     </div>
   `;
   
-  // Add the slide to the DOM
   document.getElementById("quizSlides").appendChild(summarySlide);
-  
-  // Update Swiper to recognize the new slide
   window.mySwiper.update();
-  
-  // Navigate to the summary slide
   window.mySwiper.slideTo(window.mySwiper.slides.length - 1);
   
-  // Add event listeners to the buttons
-  document.getElementById("startNewQuizButton").addEventListener("click", function() {
-    window.filterMode = "all";
-    document.getElementById("aboutView").style.display = "none";
-    document.getElementById("faqView").style.display = "none";
-    document.querySelector(".swiper").style.display = "none";
-    document.getElementById("bottomToolbar").style.display = "none";
-    document.getElementById("iconBar").style.display = "none";
-    document.getElementById("performanceView").style.display = "none";
-    document.getElementById("leaderboardView").style.display = "none";
-    document.getElementById("mainOptions").style.display = "flex";
-    ensureEventListenersAttached(); // Add this line
-  });
+  // Add event listener for the "Start New Quiz" button
+  const startNewQuizButton = document.getElementById("startNewQuizButton");
+  if (startNewQuizButton) {
+    // Clone and replace to ensure fresh listener
+    const newStartNewQuizButton = startNewQuizButton.cloneNode(true);
+    startNewQuizButton.parentNode.replaceChild(newStartNewQuizButton, startNewQuizButton);
+    newStartNewQuizButton.addEventListener("click", function() {
+        window.filterMode = "all"; // Assuming filterMode is a global or appropriately scoped variable
+        document.getElementById("aboutView").style.display = "none";
+        document.getElementById("faqView").style.display = "none";
+        document.querySelector(".swiper").style.display = "none";
+        document.getElementById("bottomToolbar").style.display = "none";
+        document.getElementById("iconBar").style.display = "none";
+        document.getElementById("performanceView").style.display = "none";
+        document.getElementById("leaderboardView").style.display = "none";
+        document.getElementById("mainOptions").style.display = "flex";
+        if (typeof ensureEventListenersAttached === 'function') { // Assuming ensureEventListenersAttached is defined in app.js
+            ensureEventListenersAttached();
+        }
+    });
+  }
   
-  document.getElementById("leaderboardButton").addEventListener("click", function() {
-    document.getElementById("aboutView").style.display = "none";
-    document.getElementById("faqView").style.display = "none";
-    document.querySelector(".swiper").style.display = "none";
-    document.getElementById("bottomToolbar").style.display = "none";
-    document.getElementById("iconBar").style.display = "none";
-    document.getElementById("performanceView").style.display = "none";
-    document.getElementById("faqView").style.display = "none";
-    document.getElementById("mainOptions").style.display = "none";
-    showLeaderboard();
-    ensureEventListenersAttached(); // Add this line
-  });
+  // Add event listener for the "View Leaderboard" button ONLY if it exists
+  if (!isFreeGuest) {
+    const leaderboardButton = document.getElementById("leaderboardButton");
+    if (leaderboardButton) {
+        // Clone and replace to ensure fresh listener
+        const newLeaderboardButton = leaderboardButton.cloneNode(true);
+        leaderboardButton.parentNode.replaceChild(newLeaderboardButton, leaderboardButton);
+        newLeaderboardButton.addEventListener("click", function() {
+            document.getElementById("aboutView").style.display = "none";
+            document.getElementById("faqView").style.display = "none";
+            document.querySelector(".swiper").style.display = "none";
+            document.getElementById("bottomToolbar").style.display = "none";
+            document.getElementById("iconBar").style.display = "none";
+            document.getElementById("performanceView").style.display = "none";
+            document.getElementById("faqView").style.display = "none"; // Duplicate, but harmless
+            document.getElementById("mainOptions").style.display = "none";
+            if (typeof showLeaderboard === 'function') { // Assuming showLeaderboard is defined in ui.js and globally accessible or imported
+                showLeaderboard();
+            }
+            if (typeof ensureEventListenersAttached === 'function') {
+                ensureEventListenersAttached();
+            }
+        });
+    }
+  }
 }
 
 // Update quiz progress and score displays
