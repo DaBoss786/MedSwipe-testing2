@@ -556,52 +556,55 @@ async function updateUserMenu() {
     console.log("Auth not initialized for updateUserMenu (user.js)");
     return;
   }
-  console.log("updateUserMenu in user.js is being called."); // Add this log
+  console.log("updateUserMenu in user.js is being called.");
 
   try {
-    const username = await getOrGenerateUsername();
-    const usernameDisplay = document.getElementById("usernameDisplay");
-    // This element is now managed by user-profile.js, so user.js doesn't need to touch it.
-    // if (usernameDisplay) {
-    //   usernameDisplay.textContent = username;
-    // }
+    // Username display is handled by user-profile.js
 
     const subscribeMenuItem = document.getElementById("subscribeMenuItemUser");
     const manageSubscriptionMenuItem = document.getElementById("manageSubscriptionBtn");
-    const logoutUserBtnItem = document.getElementById("logoutUserBtn"); // Get the <li> for logout
+    const logoutUserBtnItem = document.getElementById("logoutUserBtn");
+    const guestLoginMenuItem = document.getElementById("guestLoginMenuItem"); // Get the new Log In item
 
     // Ensure all menu items are found
     if (!subscribeMenuItem) console.warn("subscribeMenuItemUser not found in user.js");
     if (!manageSubscriptionMenuItem) console.warn("manageSubscriptionBtn not found in user.js");
     if (!logoutUserBtnItem) console.warn("logoutUserBtn (li) not found in user.js");
+    if (!guestLoginMenuItem) console.warn("guestLoginMenuItem not found in user.js");
 
-    if (subscribeMenuItem && manageSubscriptionMenuItem && logoutUserBtnItem) {
+
+    if (subscribeMenuItem && manageSubscriptionMenuItem && logoutUserBtnItem && guestLoginMenuItem) {
         const accessTier = window.authState?.accessTier;
         const isAnonymousUser = window.authState?.user?.isAnonymous;
 
         // Default to hiding all dynamic items
         subscribeMenuItem.style.display = "none";
         manageSubscriptionMenuItem.style.display = "none";
-        logoutUserBtnItem.style.display = "none"; // Hide logout by default
+        logoutUserBtnItem.style.display = "none";
+        guestLoginMenuItem.style.display = "none"; // Hide Log In by default
 
         if (isAnonymousUser) {
-            // ANONYMOUS: Show "Subscribe to Premium"
+            // ANONYMOUS: Show "Subscribe to Premium" AND "Log In"
             subscribeMenuItem.style.display = "block"; // Or "list-item"
-            // Logout button is not typically shown for anonymous users as they aren't "logged in"
-            // in a traditional sense. If you want a "Start Over" or similar, that's different.
+            guestLoginMenuItem.style.display = "block"; // Or "list-item"
+            // Logout button remains hidden for anonymous
         } else { // User is REGISTERED (not anonymous)
             logoutUserBtnItem.style.display = "block"; // Show logout for any registered user
 
             if (accessTier === "free_guest") {
                 // REGISTERED FREE_GUEST: Show "Subscribe to Premium"
                 subscribeMenuItem.style.display = "block"; // Or "list-item"
+                // Log In button remains hidden for registered users
             } else if (accessTier && accessTier !== "free_guest") {
                 // PAYING TIER: Show "Manage Subscription"
                 manageSubscriptionMenuItem.style.display = "block"; // Or "list-item"
+                // Subscribe and Log In remain hidden
             }
         }
 
-        // Event listener for "Subscribe" button
+        // --- Event Listeners ---
+
+        // Event listener for "Subscribe to Premium" button
         const newSubscribeMenuItem = subscribeMenuItem.cloneNode(true);
         subscribeMenuItem.parentNode.replaceChild(newSubscribeMenuItem, subscribeMenuItem);
         newSubscribeMenuItem.addEventListener("click", function(e) {
@@ -617,10 +620,23 @@ async function updateUserMenu() {
             }
         });
 
-        // Event listener for "Log Out" button (if the <li> itself is the button)
-        // Ensure the logout button listener is attached in app.js as it's more static.
-        // This function (updateUserMenu) primarily handles visibility.
-        // The listener for logoutUserBtn should already be in app.js.
+        // Event listener for "Log In" button (for anonymous users)
+        const newGuestLoginMenuItem = guestLoginMenuItem.cloneNode(true);
+        guestLoginMenuItem.parentNode.replaceChild(newGuestLoginMenuItem, guestLoginMenuItem);
+        newGuestLoginMenuItem.addEventListener("click", function(e) {
+            e.preventDefault();
+            console.log("User menu 'Log In' clicked by anonymous user.");
+            if (typeof closeUserMenu === 'function') closeUserMenu();
+            // Assuming showLoginForm is globally available from app.js or auth-ui.js
+            if (typeof window.showLoginForm === 'function') {
+                window.showLoginForm();
+            } else {
+                console.error("showLoginForm function not found.");
+            }
+        });
+
+        // The event listener for "Log Out" (logoutUserBtnItem) should be in app.js
+        // as it's a more static button whose action doesn't change, only visibility.
 
     }
 
