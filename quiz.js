@@ -54,130 +54,165 @@ async function fetchQuestionBank() {
 
 // Load questions according to quiz options (handles regular and CME quizzes)
 async function loadQuestions(options = {}) {
-    console.log("Loading questions with options:", options);
-    window.isOnboardingQuiz = options.isOnboarding || false; // Keep onboarding flag logic
+  console.log("Loading questions with options:", options);
+  window.isOnboardingQuiz = options.isOnboarding || false;
 
-    // Show a loading indicator (optional, but good practice)
-    // You might need to create a loading element in index.html
-    // const loadingIndicator = document.getElementById('loadingIndicator');
-    // if (loadingIndicator) loadingIndicator.style.display = 'flex';
+  try {
+      const allQuestionsData = await fetchQuestionBank();
+      console.log("Total questions fetched from bank:", allQuestionsData.length);
 
-    try {
-        // Fetch the entire question bank once
-        const allQuestionsData = await fetchQuestionBank(); // Use existing function
-        console.log("Total questions fetched:", allQuestionsData.length);
+      let relevantAnsweredIds = [];
+      if (options.quizType === 'cme') {
+          relevantAnsweredIds = await fetchCmeAnsweredIds();
+          console.log("Fetched CME answered IDs:", relevantAnsweredIds.length);
+      } else if (!options.bookmarksOnly) {
+          relevantAnsweredIds = await fetchPersistentAnsweredIds();
+          console.log("Fetched regular answered IDs:", relevantAnsweredIds.length);
+      }
 
-        // Fetch necessary user data (answered IDs for filtering)
-        // Use separate tracking for regular vs CME answered questions
-        let relevantAnsweredIds = [];
-        if (options.quizType === 'cme') {
-            // Fetch CME-specific answered IDs (we'll need a function for this)
-            relevantAnsweredIds = await fetchCmeAnsweredIds(); // New function needed
-            console.log("Fetched CME answered IDs:", relevantAnsweredIds.length);
-        } else if (!options.bookmarksOnly) {
-            // Fetch regular answered IDs for non-bookmark, non-CME quizzes
-            relevantAnsweredIds = await fetchPersistentAnsweredIds(); // Existing function
-            console.log("Fetched regular answered IDs:", relevantAnsweredIds.length);
-        }
+      let filteredQuestions = allQuestionsData;
 
-        let filteredQuestions = allQuestionsData;
+      // --- START: Tier-based filtering for "free_guest" ---
+      if (window.authState && window.authState.accessTier === "free_guest") {
+          console.log("User is free_guest, filtering for 'Free: true' questions.");
+          // Ensure 'Free' field is explicitly checked for boolean true
+          filteredQuestions = filteredQuestions.filter(q => q.Free === true);
+          console.log("Questions after 'Free: true' filter:", filteredQuestions.length);
+      }
+      // --- END: Tier-based filtering ---
 
-        // --- Filtering Logic ---
-
-        // 1. Filter for CME Eligible if it's a CME quiz
-        if (options.quizType === 'cme') {
+      // 1. Filter for CME Eligible if it's a CME quiz
+      if (options.quizType === 'cme') {
           filteredQuestions = filteredQuestions.filter(q => {
               const cmeEligibleValue = q["CME Eligible"];
-              // Handle both boolean true and string "yes" (case-insensitive)
               return (typeof cmeEligibleValue === 'boolean' && cmeEligibleValue === true) ||
                      (typeof cmeEligibleValue === 'string' && String(cmeEligibleValue).trim().toLowerCase() === 'yes');
           });
           console.log("Questions after CME Eligible filter:", filteredQuestions.length);
       }
 
-        // 2. Filter by Bookmarks (only if specified, overrides other filters except CME eligibility)
-        if (options.bookmarksOnly) {
-            const bookmarks = await getBookmarks(); // Existing function
-            console.log("Filtering for bookmarks:", bookmarks);
-            if (bookmarks.length === 0) {
-                alert("You don't have any bookmarks yet. Star questions you want to review later!");
-                document.getElementById("mainOptions").style.display = "flex"; // Show main options
-                // Hide loading indicator if you added one
-                // if (loadingIndicator) loadingIndicator.style.display = 'none';
-                return; // Stop processing
-            }
-            // Apply bookmark filter *after* CME filter if applicable
-            filteredQuestions = filteredQuestions.filter(q => bookmarks.includes(q["Question"].trim()));
-            console.log("Questions after Bookmark filter:", filteredQuestions.length);
-        }
-        // 3. Filter by Category (if not bookmark-only)
-        else if (options.category && options.category !== "") {
-            filteredQuestions = filteredQuestions.filter(q =>
-                q["Category"] && q["Category"].trim() === options.category
-            );
-            console.log(`Questions after Category filter ('${options.category}'):`, filteredQuestions.length);
-        }
+      // 2. Filter by Bookmarks (only if specified, overrides other filters except CME eligibility)
+      if (options.bookmarksOnly) {
+          const bookmarks = await getBookmarks();
+          console.log("Filtering for bookmarks:", bookmarks);
+          if (bookmarks.length === 0) {
+              alert("You don't have any bookmarks yet. Star questions you want to review later!");
+              document.getElementById("mainOptions").style.display = "flex";
+              return;
+          }
+          filteredQuestions = filteredQuestions.filter(q => bookmarks.includes(q["Question"].trim()));
+          console.log("Questions after Bookmark filter:", filteredQuestions.length);
+      }
+      // 3. Filter by Category (if not bookmark-only)
+      else if (options.category && options.category !== "") {
+          filteredQuestions = filteredQuestions.filter(q =>
+              q["Category"] && q["Category"].trim() === options.category
+          );
+          console.log(`Questions after Category filter ('${options.category}'):`, filteredQuestions.length);
+      }
 
-        // 4. Filter out answered questions (if not bookmark-only and includeAnswered is false)
-        if (!options.bookmarksOnly && !options.includeAnswered) {
-            filteredQuestions = filteredQuestions.filter(q =>
-                !relevantAnsweredIds.includes(q["Question"].trim())
-            );
-            console.log("Questions after 'Include Answered=false' filter:", filteredQuestions.length);
-        }
+      // 4. Filter out answered questions (if not bookmark-only and includeAnswered is false)
+      if (!options.bookmarksOnly && !options.includeAnswered) {
+          filteredQuestions = filteredQuestions.filter(q =>
+              !relevantAnsweredIds.includes(q["Question"].trim())
+          );
+          console.log("Questions after 'Include Answered=false' filter:", filteredQuestions.length);
+      }
 
-        // --- Handling No Questions ---
-        if (filteredQuestions.length === 0) {
-            let message = "No questions found matching your criteria.";
-            if (options.quizType === 'cme') {
-                message = "No CME questions found matching your criteria. Try adjusting the category or including answered questions.";
-            } else if (options.bookmarksOnly) {
-                message = "No bookmarked questions found matching your criteria.";
-            } else if (options.category) {
-                message = `No unanswered questions left in the '${options.category}' category. Try including answered questions.`;
-            } else {
-                message = "No unanswered questions left. Try including answered questions for more practice!";
-            }
-            alert(message);
-            // Show the appropriate dashboard based on quiz type
-            if (options.quizType === 'cme') {
-                 const cmeDash = document.getElementById("cmeDashboardView");
-                 if(cmeDash) cmeDash.style.display = "block";
-            } else {
-                 const mainOpts = document.getElementById("mainOptions");
-                 if(mainOpts) mainOpts.style.display = "flex";
-            }
-            // Hide loading indicator if you added one
-            // if (loadingIndicator) loadingIndicator.style.display = 'none';
-            return; // Stop processing
-        }
+      // --- Handling No Questions ---
+      if (filteredQuestions.length === 0) {
+          let message;
+          // Specific messages for free_guest tier
+          if (window.authState && window.authState.accessTier === "free_guest") {
+              if (options.category && options.category !== "") {
+                  message = `No free questions found in the '${options.category}' category matching your criteria. Try 'All Categories' or including answered questions.`;
+              } else if (options.bookmarksOnly) {
+                   message = "No bookmarked free questions found matching your criteria.";
+              } else {
+                  message = "No free questions found matching your current criteria. Consider upgrading for full access to all questions!";
+              }
+          }
+          // Messages for other tiers or general cases
+          else if (options.quizType === 'cme') {
+              message = "No CME questions found matching your criteria. Try adjusting the category or including answered questions.";
+          } else if (options.bookmarksOnly) {
+              message = "No bookmarked questions found matching your criteria.";
+          } else if (options.category && options.category !== "") {
+              message = `No unanswered questions left in the '${options.category}' category. Try including answered questions.`;
+          } else {
+              message = "No unanswered questions left. Try including answered questions for more practice!";
+          }
+          alert(message);
 
-        // --- Selecting & Shuffling ---
-        let selectedQuestions = shuffleArray(filteredQuestions); // Use existing function
+          if (options.quizType === 'cme') {
+               const cmeDash = document.getElementById("cmeDashboardView");
+               if(cmeDash) cmeDash.style.display = "block";
+          } else {
+               const mainOpts = document.getElementById("mainOptions");
+               if(mainOpts) mainOpts.style.display = "flex";
+          }
+          return;
+      }
 
-        // Limit number of questions
-        const numQuestionsToLoad = options.num || 10; // Default to 10 if not specified
-        if (selectedQuestions.length > numQuestionsToLoad) {
-            selectedQuestions = selectedQuestions.slice(0, numQuestionsToLoad);
-        }
-        console.log("Final selected questions count:", selectedQuestions.length);
+      let selectedQuestions = shuffleArray(filteredQuestions);
 
-        // --- Initialize Quiz ---
-        // Pass quizType to initializeQuiz if needed later
-        initializeQuiz(selectedQuestions, options.quizType || 'regular');
+      const numQuestionsToLoad = options.num || 10;
+      if (selectedQuestions.length > numQuestionsToLoad) {
+          selectedQuestions = selectedQuestions.slice(0, numQuestionsToLoad);
+      }
+      console.log("Final selected questions count:", selectedQuestions.length);
 
-    } catch (error) {
-        console.error("Error loading questions:", error);
-        alert("Error loading questions. Please check your connection and try again.");
-        // Hide loading indicator if you added one
-        // if (loadingIndicator) loadingIndicator.style.display = 'none';
-         // Show main options as a fallback
-         const mainOpts = document.getElementById("mainOptions");
-         if(mainOpts) mainOpts.style.display = "flex";
-    } finally {
-         // Hide loading indicator if you added one
-         // if (loadingIndicator) loadingIndicator.style.display = 'none';
-    }
+      initializeQuiz(selectedQuestions, options.quizType || 'regular');
+
+  } catch (error) {
+      console.error("Error loading questions:", error);
+      alert("Error loading questions. Please check your connection and try again.");
+      const mainOpts = document.getElementById("mainOptions");
+      if(mainOpts) mainOpts.style.display = "flex";
+  }
+}
+
+// Ensure fetchCmeAnsweredIds is defined (it was provided in the prompt's quiz.js)
+// If it's not already in your quiz.js, add it:
+async function fetchCmeAnsweredIds() {
+  if (!auth || !auth.currentUser || auth.currentUser.isAnonymous) {
+      console.log("User not authenticated or is guest, cannot fetch CME answered IDs.");
+      return [];
+  }
+  try {
+      const uid = auth.currentUser.uid;
+      const userDocRef = doc(db, 'users', uid);
+      const userDocSnap = await getDoc(userDocRef);
+      if (userDocSnap.exists()) {
+          const data = userDocSnap.data();
+          const cmeAnswered = data.cmeAnsweredQuestions || {};
+          return Object.keys(cmeAnswered);
+      } else {
+           console.log("User document not found, returning empty CME answered IDs.");
+           return [];
+      }
+  } catch (error) {
+      console.error("Error fetching CME answered IDs:", error);
+      return [];
+  }
+}
+
+// Ensure fetchQuestionBank is defined (it was provided in the prompt's quiz.js)
+// If it's not already in your quiz.js, add it:
+async function fetchQuestionBank() {
+console.log("Fetching question bank from Firestore...");
+try {
+  const questionsCollectionRef = collection(db, 'questions');
+  const querySnapshot = await getDocs(questionsCollectionRef);
+  const questionsArray = querySnapshot.docs.map(doc => {
+    return doc.data();
+  });
+  console.log(`Successfully fetched ${questionsArray.length} questions from Firestore.`);
+  return questionsArray;
+} catch (error) {
+  console.error("Error fetching question bank from Firestore:", error);
+  throw error;
+}
 }
 
 // --- End of Updated loadQuestions function ---
