@@ -1564,43 +1564,51 @@ async function loadLeaderboardPreview() {
   const accessTier = window.authState?.accessTier; // Use optional chaining
 
   if (auth.currentUser.isAnonymous || accessTier === "free_guest") {
-    let message1 = "Leaderboards are a premium feature.";
-    let message2 = "Upgrade your account to compete with others!";
-    if (auth.currentUser.isAnonymous) {
-        message1 = "Leaderboards are only available for registered users.";
-        message2 = "Create a free account to compete with others!";
-    }
+    const message1 = "Leaderboards are a premium feature."; // Consistent message
+    const message2 = "Upgrade your account to unlock this feature!"; // Consistent message
+    const buttonText = "Upgrade to Access"; // Consistent button text
 
     leaderboardPreview.innerHTML = `
-      <div class="guest-analytics-prompt">
-        <p>${message1}</p>
-        <p>${message2}</p>
-        <button id="upgradeForLeaderboardBtn" class="start-quiz-btn">${auth.currentUser.isAnonymous ? 'Create Free Account' : 'Upgrade to Access'}</button>
-      </div>
+        <div class="guest-analytics-prompt">
+            <p>${message1}</p>
+            <p>${message2}</p>
+            <button id="upgradeForLeaderboardBtn" class="start-quiz-btn" style="margin-top:10px;">
+                ${buttonText}
+            </button>
+        </div>
     `;
 
     const upgradeBtn = document.getElementById('upgradeForLeaderboardBtn');
     if (upgradeBtn) {
-      upgradeBtn.addEventListener('click', function() {
-        if (auth.currentUser.isAnonymous) {
-          // For truly anonymous users, show registration form first
-          if (typeof window.showRegisterForm === 'function') {
-            window.showRegisterForm('board_review_pricing'); // Or a generic paywall redirect after reg
-          } else { console.error("showRegisterForm not found");}
-        } else {
-          // For registered "free_guest", go to main paywall
-          ensureAllScreensHidden(); // Hide other screens
-          if (mainPaywallScreen) mainPaywallScreen.style.display = 'flex';
-        }
-      });
+        // Remove any old listeners by cloning the button
+        const newUpgradeBtn = upgradeBtn.cloneNode(true);
+        upgradeBtn.parentNode.replaceChild(newUpgradeBtn, upgradeBtn);
+
+        newUpgradeBtn.addEventListener('click', function () {
+            // For BOTH anonymous and registered "free_guest", go to main paywall
+            console.log("Leaderboard 'Upgrade to Access' button clicked. Redirecting to paywall.");
+            ensureAllScreensHidden(); // Hide other screens
+
+            if (mainPaywallScreen) {
+                // mainPaywallScreen is already defined at the top of loadLeaderboardPreview
+                mainPaywallScreen.style.display = 'flex';
+            } else {
+                console.error("Main paywall screen not found!");
+                // Fallback if paywall is missing
+                const mainOptions = document.getElementById("mainOptions");
+                if (mainOptions) mainOptions.style.display = 'flex';
+            }
+        });
     }
 
     const cardFooter = document.querySelector("#leaderboardPreviewCard .card-footer span:first-child");
     if (cardFooter) {
-      cardFooter.textContent = auth.currentUser.isAnonymous ? "Register to Access" : "Upgrade to Access";
+        cardFooter.textContent = "Upgrade to Access"; // Consistent footer text
     }
+
     return;
-  }
+}
+
 
   // For "board_review", "cme_annual", "cme_credits_only" tiers:
   try {
