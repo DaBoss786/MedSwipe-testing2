@@ -892,7 +892,7 @@ function showSummary() {
       
       <div class="summary-buttons">
         <button id="startNewQuizButton" class="start-quiz-btn">Start New Quiz</button>
-        ${leaderboardButtonHtml} {/* Inject the leaderboard button HTML here */}
+        ${leaderboardButtonHtml}
       </div>
     </div>
   `;
