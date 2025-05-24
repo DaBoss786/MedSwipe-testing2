@@ -1094,6 +1094,27 @@ if (manageSubBtn) {
 if (cmeDashboard) cmeDashboard.style.display = "none";
     });
   }
+
+  const logoutUserBtn = document.getElementById("logoutUserBtn");
+if (logoutUserBtn) {
+    logoutUserBtn.addEventListener("click", async function(e) {
+        e.preventDefault();
+        console.log("Log Out button clicked.");
+        if (typeof closeUserMenu === 'function') {
+            closeUserMenu();
+        }
+        try {
+            await window.authFunctions.logoutUser();
+            // cleanupOnLogout() is called internally by auth.js on sign-out
+            // The authStateChanged listener will then handle redirecting to the welcome screen
+            // or appropriate initial view for an anonymous user.
+            console.log("User logged out, authStateChanged will handle UI.");
+        } catch (error) {
+            console.error("Error during logout:", error);
+            alert("Failed to log out. Please try again.");
+        }
+    });
+}
   
   // CUSTOM QUIZ BUTTON => show modal
   const customQuizBtn = document.getElementById("customQuizBtn");

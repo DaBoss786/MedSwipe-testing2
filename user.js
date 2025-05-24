@@ -553,69 +553,79 @@ function showBonusMessages(messages) {
 // Update the user menu with current username and score
 async function updateUserMenu() {
   if (!auth || !auth.currentUser) {
-    console.log("Auth not initialized for updateUserMenu");
+    console.log("Auth not initialized for updateUserMenu (user.js)");
     return;
   }
+  console.log("updateUserMenu in user.js is being called."); // Add this log
 
   try {
     const username = await getOrGenerateUsername();
     const usernameDisplay = document.getElementById("usernameDisplay");
-    if (usernameDisplay) {
-      usernameDisplay.textContent = username;
-    }
+    // This element is now managed by user-profile.js, so user.js doesn't need to touch it.
+    // if (usernameDisplay) {
+    //   usernameDisplay.textContent = username;
+    // }
 
     const subscribeMenuItem = document.getElementById("subscribeMenuItemUser");
     const manageSubscriptionMenuItem = document.getElementById("manageSubscriptionBtn");
+    const logoutUserBtnItem = document.getElementById("logoutUserBtn"); // Get the <li> for logout
 
-    if (subscribeMenuItem && manageSubscriptionMenuItem) {
+    // Ensure all menu items are found
+    if (!subscribeMenuItem) console.warn("subscribeMenuItemUser not found in user.js");
+    if (!manageSubscriptionMenuItem) console.warn("manageSubscriptionBtn not found in user.js");
+    if (!logoutUserBtnItem) console.warn("logoutUserBtn (li) not found in user.js");
+
+    if (subscribeMenuItem && manageSubscriptionMenuItem && logoutUserBtnItem) {
         const accessTier = window.authState?.accessTier;
-        // isRegistered is true if user is not anonymous, based on auth.js logic
-        // const isRegistered = window.authState?.isRegistered; // We don't need this for the new logic
+        const isAnonymousUser = window.authState?.user?.isAnonymous;
 
-        // Default to hiding both
+        // Default to hiding all dynamic items
         subscribeMenuItem.style.display = "none";
         manageSubscriptionMenuItem.style.display = "none";
+        logoutUserBtnItem.style.display = "none"; // Hide logout by default
 
-        // If the user does NOT have a paying tier (i.e., they are effectively a "free_guest" or anonymous)
-        // show "Subscribe to Premium".
-        // Otherwise (if they have a paying tier), show "Manage Subscription".
-        if (accessTier === "free_guest" || window.authState?.user?.isAnonymous) {
+        if (isAnonymousUser) {
+            // ANONYMOUS: Show "Subscribe to Premium"
             subscribeMenuItem.style.display = "block"; // Or "list-item"
-        } else if (accessTier && accessTier !== "free_guest") {
-            // This covers "board_review", "cme_annual", "cme_credits_only"
-            manageSubscriptionMenuItem.style.display = "block"; // Or "list-item"
+            // Logout button is not typically shown for anonymous users as they aren't "logged in"
+            // in a traditional sense. If you want a "Start Over" or similar, that's different.
+        } else { // User is REGISTERED (not anonymous)
+            logoutUserBtnItem.style.display = "block"; // Show logout for any registered user
+
+            if (accessTier === "free_guest") {
+                // REGISTERED FREE_GUEST: Show "Subscribe to Premium"
+                subscribeMenuItem.style.display = "block"; // Or "list-item"
+            } else if (accessTier && accessTier !== "free_guest") {
+                // PAYING TIER: Show "Manage Subscription"
+                manageSubscriptionMenuItem.style.display = "block"; // Or "list-item"
+            }
         }
 
-
-        // Event listener for "Subscribe" button (ensure it's attached only once or re-attach safely)
-        // Cloning to remove old listeners and attach new one
+        // Event listener for "Subscribe" button
         const newSubscribeMenuItem = subscribeMenuItem.cloneNode(true);
         subscribeMenuItem.parentNode.replaceChild(newSubscribeMenuItem, subscribeMenuItem);
-
         newSubscribeMenuItem.addEventListener("click", function(e) {
             e.preventDefault();
-            console.log("User menu 'Subscribe to Premium' clicked.");
             if (typeof closeUserMenu === 'function') closeUserMenu();
-            
             if (typeof ensureAllScreensHidden === 'function') ensureAllScreensHidden();
-            
             const mainPaywallScreen = document.getElementById("newPaywallScreen");
-            if (mainPaywallScreen) {
-                mainPaywallScreen.style.display = "flex";
-            } else {
-                console.error("Main paywall screen not found from user menu subscribe click.");
+            if (mainPaywallScreen) mainPaywallScreen.style.display = "flex";
+            else {
+                console.error("Main paywall screen not found.");
                 const mainOptions = document.getElementById("mainOptions");
-                if (mainOptions) mainOptions.style.display = "flex"; // Fallback
+                if (mainOptions) mainOptions.style.display = "flex";
             }
         });
 
-    } else {
-        if (!subscribeMenuItem) console.warn("Subscribe menu item not found.");
-        if (!manageSubscriptionMenuItem) console.warn("Manage Subscription menu item not found.");
+        // Event listener for "Log Out" button (if the <li> itself is the button)
+        // Ensure the logout button listener is attached in app.js as it's more static.
+        // This function (updateUserMenu) primarily handles visibility.
+        // The listener for logoutUserBtn should already be in app.js.
+
     }
 
   } catch (error) {
-    console.error("Error updating user menu:", error);
+    console.error("Error updating user menu (user.js):", error);
   }
 }
 
