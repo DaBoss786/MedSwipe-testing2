@@ -4507,14 +4507,27 @@ html, body {
   top: -10px; /* Position slightly above the card */
   left: 50%;
   transform: translateX(-50%);
-  background-color: #ffc107; /* Yellow for popular */
-  color: #333;
+  /* background-color: #ffc107; */ /* Default removed or overridden by specific badges */
+  color: #333; /* Default text color for badges */
   padding: 5px 15px;
   font-size: 0.8rem;
   font-weight: bold;
   border-radius: 20px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 1; /* Ensure badge is above card border if card has a thick top border */
 }
+
+.popular-badge {
+  background-color: #ffc107; /* Yellow for popular */
+  /* color: #333; /* Already set by .card-badge */
+}
+
+/* START: New CME Eligible Badge Style */
+.cme-eligible-badge {
+  background-color: #28a745; /* Green color */
+  color: #ffffff; /* White text for better contrast on green */
+}
+/* END: New CME Eligible Badge Style */
 
 /* Specific card styling if needed */
 .board-review-card {
