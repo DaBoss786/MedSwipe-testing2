@@ -172,49 +172,6 @@ async function loadQuestions(options = {}) {
   }
 }
 
-// Ensure fetchCmeAnsweredIds is defined (it was provided in the prompt's quiz.js)
-// If it's not already in your quiz.js, add it:
-async function fetchCmeAnsweredIds() {
-  if (!auth || !auth.currentUser || auth.currentUser.isAnonymous) {
-      console.log("User not authenticated or is guest, cannot fetch CME answered IDs.");
-      return [];
-  }
-  try {
-      const uid = auth.currentUser.uid;
-      const userDocRef = doc(db, 'users', uid);
-      const userDocSnap = await getDoc(userDocRef);
-      if (userDocSnap.exists()) {
-          const data = userDocSnap.data();
-          const cmeAnswered = data.cmeAnsweredQuestions || {};
-          return Object.keys(cmeAnswered);
-      } else {
-           console.log("User document not found, returning empty CME answered IDs.");
-           return [];
-      }
-  } catch (error) {
-      console.error("Error fetching CME answered IDs:", error);
-      return [];
-  }
-}
-
-// Ensure fetchQuestionBank is defined (it was provided in the prompt's quiz.js)
-// If it's not already in your quiz.js, add it:
-async function fetchQuestionBank() {
-console.log("Fetching question bank from Firestore...");
-try {
-  const questionsCollectionRef = collection(db, 'questions');
-  const querySnapshot = await getDocs(questionsCollectionRef);
-  const questionsArray = querySnapshot.docs.map(doc => {
-    return doc.data();
-  });
-  console.log(`Successfully fetched ${questionsArray.length} questions from Firestore.`);
-  return questionsArray;
-} catch (error) {
-  console.error("Error fetching question bank from Firestore:", error);
-  throw error;
-}
-}
-
 // --- End of Updated loadQuestions function ---
 
 
