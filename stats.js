@@ -38,13 +38,21 @@ async function displayPerformance() {
     });
     return;
   }
-  const data = userDocSnap.data();
+  const data = userDocSnap.data(); // Assuming userDocSnap.exists() is checked earlier
   const stats = data.stats || {};
-  
   const totalAnswered = stats.totalAnswered || 0;
+  const totalCorrect = stats.totalCorrect || 0;
+  const overallPercent = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
   const xp = stats.xp || 0;
   const level = stats.level || 1;
-  
+  // ... (level progress calculation) ...
+  const levelThresholds = [0, 30, 75, 150, 250, 400, 600, 850, 1150, 1500, 2000, 2750, 3750, 5000, 6500];
+  const currentLevelXp = levelThresholds[level - 1] || 0;
+  const nextLevelXp = level < levelThresholds.length ? levelThresholds[level] : null;
+  const xpInCurrentLevel = xp - currentLevelXp;
+  const xpRequiredForNextLevel = nextLevelXp ? nextLevelXp - currentLevelXp : 1000; 
+  const levelProgress = Math.min(100, Math.floor((xpInCurrentLevel / xpRequiredForNextLevel) * 100));
+
   let questionBank = [];
   try {
     questionBank = await fetchQuestionBank();
@@ -52,68 +60,26 @@ async function displayPerformance() {
     console.error("Error fetching question bank:", error);
   }
   const totalInBank = questionBank.length;
-  console.log("Total in bank: ", totalInBank, "Total answered: ", totalAnswered);
-  
   let remaining = totalInBank - totalAnswered;
   if (remaining < 0) { remaining = 0; }
-  
-  const totalCorrect = stats.totalCorrect || 0;
-  const overallPercent = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
-  
-  // Get level progress info
-  const levelThresholds = [0, 30, 75, 150, 250, 400, 600, 850, 1150, 1500, 2000, 2750, 3750, 5000, 6500];
-  const currentLevelXp = levelThresholds[level - 1] || 0;
-  const nextLevelXp = level < levelThresholds.length ? levelThresholds[level] : null;
-  
-  const xpInCurrentLevel = xp - currentLevelXp;
-  const xpRequiredForNextLevel = nextLevelXp ? nextLevelXp - currentLevelXp : 1000; // Default to 1000 if at max level
-  const levelProgress = Math.min(100, Math.floor((xpInCurrentLevel / xpRequiredForNextLevel) * 100));
-  
-  let categoryBreakdown = "";
 
-  // Only show detailed category breakdown for registered users
-  if (auth && auth.currentUser && !auth.currentUser.isAnonymous) {
-    if (stats.categories) {
-      categoryBreakdown = Object.keys(stats.categories).map(cat => {
-        const c = stats.categories[cat];
-        const answered = c.answered;
-        const correct = c.correct;
-        const percent = answered > 0 ? Math.round((correct / answered) * 100) : 0;
-        return `
-          <div class="category-item">
-            <strong>${cat}</strong>: ${correct}/${answered} (${percent}%)
-            <div class="progress-bar-container">
-              <div class="progress-bar" style="width: ${percent}%"></div>
-            </div>
-          </div>
-        `;
-      }).join("");
-    } else {
-      categoryBreakdown = "<p>No category data available.</p>";
-    }
-  } else {
-    // For guest users, show registration prompt
-    categoryBreakdown = `
-      <div class="guest-analytics-prompt">
-        <p>Subject-specific analytics are available for registered users only.</p>
-        <button id="registerForAnalyticsBtn" class="start-quiz-btn">Create Free Account</button>
-      </div>
-    `;
+
+  const performanceView = document.getElementById("performanceView"); // Ensure performanceView is defined
+  if (!performanceView) {
+      console.error("Performance view element not found!");
+      return;
   }
   
-  document.getElementById("performanceView").innerHTML = `
+  // Initial part of innerHTML (overall stats, XP, etc.)
+  performanceView.innerHTML = `
     <h2 style="text-align:center; color:#0056b3;">Performance</h2>
-    
     <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:20px; margin-bottom:20px;">
-      <!-- Accuracy Doughnut Chart -->
       <div style="flex:1; min-width:220px; max-width:300px; display:flex; flex-direction:column; align-items:center;">
         <canvas id="overallScoreChart" width="200" height="200"></canvas>
         <p style="font-size:1.2rem; color:#333; margin-top:10px; text-align:center;">
           Accuracy: ${overallPercent}%
         </p>
       </div>
-      
-      <!-- XP Level Display -->
       <div style="flex:1; min-width:220px; max-width:300px; display:flex; flex-direction:column; align-items:center;">
         <div class="level-progress-circle" style="width:100px; height:100px; margin:20px auto;">
           <div class="level-circle-background"></div>
@@ -128,50 +94,111 @@ async function displayPerformance() {
         </p>
       </div>
     </div>
-    
     <div style="background:#f5f5f5; border-radius:8px; padding:15px; margin:20px 0;">
       <h3 style="margin-top:0; color:#0056b3; text-align:center;">Stats Summary</h3>
-      <p style="font-size:1rem; color:#333;">
-        Total Questions Answered: <strong>${totalAnswered}</strong>
-      </p>
-      <p style="font-size:1rem; color:#333;">
-        Correct Answers: <strong>${totalCorrect}</strong> (${overallPercent}%)
-      </p>
-      <p style="font-size:1rem; color:#333;">
-        Questions Remaining: <strong>${remaining}</strong>
-      </p>
+      <p style="font-size:1rem; color:#333;">Total Questions Answered: <strong>${totalAnswered}</strong></p>
+      <p style="font-size:1rem; color:#333;">Correct Answers: <strong>${totalCorrect}</strong> (${overallPercent}%)</p>
+      <p style="font-size:1rem; color:#333;">Questions Remaining: <strong>${remaining}</strong></p>
     </div>
-    
     <hr>
     <h3 style="text-align:center; color:#0056b3;">By Category</h3>
-    ${categoryBreakdown}
+    <div id="categoryBreakdownInternal"></div>
     <button id="backToMain" style="margin-top:20px;">Back</button>
   `;
-  
-  // Draw accuracy doughnut chart
-  const ctx = document.getElementById("overallScoreChart").getContext("2d");
-  new Chart(ctx, {
-    type: "doughnut",
-    data: {
-      labels: ["Correct", "Incorrect"],
-      datasets: [{
-        data: [
-          totalCorrect,
-          totalAnswered - totalCorrect
-        ],
-        backgroundColor: ["#28a745", "#dc3545"]
-      }]
-    },
-    options: {
-      responsive: false,
-      cutout: "60%",
-      plugins: {
-        legend: {
-          display: true
+
+  // Now populate the categoryBreakdownInternal div
+  const categoryBreakdownContainer = document.getElementById("categoryBreakdownInternal");
+  const accessTier = window.authState?.accessTier;
+  // isRegistered is not strictly needed for this simplified logic but can be kept for logging
+  const isRegistered = window.authState?.isRegistered; 
+
+  if (categoryBreakdownContainer) {
+    if (accessTier === "free_guest") { // This covers both anonymous and registered free_guest
+        console.log("User is free_guest. Showing upgrade prompt for analytics.");
+        const message1 = "Detailed subject-specific analytics are a premium feature.";
+        const message2 = "Upgrade your account to track your performance across different subspecialties!";
+        const buttonText = "Upgrade to Access";
+        const buttonId = "upgradeForAnalyticsBtn_stats"; // Make ID unique if needed
+
+        categoryBreakdownContainer.innerHTML = `
+            <div class="guest-analytics-prompt" style="margin-top: 20px; padding: 15px; background: #f2f7ff; border-left: 4px solid #0C72D3; border-radius: 8px; text-align: center;">
+                <p style="color: #0056b3; margin-bottom: 10px;">${message1}</p>
+                <p style="color: #0056b3; margin-bottom: 15px;">${message2}</p>
+                <button id="${buttonId}" class="start-quiz-btn" style="padding: 10px 20px; font-size: 1rem;">
+                    ${buttonText}
+                </button>
+            </div>
+        `;
+
+        const upgradeButton = document.getElementById(buttonId);
+        if (upgradeButton) {
+            const newUpgradeButton = upgradeButton.cloneNode(true);
+            upgradeButton.parentNode.replaceChild(newUpgradeButton, upgradeButton);
+
+            newUpgradeButton.addEventListener('click', function() {
+                console.log("Performance page 'Upgrade to Access' button clicked by free_guest.");
+                if (performanceView) performanceView.style.display = 'none'; 
+
+                const mainPaywallScreen = document.getElementById("newPaywallScreen");
+                if (mainPaywallScreen) {
+                    mainPaywallScreen.style.display = 'flex';
+                } else {
+                    console.error("Main paywall screen (#newPaywallScreen) not found!");
+                    const mainOptions = document.getElementById("mainOptions"); // Fallback
+                    if (mainOptions) mainOptions.style.display = 'flex';
+                }
+            });
         }
-      }
+    } else if (isRegistered && (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only")) {
+        // Logic for paying tiers to display detailed category breakdown
+        let categoryBreakdownHtml = "";
+        if (stats.categories && Object.keys(stats.categories).length > 0) {
+            categoryBreakdownHtml = Object.keys(stats.categories).map(cat => {
+                const c = stats.categories[cat];
+                const catAnswered = c.answered || 0; // Ensure defined
+                const catCorrect = c.correct || 0;   // Ensure defined
+                const percent = catAnswered > 0 ? Math.round((catCorrect / catAnswered) * 100) : 0;
+                return `
+                <div class="category-item">
+                    <strong>${cat}</strong>: ${catCorrect}/${catAnswered} (${percent}%)
+                    <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: ${percent}%"></div>
+                    </div>
+                </div>
+                `;
+            }).join("");
+        } else {
+            categoryBreakdownHtml = "<p>No category data available yet. Answer more questions to see your breakdown!</p>";
+        }
+        categoryBreakdownContainer.innerHTML = categoryBreakdownHtml;
+    } else {
+        // Fallback or if authState is not yet loaded (should ideally not happen here)
+        categoryBreakdownContainer.innerHTML = "<p>Loading analytics data...</p>";
+        console.warn("Access tier not 'free_guest' and not a recognized paying tier, or user not registered for detailed analytics display.");
     }
-  });
+  }
+
+
+  // Draw accuracy doughnut chart (ensure ctx is valid)
+  const canvasElement = document.getElementById("overallScoreChart");
+  if (canvasElement) {
+    const ctx = canvasElement.getContext("2d");
+    new Chart(ctx, {
+        type: "doughnut",
+        data: {
+        labels: ["Correct", "Incorrect"],
+        datasets: [{
+            data: [totalCorrect, totalAnswered - totalCorrect],
+            backgroundColor: ["#28a745", "#dc3545"]
+        }]
+        },
+        options: { /* ... your chart options ... */ 
+            responsive: false,
+            cutout: "60%",
+            plugins: { legend: { display: true } }
+        }
+    });
+  }
   
   // Set the level progress circle fill
   const performanceLevelProgress = document.getElementById("performanceLevelProgress");
@@ -179,23 +206,20 @@ async function displayPerformance() {
     performanceLevelProgress.style.setProperty('--progress', `${levelProgress}%`);
   }
   
-  document.getElementById("backToMain").addEventListener("click", function() {
-    document.getElementById("performanceView").style.display = "none";
-    document.getElementById("mainOptions").style.display = "flex";
-  });
-  
-  // Add event listener for the register button in guest analytics prompt
-  const registerBtn = document.getElementById('registerForAnalyticsBtn');
-  if (registerBtn) {
-    registerBtn.addEventListener('click', function() {
-      document.getElementById("performanceView").style.display = "none";
-      if (typeof window.showRegistrationBenefitsModal === 'function') {
-        window.showRegistrationBenefitsModal();
-      } else if (typeof window.showRegisterForm === 'function') {
-        window.showRegisterForm();
-      }
+  // Back button listener
+  const backButton = document.getElementById("backToMain");
+  if (backButton) {
+    const newBackButton = backButton.cloneNode(true);
+    backButton.parentNode.replaceChild(newBackButton, backButton);
+    newBackButton.addEventListener("click", function() {
+        if (performanceView) performanceView.style.display = "none";
+        const mainOptions = document.getElementById("mainOptions");
+        if (mainOptions) mainOptions.style.display = "flex";
     });
   }
+
+  // Remove the old #registerForAnalyticsBtn listener as it's no longer generated with that ID
+  // The new button #upgradeForAnalyticsBtn_stats has its listener attached above.
 }
 
 // Load XP Rankings leaderboard with weekly/all-time toggle
