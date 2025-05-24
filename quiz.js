@@ -64,55 +64,68 @@ async function loadQuestions(options = {}) {
       let relevantAnsweredIds = [];
       if (options.quizType === 'cme') {
           relevantAnsweredIds = await fetchCmeAnsweredIds();
-          console.log("Fetched CME answered IDs:", relevantAnsweredIds.length);
       } else if (!options.bookmarksOnly) {
           relevantAnsweredIds = await fetchPersistentAnsweredIds();
-          console.log("Fetched regular answered IDs:", relevantAnsweredIds.length);
       }
 
       let filteredQuestions = allQuestionsData;
+      const accessTier = window.authState?.accessTier;
 
-      // --- START: Tier-based filtering for "free_guest" ---
-      if (window.authState && window.authState.accessTier === "free_guest") {
+      // --- Tier-based filtering ---
+
+      if (accessTier === "free_guest") {
           console.log("User is free_guest, filtering for 'Free: true' questions.");
-          // Ensure 'Free' field is explicitly checked for boolean true
           filteredQuestions = filteredQuestions.filter(q => q.Free === true);
           console.log("Questions after 'Free: true' filter:", filteredQuestions.length);
+      } else if (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only") {
+          // For paying tiers, check if "Board Review Only" is selected
+          if (options.boardReviewOnly === true) {
+              console.log("Board Review Only selected, filtering for 'Board Review: true' questions.");
+              filteredQuestions = filteredQuestions.filter(q => q["Board Review"] === true); // Assuming 'Board Review' is the field name
+              console.log("Questions after 'Board Review: true' filter:", filteredQuestions.length);
+          }
+          // If boardReviewOnly is false or not specified for these tiers, no *additional* tier-based filtering is done here.
+          // CME quiz type will still filter for CME Eligible questions later.
+          // Regular quizzes for these tiers will include all questions (Free, Board Review, CME Eligible).
       }
-      // --- END: Tier-based filtering ---
 
-      // 1. Filter for CME Eligible if it's a CME quiz
+
+      // 1. Filter for CME Eligible if it's a CME quiz (applies to all users if they reach this quiz type)
       if (options.quizType === 'cme') {
+          // This filter should apply regardless of the boardReviewOnly flag if it's a CME quiz.
+          // CME questions might also be board review style, but CME eligibility is primary here.
           filteredQuestions = filteredQuestions.filter(q => {
               const cmeEligibleValue = q["CME Eligible"];
               return (typeof cmeEligibleValue === 'boolean' && cmeEligibleValue === true) ||
                      (typeof cmeEligibleValue === 'string' && String(cmeEligibleValue).trim().toLowerCase() === 'yes');
           });
-          console.log("Questions after CME Eligible filter:", filteredQuestions.length);
+          console.log("Questions after CME Eligible filter (for CME quiz type):", filteredQuestions.length);
       }
 
-      // 2. Filter by Bookmarks (only if specified, overrides other filters except CME eligibility)
+      // 2. Filter by Bookmarks
       if (options.bookmarksOnly) {
           const bookmarks = await getBookmarks();
-          console.log("Filtering for bookmarks:", bookmarks);
           if (bookmarks.length === 0) {
               alert("You don't have any bookmarks yet. Star questions you want to review later!");
               document.getElementById("mainOptions").style.display = "flex";
               return;
           }
+          // Apply bookmark filter to the already tier-filtered list
           filteredQuestions = filteredQuestions.filter(q => bookmarks.includes(q["Question"].trim()));
           console.log("Questions after Bookmark filter:", filteredQuestions.length);
       }
-      // 3. Filter by Category (if not bookmark-only)
+      // 3. Filter by Category
       else if (options.category && options.category !== "") {
+          // Apply category filter to the already tier-filtered list
           filteredQuestions = filteredQuestions.filter(q =>
               q["Category"] && q["Category"].trim() === options.category
           );
           console.log(`Questions after Category filter ('${options.category}'):`, filteredQuestions.length);
       }
 
-      // 4. Filter out answered questions (if not bookmark-only and includeAnswered is false)
+      // 4. Filter out answered questions
       if (!options.bookmarksOnly && !options.includeAnswered) {
+          // Apply answered filter to the already tier/category/bookmark-filtered list
           filteredQuestions = filteredQuestions.filter(q =>
               !relevantAnsweredIds.includes(q["Question"].trim())
           );
@@ -121,26 +134,21 @@ async function loadQuestions(options = {}) {
 
       // --- Handling No Questions ---
       if (filteredQuestions.length === 0) {
-          let message;
-          // Specific messages for free_guest tier
-          if (window.authState && window.authState.accessTier === "free_guest") {
+          let message = "No questions found matching your criteria."; // Default
+          if (accessTier === "free_guest") {
               if (options.category && options.category !== "") {
                   message = `No free questions found in the '${options.category}' category matching your criteria. Try 'All Categories' or including answered questions.`;
-              } else if (options.bookmarksOnly) {
-                   message = "No bookmarked free questions found matching your criteria.";
               } else {
                   message = "No free questions found matching your current criteria. Consider upgrading for full access to all questions!";
               }
-          }
-          // Messages for other tiers or general cases
-          else if (options.quizType === 'cme') {
+          } else if (options.boardReviewOnly === true) {
+               message = "No Board Review questions found matching your criteria. Try adjusting filters or unchecking 'Board Review Questions Only'.";
+          } else if (options.quizType === 'cme') {
               message = "No CME questions found matching your criteria. Try adjusting the category or including answered questions.";
           } else if (options.bookmarksOnly) {
               message = "No bookmarked questions found matching your criteria.";
           } else if (options.category && options.category !== "") {
               message = `No unanswered questions left in the '${options.category}' category. Try including answered questions.`;
-          } else {
-              message = "No unanswered questions left. Try including answered questions for more practice!";
           }
           alert(message);
 
@@ -155,7 +163,6 @@ async function loadQuestions(options = {}) {
       }
 
       let selectedQuestions = shuffleArray(filteredQuestions);
-
       const numQuestionsToLoad = options.num || 10;
       if (selectedQuestions.length > numQuestionsToLoad) {
           selectedQuestions = selectedQuestions.slice(0, numQuestionsToLoad);

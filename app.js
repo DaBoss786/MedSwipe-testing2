@@ -2190,10 +2190,9 @@ async function updateReviewQueue() {
 
 // Set up event listeners for dashboard
 function setupDashboardEvents() {
-  // Start Quiz button
+  // Start Quiz button on Dashboard
   const startQuizBtn = document.getElementById("startQuizBtn");
   if (startQuizBtn) {
-      // Clone the button to remove any existing listeners first
       const newStartQuizBtn = startQuizBtn.cloneNode(true);
       startQuizBtn.parentNode.replaceChild(newStartQuizBtn, startQuizBtn);
   
@@ -2202,33 +2201,45 @@ function setupDashboardEvents() {
           const isAnonymousUser = auth.currentUser && auth.currentUser.isAnonymous;
   
           const spacedRepCheckbox = document.getElementById('modalSpacedRepetition');
-          const spacedRepContainer = spacedRepCheckbox ? spacedRepCheckbox.closest('.formGroup') : null; // Assuming '.form-group' is the direct parent container you want to hide/show
-  
+          const spacedRepContainer = spacedRepCheckbox ? spacedRepCheckbox.closest('.formGroup') : null;
+          
+          // --- START: Board Review Checkbox Visibility ---
+          const boardReviewCheckbox = document.getElementById('modalBoardReviewOnly');
+          const boardReviewContainer = document.getElementById('boardReviewOnlyContainer');
+
+          if (boardReviewContainer) {
+              if (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only") {
+                  boardReviewContainer.style.display = 'block'; // Or 'flex' if your .formGroup uses flex
+                  console.log("Board Review Only option shown for tiered user.");
+              } else {
+                  boardReviewContainer.style.display = 'none';
+                  if (boardReviewCheckbox) {
+                      boardReviewCheckbox.checked = false; // Ensure it's unchecked if hidden
+                  }
+                  console.log("Board Review Only option hidden for free_guest/anonymous user.");
+              }
+          } else {
+              console.warn("Board Review Only container not found in quiz setup modal.");
+          }
+          // --- END: Board Review Checkbox Visibility ---
+
           if (spacedRepContainer) {
               if (isAnonymousUser || accessTier === "free_guest") {
-                  // Hide the option for anonymous or free_guest users
                   spacedRepContainer.style.display = 'none';
-                  if (spacedRepCheckbox) {
-                      spacedRepCheckbox.checked = false; // Ensure it's unchecked
-                  }
+                  if (spacedRepCheckbox) spacedRepCheckbox.checked = false;
                   console.log("Spaced repetition option hidden for guest/free_guest user.");
               } else {
-                  // Show the option for tiered users ("board_review", "cme_annual", "cme_credits_only")
-                  spacedRepContainer.style.display = 'block'; // Or 'flex', or remove inline style to revert to CSS
+                  spacedRepContainer.style.display = 'block';
                   console.log("Spaced repetition option shown for tiered user.");
               }
           } else {
               console.warn("Spaced repetition container or checkbox not found in quiz setup modal.");
           }
           
-          // Populate categories in the main quiz setup modal if not already done
-          // (Assuming you have a similar populate function for the main modal)
           if (typeof populateCategoryDropdownForMainQuiz === 'function') {
-              populateCategoryDropdownForMainQuiz(); // You'll need to create this function if it doesn't exist
+              populateCategoryDropdownForMainQuiz();
           }
   
-  
-          // Show the modal
           const quizSetupModal = document.getElementById("quizSetupModal");
           if (quizSetupModal) {
               quizSetupModal.style.display = "block";
@@ -2241,38 +2252,48 @@ function setupDashboardEvents() {
   // Modal Start Quiz button
   const modalStartQuiz = document.getElementById("modalStartQuiz");
   if (modalStartQuiz) {
-    modalStartQuiz.addEventListener("click", function() {
+    // Clone and replace to ensure fresh listener
+    const newModalStartQuiz = modalStartQuiz.cloneNode(true);
+    modalStartQuiz.parentNode.replaceChild(newModalStartQuiz, modalStartQuiz);
+
+    newModalStartQuiz.addEventListener("click", function() {
       const category = document.getElementById("modalCategorySelect").value;
       const numQuestions = parseInt(document.getElementById("modalNumQuestions").value) || 10;
       const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
+      const useSpacedRepetition = document.getElementById("modalSpacedRepetition").checked;
+      
+      // --- START: Read Board Review Checkbox State ---
+      const boardReviewOnlyCheckbox = document.getElementById("modalBoardReviewOnly");
+      const boardReviewOnlyContainer = document.getElementById("boardReviewOnlyContainer");
+      let boardReviewOnly = false; // Default to false
+
+      // Only consider the checkbox if its container is visible (i.e., user has access)
+      if (boardReviewOnlyContainer && boardReviewOnlyContainer.style.display !== 'none' && boardReviewOnlyCheckbox) {
+          boardReviewOnly = boardReviewOnlyCheckbox.checked;
+      }
+      console.log("Board Review Only selected:", boardReviewOnly);
+      // --- END: Read Board Review Checkbox State ---
       
       document.getElementById("quizSetupModal").style.display = "none";
-
-      // Update this part to include the spaced repetition option
-      const useSpacedRepetition = document.getElementById("modalSpacedRepetition").checked;
       
       loadQuestions({
         type: category ? 'custom' : 'random',
         category: category,
         num: numQuestions,
         includeAnswered: includeAnswered,
-        spacedRepetition: useSpacedRepetition
+        spacedRepetition: useSpacedRepetition,
+        boardReviewOnly: boardReviewOnly // <<< Pass the new option
       });
     });
   }
   
-  // Modal Cancel button
-  const modalCancelQuiz = document.getElementById("modalCancelQuiz");
-  if (modalCancelQuiz) {
-    modalCancelQuiz.addEventListener("click", function() {
-      document.getElementById("quizSetupModal").style.display = "none";
-    });
-  }
-  
+  // ... (rest of your setupDashboardEvents function, e.g., modalCancelQuiz, card click listeners) ...
   // User Progress card click - go to Performance
   const userProgressCard = document.getElementById("userProgressCard");
   if (userProgressCard) {
-    userProgressCard.addEventListener("click", function() {
+    const newCard = userProgressCard.cloneNode(true); // Clone to remove old listeners
+    userProgressCard.parentNode.replaceChild(newCard, userProgressCard);
+    newCard.addEventListener("click", function() {
       window.displayPerformance(); 
     });
   }
@@ -2280,66 +2301,96 @@ function setupDashboardEvents() {
   // Quick Stats card click - go to Performance
   const quickStatsCard = document.getElementById("quickStatsCard");
   if (quickStatsCard) {
-    quickStatsCard.addEventListener("click", function() {
+    const newCard = quickStatsCard.cloneNode(true); // Clone to remove old listeners
+    quickStatsCard.parentNode.replaceChild(newCard, quickStatsCard);
+    newCard.addEventListener("click", function() {
       window.displayPerformance(); 
     });
   }
   
-// Leaderboard Preview Card click
-const leaderboardPreviewCard = document.getElementById("leaderboardPreviewCard");
-if (leaderboardPreviewCard) {
-    const newLPCard = leaderboardPreviewCard.cloneNode(true); // Clone to remove old listeners
-    leaderboardPreviewCard.parentNode.replaceChild(newLPCard, leaderboardPreviewCard);
-    newLPCard.addEventListener('click', function() {
-        const accessTier = window.authState?.accessTier;
-        const mainPaywallScreen = document.getElementById("newPaywallScreen");
-        if (auth.currentUser.isAnonymous || accessTier === "free_guest") {
-            console.log("Leaderboard card clicked by guest/free_guest. Redirecting to paywall.");
-            ensureAllScreensHidden();
-            if (mainPaywallScreen) mainPaywallScreen.style.display = 'flex';
-        } else {
-            console.log("Leaderboard card clicked by tiered user. Showing leaderboard.");
-            if (typeof showLeaderboard === 'function') {
-                showLeaderboard();
-            } else {
-                console.error("showLeaderboard function not found!");
-            }
-        }
-    });
-} else {
-     console.warn("Leaderboard Preview Card (#leaderboardPreviewCard) not found in DOM during listener setup.");
-}
+  // Leaderboard Preview Card click
+  const leaderboardPreviewCard = document.getElementById("leaderboardPreviewCard");
+  if (leaderboardPreviewCard) {
+      const newLPCard = leaderboardPreviewCard.cloneNode(true); 
+      leaderboardPreviewCard.parentNode.replaceChild(newLPCard, leaderboardPreviewCard);
+      newLPCard.addEventListener('click', function() {
+          const accessTier = window.authState?.accessTier;
+          const mainPaywallScreen = document.getElementById("newPaywallScreen");
+          if (auth.currentUser.isAnonymous || accessTier === "free_guest") {
+              ensureAllScreensHidden();
+              if (mainPaywallScreen) mainPaywallScreen.style.display = 'flex';
+          } else {
+              if (typeof showLeaderboard === 'function') showLeaderboard();
+          }
+      });
+  }
   
   // Review Queue card click
   const reviewQueueCard = document.getElementById("reviewQueueCard");
   if (reviewQueueCard) {
-      const newRQCard = reviewQueueCard.cloneNode(true); // Clone to remove old listeners
+      const newRQCard = reviewQueueCard.cloneNode(true); 
       reviewQueueCard.parentNode.replaceChild(newRQCard, reviewQueueCard);
       newRQCard.addEventListener('click', async function() {
           const accessTier = window.authState?.accessTier;
           const mainPaywallScreen = document.getElementById("newPaywallScreen");
 
           if (auth.currentUser.isAnonymous || accessTier === "free_guest") {
-              console.log("Review Queue card clicked by guest/free_guest. Redirecting to paywall.");
               ensureAllScreensHidden();
               if (mainPaywallScreen) mainPaywallScreen.style.display = 'flex';
               return;
           }
-
-          // Original functionality for tiered users
-          console.log("Review Queue card clicked by tiered user.");
-          const { dueCount } = await countDueReviews();
+          const { dueCount } = await countDueReviews(); // Ensure countDueReviews is defined and async
           if (dueCount === 0) {
               alert("You have no questions due for review today. Good job!");
               return;
           }
-          const dueQuestionIds = await getDueQuestionIds();
+          const dueQuestionIds = await getDueQuestionIds(); // Ensure getDueQuestionIds is defined and async
           if (dueQuestionIds.length === 0) {
               alert("No questions found for review. Please try again later.");
               return;
           }
-          loadSpecificQuestions(dueQuestionIds);
+          loadSpecificQuestions(dueQuestionIds); // Ensure loadSpecificQuestions is defined
       });
+  }
+}
+
+async function populateCategoryDropdownForMainQuiz() {
+  const categorySelect = document.getElementById("modalCategorySelect");
+  if (!categorySelect) {
+      console.error("Main Quiz Category Select dropdown (#modalCategorySelect) not found.");
+      return;
+  }
+
+  // Clear existing options except the first "All Categories" option
+  while (categorySelect.options.length > 1) {
+      categorySelect.remove(1);
+  }
+
+  try {
+      const allQuestions = await fetchQuestionBank(); // Reuses existing function
+      let relevantQuestions = allQuestions;
+
+      // If user is free_guest, only show categories that have at least one "Free: true" question
+      if (window.authState && window.authState.accessTier === "free_guest") {
+          relevantQuestions = allQuestions.filter(q => q.Free === true);
+      }
+      // For other tiers, all categories from all questions are potentially relevant
+
+      const categories = [...new Set(relevantQuestions
+          .map(q => q.Category ? q.Category.trim() : null)
+          .filter(cat => cat && cat !== "")
+      )].sort();
+
+      categories.forEach(category => {
+          const option = document.createElement("option");
+          option.value = category;
+          option.textContent = category;
+          categorySelect.appendChild(option);
+      });
+      console.log("Main quiz category dropdown populated with:", categories);
+
+  } catch (error) {
+      console.error("Error populating main quiz category dropdown:", error);
   }
 }
 
