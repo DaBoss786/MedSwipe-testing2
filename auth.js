@@ -343,17 +343,22 @@ async function registerUser(email, password, username, experience) {
     await updateProfile(user, { displayName: username });
 
     const userDocRef = doc(db, 'users', user.uid);
-    await setDoc(
-      userDocRef,
-      {
-        username,
-        email,
-        experience,
-        isRegistered: true,
-        updatedAt: serverTimestamp()
-      },
-      { merge: true }
-    );
+    // Get marketing opt-in value from the checkbox
+const marketingOptInCheckbox = document.getElementById('marketingOptIn');
+const marketingOptIn = marketingOptInCheckbox ? marketingOptInCheckbox.checked : false;
+
+await setDoc(
+  userDocRef,
+  {
+    username,
+    email,
+    experience,
+    isRegistered: true,
+    marketingOptIn: marketingOptIn,
+    updatedAt: serverTimestamp()
+  },
+  { merge: true }
+);
 
     window.authState.user        = user;
     window.authState.isRegistered = true;
@@ -389,17 +394,22 @@ async function upgradeAnonymousUser(email, password, username, experience) {
     await updateProfile(upgradedUser, { displayName: username });
 
     const userDocRef = doc(db, 'users', upgradedUser.uid);
-    await setDoc(
-      userDocRef,
-      {
-        username,
-        email,
-        experience,
-        isRegistered: true,
-        updatedAt: serverTimestamp()
-      },
-      { merge: true }
-    );
+    // Get marketing opt-in value from the checkbox
+const marketingOptInCheckbox = document.getElementById('marketingOptIn');
+const marketingOptIn = marketingOptInCheckbox ? marketingOptInCheckbox.checked : false;
+
+await setDoc(
+  userDocRef,
+  {
+    username,
+    email,
+    experience,
+    isRegistered: true,
+    marketingOptIn: marketingOptIn,
+    updatedAt: serverTimestamp()
+  },
+  { merge: true }
+);
 
     window.authState.user        = upgradedUser;
     window.authState.isRegistered = true;

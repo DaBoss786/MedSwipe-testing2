@@ -725,15 +725,23 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
         <small>Password must be at least 6 characters</small>
       </div>
       <div class="form-group terms-container">
-        <div class="terms-checkbox">
-          <input type="checkbox" id="agreeTerms" required>
-          <label for="agreeTerms">
-            I agree to the <a href="#" id="registerViewTOS">Terms of Service</a> and
-            <a href="#" id="registerViewPrivacy">Privacy Policy</a>
-          </label>
-        </div>
-        <div class="form-error" id="termsError"></div>
-      </div>
+  <div class="terms-checkbox">
+    <input type="checkbox" id="agreeTerms" required>
+    <label for="agreeTerms">
+      I agree to the <a href="#" id="registerViewTOS">Terms of Service</a> and
+      <a href="#" id="registerViewPrivacy">Privacy Policy</a>
+    </label>
+  </div>
+  <div class="form-error" id="termsError"></div>
+  
+  <!-- New Marketing Email Opt-in Checkbox -->
+  <div class="terms-checkbox" style="margin-top: 10px;">
+    <input type="checkbox" id="marketingOptIn">
+    <label for="marketingOptIn">
+      Send me occasional updates, notifications and feature news. Unsubscribe anytime.
+    </label>
+  </div>
+</div>
       <div class="auth-buttons">
         <button type="submit" class="auth-primary-btn">Create Account</button>
         <button type="button" id="goToLoginBtn" class="auth-secondary-btn">I Already Have an Account</button>
