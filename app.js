@@ -109,18 +109,47 @@ window.addEventListener('authStateChanged', function(event) {
                 } else {
                     console.error("Main options element not found for paying user!");
                 }
-            } else { // accessTier is "free_guest" (or potentially undefined, treat as free_guest)
-                console.log('Registered user is "free_guest". Showing main paywall screen.');
-                if (newPaywallScreen) {
-                    newPaywallScreen.style.display = 'flex';
+              } else { // accessTier is "free_guest" (or potentially undefined, treat as free_guest)
+                console.log('Registered user is "free_guest". Checking for pending redirect...');
+                
+                // Check if there's a pending redirect after registration
+                const pendingRedirect = sessionStorage.getItem('pendingRedirectAfterRegistration');
+                
+                if (pendingRedirect === 'cme_info') {
+                    console.log('Redirecting to CME Info Screen after registration.');
+                    sessionStorage.removeItem('pendingRedirectAfterRegistration');
+                    const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+                    if (cmeInfoScreen) {
+                        cmeInfoScreen.style.display = "flex";
+                    } else {
+                        console.error("CME Info Screen not found after registration redirect!");
+                        if (newPaywallScreen) newPaywallScreen.style.display = 'flex';
+                    }
+                } else if (pendingRedirect === 'board_review_pricing') {
+                    console.log('Redirecting to Board Review Pricing Screen after registration.');
+                    sessionStorage.removeItem('pendingRedirectAfterRegistration');
+                    const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
+                    if (boardReviewPricingScreen) {
+                        boardReviewPricingScreen.style.display = 'flex';
+                        if (typeof updateBoardReviewPricingView === 'function') {
+                            updateBoardReviewPricingView('annual');
+                        }
+                    } else {
+                        console.error("Board Review Pricing Screen not found after registration redirect!");
+                        if (newPaywallScreen) newPaywallScreen.style.display = 'flex';
+                    }
                 } else {
-                    console.error("New paywall screen element not found for free_guest user!");
-                    // Fallback: show welcome screen or main options if paywall is missing
-                    if (welcomeScreen) { // Prefer welcome if paywall missing for a free_guest
-                        welcomeScreen.style.display = 'flex';
-                        welcomeScreen.style.opacity = '1';
-                    } else if (mainOptions) {
-                        mainOptions.style.display = 'flex';
+                    console.log('No pending redirect. Showing main paywall screen.');
+                    if (newPaywallScreen) {
+                        newPaywallScreen.style.display = 'flex';
+                    } else {
+                        console.error("New paywall screen element not found for free_guest user!");
+                        if (welcomeScreen) {
+                            welcomeScreen.style.display = 'flex';
+                            welcomeScreen.style.opacity = '1';
+                        } else if (mainOptions) {
+                            mainOptions.style.display = 'flex';
+                        }
                     }
                 }
             }
@@ -173,14 +202,44 @@ window.addEventListener('authStateChanged', function(event) {
                       else if (typeof initializeDashboard === 'function') initializeDashboard();
                   }, 100);
               }
-          } else { // accessTier is "free_guest"
-              console.log('Registered user is "free_guest" (no splash). Showing main paywall screen.');
-              if (newPaywallScreen) {
-                  newPaywallScreen.style.display = 'flex';
+            } else { // accessTier is "free_guest"
+              console.log('Registered user is "free_guest" (no splash). Checking for pending redirect...');
+              
+              // Check if there's a pending redirect after registration
+              const pendingRedirect = sessionStorage.getItem('pendingRedirectAfterRegistration');
+              
+              if (pendingRedirect === 'cme_info') {
+                  console.log('Redirecting to CME Info Screen after registration (no splash).');
+                  sessionStorage.removeItem('pendingRedirectAfterRegistration');
+                  const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+                  if (cmeInfoScreen) {
+                      cmeInfoScreen.style.display = "flex";
+                  } else {
+                      console.error("CME Info Screen not found after registration redirect (no splash)!");
+                      if (newPaywallScreen) newPaywallScreen.style.display = 'flex';
+                  }
+              } else if (pendingRedirect === 'board_review_pricing') {
+                  console.log('Redirecting to Board Review Pricing Screen after registration (no splash).');
+                  sessionStorage.removeItem('pendingRedirectAfterRegistration');
+                  const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
+                  if (boardReviewPricingScreen) {
+                      boardReviewPricingScreen.style.display = 'flex';
+                      if (typeof updateBoardReviewPricingView === 'function') {
+                          updateBoardReviewPricingView('annual');
+                      }
+                  } else {
+                      console.error("Board Review Pricing Screen not found after registration redirect (no splash)!");
+                      if (newPaywallScreen) newPaywallScreen.style.display = 'flex';
+                  }
               } else {
-                   if (welcomeScreen) { // Fallback
-                      welcomeScreen.style.display = 'flex';
-                      welcomeScreen.style.opacity = '1';
+                  console.log('No pending redirect (no splash). Showing main paywall screen.');
+                  if (newPaywallScreen) {
+                      newPaywallScreen.style.display = 'flex';
+                  } else {
+                       if (welcomeScreen) {
+                          welcomeScreen.style.display = 'flex';
+                          welcomeScreen.style.opacity = '1';
+                      }
                   }
               }
           }
@@ -4626,7 +4685,9 @@ if (exploreCmeModuleBtn) {
             if (typeof showRegisterForm === 'function') {
                 // Pass 'cme_info' as the next step.
                 // We need to modify showRegisterForm to handle this new nextStep.
-                showRegisterForm('cme_info');
+                // Set a flag so we know where to redirect after registration
+sessionStorage.setItem('pendingRedirectAfterRegistration', 'cme_info');
+showRegisterForm('cme_info');
             } else {
                 console.error("showRegisterForm function not found!");
                 const mainOptions = document.getElementById("mainOptions");
@@ -4678,7 +4739,9 @@ if (unlockBoardReviewBtn) {
             // We will modify showRegisterForm in the NEXT step to handle different post-registration destinations.
             if (typeof showRegisterForm === 'function') {
                 // Pass a parameter to indicate the next step after registration
-                showRegisterForm('board_review_pricing');
+                // Set a flag so we know where to redirect after registration
+sessionStorage.setItem('pendingRedirectAfterRegistration', 'board_review_pricing');
+showRegisterForm('board_review_pricing');
             } else {
                 console.error("showRegisterForm function not found!");
                 // Fallback: if registration form function is missing, maybe show main options or an error
