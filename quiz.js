@@ -1,6 +1,6 @@
 // app.js - TOP OF FILE
 import { shuffleArray, getCurrentQuestionId } from './utils.js';
-import { auth, db, doc, getDoc, analytics, logEvent, collection, getDocs, query, where, documentId } from './firebase-config.js'; // Adjust path if needed
+import { auth, db, doc, getDoc, analytics, logEvent, collection, getDocs, query, where } from './firebase-config.js'; // Adjust path if needed
 import {
   fetchPersistentAnsweredIds, // <<<--- ADD THIS IMPORT
   recordAnswer,               // Needed for regular quizzes
