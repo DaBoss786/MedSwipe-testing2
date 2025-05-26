@@ -64,44 +64,49 @@ async function loadQuestions(options = {}) {
     let relevantAnsweredIdsForCurrentYear = []; // Specifically for current year CME answers
 
     if (options.quizType === 'cme' && !options.includeAnswered) {
-      // Only fetch year-specific answered IDs if "includeAnswered" is false for a CME quiz
-      const currentCmeYear = await getActiveCmeYearIdFromFirestore(); // Call the new helper
-    window.setActiveCmeYearClientSide(currentCmeYear); // Also update the global one for consistency
+      let currentCmeYear = window.clientActiveCmeYearId; // Try cached value first
+  
+      if (!currentCmeYear) { // If no cached value, try fetching it
+          if (typeof window.getActiveCmeYearIdFromFirestore === 'function') {
+              console.log("No cached CME year, attempting to fetch from Firestore for quiz filtering...");
+              currentCmeYear = await window.getActiveCmeYearIdFromFirestore();
+              if (currentCmeYear && typeof window.setActiveCmeYearClientSide === 'function') {
+                  window.setActiveCmeYearClientSide(currentCmeYear); // Cache it for next time
+              }
+          } else {
+              console.error("getActiveCmeYearIdFromFirestore function is not available on window object!");
+          }
+      }
+  
       if (currentCmeYear && auth.currentUser && !auth.currentUser.isAnonymous) {
-        const uid = auth.currentUser.uid;
-        const cmeAnswersForYearRef = collection(db, 'users', uid, 'cmeAnswers');
-        // Query for answer logs specific to the current active year
-        // Document IDs are like "YEAR_HASH", e.g., "2025-2026_hashvalue"
-        const q = query(cmeAnswersForYearRef, 
-          where('__name__', ">=", `${currentCmeYear}_`), 
-          where('__name__', "<", `${currentCmeYear}_\uffff`));
-                        // \uffff is a high Unicode character to act as an upper bound for strings starting with currentCmeYear_
-        
-        try {
-          const querySnapshot = await getDocs(q);
-          querySnapshot.forEach((docSnap) => {
-            // The document data contains originalQuestionId
-            if (docSnap.data().originalQuestionId) {
-              relevantAnsweredIdsForCurrentYear.push(docSnap.data().originalQuestionId.trim());
-            }
-          });
-          console.log(`Fetched ${relevantAnsweredIdsForCurrentYear.length} answered CME questions for year ${currentCmeYear}.`);
-        } catch (e) {
-          console.error(`Error fetching CME answers for year ${currentCmeYear}:`, e);
-        }
-      } else if (options.quizType === 'cme') {
-        console.warn("Cannot fetch year-specific CME answers: No active CME year determined or user not authenticated.");
-        alert("Could not determine the current CME year. Please ensure CME windows are configured correctly or try again later.");
-        // Navigate back or show dashboard
-        const cmeDash = document.getElementById("cmeDashboardView");
-        if(cmeDash && typeof showCmeDashboard === 'function') showCmeDashboard();
-        else if(cmeDash) cmeDash.style.display = "block";
-        else {
-            const mainOpts = document.getElementById("mainOptions");
-            if(mainOpts) mainOpts.style.display = "flex";
-        }
-        return; // Stop quiz loading
-    }
+          const uid = auth.currentUser.uid;
+          const cmeAnswersForYearRef = collection(db, 'users', uid, 'cmeAnswers');
+          const q = query(cmeAnswersForYearRef, 
+                          where('__name__', ">=", `${currentCmeYear}_`), 
+                          where('__name__', "<", `${currentCmeYear}_\uffff`)); 
+          try {
+              const querySnapshot = await getDocs(q);
+              querySnapshot.forEach((docSnap) => {
+                  if (docSnap.data().originalQuestionId) {
+                      relevantAnsweredIdsForCurrentYear.push(docSnap.data().originalQuestionId.trim());
+                  }
+              });
+              console.log(`Fetched ${relevantAnsweredIdsForCurrentYear.length} answered CME questions for year ${currentCmeYear}.`);
+          } catch (e) {
+              console.error(`Error fetching CME answers for year ${currentCmeYear}:`, e);
+          }
+      } else if (options.quizType === 'cme') { 
+          console.warn("Cannot fetch year-specific CME answers: No active CME year determined or user not authenticated for filtering.");
+          alert("Could not determine the current CME year to filter out answered questions. Please answer at least one CME question in this session to sync the active year, or try checking 'Include answered questions'.");
+          const cmeDash = document.getElementById("cmeDashboardView");
+          if(cmeDash && typeof showCmeDashboard === 'function') showCmeDashboard();
+          else if(cmeDash) cmeDash.style.display = "block"; 
+          else {
+              const mainOpts = document.getElementById("mainOptions");
+              if(mainOpts) mainOpts.style.display = "flex";
+          }
+          return; 
+      }
 
     } else if (!options.bookmarksOnly && !options.includeAnswered) {
       // For regular quizzes, use the overall persistent answered IDs

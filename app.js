@@ -1,5 +1,5 @@
 // app.js - Top of file
-import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc } from './firebase-config.js'; // Adjust path if needed
+import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc, getFiresotreDocs } from './firebase-config.js'; // Adjust path if needed
 // Import needed functions from user.js
 import { updateUserXP, updateUserMenu, calculateLevelProgress, getLevelInfo, toggleBookmark } from './user.v2.js';
 import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
@@ -24,6 +24,44 @@ try {
      // Disable checkout button maybe?
 }
 // ---
+
+window.getActiveCmeYearIdFromFirestore = async function() {
+  if (!db) { // db should be imported from firebase-config.js and available here
+      console.error("Firestore (db) not initialized for getActiveCmeYearIdFromFirestore");
+      return null;
+  }
+  const now = new Date(); 
+  const cmeWindowsRef = collection(db, "cmeWindows");
+
+  try {
+      // Use the aliased getFirestoreDocs if you aliased it, otherwise getDocs
+      const snapshot = await (typeof getFirestoreDocs === 'function' ? getFirestoreDocs(cmeWindowsRef) : getDocs(cmeWindowsRef));
+      if (snapshot.empty) {
+          console.warn("Client: No CME windows defined in 'cmeWindows' collection.");
+          return null;
+      }
+
+      for (const docSnap of snapshot.docs) {
+          const windowData = docSnap.data();
+          if (windowData.startDate && windowData.endDate) {
+              const startDate = windowData.startDate.toDate ? windowData.startDate.toDate() : new Date(windowData.startDate);
+              const endDate = windowData.endDate.toDate ? windowData.endDate.toDate() : new Date(windowData.endDate);
+
+              if (now >= startDate && now <= endDate) {
+                  console.log(`Client: Active CME window found: ${docSnap.id}`);
+                  return docSnap.id;
+              }
+          } else {
+              console.warn(`Client: CME window ${docSnap.id} is missing startDate or endDate.`);
+          }
+      }
+      console.log("Client: No currently active CME window found for today's date.");
+      return null;
+  } catch (error) {
+      console.error("Client: Error fetching active CME year ID:", error);
+      return null; 
+  }
+}
 
 // Add splash screen, welcome screen, and authentication-based routing
 document.addEventListener('DOMContentLoaded', function() {
@@ -3971,9 +4009,19 @@ async function loadCmeDashboardData() {
 
   const uid = window.authState.user.uid;
 
-  // --- Attempt to get activeYearId for client-side display ---
-  const currentActiveYearId = await getActiveCmeYearIdFromFirestore();
-window.setActiveCmeYearClientSide(currentActiveYearId);
+  let currentActiveYearId = window.clientActiveCmeYearId; // Try cached first
+
+  if (!currentActiveYearId) { // If no cached value, try fetching it
+      if (typeof window.getActiveCmeYearIdFromFirestore === 'function') {
+          console.log("No cached CME year, attempting to fetch from Firestore for dashboard...");
+          currentActiveYearId = await window.getActiveCmeYearIdFromFirestore();
+          if (currentActiveYearId && typeof window.setActiveCmeYearClientSide === 'function') {
+              window.setActiveCmeYearClientSide(currentActiveYearId); // Cache it
+          }
+      } else {
+          console.error("getActiveCmeYearIdFromFirestore function is not available on window object for dashboard!");
+      }
+  }
 
   if (!currentActiveYearId) {
       trackerContent.innerHTML = "<p>Could not determine the current CME year. Please try answering a CME question first to sync the active year, or check back later.</p>";
