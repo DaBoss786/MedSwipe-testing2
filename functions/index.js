@@ -950,3 +950,164 @@ exports.recordCmeAnswerV2 = onCall(
   }
 );
 // --- End Callable Function recordCmeAnswerV2 ---
+
+// --- NEW LEADERBOARD CLOUD FUNCTION ---
+exports.getLeaderboardData = onCall(
+  {
+    region: "us-central1", // Or your preferred region
+    memory: "512MiB", // Adjust if needed, 512MiB is a good start
+    timeoutSeconds: 60, // Standard timeout
+  },
+  async (request) => {
+    logger.info("getLeaderboardData function called", { auth: request.auth });
+
+    // 1. Authentication Check
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "The function must be called while authenticated."
+      );
+    }
+    const currentAuthUid = request.auth.uid;
+
+    // Helper function to get the start of the current week in milliseconds
+    // (Monday as the first day of the week)
+    function getStartOfWeekMilliseconds(date = new Date()) {
+      const d = new Date(date);
+      const day = d.getDay(); // 0 (Sun) to 6 (Sat)
+      // Adjust diff to make Monday the first day (day === 0 means Sunday, target is -6 days)
+      // If day is Sunday (0), diff should be -6 to get to previous Monday.
+      // If day is Monday (1), diff should be 0.
+      // If day is Saturday (6), diff should be -5.
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      const startOfWeekDate = new Date(d.setDate(diff));
+      startOfWeekDate.setHours(0, 0, 0, 0);
+      return startOfWeekDate.getTime();
+    }
+
+    const TOP_N_LEADERBOARD = 10; // Number of users to return for top lists
+
+    try {
+      const usersSnapshot = await db.collection("users").get();
+      const allEligibleUsersData = [];
+      const weekStartMillis = getStartOfWeekMilliseconds();
+
+      usersSnapshot.forEach((doc) => {
+        const userData = doc.data();
+
+        // Filter out users who are not registered
+        if (userData.isRegistered === true) {
+          // Calculate weeklyAnsweredCount
+          let weeklyAnsweredCount = 0;
+          if (userData.answeredQuestions) {
+            for (const questionKey in userData.answeredQuestions) {
+              const answer = userData.answeredQuestions[questionKey];
+              // Assuming answer.timestamp is stored as milliseconds
+              if (answer.timestamp && answer.timestamp >= weekStartMillis) {
+                weeklyAnsweredCount++;
+              }
+            }
+          }
+
+          allEligibleUsersData.push({
+            uid: doc.id,
+            username: userData.username || "Anonymous",
+            xp: userData.stats?.xp || 0,
+            level: userData.stats?.level || 1,
+            currentStreak: userData.streaks?.currentStreak || 0,
+            weeklyAnsweredCount: weeklyAnsweredCount,
+            // accessTier: userData.accessTier || "free_guest" // Not strictly needed for leaderboard display itself
+          });
+        }
+      });
+
+      logger.info(`Processed ${allEligibleUsersData.length} eligible users.`);
+
+      // --- Prepare data for each leaderboard ---
+      let currentUserRanks = {
+        xp: null,
+        streak: null,
+        answered: null,
+      };
+
+      // XP Leaderboard
+      const sortedByXp = [...allEligibleUsersData].sort((a, b) => b.xp - a.xp);
+      const xpLeaderboard = sortedByXp
+        .slice(0, TOP_N_LEADERBOARD)
+        .map((user, index) => ({
+          uid: user.uid,
+          username: user.username,
+          xp: user.xp,
+          level: user.level,
+          rank: index + 1,
+        }));
+      const currentUserXpIndex = sortedByXp.findIndex(u => u.uid === currentAuthUid);
+      if (currentUserXpIndex !== -1) {
+        const userXpData = sortedByXp[currentUserXpIndex];
+        currentUserRanks.xp = {
+          rank: currentUserXpIndex + 1,
+          username: userXpData.username,
+          xp: userXpData.xp,
+          level: userXpData.level,
+        };
+      }
+
+      // Streak Leaderboard
+      const sortedByStreak = [...allEligibleUsersData].sort((a, b) => b.currentStreak - a.currentStreak);
+      const streakLeaderboard = sortedByStreak
+        .slice(0, TOP_N_LEADERBOARD)
+        .map((user, index) => ({
+          uid: user.uid,
+          username: user.username,
+          currentStreak: user.currentStreak,
+          rank: index + 1,
+        }));
+      const currentUserStreakIndex = sortedByStreak.findIndex(u => u.uid === currentAuthUid);
+      if (currentUserStreakIndex !== -1) {
+        const userStreakData = sortedByStreak[currentUserStreakIndex];
+        currentUserRanks.streak = {
+          rank: currentUserStreakIndex + 1,
+          username: userStreakData.username,
+          currentStreak: userStreakData.currentStreak,
+        };
+      }
+
+      // Answered Leaderboard (Weekly)
+      const sortedByAnswered = [...allEligibleUsersData].sort((a, b) => b.weeklyAnsweredCount - a.weeklyAnsweredCount);
+      const answeredLeaderboard = sortedByAnswered
+        .slice(0, TOP_N_LEADERBOARD)
+        .map((user, index) => ({
+          uid: user.uid,
+          username: user.username,
+          weeklyAnsweredCount: user.weeklyAnsweredCount,
+          rank: index + 1,
+        }));
+      const currentUserAnsweredIndex = sortedByAnswered.findIndex(u => u.uid === currentAuthUid);
+      if (currentUserAnsweredIndex !== -1) {
+        const userAnsweredData = sortedByAnswered[currentUserAnsweredIndex];
+        currentUserRanks.answered = {
+          rank: currentUserAnsweredIndex + 1,
+          username: userAnsweredData.username,
+          weeklyAnsweredCount: userAnsweredData.weeklyAnsweredCount,
+        };
+      }
+
+      logger.info("Leaderboard data prepared successfully.");
+      return {
+        xpLeaderboard,
+        streakLeaderboard,
+        answeredLeaderboard,
+        currentUserRanks,
+      };
+
+    } catch (error) {
+      logger.error("Error fetching leaderboard data:", error);
+      throw new HttpsError(
+        "internal",
+        "An error occurred while fetching leaderboard data.",
+        error.message
+      );
+    }
+  }
+);
+// --- END LEADERBOARD CLOUD FUNCTION ---

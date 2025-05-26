@@ -7,6 +7,22 @@ import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { closeSideMenu, closeUserMenu, shuffleArray } from './utils.js';
 import { displayPerformance } from './stats.js';
 
+// --- Get a reference to the getLeaderboardData Callable Function ---
+// This reference can be shared if app.js and stats.js are part of the same bundle
+// or initialized in a common module. For simplicity, we can re-declare if they are separate.
+let getLeaderboardDataFunctionApp; // Use a different name to avoid conflict if stats.js is also loaded
+try {
+    if (functions && httpsCallable) {
+        getLeaderboardDataFunctionApp = httpsCallable(functions, 'getLeaderboardData');
+        console.log("Callable function reference 'getLeaderboardData' created in app.js.");
+    } else {
+        console.error("Firebase Functions or httpsCallable not imported correctly in app.js.");
+    }
+} catch (error) {
+    console.error("Error getting 'getLeaderboardData' callable function reference in app.js:", error);
+}
+// --- End Callable Function Reference ---
+
 // --- Get reference to Firebase Callable Function ---
 let createCheckoutSessionFunction;
 let createPortalSessionFunction;
@@ -1747,6 +1763,7 @@ async function checkAndUpdateStreak() {
 }
 
 // Function to load leaderboard preview data - fixed for desktop view
+// MODIFIED: Function to load leaderboard preview data
 async function loadLeaderboardPreview() {
   if (!auth || !auth.currentUser || !db) {
     console.log("Auth or DB not initialized for leaderboard preview");
@@ -1756,16 +1773,13 @@ async function loadLeaderboardPreview() {
   const leaderboardPreview = document.getElementById("leaderboardPreview");
   if (!leaderboardPreview) return;
 
-  const mainPaywallScreen = document.getElementById("newPaywallScreen"); // Get paywall screen
-
-  // Check user's access tier
-  const accessTier = window.authState?.accessTier; // Use optional chaining
+  const mainPaywallScreen = document.getElementById("newPaywallScreen");
+  const accessTier = window.authState?.accessTier;
 
   if (auth.currentUser.isAnonymous || accessTier === "free_guest") {
-    const message1 = "Leaderboards are a premium feature."; // Consistent message
-    const message2 = "Upgrade your account to unlock this feature!"; // Consistent message
-    const buttonText = "Upgrade to Access"; // Consistent button text
-
+    const message1 = "Leaderboards are a premium feature.";
+    const message2 = "Upgrade your account to unlock this feature!";
+    const buttonText = "Upgrade to Access";
     leaderboardPreview.innerHTML = `
         <div class="guest-analytics-prompt">
             <p>${message1}</p>
@@ -1775,75 +1789,50 @@ async function loadLeaderboardPreview() {
             </button>
         </div>
     `;
-
     const upgradeBtn = document.getElementById('upgradeForLeaderboardBtn');
     if (upgradeBtn) {
-        // Remove any old listeners by cloning the button
         const newUpgradeBtn = upgradeBtn.cloneNode(true);
         upgradeBtn.parentNode.replaceChild(newUpgradeBtn, upgradeBtn);
-
         newUpgradeBtn.addEventListener('click', function () {
-            // For BOTH anonymous and registered "free_guest", go to main paywall
-            console.log("Leaderboard 'Upgrade to Access' button clicked. Redirecting to paywall.");
-            ensureAllScreensHidden(); // Hide other screens
-
-            if (mainPaywallScreen) {
-                // mainPaywallScreen is already defined at the top of loadLeaderboardPreview
-                mainPaywallScreen.style.display = 'flex';
-            } else {
+            ensureAllScreensHidden();
+            if (mainPaywallScreen) mainPaywallScreen.style.display = 'flex';
+            else {
                 console.error("Main paywall screen not found!");
-                // Fallback if paywall is missing
                 const mainOptions = document.getElementById("mainOptions");
                 if (mainOptions) mainOptions.style.display = 'flex';
             }
         });
     }
-
     const cardFooter = document.querySelector("#leaderboardPreviewCard .card-footer span:first-child");
-    if (cardFooter) {
-        cardFooter.textContent = "Upgrade to Access"; // Consistent footer text
-    }
-
+    if (cardFooter) cardFooter.textContent = "Upgrade to Access";
     return;
-}
-
+  }
 
   // For "board_review", "cme_annual", "cme_credits_only" tiers:
+  leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Loading preview...</div>'; // Loading state
+
+  if (!getLeaderboardDataFunctionApp) {
+    leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Error: Service unavailable.</div>';
+    return;
+  }
+
   try {
+    const result = await getLeaderboardDataFunctionApp();
+    const leaderboardData = result.data;
     const currentUid = auth.currentUser.uid;
-    // Fetch users who are NOT free_guest for the leaderboard
-    const querySnapshot = await getDocs(collection(db, 'users'));
-    let leaderboardEntries = [];
 
-    querySnapshot.forEach(docSnap => {
-      const data = docSnap.data();
-      // Only include users with a paying tier for leaderboard rankings
-      if (data.stats && data.isRegistered === true && data.accessTier && data.accessTier !== "free_guest") {
-        let xp = data.stats.xp || 0;
-        leaderboardEntries.push({
-          uid: docSnap.id,
-          username: data.username || "Anonymous",
-          xp: xp
-        });
-      }
-    });
-
-    leaderboardEntries.sort((a, b) => b.xp - a.xp);
-    let top3 = leaderboardEntries.slice(0, 3);
-    let currentUserRank = leaderboardEntries.findIndex(e => e.uid === currentUid) + 1;
-    let currentUserEntry = leaderboardEntries.find(e => e.uid === currentUid);
-    let showCurrentUser = currentUserRank > 3 && currentUserEntry;
+    const top3 = (leaderboardData.xpLeaderboard || []).slice(0, 3);
+    const currentUserRankData = leaderboardData.currentUserRanks?.xp;
 
     let html = '';
-    if (top3.length === 0) {
+    if (top3.length === 0 && !currentUserRankData) { // Check if no data at all
       html = '<div class="leaderboard-loading">No ranked players yet.</div>';
     } else {
-      top3.forEach((entry, index) => {
+      top3.forEach((entry) => { // Rank comes from CF
         const isCurrentUser = entry.uid === currentUid;
-        const rank = index + 1;
         html += `
           <div class="leaderboard-preview-entry ${isCurrentUser ? 'current-user-entry' : ''}">
-            <div class="leaderboard-rank leaderboard-rank-${rank}">${rank}</div>
+            <div class="leaderboard-rank leaderboard-rank-${entry.rank}">${entry.rank}</div>
             <div class="leaderboard-user-info">
               <div class="leaderboard-username">${entry.username}</div>
               <div class="leaderboard-user-xp">${entry.xp} XP</div>
@@ -1851,26 +1840,38 @@ async function loadLeaderboardPreview() {
           </div>
         `;
       });
-      if (showCurrentUser) {
+
+      // Show current user if they exist, are not in top 3, and there's data to show
+      if (currentUserRankData && !top3.some(e => e.uid === currentUid) && currentUserRankData.rank > 3) {
+         // Check if rank > 3 to avoid duplicating if user is in top 3 but list is shorter
         html += `
-          <div class.leaderboard-preview-entry current-user-entry">
-            <div class="leaderboard-rank">${currentUserRank}</div>
+          <div class="leaderboard-preview-entry current-user-entry your-rank-preview">
+            <div class="leaderboard-rank">${currentUserRankData.rank}</div>
             <div class="leaderboard-user-info">
-              <div class="leaderboard-username">${currentUserEntry.username} (You)</div>
-              <div class="leaderboard-user-xp">${currentUserEntry.xp} XP</div>
+              <div class="leaderboard-username">${currentUserRankData.username} (You)</div>
+              <div class="leaderboard-user-xp">${currentUserRankData.xp} XP</div>
+            </div>
+          </div>
+        `;
+      } else if (top3.length === 0 && currentUserRankData) { // Only current user data available
+         html += `
+          <div class="leaderboard-preview-entry current-user-entry your-rank-preview">
+            <div class="leaderboard-rank">${currentUserRankData.rank}</div>
+            <div class="leaderboard-user-info">
+              <div class="leaderboard-username">${currentUserRankData.username} (You)</div>
+              <div class="leaderboard-user-xp">${currentUserRankData.xp} XP</div>
             </div>
           </div>
         `;
       }
     }
-    leaderboardPreview.innerHTML = html;
+    leaderboardPreview.innerHTML = html || '<div class="leaderboard-loading">No ranked players yet.</div>'; // Fallback if html is empty
     const cardFooter = document.querySelector("#leaderboardPreviewCard .card-footer span:first-child");
-    if (cardFooter) {
-      cardFooter.textContent = "View Full Leaderboard";
-    }
+    if (cardFooter) cardFooter.textContent = "View Full Leaderboard";
+
   } catch (error) {
     console.error("Error loading leaderboard preview:", error);
-    leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Error loading leaderboard</div>';
+    leaderboardPreview.innerHTML = `<div class="leaderboard-loading">Error: ${error.message}</div>`;
   }
 }
 
