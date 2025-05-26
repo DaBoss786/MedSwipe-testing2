@@ -1,6 +1,19 @@
 // user.js - TOP OF FILE
 import { auth, db, doc, getDoc, runTransaction, serverTimestamp } from './firebase-config.js'; // Adjust path if needed
 
+let recordCmeAnswerFunction;
+if (functions && httpsCallable) {
+  try {
+    recordCmeAnswerFunction = httpsCallable(functions, 'recordCmeAnswer');
+    console.log("Callable function reference 'recordCmeAnswer' created in user.js.");
+  } catch (error) {
+    console.error("Error creating 'recordCmeAnswer' callable function reference in user.js:", error);
+    // Handle error, perhaps by disabling CME recording or alerting the user.
+  }
+} else {
+  console.error("Firebase Functions or httpsCallable not imported correctly in user.js.");
+}
+
 // Session tracking
 let questionStartTime = 0;
 let sessionStartTime = Date.now();
@@ -971,78 +984,100 @@ window.fetchSpacedRepetitionData = fetchSpacedRepetitionData;
    const MAX_CME_CREDITS            = 24.0;  // 300 Qs → 1 440 min → 24 cr
    
    // --- Step 8: Function to Record CME Answers and Update Stats ---
-   async function recordCmeAnswer(questionId, category, isCorrect, timeSpent) {
-     // Require a logged-in (non-anonymous) user
-     if (!auth || !auth.currentUser || auth.currentUser.isAnonymous) {
-       console.log("User not authenticated or is guest; CME answer not recorded.");
-       return;
-     }
-   
-     const uid         = auth.currentUser.uid;
-     const userDocRef  = doc(db, "users", uid);
-   
-     try {
-       await runTransaction(db, async (tx) => {
-         const snap = await tx.get(userDocRef);
-         if (!snap.exists()) return;
-   
-         /* ---------- initialise stats & maps if missing ---------- */
-         const data = snap.data();
-         if (!data.cmeStats) {
-           data.cmeStats = {
-             totalAnswered : 0,
-             totalCorrect  : 0,
-             creditsEarned : 0.00,
-             creditsClaimed: 0.00,
-             eligibleAnswerCount : 0      // legacy field, kept for UI fallback
-           };
-         }
-         if (!data.cmeAnsweredQuestions) data.cmeAnsweredQuestions = {};
-   
-         /* ---------- count only the first attempt at each question ---------- */
-         if (data.cmeAnsweredQuestions.hasOwnProperty(questionId)) {
-           console.log(`CME Q ${questionId} already answered; unique stats unchanged.`);
-         } else {
-           data.cmeAnsweredQuestions[questionId] = serverTimestamp();  // tag question
-           data.cmeStats.totalAnswered += 1;
-           if (isCorrect) data.cmeStats.totalCorrect += 1;
-         }
-   
-         /* ---------- accuracy-gated credit calculation ---------- */
-         const accuracy =
-           data.cmeStats.totalAnswered > 0
-             ? data.cmeStats.totalCorrect / data.cmeStats.totalAnswered
-             : 0;
-   
-         if (accuracy >= ACCURACY_THRESHOLD) {
-           const minutes           = data.cmeStats.totalAnswered * MINUTES_PER_QUESTION;
-           const qtrCreditsRounded = Math.round(minutes / MINUTES_PER_QUARTER_CREDIT);
-           let   potentialCredits  = qtrCreditsRounded * 0.25;
-   
-           if (potentialCredits > MAX_CME_CREDITS) potentialCredits = MAX_CME_CREDITS;
-   
-           if (potentialCredits > data.cmeStats.creditsEarned) {
-             data.cmeStats.creditsEarned = potentialCredits;
-             console.log(`Credits updated → ${data.cmeStats.creditsEarned.toFixed(2)}`);
-           }
-         } else {
-           console.log("Accuracy < 70 %; credits not recalculated.");
-         }
-   
-         /* ---------- persist ---------- */
-         tx.set(
-           userDocRef,
-           {
-             cmeStats:              data.cmeStats,
-             cmeAnsweredQuestions:  data.cmeAnsweredQuestions
-           },
-           { merge: true }
-         );
-       });
-     } catch (err) {
-       console.error("Error recording CME answer:", err);
-     }
-   }
+
+async function recordCmeAnswer(questionId, category, isCorrect, timeSpent) {
+  // Require a logged-in (non-anonymous) user (client-side check, backend also verifies)
+  if (!auth || !auth.currentUser || auth.currentUser.isAnonymous) {
+    console.log("User not authenticated or is guest; CME answer not submitted to CF.");
+    // Optionally, provide feedback to the user here if this state is unexpected.
+    return; // Or return a specific object indicating failure/ineligibility
+  }
+
+  if (!recordCmeAnswerFunction) {
+    console.error("recordCmeAnswer Cloud Function reference is not available. Cannot record CME answer.");
+    // Optionally, alert the user or try to re-initialize the reference.
+    // For now, we'll just prevent the call.
+    alert("There was a problem connecting to the CME recording service. Please try again later.");
+    return;
+  }
+
+  const uid = auth.currentUser.uid;
+  console.log(`Calling Cloud Function 'recordCmeAnswer' for user ${uid}, QID: ${questionId}`);
+
+  try {
+    // Prepare data for the Cloud Function
+    const dataToSend = {
+      questionId: questionId,
+      category: category,
+      isCorrect: isCorrect,
+      timeSpent: timeSpent, // Optional, but can be useful for logging
+    };
+
+    const result = await recordCmeAnswerFunction(dataToSend);
+    const cfResponse = result.data; // The data returned by the Cloud Function
+
+    console.log("Cloud Function 'recordCmeAnswer' response:", cfResponse);
+
+    // Process the response from the Cloud Function
+    if (cfResponse) {
+      // Example: Update UI or provide feedback based on cfResponse.status or cfResponse.message
+      // For instance, you might show a small notification about credits earned or yearly total.
+      // This part depends on how you want the UI to react.
+      // For now, we'll just log it.
+
+      if (cfResponse.status === "success" || cfResponse.status === "already_recorded_this_year" || cfResponse.status === "limit_reached" || cfResponse.status === "accuracy_low") {
+        console.log(`CME Status for QID ${questionId} (${cfResponse.activeYearId}): ${cfResponse.message}. Credits this answer: ${cfResponse.creditedThisAnswer}, Year Total: ${cfResponse.newYearTotalCredits}`);
+        // You might want to update some UI element here with newYearTotalCredits if you have one.
+        // e.g., updateCmeYearlyDisplay(cfResponse.activeYearId, cfResponse.newYearTotalCredits);
+      } else if (cfResponse.status === "no_active_year") {
+        console.warn("CME recording: No active CME year. " + cfResponse.message);
+        // alert("CME credits cannot be awarded at this time as there is no active accreditation period.");
+      } else if (cfResponse.status === "tier_ineligible") {
+        console.warn("CME recording: User tier ineligible. " + cfResponse.message);
+        // alert("Your current plan does not support CME credit earning.");
+      } else {
+        console.warn("CME recording: Received an unexpected status from CF: ", cfResponse.status);
+      }
+
+      // IMPORTANT: After the CF call, refresh the CME dashboard data if the user is on it
+      // or if they navigate to it next.
+      // The loadCmeDashboardData() function in app.js reads the *old* cmeStats (overall).
+      // For the new yearly tracking, you'll eventually need a way to display yearly stats.
+      // For now, the CF handles the core logic. The UI for yearly stats is a future step.
+
+      // If the CME dashboard is currently visible, or to ensure it's up-to-date next time it's shown:
+      if (typeof window.loadCmeDashboardData === 'function') {
+         // This function loads the *overall* cmeStats.
+         // It does NOT yet reflect the new per-year breakdown.
+         // This is fine for now as the CF is the source of truth for yearly credits.
+         window.loadCmeDashboardData();
+      }
+       // Also, if the main dashboard is visible, refresh its CME card (which also uses overall cmeStats)
+      if (typeof window.initializeDashboard === 'function' && document.getElementById('mainOptions')?.style.display !== 'none') {
+          window.initializeDashboard();
+      }
+
+
+    } else {
+      console.error("Cloud Function 'recordCmeAnswer' returned undefined or no data.");
+      // Handle cases where the CF might not return data as expected
+    }
+
+  } catch (error) {
+    console.error("Error calling 'recordCmeAnswer' Cloud Function:", error);
+    // Handle errors, e.g., show a user-friendly message
+    // Check for HttpsError details
+    if (error.code && error.message && error.details) {
+      alert(`Error recording CME answer: ${error.message} (Details: ${JSON.stringify(error.details)})`);
+    } else {
+      alert(`An error occurred while recording your CME answer: ${error.message}`);
+    }
+    // If the error is 'unauthenticated', you might prompt the user to log in again.
+    // If 'invalid-argument', it indicates a problem with the data sent.
+    // If 'internal', it's a server-side issue.
+  }
+}
+// --- End of new recordCmeAnswer function ---
    // --- End of Step 8 ---
    
 

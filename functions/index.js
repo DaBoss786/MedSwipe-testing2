@@ -697,3 +697,57 @@ exports.createStripePortalSession = onCall(
     }
   }
 ); // End createStripePortalSession
+
+exports.calculateCmeCreditsNoAuth = onCall(
+  {
+    region: "us-central1",
+    timeoutSeconds: 120,
+    memory: "256MiB"
+  },
+  async (request) => {
+    const adminDB = admin.firestore();
+    const { uid, startDateString, endDateString } = request.data;
+
+    if (!uid || !startDateString || !endDateString) {
+      logger.error("Missing parameters", { uid, startDateString, endDateString });
+      throw new HttpsError("invalid-argument", "uid, startDateString, and endDateString are required.");
+    }
+
+    const startDate = new Date(startDateString);
+    const endDate = new Date(endDateString);
+    const startTS = startDate.getTime();
+    const endTS = endDate.getTime();
+
+    logger.info(`📘 (NoAuth) Checking CME credits for UID: ${uid} from ${startDateString} to ${endDateString}`);
+
+    const userDoc = await adminDB.collection("users").doc(uid).get();
+    if (!userDoc.exists) {
+      logger.warn(`No user found with UID: ${uid}`);
+      throw new HttpsError("not-found", "User not found.");
+    }
+
+    const data = userDoc.data();
+    const cmeAnswered = data.cmeAnsweredQuestions || {};
+
+    let countInWindow = 0;
+    for (const [questionId, entry] of Object.entries(cmeAnswered)) {
+      if (!entry?.timestamp) continue;
+      const ts = entry.timestamp.toMillis ? entry.timestamp.toMillis() : entry.timestamp;
+      if (ts >= startTS && ts <= endTS) countInWindow++;
+    }
+
+    const totalMinutes = countInWindow * 4.8;
+    const credits = Math.round((totalMinutes / 60) * 4) / 4;
+
+    const summary = {
+      uid,
+      questionsInWindow: countInWindow,
+      estimatedCredits: credits,
+      window: `${startDateString} to ${endDateString}`
+    };
+
+    logger.info("✅ (NoAuth) CME credit summary:", summary);
+    return summary;
+  }
+);
+
