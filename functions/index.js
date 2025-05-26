@@ -7,6 +7,7 @@ const admin = require("firebase-admin");
 const stripe = require("stripe");
 const { defineString } = require("firebase-functions/params");
 const { PDFDocument, StandardFonts, rgb, degrees } = require("pdf-lib"); // Added degrees
+const crypto = require("crypto");
 
 // --- Initialize Firebase Admin SDK (Keep as is) ---
 // Initialize Firebase Admin SDK only once
@@ -746,190 +747,201 @@ exports.createStripePortalSession = onCall(
 // --- Callable Function to Record CME Answer and Award Credits Annually ---
 exports.recordCmeAnswerV2 = onCall(
   {
-    region: "us-central1", // Or your preferred region
-    memory: "256MiB", // Adjust if needed
-    timeoutSeconds: 60, // Standard timeout
-    // No secrets needed directly by this function, but it uses admin SDK
+    region: "us-central1",
+    memory: "512MiB",
+    timeoutSeconds: 60,
   },
   async (request) => {
     // 1. Authentication Check
     if (!request.auth) {
-      logger.error("recordCmeAnswer: Authentication failed. No auth context.");
+      logger.error("recordCmeAnswerV2: Authentication failed. No auth context.");
       throw new HttpsError("unauthenticated", "Please log in to record CME answers.");
     }
     const uid = request.auth.uid;
-    logger.info(`recordCmeAnswer: Called by authenticated user: ${uid}`);
+    logger.info(`recordCmeAnswerV2: Called by authenticated user: ${uid}`);
 
     // 2. Input Validation
-    const { questionId, category, isCorrect, timeSpent } = request.data;
+    const { questionId, category, isCorrect, timeSpent } = request.data; // questionId here is the full question text
     if (!questionId || typeof questionId !== "string" || questionId.trim() === "") {
-      logger.error("recordCmeAnswer: Validation failed. Invalid questionId.", { data: request.data });
+      logger.error("recordCmeAnswerV2: Validation failed. Invalid questionId.", { data: request.data });
       throw new HttpsError("invalid-argument", "A valid question ID is required.");
     }
     if (!category || typeof category !== "string" || category.trim() === "") {
-      logger.error("recordCmeAnswer: Validation failed. Invalid category.", { data: request.data });
+      logger.error("recordCmeAnswerV2: Validation failed. Invalid category.", { data: request.data });
       throw new HttpsError("invalid-argument", "A valid category is required.");
     }
     if (typeof isCorrect !== "boolean") {
-      logger.error("recordCmeAnswer: Validation failed. Invalid isCorrect flag.", { data: request.data });
+      logger.error("recordCmeAnswerV2: Validation failed. Invalid isCorrect flag.", { data: request.data });
       throw new HttpsError("invalid-argument", "A boolean 'isCorrect' flag is required.");
     }
-    // timeSpent is optional for this core logic but good to have if logged
-    logger.info(`recordCmeAnswer: Processing for QID: ${questionId}, Correct: ${isCorrect}`);
+    logger.info(`recordCmeAnswerV2: Processing for QID (text): "${questionId.substring(0, 50)}...", Correct: ${isCorrect}`);
 
     // 3. Business Logic Constants
     const MINUTES_PER_QUESTION = 4.8;
     const MINUTES_PER_QUARTER_CREDIT = 15;
-    const ACCURACY_THRESHOLD = 0.70; // 70%
+    const ACCURACY_THRESHOLD = 0.70;
     const MAX_CME_CREDITS_PER_YEAR = 24.0;
 
     const db = admin.firestore();
 
     try {
-      // 4. Get Active CME Year ID
-      const activeYearId = await getActiveYearId(); // Uses the helper function
+      // 4. Get Active CME Year ID (as before)
+      const activeYearId = await getActiveYearId();
       if (!activeYearId) {
-        logger.warn(`recordCmeAnswer: No active CME year found. Cannot record answer for user ${uid}.`);
-        // Return a specific status that the client can interpret
+        logger.warn(`recordCmeAnswerV2: No active CME year found. Cannot record answer for user ${uid}.`);
         return {
           status: "no_active_year",
           message: "No active CME accreditation year. Credits cannot be awarded at this time.",
           creditedThisAnswer: 0,
           newYearTotalCredits: 0,
+          activeYearId: null // Return null for activeYearId
         };
       }
-      logger.info(`recordCmeAnswer: Active CME Year ID: ${activeYearId} for user ${uid}.`);
+      logger.info(`recordCmeAnswerV2: Active CME Year ID: ${activeYearId} for user ${uid}.`);
 
-      // 5. Check User's Access Tier (Essential for CME)
-      const userDocRef = db.collection("users").doc(uid);
-      const userDocSnap = await userDocRef.get();
-
-      if (!userDocSnap.exists()) {
-        logger.error(`recordCmeAnswer: User document not found for UID: ${uid}.`);
+      // 5. Check User's Access Tier (as before)
+      const userDocRefForTierCheck = db.collection("users").doc(uid);
+      const userDocSnapForTierCheck = await userDocRefForTierCheck.get();
+      if (!userDocSnapForTierCheck.exists) {
+        logger.error(`recordCmeAnswerV2: User document not found for UID: ${uid}.`);
         throw new HttpsError("not-found", "User data not found. Cannot process CME answer.");
       }
-      const userData = userDocSnap.data();
-      const accessTier = userData.accessTier;
-
-      // Only "cme_annual" or "cme_credits_only" can earn CME credits.
-      // "board_review" and "free_guest" are excluded from CME credit earning.
+      const userDataForTierCheck = userDocSnapForTierCheck.data();
+      const accessTier = userDataForTierCheck.accessTier;
       if (accessTier !== "cme_annual" && accessTier !== "cme_credits_only") {
-        logger.info(`recordCmeAnswer: User ${uid} has accessTier '${accessTier}', not eligible for CME credits for QID ${questionId}.`);
+        logger.info(`recordCmeAnswerV2: User ${uid} has accessTier '${accessTier}', not eligible for CME credits for QID "${questionId.substring(0,50)}...".`);
         return {
           status: "tier_ineligible",
           message: "Your current subscription tier is not eligible for CME credits.",
           creditedThisAnswer: 0,
-          newYearTotalCredits: 0, // Or fetch existing year total if needed for display
+          newYearTotalCredits: 0,
+          activeYearId: activeYearId
         };
       }
-      logger.info(`recordCmeAnswer: User ${uid} has eligible tier '${accessTier}'.`);
+      logger.info(`recordCmeAnswerV2: User ${uid} has eligible tier '${accessTier}'.`);
 
       // 6. Firestore Transaction
       let creditedThisAnswer = 0;
       let finalYearTotalCredits = 0;
-      let transactionStatus = "success"; // Default status
+      let finalTotalAnsweredInYear = 0; // To return to client
+      let transactionStatus = "success";
       let transactionMessage = "Answer recorded.";
+      let overallCmeStatsAfterUpdate = {};
+
+      const questionIdHash = crypto.createHash('sha256').update(questionId).digest('hex');
+      const answerLogDocumentId = `${activeYearId}_${questionIdHash}`;
 
       await db.runTransaction(async (transaction) => {
-        // Path to the user's specific stats for the active year
         const yearStatsDocRef = db.collection("users").doc(uid).collection("cmeStats").doc(activeYearId);
-        // Path to the specific answer log for this year to prevent double counting
-        const answerLogDocRef = db.collection("users").doc(uid).collection("cmeAnswers").doc(`${activeYearId}_${questionId}`);
+        const answerLogDocRef = db.collection("users").doc(uid).collection("cmeAnswers").doc(answerLogDocumentId);
+        const mainUserDocRef = db.collection("users").doc(uid);
+        const allYearStatsCollectionRef = db.collection("users").doc(uid).collection("cmeStats");
 
         const yearStatsDoc = await transaction.get(yearStatsDocRef);
         const answerLogDoc = await transaction.get(answerLogDocRef);
+        const mainUserDocSnap = await transaction.get(mainUserDocRef);
+        const allYearStatsSnapshot = await transaction.get(allYearStatsCollectionRef);
 
-        // If answer already logged for this question in this year, do nothing for credits.
+        let mainUserData = mainUserDocSnap.exists ? mainUserDocSnap.data() : {};
+        if (!mainUserData.cmeStats) {
+          mainUserData.cmeStats = { totalAnswered: 0, totalCorrect: 0, creditsEarned: 0.00, creditsClaimed: 0.00 };
+        } else {
+          mainUserData.cmeStats.totalAnswered = mainUserData.cmeStats.totalAnswered || 0;
+          mainUserData.cmeStats.totalCorrect = mainUserData.cmeStats.totalCorrect || 0;
+          mainUserData.cmeStats.creditsEarned = mainUserData.cmeStats.creditsEarned || 0.00;
+          mainUserData.cmeStats.creditsClaimed = mainUserData.cmeStats.creditsClaimed || 0.00;
+        }
+
         if (answerLogDoc.exists) {
-          logger.info(`recordCmeAnswer: Question ${questionId} already recorded for user ${uid} in year ${activeYearId}. No new credits.`);
+          logger.info(`recordCmeAnswerV2: Question (hash: ${questionIdHash}) already recorded for user ${uid} in year ${activeYearId}. No new credits or overall stat changes.`);
           transactionStatus = "already_recorded_this_year";
           transactionMessage = "This question has already been recorded for CME credit this year.";
-          // Still need to return the current year's total
-          finalYearTotalCredits = yearStatsDoc.exists() ? (yearStatsDoc.data().creditsEarned || 0) : 0;
-          return; // Exit transaction early
+          const existingYearData = yearStatsDoc.exists ? yearStatsDoc.data() : { creditsEarned: 0, totalAnsweredInYear: 0 };
+          finalYearTotalCredits = existingYearData.creditsEarned || 0;
+          finalTotalAnsweredInYear = existingYearData.totalAnsweredInYear || 0;
+          overallCmeStatsAfterUpdate = mainUserData.cmeStats;
+          return;
         }
 
-        // Initialize yearly stats if they don't exist
-        let yearStatsData = {
-          totalAnsweredInYear: 0,
-          totalCorrectInYear: 0,
-          creditsEarned: 0.00,
-          // lastUpdated: admin.firestore.FieldValue.serverTimestamp() // Will be set at the end
-        };
+        let yearStatsData = { totalAnsweredInYear: 0, totalCorrectInYear: 0, creditsEarned: 0.00 };
         if (yearStatsDoc.exists) {
-          yearStatsData = { ...yearStatsData, ...yearStatsDoc.data() }; // Merge existing with defaults
+          yearStatsData = { ...yearStatsData, ...yearStatsDoc.data() };
         }
-
-        // Update counts for the current answer
         yearStatsData.totalAnsweredInYear += 1;
-        if (isCorrect) {
-          yearStatsData.totalCorrectInYear += 1;
-        }
+        if (isCorrect) { yearStatsData.totalCorrectInYear += 1; }
+        
+        finalTotalAnsweredInYear = yearStatsData.totalAnsweredInYear; // Capture after increment
 
-        // Calculate current accuracy for the year
         const accuracyInYear = yearStatsData.totalAnsweredInYear > 0
           ? yearStatsData.totalCorrectInYear / yearStatsData.totalAnsweredInYear
           : 0;
-
-        // Calculate potential new credits if accuracy threshold is met
-        let oldCreditsEarnedInYear = yearStatsData.creditsEarned;
-        let newPotentialCreditsInYear = yearStatsData.creditsEarned; // Start with current
-
+        let oldCreditsEarnedInYear = yearStatsData.creditsEarned || 0.00;
+        let newPotentialCreditsInYear = oldCreditsEarnedInYear;
         if (accuracyInYear >= ACCURACY_THRESHOLD) {
           const totalMinutesInYear = yearStatsData.totalAnsweredInYear * MINUTES_PER_QUESTION;
           const quarterCreditsRounded = Math.round(totalMinutesInYear / MINUTES_PER_QUARTER_CREDIT);
           newPotentialCreditsInYear = Math.min(quarterCreditsRounded * 0.25, MAX_CME_CREDITS_PER_YEAR);
-        } else {
-          logger.info(`recordCmeAnswer: User ${uid} accuracy for year ${activeYearId} (${(accuracyInYear * 100).toFixed(1)}%) is below threshold. No new credits calculated.`);
         }
-
-        // Determine how many credits were awarded *for this specific answer*
-        // This is the increase from old to new, but only if new is greater.
         if (newPotentialCreditsInYear > oldCreditsEarnedInYear) {
           creditedThisAnswer = newPotentialCreditsInYear - oldCreditsEarnedInYear;
           yearStatsData.creditsEarned = newPotentialCreditsInYear;
-          transactionMessage = `Answer recorded. ${creditedThisAnswer.toFixed(2)} credits earned this answer.`;
+          transactionMessage = `Answer recorded. ${creditedThisAnswer.toFixed(2)} credits earned this answer for year ${activeYearId}.`;
         } else {
-          // Credits didn't increase (e.g. accuracy dropped, or already at max, or no change)
-          // yearStatsData.creditsEarned remains as is (which is oldCreditsEarnedInYear)
-          creditedThisAnswer = 0;
-          if (yearStatsData.creditsEarned >= MAX_CME_CREDITS_PER_YEAR) {
-            transactionMessage = "Answer recorded. Yearly credit limit reached.";
-            transactionStatus = "limit_reached";
-          } else if (accuracyInYear < ACCURACY_THRESHOLD && yearStatsData.totalAnsweredInYear > 0) {
-            transactionMessage = "Answer recorded. Yearly accuracy below threshold for new credits.";
-            transactionStatus = "accuracy_low";
-          } else {
-            transactionMessage = "Answer recorded. No change in credits earned this answer.";
-          }
+            creditedThisAnswer = 0;
+            if (yearStatsData.creditsEarned >= MAX_CME_CREDITS_PER_YEAR) {
+              transactionMessage = `Answer recorded. Yearly credit limit for ${activeYearId} reached.`;
+              transactionStatus = "limit_reached";
+            } else if (accuracyInYear < ACCURACY_THRESHOLD && yearStatsData.totalAnsweredInYear > 0) {
+              transactionMessage = `Answer recorded. Yearly accuracy for ${activeYearId} below threshold for new credits.`;
+              transactionStatus = "accuracy_low";
+            } else {
+              transactionMessage = `Answer recorded. No change in credits earned this answer for year ${activeYearId}.`;
+            }
         }
-
         yearStatsData.lastUpdated = admin.firestore.FieldValue.serverTimestamp();
         finalYearTotalCredits = yearStatsData.creditsEarned;
-
-        // Set the yearly stats
         transaction.set(yearStatsDocRef, yearStatsData, { merge: true });
-        // Log that this question has been answered for this year (empty doc is fine)
         transaction.set(answerLogDocRef, {
+          originalQuestionId: questionId,
           answeredAt: admin.firestore.FieldValue.serverTimestamp(),
           isCorrect: isCorrect,
           category: category,
         });
 
-        logger.info(`recordCmeAnswer: Transaction for user ${uid}, year ${activeYearId}, QID ${questionId} successful. Credits this answer: ${creditedThisAnswer}, New total for year: ${finalYearTotalCredits}`);
-      }); // End of Firestore Transaction
+        mainUserData.cmeStats.totalAnswered = (mainUserData.cmeStats.totalAnswered || 0) + 1;
+        if (isCorrect) {
+          mainUserData.cmeStats.totalCorrect = (mainUserData.cmeStats.totalCorrect || 0) + 1;
+        }
 
-      // 7. Return result to client
+        let totalCumulativeCreditsEarned = 0;
+        allYearStatsSnapshot.forEach(doc => {
+            if (doc.id !== activeYearId) {
+                totalCumulativeCreditsEarned += (doc.data().creditsEarned || 0);
+            }
+        });
+        totalCumulativeCreditsEarned += yearStatsData.creditsEarned;
+        mainUserData.cmeStats.creditsEarned = parseFloat(totalCumulativeCreditsEarned.toFixed(2));
+        
+        overallCmeStatsAfterUpdate = mainUserData.cmeStats;
+        transaction.set(mainUserDocRef, mainUserData, { merge: true });
+
+        logger.info(`recordCmeAnswerV2: Transaction for user ${uid}, year ${activeYearId}, QID_hash: ${questionIdHash} successful. Credits this answer (year): ${creditedThisAnswer.toFixed(2)}, New total for year: ${finalYearTotalCredits.toFixed(2)}, Total answered in year: ${finalTotalAnsweredInYear}, New OVERALL earned: ${mainUserData.cmeStats.creditsEarned.toFixed(2)}, Overall answered: ${mainUserData.cmeStats.totalAnswered}`);
+      }); // End Transaction
+
       return {
         status: transactionStatus,
         message: transactionMessage,
         creditedThisAnswer: parseFloat(creditedThisAnswer.toFixed(2)),
         newYearTotalCredits: parseFloat(finalYearTotalCredits.toFixed(2)),
+        totalAnsweredInYear: finalTotalAnsweredInYear, // Return this
         activeYearId: activeYearId,
+        overallCreditsEarned: parseFloat(overallCmeStatsAfterUpdate.creditsEarned?.toFixed(2) || "0.00"),
+        overallTotalAnswered: overallCmeStatsAfterUpdate.totalAnswered || 0,
+        overallTotalCorrect: overallCmeStatsAfterUpdate.totalCorrect || 0,
       };
 
     } catch (error) {
-      logger.error(`recordCmeAnswer: Error processing for user ${uid}, QID ${questionId}:`, error);
+      logger.error(`recordCmeAnswerV2: Error processing for user ${uid}, QID_text: "${questionId.substring(0,50)}...":`, error);
       if (error instanceof HttpsError) {
         throw error;
       }
@@ -937,4 +949,4 @@ exports.recordCmeAnswerV2 = onCall(
     }
   }
 );
-// --- End Callable Function recordCmeAnswer ---
+// --- End Callable Function recordCmeAnswerV2 ---
