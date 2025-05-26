@@ -65,7 +65,8 @@ async function loadQuestions(options = {}) {
 
     if (options.quizType === 'cme' && !options.includeAnswered) {
       // Only fetch year-specific answered IDs if "includeAnswered" is false for a CME quiz
-      const currentCmeYear = window.clientActiveCmeYearId; // Get from global scope (set by app.js/user.v2.js)
+      const currentCmeYear = await getActiveCmeYearIdFromFirestore(); // Call the new helper
+    window.setActiveCmeYearClientSide(currentCmeYear); // Also update the global one for consistency
       if (currentCmeYear && auth.currentUser && !auth.currentUser.isAnonymous) {
         const uid = auth.currentUser.uid;
         const cmeAnswersForYearRef = collection(db, 'users', uid, 'cmeAnswers');
@@ -89,11 +90,19 @@ async function loadQuestions(options = {}) {
           console.error(`Error fetching CME answers for year ${currentCmeYear}:`, e);
         }
       } else if (options.quizType === 'cme') {
-          console.warn("Cannot fetch year-specific CME answers: No active CME year ID available on client or user not authenticated.");
-          // If no year ID, and it's a CME quiz where we shouldn't include answered,
-          // it's tricky. For now, it will proceed without filtering these,
-          // or you could choose to show an error/prevent quiz start.
-      }
+        console.warn("Cannot fetch year-specific CME answers: No active CME year determined or user not authenticated.");
+        alert("Could not determine the current CME year. Please ensure CME windows are configured correctly or try again later.");
+        // Navigate back or show dashboard
+        const cmeDash = document.getElementById("cmeDashboardView");
+        if(cmeDash && typeof showCmeDashboard === 'function') showCmeDashboard();
+        else if(cmeDash) cmeDash.style.display = "block";
+        else {
+            const mainOpts = document.getElementById("mainOptions");
+            if(mainOpts) mainOpts.style.display = "flex";
+        }
+        return; // Stop quiz loading
+    }
+
     } else if (!options.bookmarksOnly && !options.includeAnswered) {
       // For regular quizzes, use the overall persistent answered IDs
       relevantAnsweredIdsForCurrentYear = await fetchPersistentAnsweredIds(); // Re-using variable name for simplicity here

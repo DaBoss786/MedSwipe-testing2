@@ -3972,7 +3972,8 @@ async function loadCmeDashboardData() {
   const uid = window.authState.user.uid;
 
   // --- Attempt to get activeYearId for client-side display ---
-  const currentActiveYearId = clientActiveCmeYearId;
+  const currentActiveYearId = await getActiveCmeYearIdFromFirestore();
+window.setActiveCmeYearClientSide(currentActiveYearId);
 
   if (!currentActiveYearId) {
       trackerContent.innerHTML = "<p>Could not determine the current CME year. Please try answering a CME question first to sync the active year, or check back later.</p>";
@@ -4945,3 +4946,42 @@ if (checkoutBrAnnualBtn) {
   console.error("Board Review Annual Checkout button (#checkoutBrAnnualBtn) not found.");
 }
 // --- End Board Review Checkout Button Listeners ---
+
+// In app.js or a utils.js
+async function getActiveCmeYearIdFromFirestore() {
+  if (!db) {
+      console.error("Firestore (db) not initialized for getActiveCmeYearIdFromFirestore");
+      return null;
+  }
+  const now = new Date(); // Use client-side Date
+  const cmeWindowsRef = collection(db, "cmeWindows");
+
+  try {
+      const snapshot = await getDocs(cmeWindowsRef);
+      if (snapshot.empty) {
+          console.warn("Client: No CME windows defined in 'cmeWindows' collection.");
+          return null;
+      }
+
+      for (const docSnap of snapshot.docs) {
+          const windowData = docSnap.data();
+          if (windowData.startDate && windowData.endDate) {
+              // Ensure startDate and endDate are Date objects for comparison
+              const startDate = windowData.startDate.toDate ? windowData.startDate.toDate() : new Date(windowData.startDate);
+              const endDate = windowData.endDate.toDate ? windowData.endDate.toDate() : new Date(windowData.endDate);
+
+              if (now >= startDate && now <= endDate) {
+                  console.log(`Client: Active CME window found: ${docSnap.id}`);
+                  return docSnap.id;
+              }
+          } else {
+              console.warn(`Client: CME window ${docSnap.id} is missing startDate or endDate.`);
+          }
+      }
+      console.log("Client: No currently active CME window found for today's date.");
+      return null;
+  } catch (error) {
+      console.error("Client: Error fetching active CME year ID:", error);
+      return null; 
+  }
+}
