@@ -72,8 +72,8 @@ async function loadQuestions(options = {}) {
         // Query for answer logs specific to the current active year
         // Document IDs are like "YEAR_HASH", e.g., "2025-2026_hashvalue"
         const q = query(cmeAnswersForYearRef, 
-                        where(documentId(), ">=", `${currentCmeYear}_`), 
-                        where(documentId(), "<", `${currentCmeYear}_\uffff`)); 
+          where('__name__', ">=", `${currentCmeYear}_`), 
+          where('__name__', "<", `${currentCmeYear}_\uffff`));
                         // \uffff is a high Unicode character to act as an upper bound for strings starting with currentCmeYear_
         
         try {
