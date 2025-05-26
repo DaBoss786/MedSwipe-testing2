@@ -1,13 +1,16 @@
 // user.js - TOP OF FILE
 import { auth, db, doc, getDoc, runTransaction, serverTimestamp, functions, httpsCallable } from './firebase-config.js'; // Adjust path if needed
 
-let recordCmeAnswerFunction;
+// user.js - After imports
+
+let recordCmeAnswerFunction; // Keep the variable name the same for simplicity internally
 if (functions && httpsCallable) {
   try {
-    recordCmeAnswerFunction = httpsCallable(functions, 'recordCmeAnswer');
-    console.log("Callable function reference 'recordCmeAnswer' created in user.js.");
+    // Use the NEW function name "recordCmeAnswerV2" when creating the reference
+    recordCmeAnswerFunction = httpsCallable(functions, 'recordCmeAnswerV2'); // <--- NEW NAME
+    console.log("Callable function reference 'recordCmeAnswerV2' created in user.js.");
   } catch (error) {
-    console.error("Error creating 'recordCmeAnswer' callable function reference in user.js:", error);
+    console.error("Error creating 'recordCmeAnswerV2' callable function reference in user.js:", error);
     // Handle error, perhaps by disabling CME recording or alerting the user.
   }
 } else {
@@ -1002,7 +1005,7 @@ async function recordCmeAnswer(questionId, category, isCorrect, timeSpent) {
   }
 
   const uid = auth.currentUser.uid;
-  console.log(`Calling Cloud Function 'recordCmeAnswer' for user ${uid}, QID: ${questionId}`);
+  console.log(`Calling Cloud Function (target: recordCmeAnswerV2) for user ${uid}, QID: ${questionId}`);
 
   try {
     // Prepare data for the Cloud Function
