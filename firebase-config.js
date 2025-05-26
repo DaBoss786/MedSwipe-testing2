@@ -53,5 +53,7 @@ export {
   getIdToken,
   httpsCallable,
   EmailAuthProvider,
-  linkWithCredential
+  linkWithCredential,
+  query,
+  where
 };
