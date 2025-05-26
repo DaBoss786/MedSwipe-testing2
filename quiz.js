@@ -9,7 +9,7 @@ import {
   getBookmarks,               // Needed for bookmark filtering
   updateSpacedRepetitionData  // Needed for difficulty buttons
   // Add any other functions from user.js called within quiz.js
-} from './user.js';
+} from './user.v2.js';
 import { showLeaderboard } from './ui.js'; 
 
 // Quiz management variables
