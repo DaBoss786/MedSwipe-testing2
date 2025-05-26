@@ -3937,6 +3937,7 @@ async function populateCmeCategoryDropdown() {
 // --- Step 9: Load and Display CME Dashboard Data (MODIFIED for Unique Counts & Remaining) ---
 
 let clientActiveCmeYearId = null; 
+window.clientActiveCmeYearId = null; // Make it global
 
 // You would call this from your recordCmeAnswer function in user.v2.js
 // after a successful call to the recordCmeAnswerV2 cloud function
