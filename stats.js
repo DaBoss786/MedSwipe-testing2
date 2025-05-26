@@ -1,4 +1,4 @@
-import { auth, db, doc, getDoc, collection, getDocs } from './firebase-config.js'; // Adjust path if needed
+import { auth, db, doc, getDoc, collection, getDocs, functions, httpsCallable } from './firebase-config.js'; // Adjust path if needed
 import {fetchQuestionBank} from './quiz.js';
 import { getOrGenerateUsername } from './user.v2.js';
 import { getStartOfWeek } from './utils.js';
