@@ -1,5 +1,5 @@
 // user.js - TOP OF FILE
-import { auth, db, doc, getDoc, runTransaction, serverTimestamp } from './firebase-config.js'; // Adjust path if needed
+import { auth, db, doc, getDoc, runTransaction, serverTimestamp, functions, httpsCallable } from './firebase-config.js'; // Adjust path if needed
 
 let recordCmeAnswerFunction;
 if (functions && httpsCallable) {
