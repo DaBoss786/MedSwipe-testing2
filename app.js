@@ -1764,42 +1764,52 @@ async function checkAndUpdateStreak() {
 // Function to load leaderboard preview data - fixed for desktop view
 // MODIFIED: Function to load leaderboard preview data
 
+// DECLARE THIS FLAG OUTSIDE THE FUNCTION, IN A SCOPE ACCESSIBLE BY IT:
+let isLeaderboardPreviewLoadingOrLoaded = false;
+
 async function loadLeaderboardPreview() {
-  console.log("loadLeaderboardPreview: Called.");
   const leaderboardPreview = document.getElementById("leaderboardPreview");
 
   if (!leaderboardPreview) {
     console.error("loadLeaderboardPreview: #leaderboardPreview element NOT FOUND.");
     return;
   }
-  // Set initial loading state
-  leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Loading preview...</div>';
+
+  // Check the flag: If already loading/loaded by a recent call, and content is not "Loading...", skip resetting innerHTML.
+  if (isLeaderboardPreviewLoadingOrLoaded && 
+      leaderboardPreview.innerHTML.trim() !== '' && // Check if it has some content
+      !leaderboardPreview.innerHTML.includes('<div class="leaderboard-loading">Loading preview...</div>')) { // And it's not the loading message
+    console.log("loadLeaderboardPreview: Preview content already exists or is being loaded. Avoiding reset to 'Loading...'. Will still attempt data fetch for potential refresh.");
+  } else {
+    leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Loading preview...</div>';
+  }
+  
+  console.log("loadLeaderboardPreview: Called.");
+  isLeaderboardPreviewLoadingOrLoaded = true; // Indicate that a load attempt has started or is in progress
+
   const cardFooter = document.querySelector("#leaderboardPreviewCard .card-footer span:first-child");
 
-
   // 1. Check if the callable function reference is valid
-  if (typeof getLeaderboardDataFunctionApp !== 'function') { // More robust check
+  if (typeof getLeaderboardDataFunctionApp !== 'function') {
     console.error("loadLeaderboardPreview: getLeaderboardDataFunctionApp is not a function or not initialized.");
     leaderboardPreview.innerHTML = '<div class="leaderboard-loading" style="color:red;">Error: Service unavailable.</div>';
     if (cardFooter) cardFooter.textContent = "Error";
+    isLeaderboardPreviewLoadingOrLoaded = false; // Reset flag on error
     return;
   }
 
   // 2. Check auth state and access tier
-  // Ensure window.authState is populated before this function is called.
-  const currentUser = auth.currentUser; // Get current user directly
+  const currentUser = auth.currentUser;
   const accessTier = window.authState?.accessTier;
   const isUserAnonymous = currentUser?.isAnonymous;
 
   console.log(`loadLeaderboardPreview: UID: ${currentUser?.uid}, Anonymous: ${isUserAnonymous}, Tier: ${accessTier}`);
 
   if (!currentUser) {
-      console.warn("loadLeaderboardPreview: User not authenticated yet. Cannot fetch leaderboard.");
-      // Display a generic message or wait for auth. For now, let CF handle auth error if called.
-      // leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Authenticating...</div>';
-      // return; // Optionally return if you want to wait for full auth
+      console.warn("loadLeaderboardPreview: User not authenticated yet. Cloud function call will likely fail if it requires auth.");
+      // No explicit return here, let the cloud function handle auth error if it's called without auth.
+      // The UI will show "Loading preview..." until the call fails or succeeds.
   }
-
 
   if (isUserAnonymous || accessTier === "free_guest") {
     console.log("loadLeaderboardPreview: User is anonymous or free_guest. Showing upgrade prompt.");
@@ -1826,30 +1836,32 @@ async function loadLeaderboardPreview() {
             if (mainPaywallScreen) mainPaywallScreen.style.display = 'flex';
             else {
                 console.error("Main paywall screen not found!");
-                const mainOptions = document.getElementById("mainOptions"); // Fallback
+                const mainOptions = document.getElementById("mainOptions");
                 if (mainOptions) mainOptions.style.display = 'flex';
             }
         });
     }
     if (cardFooter) cardFooter.textContent = "Upgrade to Access";
+    isLeaderboardPreviewLoadingOrLoaded = false; // Reset flag as data wasn't loaded
     return;
   }
 
   // For paying tiers:
   console.log("loadLeaderboardPreview: User eligible. Calling Cloud Function 'getLeaderboardData'.");
   try {
-    const result = await getLeaderboardDataFunctionApp(); // Call the function
+    const result = await getLeaderboardDataFunctionApp();
     const leaderboardData = result.data;
     console.log("loadLeaderboardPreview: Received data:", leaderboardData);
 
-    if (!leaderboardData || !leaderboardData.xpLeaderboard) {
+    if (!leaderboardData || !leaderboardData.xpLeaderboard || !leaderboardData.currentUserRanks) {
         console.error("loadLeaderboardPreview: Invalid data structure from Cloud Function.", leaderboardData);
         leaderboardPreview.innerHTML = '<div class="leaderboard-loading" style="color:red;">Error: Invalid data.</div>';
         if (cardFooter) cardFooter.textContent = "Error";
+        isLeaderboardPreviewLoadingOrLoaded = false; // Reset flag on error
         return;
     }
 
-    const currentUid = currentUser.uid; // User is authenticated at this point
+    const currentUid = currentUser.uid;
 
     const top3 = (leaderboardData.xpLeaderboard || []).slice(0, 3);
     const currentUserRankData = leaderboardData.currentUserRanks?.xp;
@@ -1871,7 +1883,6 @@ async function loadLeaderboardPreview() {
         `;
       });
 
-      // Logic to display current user if not in top 3
       let userInTop3 = top3.some(e => e.uid === currentUid);
       if (currentUserRankData && !userInTop3) {
         html += `
@@ -1885,9 +1896,11 @@ async function loadLeaderboardPreview() {
         `;
       }
     }
-    leaderboardPreview.innerHTML = html || '<div class="leaderboard-loading" style="text-align:center; padding-top:10px;">No ranked players yet.</div>'; // Fallback if html is empty
+    leaderboardPreview.innerHTML = html || '<div class="leaderboard-loading" style="text-align:center; padding-top:10px;">No ranked players yet.</div>';
     if (cardFooter) cardFooter.textContent = "View Full Leaderboard";
     console.log("loadLeaderboardPreview: Preview updated successfully.");
+    // isLeaderboardPreviewLoadingOrLoaded remains true after a successful load to prevent immediate flicker.
+    // If you need a manual refresh button, that button's handler could set this to false before calling loadLeaderboardPreview.
 
   } catch (error) {
     console.error("loadLeaderboardPreview: Error calling Cloud Function or processing result:", error);
@@ -1899,6 +1912,7 @@ async function loadLeaderboardPreview() {
     }
     leaderboardPreview.innerHTML = `<div class="leaderboard-loading" style="color:red;">${errorMsg}</div>`;
     if (cardFooter) cardFooter.textContent = "Error";
+    isLeaderboardPreviewLoadingOrLoaded = false; // Reset flag on error to allow another attempt
   }
 }
 
