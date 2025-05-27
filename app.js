@@ -4,19 +4,17 @@ import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection
 import { updateUserXP, updateUserMenu, calculateLevelProgress, getLevelInfo, toggleBookmark } from './user.v2.js';
 import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
 import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
-import { closeSideMenu, closeUserMenu, shuffleArray } from './utils.js';
+import { closeSideMenu, closeUserMenu, shuffleArray, getCurrentQuestionId } from './utils.js';
 import { displayPerformance } from './stats.js';
 
 // --- Get a reference to the getLeaderboardData Callable Function ---
-// This reference can be shared if app.js and stats.js are part of the same bundle
-// or initialized in a common module. For simplicity, we can re-declare if they are separate.
-let getLeaderboardDataFunctionApp; // Use a different name to avoid conflict if stats.js is also loaded
+let getLeaderboardDataFunctionApp;
 try {
     if (functions && httpsCallable) {
         getLeaderboardDataFunctionApp = httpsCallable(functions, 'getLeaderboardData');
         console.log("Callable function reference 'getLeaderboardData' created in app.js.");
     } else {
-        console.error("Firebase Functions or httpsCallable not imported correctly in app.js.");
+        console.error("Firebase Functions or httpsCallable not imported correctly in app.js, getLeaderboardDataFunctionApp will be undefined.");
     }
 } catch (error) {
     console.error("Error getting 'getLeaderboardData' callable function reference in app.js:", error);
@@ -116,6 +114,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Update the auth state change listener to properly handle welcome screen
 window.addEventListener('authStateChanged', function(event) {
   console.log('Auth state changed in app.js:', event.detail);
+  window.authState = event.detail; 
   // Log the accessTier received from the event
   console.log('Access Tier from event.detail:', event.detail.accessTier);
 
@@ -1764,19 +1763,46 @@ async function checkAndUpdateStreak() {
 
 // Function to load leaderboard preview data - fixed for desktop view
 // MODIFIED: Function to load leaderboard preview data
+
 async function loadLeaderboardPreview() {
-  if (!auth || !auth.currentUser || !db) {
-    console.log("Auth or DB not initialized for leaderboard preview");
+  console.log("loadLeaderboardPreview: Called.");
+  const leaderboardPreview = document.getElementById("leaderboardPreview");
+
+  if (!leaderboardPreview) {
+    console.error("loadLeaderboardPreview: #leaderboardPreview element NOT FOUND.");
+    return;
+  }
+  // Set initial loading state
+  leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Loading preview...</div>';
+  const cardFooter = document.querySelector("#leaderboardPreviewCard .card-footer span:first-child");
+
+
+  // 1. Check if the callable function reference is valid
+  if (typeof getLeaderboardDataFunctionApp !== 'function') { // More robust check
+    console.error("loadLeaderboardPreview: getLeaderboardDataFunctionApp is not a function or not initialized.");
+    leaderboardPreview.innerHTML = '<div class="leaderboard-loading" style="color:red;">Error: Service unavailable.</div>';
+    if (cardFooter) cardFooter.textContent = "Error";
     return;
   }
 
-  const leaderboardPreview = document.getElementById("leaderboardPreview");
-  if (!leaderboardPreview) return;
-
-  const mainPaywallScreen = document.getElementById("newPaywallScreen");
+  // 2. Check auth state and access tier
+  // Ensure window.authState is populated before this function is called.
+  const currentUser = auth.currentUser; // Get current user directly
   const accessTier = window.authState?.accessTier;
+  const isUserAnonymous = currentUser?.isAnonymous;
 
-  if (auth.currentUser.isAnonymous || accessTier === "free_guest") {
+  console.log(`loadLeaderboardPreview: UID: ${currentUser?.uid}, Anonymous: ${isUserAnonymous}, Tier: ${accessTier}`);
+
+  if (!currentUser) {
+      console.warn("loadLeaderboardPreview: User not authenticated yet. Cannot fetch leaderboard.");
+      // Display a generic message or wait for auth. For now, let CF handle auth error if called.
+      // leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Authenticating...</div>';
+      // return; // Optionally return if you want to wait for full auth
+  }
+
+
+  if (isUserAnonymous || accessTier === "free_guest") {
+    console.log("loadLeaderboardPreview: User is anonymous or free_guest. Showing upgrade prompt.");
     const message1 = "Leaderboards are a premium feature.";
     const message2 = "Upgrade your account to unlock this feature!";
     const buttonText = "Upgrade to Access";
@@ -1784,51 +1810,55 @@ async function loadLeaderboardPreview() {
         <div class="guest-analytics-prompt">
             <p>${message1}</p>
             <p>${message2}</p>
-            <button id="upgradeForLeaderboardBtn" class="start-quiz-btn" style="margin-top:10px;">
+            <button id="upgradeForLeaderboardBtn_preview" class="start-quiz-btn" style="margin-top:10px;">
                 ${buttonText}
             </button>
         </div>
     `;
-    const upgradeBtn = document.getElementById('upgradeForLeaderboardBtn');
+    const upgradeBtn = document.getElementById('upgradeForLeaderboardBtn_preview');
     if (upgradeBtn) {
         const newUpgradeBtn = upgradeBtn.cloneNode(true);
         upgradeBtn.parentNode.replaceChild(newUpgradeBtn, upgradeBtn);
         newUpgradeBtn.addEventListener('click', function () {
-            ensureAllScreensHidden();
+            console.log("Leaderboard Preview 'Upgrade' button clicked.");
+            if (typeof ensureAllScreensHidden === 'function') ensureAllScreensHidden();
+            const mainPaywallScreen = document.getElementById("newPaywallScreen");
             if (mainPaywallScreen) mainPaywallScreen.style.display = 'flex';
             else {
                 console.error("Main paywall screen not found!");
-                const mainOptions = document.getElementById("mainOptions");
+                const mainOptions = document.getElementById("mainOptions"); // Fallback
                 if (mainOptions) mainOptions.style.display = 'flex';
             }
         });
     }
-    const cardFooter = document.querySelector("#leaderboardPreviewCard .card-footer span:first-child");
     if (cardFooter) cardFooter.textContent = "Upgrade to Access";
     return;
   }
 
-  // For "board_review", "cme_annual", "cme_credits_only" tiers:
-  leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Loading preview...</div>'; // Loading state
-
-  if (!getLeaderboardDataFunctionApp) {
-    leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Error: Service unavailable.</div>';
-    return;
-  }
-
+  // For paying tiers:
+  console.log("loadLeaderboardPreview: User eligible. Calling Cloud Function 'getLeaderboardData'.");
   try {
-    const result = await getLeaderboardDataFunctionApp();
+    const result = await getLeaderboardDataFunctionApp(); // Call the function
     const leaderboardData = result.data;
-    const currentUid = auth.currentUser.uid;
+    console.log("loadLeaderboardPreview: Received data:", leaderboardData);
+
+    if (!leaderboardData || !leaderboardData.xpLeaderboard) {
+        console.error("loadLeaderboardPreview: Invalid data structure from Cloud Function.", leaderboardData);
+        leaderboardPreview.innerHTML = '<div class="leaderboard-loading" style="color:red;">Error: Invalid data.</div>';
+        if (cardFooter) cardFooter.textContent = "Error";
+        return;
+    }
+
+    const currentUid = currentUser.uid; // User is authenticated at this point
 
     const top3 = (leaderboardData.xpLeaderboard || []).slice(0, 3);
     const currentUserRankData = leaderboardData.currentUserRanks?.xp;
 
     let html = '';
-    if (top3.length === 0 && !currentUserRankData) { // Check if no data at all
-      html = '<div class="leaderboard-loading">No ranked players yet.</div>';
+    if (top3.length === 0 && !currentUserRankData) {
+      html = '<div class="leaderboard-loading" style="text-align:center; padding-top:10px;">No ranked players yet.</div>';
     } else {
-      top3.forEach((entry) => { // Rank comes from CF
+      top3.forEach((entry) => {
         const isCurrentUser = entry.uid === currentUid;
         html += `
           <div class="leaderboard-preview-entry ${isCurrentUser ? 'current-user-entry' : ''}">
@@ -1841,20 +1871,10 @@ async function loadLeaderboardPreview() {
         `;
       });
 
-      // Show current user if they exist, are not in top 3, and there's data to show
-      if (currentUserRankData && !top3.some(e => e.uid === currentUid) && currentUserRankData.rank > 3) {
-         // Check if rank > 3 to avoid duplicating if user is in top 3 but list is shorter
+      // Logic to display current user if not in top 3
+      let userInTop3 = top3.some(e => e.uid === currentUid);
+      if (currentUserRankData && !userInTop3) {
         html += `
-          <div class="leaderboard-preview-entry current-user-entry your-rank-preview">
-            <div class="leaderboard-rank">${currentUserRankData.rank}</div>
-            <div class="leaderboard-user-info">
-              <div class="leaderboard-username">${currentUserRankData.username} (You)</div>
-              <div class="leaderboard-user-xp">${currentUserRankData.xp} XP</div>
-            </div>
-          </div>
-        `;
-      } else if (top3.length === 0 && currentUserRankData) { // Only current user data available
-         html += `
           <div class="leaderboard-preview-entry current-user-entry your-rank-preview">
             <div class="leaderboard-rank">${currentUserRankData.rank}</div>
             <div class="leaderboard-user-info">
@@ -1865,13 +1885,20 @@ async function loadLeaderboardPreview() {
         `;
       }
     }
-    leaderboardPreview.innerHTML = html || '<div class="leaderboard-loading">No ranked players yet.</div>'; // Fallback if html is empty
-    const cardFooter = document.querySelector("#leaderboardPreviewCard .card-footer span:first-child");
+    leaderboardPreview.innerHTML = html || '<div class="leaderboard-loading" style="text-align:center; padding-top:10px;">No ranked players yet.</div>'; // Fallback if html is empty
     if (cardFooter) cardFooter.textContent = "View Full Leaderboard";
+    console.log("loadLeaderboardPreview: Preview updated successfully.");
 
   } catch (error) {
-    console.error("Error loading leaderboard preview:", error);
-    leaderboardPreview.innerHTML = `<div class="leaderboard-loading">Error: ${error.message}</div>`;
+    console.error("loadLeaderboardPreview: Error calling Cloud Function or processing result:", error);
+    let errorMsg = "Error loading preview.";
+    if (error.code === 'unauthenticated' || (error.message && error.message.toLowerCase().includes("authenticated"))) {
+        errorMsg = "Please log in.";
+    } else if (error.message) {
+        errorMsg = `Error: ${error.message.substring(0, 60)}${error.message.length > 60 ? '...' : ''}`;
+    }
+    leaderboardPreview.innerHTML = `<div class="leaderboard-loading" style="color:red;">${errorMsg}</div>`;
+    if (cardFooter) cardFooter.textContent = "Error";
   }
 }
 
