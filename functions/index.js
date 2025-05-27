@@ -9,10 +9,21 @@ const { defineString } = require("firebase-functions/params");
 const { PDFDocument, StandardFonts, rgb, degrees } = require("pdf-lib"); // Added degrees
 const crypto = require("crypto");
 
-// --- Initialize Firebase Admin SDK (Keep as is) ---
 // Initialize Firebase Admin SDK only once
 if (admin.apps.length === 0) {
   admin.initializeApp();
+  logger.info("Firebase Admin SDK initialized.");
+} else {
+  logger.info("Firebase Admin SDK already initialized.");
+}
+
+// Initialize Firestore DB INSTANCE - THIS IS CRITICAL
+let db = admin.firestore(); // Changed to let to allow potential re-assignment for testing
+logger.info("Firestore db object initialized in module scope. typeof db:", typeof db, "Is db truthy?", !!db);
+if (!db || typeof db.collection !== 'function') {
+    logger.error("CRITICAL FAILURE: admin.firestore() did not return a valid db instance at module scope! Re-initializing...");
+    db = admin.firestore(); // Try re-initializing immediately
+    logger.info("Attempted re-initialization. typeof db:", typeof db, "Is db truthy now?", !!db);
 }
 
 // --- Define Configuration Parameters (Keep as is) ---
@@ -36,6 +47,12 @@ const bucket = storage.bucket(BUCKET_NAME);
  * @returns {Promise<string|null>} The document ID of the active CME window (e.g., "2025-2026"), or null if none is active.
  */
 async function getActiveYearId() {
+  // Ensure db is accessible here too
+  if (!db) {
+    logger.error("getActiveYearId: db is not defined!");
+    throw new HttpsError("internal", "Database service unavailable in getActiveYearId.");
+  }
+
   const now = admin.firestore.Timestamp.now();
   const cmeWindowsRef = admin.firestore().collection("cmeWindows");
 
@@ -951,15 +968,29 @@ exports.recordCmeAnswerV2 = onCall(
 );
 // --- End Callable Function recordCmeAnswerV2 ---
 
-// --- NEW LEADERBOARD CLOUD FUNCTION ---
+// --- MODIFIED LEADERBOARD CLOUD FUNCTION ---
 exports.getLeaderboardData = onCall(
   {
-    region: "us-central1", // Or your preferred region
-    memory: "512MiB", // Adjust if needed, 512MiB is a good start
-    timeoutSeconds: 60, // Standard timeout
+    region: "us-central1",
+    memory: "512MiB",
+    timeoutSeconds: 60,
   },
   async (request) => {
-    logger.info("getLeaderboardData function called", { auth: request.auth });
+    logger.info("getLeaderboardData function called", { authUid: request.auth?.uid });
+    
+    // AGGRESSIVE CHECK AND POTENTIAL RE-INITIALIZATION
+    let currentDbInstance = db; // Try to use the global one
+    logger.info("Inside getLeaderboardData. typeof global db:", typeof currentDbInstance, "Is global db truthy?", !!currentDbInstance);
+
+    if (!currentDbInstance || typeof currentDbInstance.collection !== 'function') {
+        logger.warn("Global 'db' is not valid inside getLeaderboardData. Attempting to re-initialize locally for this call.");
+        currentDbInstance = admin.firestore();
+        logger.info("Locally re-initialized db. typeof currentDbInstance:", typeof currentDbInstance, "Is it truthy?", !!currentDbInstance);
+        if (!currentDbInstance || typeof currentDbInstance.collection !== 'function') {
+            logger.error("CRITICAL: Failed to get a valid Firestore instance even with local re-initialization in getLeaderboardData!");
+            throw new HttpsError("internal", "Database service is critically unavailable.");
+        }
+    }
 
     // 1. Authentication Check
     if (!request.auth) {
@@ -970,45 +1001,38 @@ exports.getLeaderboardData = onCall(
     }
     const currentAuthUid = request.auth.uid;
 
-    // Helper function to get the start of the current week in milliseconds
-    // (Monday as the first day of the week)
     function getStartOfWeekMilliseconds(date = new Date()) {
       const d = new Date(date);
-      const day = d.getDay(); // 0 (Sun) to 6 (Sat)
-      // Adjust diff to make Monday the first day (day === 0 means Sunday, target is -6 days)
-      // If day is Sunday (0), diff should be -6 to get to previous Monday.
-      // If day is Monday (1), diff should be 0.
-      // If day is Saturday (6), diff should be -5.
+      const day = d.getDay();
       const diff = d.getDate() - day + (day === 0 ? -6 : 1);
       const startOfWeekDate = new Date(d.setDate(diff));
       startOfWeekDate.setHours(0, 0, 0, 0);
       return startOfWeekDate.getTime();
     }
 
-    const TOP_N_LEADERBOARD = 10; // Number of users to return for top lists
+    const TOP_N_LEADERBOARD = 10;
 
     try {
-      const usersSnapshot = await db.collection("users").get();
+      // Use currentDbInstance which is either the global 'db' or the locally re-initialized one
+      logger.info("Attempting to query users collection with currentDbInstance:", typeof currentDbInstance);
+      const usersSnapshot = await currentDbInstance.collection("users").get();
+      logger.info("Users collection query successful. Number of docs:", usersSnapshot.size);
+      
       const allEligibleUsersData = [];
       const weekStartMillis = getStartOfWeekMilliseconds();
 
       usersSnapshot.forEach((doc) => {
         const userData = doc.data();
-
-        // Filter out users who are not registered
         if (userData.isRegistered === true) {
-          // Calculate weeklyAnsweredCount
           let weeklyAnsweredCount = 0;
           if (userData.answeredQuestions) {
             for (const questionKey in userData.answeredQuestions) {
               const answer = userData.answeredQuestions[questionKey];
-              // Assuming answer.timestamp is stored as milliseconds
               if (answer.timestamp && answer.timestamp >= weekStartMillis) {
                 weeklyAnsweredCount++;
               }
             }
           }
-
           allEligibleUsersData.push({
             uid: doc.id,
             username: userData.username || "Anonymous",
@@ -1016,80 +1040,38 @@ exports.getLeaderboardData = onCall(
             level: userData.stats?.level || 1,
             currentStreak: userData.streaks?.currentStreak || 0,
             weeklyAnsweredCount: weeklyAnsweredCount,
-            // accessTier: userData.accessTier || "free_guest" // Not strictly needed for leaderboard display itself
           });
         }
       });
 
-      logger.info(`Processed ${allEligibleUsersData.length} eligible users.`);
+      logger.info(`Processed ${allEligibleUsersData.length} eligible users for leaderboards.`);
+      let currentUserRanks = { xp: null, streak: null, answered: null };
 
-      // --- Prepare data for each leaderboard ---
-      let currentUserRanks = {
-        xp: null,
-        streak: null,
-        answered: null,
-      };
-
-      // XP Leaderboard
       const sortedByXp = [...allEligibleUsersData].sort((a, b) => b.xp - a.xp);
       const xpLeaderboard = sortedByXp
         .slice(0, TOP_N_LEADERBOARD)
-        .map((user, index) => ({
-          uid: user.uid,
-          username: user.username,
-          xp: user.xp,
-          level: user.level,
-          rank: index + 1,
-        }));
+        .map((user, index) => ({ ...user, rank: index + 1 })); // Spread user to include all its props
       const currentUserXpIndex = sortedByXp.findIndex(u => u.uid === currentAuthUid);
       if (currentUserXpIndex !== -1) {
-        const userXpData = sortedByXp[currentUserXpIndex];
-        currentUserRanks.xp = {
-          rank: currentUserXpIndex + 1,
-          username: userXpData.username,
-          xp: userXpData.xp,
-          level: userXpData.level,
-        };
+        currentUserRanks.xp = { ...sortedByXp[currentUserXpIndex], rank: currentUserXpIndex + 1 };
       }
 
-      // Streak Leaderboard
       const sortedByStreak = [...allEligibleUsersData].sort((a, b) => b.currentStreak - a.currentStreak);
       const streakLeaderboard = sortedByStreak
         .slice(0, TOP_N_LEADERBOARD)
-        .map((user, index) => ({
-          uid: user.uid,
-          username: user.username,
-          currentStreak: user.currentStreak,
-          rank: index + 1,
-        }));
+        .map((user, index) => ({ ...user, rank: index + 1 }));
       const currentUserStreakIndex = sortedByStreak.findIndex(u => u.uid === currentAuthUid);
       if (currentUserStreakIndex !== -1) {
-        const userStreakData = sortedByStreak[currentUserStreakIndex];
-        currentUserRanks.streak = {
-          rank: currentUserStreakIndex + 1,
-          username: userStreakData.username,
-          currentStreak: userStreakData.currentStreak,
-        };
+        currentUserRanks.streak = { ...sortedByStreak[currentUserStreakIndex], rank: currentUserStreakIndex + 1 };
       }
 
-      // Answered Leaderboard (Weekly)
       const sortedByAnswered = [...allEligibleUsersData].sort((a, b) => b.weeklyAnsweredCount - a.weeklyAnsweredCount);
       const answeredLeaderboard = sortedByAnswered
         .slice(0, TOP_N_LEADERBOARD)
-        .map((user, index) => ({
-          uid: user.uid,
-          username: user.username,
-          weeklyAnsweredCount: user.weeklyAnsweredCount,
-          rank: index + 1,
-        }));
+        .map((user, index) => ({ ...user, rank: index + 1 }));
       const currentUserAnsweredIndex = sortedByAnswered.findIndex(u => u.uid === currentAuthUid);
       if (currentUserAnsweredIndex !== -1) {
-        const userAnsweredData = sortedByAnswered[currentUserAnsweredIndex];
-        currentUserRanks.answered = {
-          rank: currentUserAnsweredIndex + 1,
-          username: userAnsweredData.username,
-          weeklyAnsweredCount: userAnsweredData.weeklyAnsweredCount,
-        };
+        currentUserRanks.answered = { ...sortedByAnswered[currentUserAnsweredIndex], rank: currentUserAnsweredIndex + 1 };
       }
 
       logger.info("Leaderboard data prepared successfully.");
@@ -1101,10 +1083,10 @@ exports.getLeaderboardData = onCall(
       };
 
     } catch (error) {
-      logger.error("Error fetching leaderboard data:", error);
+      logger.error("Error during leaderboard data processing in getLeaderboardData:", error, {stack: error.stack});
       throw new HttpsError(
         "internal",
-        "An error occurred while fetching leaderboard data.",
+        "An error occurred while processing leaderboard data.",
         error.message
       );
     }
