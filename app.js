@@ -939,18 +939,7 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
         <label for="registerUsername">Username (for Leaderboards)</label>
         <input type="text" id="registerUsername" required>
       </div>
-      <div class="form-group">
-        <label for="registerExperience">Experience Level</label>
-        <select id="registerExperience" required>
-          <option value="" disabled selected>Select your experience level</option>
-          <option value="Medical Student">Medical Student</option>
-          <option value="PGY 1-2">PGY 1-2</option>
-          <option value="PGY 3-4">PGY 3-4</option>
-          <option value="PGY 5+">PGY 5+</option>
-          <option value="Attending">Attending</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
+      
       <div class="form-group">
         <label for="registerEmail">Email</label>
         <input type="email" id="registerEmail" required>
@@ -996,7 +985,6 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
       const username = document.getElementById('registerUsername').value;
       const email = document.getElementById('registerEmail').value;
       const password = document.getElementById('registerPassword').value;
-      const experience = document.getElementById('registerExperience').value;
       const errorElement = document.getElementById('registerError');
 
       try {

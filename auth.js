@@ -335,7 +335,7 @@ function getCurrentUser() {
 
 // ----------------------------------------------------
 // Direct email/password registration (not upgrade)
-async function registerUser(email, password, username, experience) {
+async function registerUser(email, password, username) {
   try {
     console.log(`registerUser: creating ${email}`);
     const { user } = await createUserWithEmailAndPassword(auth, email, password);
@@ -352,9 +352,9 @@ await setDoc(
   {
     username,
     email,
-    experience,
     isRegistered: true,
     marketingOptIn: marketingOptIn,
+    createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   },
   { merge: true }
@@ -378,7 +378,7 @@ await setDoc(
 
 // ----------------------------------------------------
 // Upgrade currently anonymous user to permanent account
-async function upgradeAnonymousUser(email, password, username, experience) {
+async function upgradeAnonymousUser(email, password, username) {
   const anonUser = auth.currentUser;
 
   if (!anonUser || !anonUser.isAnonymous) {
@@ -403,7 +403,6 @@ await setDoc(
   {
     username,
     email,
-    experience,
     isRegistered: true,
     marketingOptIn: marketingOptIn,
     updatedAt: serverTimestamp()
