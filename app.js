@@ -1,7 +1,7 @@
 // app.js - Top of file
 import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc } from './firebase-config.js'; // Adjust path if needed
 // Import needed functions from user.js
-import { updateUserXP, updateUserMenu, calculateLevelProgress, getLevelInfo, toggleBookmark } from './user.v2.js';
+import { updateUserXP, updateUserMenu, calculateLevelProgress, getLevelInfo, toggleBookmark, saveOnboardingSelections } from './user.v2.js';
 import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
 import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { closeSideMenu, closeUserMenu, shuffleArray, getCurrentQuestionId } from './utils.js';
@@ -425,35 +425,65 @@ if (experienceOptionButtons.length > 0 && experienceContinueBtn) {
 }
 
 if (experienceContinueBtn && experiencePickScreen && onboardingLoadingScreen) {
-  experienceContinueBtn.addEventListener('click', function() {
+  experienceContinueBtn.addEventListener('click', async function() { // <<<--- Make this async
     if (!selectedExperienceLevel) {
       alert("Please select your experience level.");
       return;
     }
-    console.log("Continue from Experience screen. Experience:", selectedExperienceLevel);
-    // In Step 3, we will save specialty and experience to Firestore here.
-    // For now, just proceed to the onboarding loading / quiz.
+    if (!selectedSpecialty) {
+      // This should ideally not happen if the flow is correct, but good to check.
+      alert("Specialty not selected. Please go back and select a specialty.");
+      // You might want to add a "Back" button to the experience screen in a future step.
+      // For now, we could try to send them back to the specialty screen.
+      experiencePickScreen.style.opacity = '0';
+      setTimeout(() => {
+          experiencePickScreen.style.display = 'none';
+          const specialtyScreen = document.getElementById('specialtyPickScreen');
+          if (specialtyScreen) {
+              specialtyScreen.style.display = 'flex';
+              specialtyScreen.style.opacity = '1';
+          }
+      }, 500);
+      return;
+    }
+
+    console.log("Continue from Experience screen. Specialty:", selectedSpecialty, "Experience:", selectedExperienceLevel);
     
-    experiencePickScreen.style.opacity = '0';
-    setTimeout(function() {
-      experiencePickScreen.style.display = 'none';
-      
-      // Show onboarding loading screen
-      onboardingLoadingScreen.style.display = 'flex';
-      
-      // After a brief delay, start the onboarding quiz
+    // Disable button to prevent multiple clicks
+    this.disabled = true;
+    this.textContent = "Saving...";
+
+    try {
+      // --- SAVE TO FIRESTORE ---
+      await saveOnboardingSelections(selectedSpecialty, selectedExperienceLevel); // <<<--- CALL SAVE FUNCTION
+      console.log("Successfully saved onboarding selections to Firestore.");
+
+      // Proceed to onboarding loading / quiz
+      experiencePickScreen.style.opacity = '0';
       setTimeout(function() {
-        onboardingLoadingScreen.style.display = 'none';
-        // Ensure startOnboardingQuiz is defined and callable
-        if (typeof startOnboardingQuiz === 'function') {
-          startOnboardingQuiz();
-        } else if (typeof window.startOnboardingQuiz === 'function') {
-          window.startOnboardingQuiz();
-        } else {
-          console.error("startOnboardingQuiz function not found!");
-        }
-      }, 2000); // Show loading screen for 2 seconds
-    }, 500);
+        experiencePickScreen.style.display = 'none';
+        
+        onboardingLoadingScreen.style.display = 'flex';
+        
+        setTimeout(function() {
+          onboardingLoadingScreen.style.display = 'none';
+          if (typeof startOnboardingQuiz === 'function') {
+            startOnboardingQuiz();
+          } else if (typeof window.startOnboardingQuiz === 'function') {
+            window.startOnboardingQuiz();
+          } else {
+            console.error("startOnboardingQuiz function not found!");
+          }
+        }, 2000);
+      }, 500);
+
+    } catch (error) {
+      console.error("Failed to save onboarding selections:", error);
+      alert("There was an error saving your selections. Please try again.");
+      // Re-enable button on error
+      this.disabled = false;
+      this.textContent = "Continue";
+    }
   });
 }
 

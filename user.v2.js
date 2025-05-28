@@ -1057,7 +1057,60 @@ window.fetchSpacedRepetitionData = fetchSpacedRepetitionData;
    // --- End of Step 8 ---
    
 
-// user.js - ADD THIS AT THE VERY BOTTOM OF THE FILE
+// NEW FUNCTION to save onboarding selections
+async function saveOnboardingSelections(specialty, experienceLevel) {
+  if (!auth || !auth.currentUser) {
+    console.error("User not authenticated. Cannot save onboarding selections.");
+    // Potentially throw an error or handle this case, though in onboarding,
+    // an anonymous user should have been created by now by auth.js.
+    return;
+  }
+
+  const uid = auth.currentUser.uid;
+  const userDocRef = doc(db, 'users', uid);
+
+  const dataToSave = {
+    specialty: specialty,
+    experienceLevel: experienceLevel,
+    onboardingCompletedAt: serverTimestamp(), // Mark when these were saved
+    updatedAt: serverTimestamp() // Good practice to update this timestamp
+  };
+
+  try {
+    // Check if the document exists.
+    // While onAuthStateChanged in auth.js usually creates the doc for anon users,
+    // this onboarding step might happen very quickly for a brand new anon user.
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (!userDocSnap.exists()) {
+      // Document doesn't exist, so we're creating it with these onboarding details
+      // and some essential defaults. auth.js will later merge/update if needed.
+      console.log(`User doc for ${uid} (anonymous) not found during onboarding save. Creating with onboarding data.`);
+      const defaultGuestUsername = `Guest${Math.floor(Math.random() * 9000) + 1000}`; // Simple guest name
+      await setDoc(userDocRef, {
+        ...dataToSave,
+        username: defaultGuestUsername, // Provide a default username
+        email: null, // Explicitly null for anonymous
+        createdAt: serverTimestamp(),
+        isRegistered: false, // Explicitly false for anonymous
+        accessTier: "free_guest", // Default tier
+        // Initialize other essential structures if not handled by auth.js immediately
+        stats: { xp: 0, level: 1, totalAnswered: 0, totalCorrect: 0 },
+        bookmarks: [],
+        cmeStats: { creditsEarned: 0, creditsClaimed: 0, totalAnswered: 0, totalCorrect: 0 },
+      });
+      console.log("New user document created with onboarding selections for UID:", uid);
+    } else {
+      // Document exists, merge the new data
+      await setDoc(userDocRef, dataToSave, { merge: true });
+      console.log("Onboarding selections saved for existing UID:", uid, dataToSave);
+    }
+  } catch (error) {
+    console.error("Error saving onboarding selections to Firestore:", error);
+    // Optionally, re-throw the error to be handled by the caller in app.js
+    throw error; 
+  }
+}
 
 export {
   fetchPersistentAnsweredIds,
@@ -1078,6 +1131,6 @@ export {
   createConfetti,
   updateSpacedRepetitionData,
   fetchSpacedRepetitionData,
-  recordCmeAnswer // <<<--- Make sure to include the CME function we added!
-  // Add any other functions from user.js that need to be called from other files.
+  recordCmeAnswer, // <<<--- Make sure to include the CME function we added!
+  saveOnboardingSelections
 };
