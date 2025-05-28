@@ -1054,7 +1054,10 @@ newForm.addEventListener('submit', async function(e) {
     // and pendingRedirect to show the correct screen.
     // ensureEventListenersAttached(); // May not be needed if authStateChanged handles UI fully
   } catch (error) {
-    if (errorElement) errorElement.textContent = getAuthErrorMessage(error); // getAuthErrorMessage is in app.js
+    console.error("Full registration error object:", error); // <<<--- ADD THIS LINE
+    console.error("Error code:", error.code);                 // <<<--- ADD THIS LINE
+    console.error("Error message:", error.message);           // <<<--- ADD THIS LINE
+    if (errorElement) errorElement.textContent = getAuthErrorMessage(error);
   }
 });
 }
