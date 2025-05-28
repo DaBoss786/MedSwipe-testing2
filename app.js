@@ -21,6 +21,8 @@ try {
 }
 // --- End Callable Function Reference ---
 
+let selectedSpecialty = null;
+
 // --- Get reference to Firebase Callable Function ---
 let createCheckoutSessionFunction;
 let createPortalSessionFunction;
@@ -113,6 +115,12 @@ document.addEventListener('DOMContentLoaded', function() {
     welcomeScreen.style.display = 'flex';
     welcomeScreen.style.opacity = '0';
   }
+
+  // --- NEW element references for Specialty Screen ---
+  const specialtyPickScreen = document.getElementById('specialtyPickScreen');
+  const specialtyContinueBtn = document.getElementById('specialtyContinueBtn');
+  const specialtyOptionCards = document.querySelectorAll('#specialtyPickScreen .onboarding-option-card');
+  // --- END NEW element references ---
   
   // Update the auth state change listener to properly handle welcome screen
 window.addEventListener('authStateChanged', function(event) {
@@ -326,39 +334,17 @@ window.addEventListener('authStateChanged', function(event) {
   const startLearningBtn = document.getElementById('startLearningBtn');
   const existingAccountBtn = document.getElementById('existingAccountBtn');
 
-  if (startLearningBtn) {
-  startLearningBtn.addEventListener("click", function() {
-    // Hide welcome screen
-    welcomeScreen.style.opacity = '0';
-    
-    setTimeout(function() {
-      welcomeScreen.style.display = 'none';
-      
-      // Show onboarding loading screen
-      const onboardingLoadingScreen = document.getElementById('onboardingLoadingScreen');
-      if (onboardingLoadingScreen) {
-        onboardingLoadingScreen.style.display = 'flex';
-        
-        // After a brief delay, start the onboarding quiz
-        setTimeout(function() {
-          onboardingLoadingScreen.style.display = 'none';
-          startOnboardingQuiz();
-        }, 2000); // Show loading screen for 2 seconds
-      }
-    }, 500);
-  });
-}
-
-  // Function to start the onboarding quiz with 3 questions
-function startOnboardingQuiz() {
-  // Start a 3-question quiz
-  loadQuestions({
-    type: 'random',
-    num: 3,
-    includeAnswered: false,
-    isOnboarding: true  // Flag to indicate this is the onboarding quiz
-  });
-}
+  if (startLearningBtn && welcomeScreen && specialtyPickScreen) { // Added specialtyPickScreen check
+    startLearningBtn.addEventListener("click", function() {
+      console.log("Start Learning button clicked, showing Specialty Pick screen.");
+      welcomeScreen.style.opacity = '0';
+      setTimeout(function() {
+        welcomeScreen.style.display = 'none';
+        specialtyPickScreen.style.display = 'flex'; // Show specialty screen
+        specialtyPickScreen.style.opacity = '1';
+      }, 500);
+    });
+  }
 
   if (existingAccountBtn) {
   existingAccountBtn.addEventListener('click', function() {
@@ -379,6 +365,65 @@ function startOnboardingQuiz() {
     }
   });
 }
+
+// --- NEW listeners for Specialty Screen ---
+if (specialtyOptionCards.length > 0 && specialtyContinueBtn) {
+  specialtyOptionCards.forEach(card => {
+    card.addEventListener('click', function() {
+      if (this.classList.contains('disabled-option')) return;
+      specialtyOptionCards.forEach(c => c.classList.remove('selected'));
+      this.classList.add('selected');
+      selectedSpecialty = this.dataset.specialty;
+      console.log("Selected specialty:", selectedSpecialty);
+      specialtyContinueBtn.disabled = false;
+    });
+  });
+}
+
+if (specialtyContinueBtn && specialtyPickScreen) {
+  specialtyContinueBtn.addEventListener('click', function() {
+    if (!selectedSpecialty) {
+      alert("Please select a specialty.");
+      return;
+    }
+    console.log("Continue from Specialty screen. Specialty:", selectedSpecialty);
+    specialtyPickScreen.style.opacity = '0';
+    setTimeout(function() {
+      specialtyPickScreen.style.display = 'none';
+      
+      // Logic to show ExperiencePickScreen will go here in Step 2
+      const experiencePickScreen = document.getElementById('experiencePickScreen'); 
+      if (experiencePickScreen) { 
+           experiencePickScreen.style.display = 'flex';
+           experiencePickScreen.style.opacity = '1';
+      } else {
+          console.log("Experience pick screen not yet implemented. Placeholder action.");
+          // Fallback for testing Step 1 (optional, can be removed)
+          // if (onboardingLoadingScreen) {
+          //   onboardingLoadingScreen.style.display = 'flex';
+          //   setTimeout(function() {
+          //     onboardingLoadingScreen.style.display = 'none';
+          //     startOnboardingQuiz(); 
+          //   }, 2000);
+          // }
+      }
+    }, 500);
+  });
+}
+// --- END NEW listeners for Specialty Screen ---
+
+  // Function to start the onboarding quiz with 3 questions
+  function startOnboardingQuiz() {
+    // Start a 3-question quiz
+    loadQuestions({
+      type: 'random',
+      num: 3,
+      includeAnswered: false,
+      isOnboarding: true  // Flag to indicate this is the onboarding quiz
+    });
+  }
+
+  window.startOnboardingQuiz = startOnboardingQuiz; // Make global if defined locally
 
 // --- Event Listener for New Paywall "Continue as Guest" Button ---
 const continueFreeAccessBtn = document.getElementById("continueFreeAccessBtn");
