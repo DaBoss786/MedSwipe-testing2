@@ -61,6 +61,32 @@ async function loadQuestions(options = {}) {
     const allQuestionsData = await fetchQuestionBank();
     console.log("Total questions fetched from bank:", allQuestionsData.length);
 
+    let filteredQuestions = allQuestionsData; // Start with all questions
+
+    // --- 0. Get User's Specialty (NEW) ---
+    let userSpecialty = null;
+    if (auth.currentUser) { // Check if a user (anonymous or registered) exists
+      try {
+        const userDocRef = doc(db, 'users', auth.currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists() && userDocSnap.data().specialty) {
+          userSpecialty = userDocSnap.data().specialty;
+          console.log(`User specialty found: '${userSpecialty}'`);
+        } else {
+          console.log(`User document for ${auth.currentUser.uid} exists but no specialty field, or doc doesn't exist yet. Will include all specialties or unassigned.`);
+          // If no specialty is set (e.g., very new anonymous user or old user not yet backfilled),
+          // we won't filter by specialty, effectively including all.
+          // Or, if backfill is complete, this case becomes rarer for registered users.
+        }
+      } catch (error) {
+        console.error("Error fetching user specialty:", error);
+        // Proceed without specialty filtering if there's an error
+      }
+    } else {
+      console.log("No current user for specialty fetching (likely very early app load).");
+    }
+    // --- END Get User's Specialty ---
+
     let relevantAnsweredIdsForCurrentYear = []; // Specifically for current year CME answers
 
     if (options.quizType === 'cme' && !options.includeAnswered) {
@@ -114,22 +140,56 @@ async function loadQuestions(options = {}) {
     }
     // If options.includeAnswered is true, relevantAnsweredIdsForCurrentYear remains empty, so no filtering happens.
 
-    let filteredQuestions = allQuestionsData;
     const accessTier = window.authState?.accessTier;
 
-    // --- Tier-based filtering (as before) ---
+    // --- 1. Tier-based filtering (Free users see only "Free: true" questions) ---
     if (accessTier === "free_guest") {
-        console.log("User is free_guest, filtering for 'Free: true' questions.");
-        filteredQuestions = filteredQuestions.filter(q => q.Free === true);
-    } else if (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only") {
-        if (options.boardReviewOnly === true) {
-            console.log("Board Review Only selected, filtering for 'Board Review: true' questions.");
-            filteredQuestions = filteredQuestions.filter(q => q["Board Review"] === true);
-        }
-    }
-    // --- End Tier-based filtering ---
+      console.log("User is free_guest, filtering for 'Free: true' questions.");
+      filteredQuestions = filteredQuestions.filter(q => q.Free === true);
+  }
+  // No "else if" here for other tiers regarding "Free" questions, as paying tiers see all.
+  console.log("Questions after Free tier filter (if applied):", filteredQuestions.length);
 
-    // 1. Filter for CME Eligible if it's a CME quiz
+
+  // --- 2. Specialty Filtering (NEW) ---
+  // Apply this filter if userSpecialty is determined and is not null/empty.
+  // This filter applies to ALL users (free, board_review, cme) if they have a specialty set.
+  // For the onboarding quiz, userSpecialty will be set from the selection just made.
+  // For existing users, it's read from Firestore.
+  // If userSpecialty is null (e.g., old user not yet backfilled, or error fetching), this filter is skipped.
+  const currentSpecialtyForFilter = options.isOnboarding ? selectedSpecialty : userSpecialty; // Use onboarding selection if it's an onboarding quiz
+
+  if (currentSpecialtyForFilter) {
+      console.log(`Applying specialty filter for: '${currentSpecialtyForFilter}'`);
+      filteredQuestions = filteredQuestions.filter(q => {
+          // A question matches if:
+          // 1. Its "Specialty" field matches the user's specialty (case-insensitive trim)
+          // 2. Or, the question has no "Specialty" field (or it's empty/null) - these are considered general/unassigned
+          const questionSpecialty = q.Specialty ? String(q.Specialty).trim() : null;
+          if (!questionSpecialty) { // If question has no specialty, include it (general)
+              return true;
+          }
+          return questionSpecialty.toLowerCase() === currentSpecialtyForFilter.toLowerCase();
+      });
+      console.log("Questions after Specialty filter:", filteredQuestions.length);
+  } else {
+      console.log("No user specialty defined or it's an onboarding quiz before specialty selection, skipping specialty filter. All specialties included.");
+      // If no specialty is set for the user, or it's an onboarding quiz before specialty is known,
+      // we don't filter by specialty, effectively including questions from all specialties (respecting tier filters).
+  }
+  // --- END Specialty Filtering ---
+
+
+  // --- 3. Board Review Only Filter (for paying tiers) ---
+  // This should only apply if the user has a paying tier that grants board review access
+  // AND they explicitly check the "Board Review Only" box.
+  if ((accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only") && options.boardReviewOnly === true) {
+      console.log("Board Review Only selected by eligible user, filtering for 'Board Review: true' questions.");
+      filteredQuestions = filteredQuestions.filter(q => q["Board Review"] === true);
+  }
+  console.log("Questions after Board Review Only filter (if applied):", filteredQuestions.length);
+
+    // 4. Filter for CME Eligible if it's a CME quiz
     if (options.quizType === 'cme') {
         filteredQuestions = filteredQuestions.filter(q => {
             const cmeEligibleValue = q["CME Eligible"];
@@ -139,7 +199,7 @@ async function loadQuestions(options = {}) {
         console.log("Questions after CME Eligible filter (for CME quiz type):", filteredQuestions.length);
     }
 
-    // 2. Filter by Bookmarks (takes precedence over includeAnswered for its own list)
+    // 5. Filter by Bookmarks (takes precedence over includeAnswered for its own list)
     if (options.bookmarksOnly) {
         const bookmarks = await getBookmarks();
         if (bookmarks.length === 0) {
@@ -150,7 +210,7 @@ async function loadQuestions(options = {}) {
         filteredQuestions = filteredQuestions.filter(q => bookmarks.includes(q["Question"].trim()));
         console.log("Questions after Bookmark filter:", filteredQuestions.length);
     }
-    // 3. Filter by Category (if not bookmarksOnly)
+    // 6. Filter by Category (if not bookmarksOnly)
     else if (options.category && options.category !== "") {
         filteredQuestions = filteredQuestions.filter(q =>
             q["Category"] && q["Category"].trim() === options.category
@@ -158,7 +218,7 @@ async function loadQuestions(options = {}) {
         console.log(`Questions after Category filter ('${options.category}'):`, filteredQuestions.length);
     }
 
-    // 4. Filter out answered questions (THIS IS THE KEY CHANGE AREA)
+    // 7. Filter out answered questions (THIS IS THE KEY CHANGE AREA)
     if (!options.bookmarksOnly && !options.includeAnswered) {
         // For CME quizzes, use relevantAnsweredIdsForCurrentYear (which contains year-specific IDs)
         // For regular quizzes, relevantAnsweredIdsForCurrentYear contains overall answered IDs (due to the else if above)
