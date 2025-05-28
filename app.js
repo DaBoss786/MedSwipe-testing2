@@ -976,149 +976,122 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
   </div>
 `;
 
-    document.body.appendChild(registerModal);
+document.body.appendChild(registerModal);
 
-    // Add event listeners
-    document.getElementById('registerForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
+// Re-attach event listeners for the form and buttons inside the new modal content
+attachRegisterFormListeners(registerModal, nextStep);
 
-      const username = document.getElementById('registerUsername').value;
-      const email = document.getElementById('registerEmail').value;
-      const password = document.getElementById('registerPassword').value;
-      const errorElement = document.getElementById('registerError');
+} else {
+const titleElement = document.getElementById('registerModalTitle');
+if (titleElement) {
+  titleElement.textContent = modalTitle;
+}
+// If modal exists, ensure its content is up-to-date (in case it was built with old HTML)
+// This is a bit more involved if you want to replace just a part.
+// A simpler way if the modal structure is complex is to remove and recreate,
+// or ensure the initial creation always uses the new HTML.
+// For now, we assume the initial creation will use the updated HTML.
+// If you find the old dropdown still appearing, you might need to force a rebuild of innerHTML here too.
 
-      try {
-        errorElement.textContent = '';
+// Store nextStep on the modal and re-attach listeners to capture it
+registerModal.dataset.nextStep = nextStep; 
+attachRegisterFormListeners(registerModal, nextStep); // Re-attach to ensure correct nextStep is used
+}
 
-        if (window.authState.user && window.authState.user.isAnonymous) {
-          await window.authFunctions.upgradeAnonymousUser(email, password, username, experience);
-        } else {
-          await window.authFunctions.registerUser(email, password, username, experience);
-        }
+registerModal.style.display = 'flex';
+}
+window.showRegisterForm = showRegisterForm; // Ensure it's globally available
 
-        // Success - close modal and redirect based on nextStep
-        registerModal.style.display = 'none';
+// Helper function to attach listeners to the registration form
+// This avoids duplicating listener code if the modal is recreated or its content updated.
+function attachRegisterFormListeners(modalElement, initialNextStep) {
+const form = modalElement.querySelector('#registerForm');
+const goToLoginBtn = modalElement.querySelector('#goToLoginBtn');
+const closeRegisterBtn = modalElement.querySelector('#closeRegisterBtn');
+const errorElement = modalElement.querySelector('#registerError');
 
-        if (nextStep === 'board_review_pricing') {
-          const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
-          if (boardReviewPricingScreen) {
-            boardReviewPricingScreen.style.display = 'flex';
-            if (typeof updateBoardReviewPricingView === 'function') {
-                updateBoardReviewPricingView('annual'); // Default to annual view
-            }
-          } else {
-            console.error("Board Review Pricing Screen not found after registration!");
-            document.getElementById('mainOptions').style.display = 'flex'; // Fallback
-          }
-        } else if (nextStep === 'cme_pricing') {
-          const cmePricingScreen = document.getElementById("cmePricingScreen"); 
-          if (cmePricingScreen) {
-              cmePricingScreen.style.display = 'flex';
-          } else {
-              console.error("CME Pricing Screen not found after registration!");
-              document.getElementById('mainOptions').style.display = 'flex'; // Fallback
-          }
-        } else if (nextStep === 'cme_info') { // <<< NEW CONDITION FOR REDIRECTION
-          const cmeInfoScreen = document.getElementById("cmeInfoScreen");
-          if (cmeInfoScreen) {
-            cmeInfoScreen.style.display = 'flex';
-          } else {
-            console.error("CME Info Screen not found after registration for CME explore!");
-            document.getElementById('mainOptions').style.display = 'flex'; // Fallback
-          }
-        } else { // Default to dashboard
-          document.getElementById('mainOptions').style.display = 'flex';
-        }
-        ensureEventListenersAttached();
-      } catch (error) {
-        errorElement.textContent = getAuthErrorMessage(error);
-      }
-    });
+if (form) {
+// Clone and replace form to remove old submit listeners
+const newForm = form.cloneNode(true);
+form.parentNode.replaceChild(newForm, form);
 
-    document.getElementById('goToLoginBtn').addEventListener('click', function() {
-      registerModal.style.display = 'none';
-      showLoginForm();
-    });
+newForm.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const currentNextStep = modalElement.dataset.nextStep || initialNextStep;
 
-    document.getElementById('closeRegisterBtn').addEventListener('click', function() {
-      registerModal.style.display = 'none';
-      const newPaywallScreen = document.getElementById("newPaywallScreen");
-      if (newPaywallScreen && newPaywallScreen.style.display === 'none') { 
-        document.getElementById('mainOptions').style.display = 'flex';
-      } else if (newPaywallScreen) {
-        newPaywallScreen.style.display = 'flex';
-      } else {
-        document.getElementById('mainOptions').style.display = 'flex';
-      }
-    });
-  } else {
-    // Modal already exists, just update its title
-    const titleElement = document.getElementById('registerModalTitle');
-    if (titleElement) {
-      titleElement.textContent = modalTitle;
+  const username = newForm.querySelector('#registerUsername').value;
+  const email = newForm.querySelector('#registerEmail').value;
+  const password = newForm.querySelector('#registerPassword').value;
+  // Experience is no longer read from here
+
+  if (errorElement) errorElement.textContent = '';
+
+  try {
+    if (window.authState.user && window.authState.user.isAnonymous) {
+      // Pass undefined or null for experience, as it's handled by onboarding
+      await window.authFunctions.upgradeAnonymousUser(email, password, username, null);
+    } else {
+      // Pass undefined or null for experience
+      await window.authFunctions.registerUser(email, password, username, null);
     }
-    registerModal.dataset.nextStep = nextStep; // Store nextStep on the modal
+    
+    modalElement.style.display = 'none';
 
-    // Re-get the form and re-attach the submit listener to capture the new nextStep
-    const form = document.getElementById('registerForm');
-    const newForm = form.cloneNode(true); 
-    form.parentNode.replaceChild(newForm, form);
-
-    newForm.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const currentNextStep = registerModal.dataset.nextStep || 'dashboard'; 
-
-      const username = document.getElementById('registerUsername').value;
-      const email = document.getElementById('registerEmail').value;
-      const password = document.getElementById('registerPassword').value;
-      const experience = document.getElementById('registerExperience').value;
-      const errorElement = document.getElementById('registerError');
-
-      try {
-        errorElement.textContent = '';
-        if (window.authState.user && window.authState.user.isAnonymous) {
-          await window.authFunctions.upgradeAnonymousUser(email, password, username, experience);
-        } else {
-          await window.authFunctions.registerUser(email, password, username, experience);
-        }
-        registerModal.style.display = 'none';
-
-        if (currentNextStep === 'board_review_pricing') {
-          const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
-          if (boardReviewPricingScreen) {
-            boardReviewPricingScreen.style.display = 'flex';
-            if (typeof updateBoardReviewPricingView === 'function') { updateBoardReviewPricingView('annual'); }
-          } else {
-            console.error("Board Review Pricing Screen not found after re-registration!");
-            document.getElementById('mainOptions').style.display = 'flex'; 
-          }
-        } else if (currentNextStep === 'cme_pricing') { 
-          const cmePricingScreen = document.getElementById("cmePricingScreen");
-          if (cmePricingScreen) { cmePricingScreen.style.display = 'flex'; }
-          else {
-            console.error("CME Pricing Screen not found after re-registration!");
-            document.getElementById('mainOptions').style.display = 'flex'; 
-          }
-        } else if (currentNextStep === 'cme_info') { // <<< CORRECTED REDIRECTION LOGIC
-          const cmeInfoScreen = document.getElementById("cmeInfoScreen");
-          if (cmeInfoScreen) {
-            cmeInfoScreen.style.display = 'flex';
-          } else {
-            console.error("CME Info Screen not found after re-registration for CME explore!");
-            document.getElementById('mainOptions').style.display = 'flex'; 
-          }
-        } else { 
-          document.getElementById('mainOptions').style.display = 'flex'; 
-        }
-        ensureEventListenersAttached();
-      } catch (error) {
-        errorElement.textContent = getAuthErrorMessage(error);
-      }
-    });
+    // Handle redirection based on currentNextStep
+    if (currentNextStep === 'board_review_pricing') {
+      sessionStorage.setItem('pendingRedirectAfterRegistration', 'board_review_pricing');
+      // The authStateChanged listener will handle the actual redirect
+    } else if (currentNextStep === 'cme_pricing') {
+      sessionStorage.setItem('pendingRedirectAfterRegistration', 'cme_pricing');
+    } else if (currentNextStep === 'cme_info') {
+      sessionStorage.setItem('pendingRedirectAfterRegistration', 'cme_info');
+    } else {
+      // Default to dashboard or main options if no specific redirect
+      const mainOptions = document.getElementById('mainOptions');
+      if (mainOptions) mainOptions.style.display = 'flex';
+    }
+    // The authStateChanged listener in app.js should now pick up the isRegistered=true
+    // and pendingRedirect to show the correct screen.
+    // ensureEventListenersAttached(); // May not be needed if authStateChanged handles UI fully
+  } catch (error) {
+    if (errorElement) errorElement.textContent = getAuthErrorMessage(error); // getAuthErrorMessage is in app.js
   }
+});
+}
 
-  // Show the modal
-  registerModal.style.display = 'flex';
+if (goToLoginBtn) {
+const newGoToLoginBtn = goToLoginBtn.cloneNode(true);
+goToLoginBtn.parentNode.replaceChild(newGoToLoginBtn, goToLoginBtn);
+newGoToLoginBtn.addEventListener('click', function() {
+  modalElement.style.display = 'none';
+  if (typeof showLoginForm === 'function') showLoginForm(); // showLoginForm is in app.js
+});
+}
+
+if (closeRegisterBtn) {
+const newCloseRegisterBtn = closeRegisterBtn.cloneNode(true);
+closeRegisterBtn.parentNode.replaceChild(newCloseRegisterBtn, closeRegisterBtn);
+newCloseRegisterBtn.addEventListener('click', function() {
+  modalElement.style.display = 'none';
+  // Determine what to show when registration is cancelled
+  // This logic might need to be smarter based on where the user came from.
+  // For now, a simple fallback:
+  const newPaywallScreen = document.getElementById("newPaywallScreen");
+  const mainOptions = document.getElementById("mainOptions");
+  if (newPaywallScreen && newPaywallScreen.style.display === 'none' && (!mainOptions || mainOptions.style.display === 'none')) {
+      newPaywallScreen.style.display = 'flex'; // Show paywall if nothing else is shown
+  } else if (mainOptions && mainOptions.style.display === 'none' && (!newPaywallScreen || newPaywallScreen.style.display === 'none')) {
+      mainOptions.style.display = 'flex'; // Or main options
+  } else if (newPaywallScreen && newPaywallScreen.style.display !== 'none') {
+      // Paywall is already visible, do nothing
+  } else if (mainOptions && mainOptions.style.display !== 'none') {
+      // Main options are already visible, do nothing
+  } else {
+      // Default fallback if unsure
+      if (mainOptions) mainOptions.style.display = 'flex';
+  }
+});
+}
 }
 
 window.showRegisterForm = showRegisterForm;
