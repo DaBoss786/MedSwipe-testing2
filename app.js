@@ -390,11 +390,11 @@ if (specialtyOptionCards.length > 0 && specialtyContinueBtn) {
 // --- MODIFIED specialtyContinueBtn listener ---
 if (specialtyContinueBtn && specialtyPickScreen && experiencePickScreen) { // Added experiencePickScreen check
   specialtyContinueBtn.addEventListener('click', function() {
-    if (!selectedSpecialty) {
+    if (!window.selectedSpecialty) {
       alert("Please select a specialty.");
       return;
     }
-    console.log("Continue from Specialty screen. Specialty:", selectedSpecialty);
+    console.log("Continue from Specialty screen. Specialty:", window.selectedSpecialty);
     specialtyPickScreen.style.opacity = '0';
     setTimeout(function() {
       specialtyPickScreen.style.display = 'none';
@@ -417,7 +417,7 @@ if (experienceOptionButtons.length > 0 && experienceContinueBtn) {
       // Add 'selected' to the clicked button
       this.classList.add('selected');
       
-      selectedExperienceLevel = this.dataset.experience;
+      window.selectedSpecialty = this.dataset.specialty;
       console.log("Selected experience level:", selectedExperienceLevel);
       experienceContinueBtn.disabled = false; // Enable continue button
     });
@@ -430,7 +430,7 @@ if (experienceContinueBtn && experiencePickScreen && onboardingLoadingScreen) {
       alert("Please select your experience level.");
       return;
     }
-    if (!selectedSpecialty) {
+    if (!window.selectedSpecialty) {
       // This should ideally not happen if the flow is correct, but good to check.
       alert("Specialty not selected. Please go back and select a specialty.");
       // You might want to add a "Back" button to the experience screen in a future step.
@@ -447,7 +447,7 @@ if (experienceContinueBtn && experiencePickScreen && onboardingLoadingScreen) {
       return;
     }
 
-    console.log("Continue from Experience screen. Specialty:", selectedSpecialty, "Experience:", selectedExperienceLevel);
+    console.log("Continue from Experience screen. Specialty:", window.selectedSpecialty, "Experience:", selectedExperienceLevel);
     
     // Disable button to prevent multiple clicks
     this.disabled = true;
@@ -455,7 +455,7 @@ if (experienceContinueBtn && experiencePickScreen && onboardingLoadingScreen) {
 
     try {
       // --- SAVE TO FIRESTORE ---
-      await saveOnboardingSelections(selectedSpecialty, selectedExperienceLevel); // <<<--- CALL SAVE FUNCTION
+      await saveOnboardingSelections(window.selectedSpecialty, selectedExperienceLevel); // <<<--- CALL SAVE FUNCTION
       console.log("Successfully saved onboarding selections to Firestore.");
 
       // Proceed to onboarding loading / quiz

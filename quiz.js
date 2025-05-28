@@ -157,7 +157,7 @@ async function loadQuestions(options = {}) {
   // For the onboarding quiz, userSpecialty will be set from the selection just made.
   // For existing users, it's read from Firestore.
   // If userSpecialty is null (e.g., old user not yet backfilled, or error fetching), this filter is skipped.
-  const currentSpecialtyForFilter = options.isOnboarding ? selectedSpecialty : userSpecialty; // Use onboarding selection if it's an onboarding quiz
+  const currentSpecialtyForFilter = options.isOnboarding ? window.selectedSpecialty : userSpecialty; // Use onboarding selection if it's an onboarding quiz
 
   if (currentSpecialtyForFilter) {
       console.log(`Applying specialty filter for: '${currentSpecialtyForFilter}'`);
