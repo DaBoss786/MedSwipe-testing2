@@ -1,5 +1,5 @@
 // user.js - TOP OF FILE
-import { auth, db, doc, getDoc, runTransaction, serverTimestamp, functions, httpsCallable } from './firebase-config.js'; // Adjust path if needed
+import { auth, db, doc, getDoc, runTransaction, serverTimestamp, functions, httpsCallable, setDoc } from './firebase-config.js'; // Adjust path if needed
 
 // user.js - After imports
 
