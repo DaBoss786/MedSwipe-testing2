@@ -40,7 +40,7 @@ try {
 // ---
 
 let currentFeedbackQuestionId = ""; // Declare with let
-let currentFeedbackQuestionText = ""; // Declare with let
+let currentFeedbackQuestionText = ""; // Declare with le
 
 window.getActiveCmeYearIdFromFirestore = async function() {
   if (!db) { // db should be imported from firebase-config.js and available here
