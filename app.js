@@ -22,6 +22,7 @@ try {
 // --- End Callable Function Reference ---
 
 let selectedSpecialty = null;
+let selectedExperienceLevel = null;
 
 // --- Get reference to Firebase Callable Function ---
 let createCheckoutSessionFunction;
@@ -120,6 +121,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const specialtyPickScreen = document.getElementById('specialtyPickScreen');
   const specialtyContinueBtn = document.getElementById('specialtyContinueBtn');
   const specialtyOptionCards = document.querySelectorAll('#specialtyPickScreen .onboarding-option-card');
+  // --- END NEW element references ---
+
+  // --- NEW element references for Experience Screen ---
+  const experiencePickScreen = document.getElementById('experiencePickScreen'); // <<<--- ADD
+  const experienceContinueBtn = document.getElementById('experienceContinueBtn'); // <<<--- ADD
+  const experienceOptionButtons = document.querySelectorAll('#experiencePickScreen .onboarding-option-button'); // <<<--- ADD
   // --- END NEW element references ---
   
   // Update the auth state change listener to properly handle welcome screen
@@ -380,7 +387,8 @@ if (specialtyOptionCards.length > 0 && specialtyContinueBtn) {
   });
 }
 
-if (specialtyContinueBtn && specialtyPickScreen) {
+// --- MODIFIED specialtyContinueBtn listener ---
+if (specialtyContinueBtn && specialtyPickScreen && experiencePickScreen) { // Added experiencePickScreen check
   specialtyContinueBtn.addEventListener('click', function() {
     if (!selectedSpecialty) {
       alert("Please select a specialty.");
@@ -391,26 +399,64 @@ if (specialtyContinueBtn && specialtyPickScreen) {
     setTimeout(function() {
       specialtyPickScreen.style.display = 'none';
       
-      // Logic to show ExperiencePickScreen will go here in Step 2
-      const experiencePickScreen = document.getElementById('experiencePickScreen'); 
-      if (experiencePickScreen) { 
-           experiencePickScreen.style.display = 'flex';
-           experiencePickScreen.style.opacity = '1';
-      } else {
-          console.log("Experience pick screen not yet implemented. Placeholder action.");
-          // Fallback for testing Step 1 (optional, can be removed)
-          // if (onboardingLoadingScreen) {
-          //   onboardingLoadingScreen.style.display = 'flex';
-          //   setTimeout(function() {
-          //     onboardingLoadingScreen.style.display = 'none';
-          //     startOnboardingQuiz(); 
-          //   }, 2000);
-          // }
-      }
+      // NOW, show Experience Pick Screen
+      experiencePickScreen.style.display = 'flex'; // <<<--- CHANGE HERE
+      experiencePickScreen.style.opacity = '1';   // <<<--- CHANGE HERE
+
     }, 500);
   });
 }
-// --- END NEW listeners for Specialty Screen ---
+// --- END MODIFIED specialtyContinueBtn listener ---
+
+// --- NEW listeners for Experience Screen ---
+if (experienceOptionButtons.length > 0 && experienceContinueBtn) {
+  experienceOptionButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      // Remove 'selected' from all buttons
+      experienceOptionButtons.forEach(b => b.classList.remove('selected'));
+      // Add 'selected' to the clicked button
+      this.classList.add('selected');
+      
+      selectedExperienceLevel = this.dataset.experience;
+      console.log("Selected experience level:", selectedExperienceLevel);
+      experienceContinueBtn.disabled = false; // Enable continue button
+    });
+  });
+}
+
+if (experienceContinueBtn && experiencePickScreen && onboardingLoadingScreen) {
+  experienceContinueBtn.addEventListener('click', function() {
+    if (!selectedExperienceLevel) {
+      alert("Please select your experience level.");
+      return;
+    }
+    console.log("Continue from Experience screen. Experience:", selectedExperienceLevel);
+    // In Step 3, we will save specialty and experience to Firestore here.
+    // For now, just proceed to the onboarding loading / quiz.
+    
+    experiencePickScreen.style.opacity = '0';
+    setTimeout(function() {
+      experiencePickScreen.style.display = 'none';
+      
+      // Show onboarding loading screen
+      onboardingLoadingScreen.style.display = 'flex';
+      
+      // After a brief delay, start the onboarding quiz
+      setTimeout(function() {
+        onboardingLoadingScreen.style.display = 'none';
+        // Ensure startOnboardingQuiz is defined and callable
+        if (typeof startOnboardingQuiz === 'function') {
+          startOnboardingQuiz();
+        } else if (typeof window.startOnboardingQuiz === 'function') {
+          window.startOnboardingQuiz();
+        } else {
+          console.error("startOnboardingQuiz function not found!");
+        }
+      }, 2000); // Show loading screen for 2 seconds
+    }, 500);
+  });
+}
+
 
   // Function to start the onboarding quiz with 3 questions
   function startOnboardingQuiz() {

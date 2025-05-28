@@ -3707,6 +3707,49 @@ html, body {
   }
 }
 
+.onboarding-options-list {
+  display: flex;
+  flex-direction: column; /* Stack buttons vertically */
+  gap: 10px; /* Space between buttons */
+  width: 100%;
+  max-width: 320px; /* Max width for the list of buttons */
+  margin-bottom: 30px;
+}
+
+.onboarding-option-button {
+  background-color: #f8f9fa;
+  border: 2px solid #e0e6ed;
+  border-radius: 8px; /* Slightly less rounded than cards */
+  padding: 12px 15px; /* Adjust padding as needed */
+  font-size: 1rem;   /* Adjust font size */
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  text-align: center;
+  width: 100%; /* Make buttons full width of their container */
+}
+
+.onboarding-option-button:hover:not(:disabled) {
+  border-color: #0C72D3;
+  background-color: #e9f2fa; /* Lighter hover than selected */
+}
+
+.onboarding-option-button.selected {
+  background-color: #e6f0fa; /* Light blue for selected */
+  border-color: #0C72D3;
+  color: #0056b3;
+  box-shadow: 0 0 0 2px rgba(12, 114, 211, 0.25); /* Softer outline for buttons */
+  font-weight: bold;
+}
+
+.onboarding-option-button:disabled { /* If you ever add disabled experience options */
+  background-color: #e9ecef;
+  color: #adb5bd;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 /* Registration Benefits Modal */
 .benefits-list {
   margin: 20px 0;

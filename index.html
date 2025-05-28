@@ -59,7 +59,6 @@
     
     <div class="onboarding-options-grid">
       <button class="onboarding-option-card" data-specialty="ENT">
-        <span class="onboarding-option-icon">🩺</span> <!-- Placeholder icon -->
         ENT (Otolaryngology)
       </button>
       <!-- Add more specialty cards here in the future -->
@@ -77,6 +76,31 @@
 <!-- ================================= -->
 <!-- == END Specialty Pick Screen   == -->
 <!-- ================================= -->
+
+<!-- ===================================== -->
+<!-- == NEW Experience Level Pick Screen == -->
+<!-- ===================================== -->
+<div id="experiencePickScreen" class="onboarding-screen" style="display: none;">
+  <div class="onboarding-content">
+    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="onboarding-logo">
+    <h1 class="onboarding-title">Select Your Experience Level</h1>
+    <p class="onboarding-subtitle">This helps us tailor content for you.</p>
+    
+    <div class="onboarding-options-list"> <!-- Using a list/column layout for experience -->
+      <button class="onboarding-option-button" data-experience="Medical Student">Medical Student</button>
+      <button class="onboarding-option-button" data-experience="PGY 1-2">PGY 1-2</button>
+      <button class="onboarding-option-button" data-experience="PGY 3-4">PGY 3-4</button>
+      <button class="onboarding-option-button" data-experience="PGY 5+">PGY 5+</button>
+      <button class="onboarding-option-button" data-experience="Attending">Attending</button>
+      <button class="onboarding-option-button" data-experience="Other">Other</button>
+    </div>
+    
+    <button id="experienceContinueBtn" class="onboarding-primary-btn" disabled>Continue</button>
+  </div>
+</div>
+<!-- ===================================== -->
+<!-- == END Experience Level Pick Screen == -->
+<!-- ===================================== -->
 
   <!-- Onboarding Loading Screen -->
 <div id="onboardingLoadingScreen" class="loading-screen">
