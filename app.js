@@ -1759,12 +1759,16 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
   // CONTACT modal buttons
   const submitContact = document.getElementById("submitContact");
   if (submitContact) {
-    submitContact.addEventListener("click", async function() {
-      const contactEmail = document.getElementById("contactEmail");
-      const contactMessage = document.getElementById("contactMessage");
+    // Clone and replace to ensure fresh listener
+    const newSubmitContact = submitContact.cloneNode(true);
+    submitContact.parentNode.replaceChild(newSubmitContact, submitContact);
+
+    newSubmitContact.addEventListener("click", async function() {
+      const contactEmailElement = document.getElementById("contactEmail"); // Renamed
+      const contactMessageElement = document.getElementById("contactMessage"); // Renamed
       
-      const email = contactEmail ? contactEmail.value.trim() : "";
-      const message = contactMessage ? contactMessage.value.trim() : "";
+      const email = contactEmailElement ? contactEmailElement.value.trim() : "";
+      const message = contactMessageElement ? contactMessageElement.value.trim() : "";
       
       if (!message) {
         alert("Please enter your message.");
@@ -1772,21 +1776,29 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
       }
       
       try {
-        if (!auth || !auth.currentUser) {
-          alert("User not authenticated. Please try again later.");
+        // This check was already good, but ensure auth is available
+        if (!auth || !auth.currentUser) { 
+          alert("User not authenticated. Please log in to send a message or try again later.");
+          // Optionally, you could allow anonymous contact submissions if desired,
+          // but then userId would be the anonymous ID or null.
           return;
         }
         
-        await Doc(collection(db, "contact"), {
-          email: email,
+        // --- CORRECTED Firestore call ---
+        const contactCollectionRef = collection(db, "contactSubmissions"); // Use a descriptive collection name, e.g., "contactSubmissions" or "userMessages"
+        await addDoc(contactCollectionRef, { // Use addDoc
+          email: email, // User-provided email (optional)
           message: message,
           timestamp: serverTimestamp(),
-          userId: auth.currentUser.uid
+          userId: auth.currentUser.uid, // Logged-in user's ID
+          userEmailAuth: auth.currentUser.email // Logged-in user's authenticated email
         });
+        // --- END CORRECTION ---
+
         alert("Thank you for contacting us!");
         
-        if (contactEmail) contactEmail.value = "";
-        if (contactMessage) contactMessage.value = "";
+        if (contactEmailElement) contactEmailElement.value = "";
+        if (contactMessageElement) contactMessageElement.value = "";
         
         const contactModal = document.getElementById("contactModal");
         if (contactModal) {
