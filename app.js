@@ -1483,16 +1483,63 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
     });
   }
   
-  // LEADERBOARD
+  // --- MODIFIED LEADERBOARD MENU ITEM LISTENER ---
   const leaderboardItem = document.getElementById("leaderboardItem");
   if (leaderboardItem) {
-    leaderboardItem.addEventListener("click", function() {
-      closeSideMenu();
-      const cmeDashboard = document.getElementById("cmeDashboardView");
-if (cmeDashboard) cmeDashboard.style.display = "none";
-      showLeaderboard();
+    // Clone and replace to ensure a fresh listener, removing any old ones
+    const newLeaderboardItem = leaderboardItem.cloneNode(true);
+    leaderboardItem.parentNode.replaceChild(newLeaderboardItem, leaderboardItem);
+
+    newLeaderboardItem.addEventListener("click", function() {
+      closeSideMenu(); // Close the menu first
+
+      // Ensure authState and user are available
+      if (!window.authState || !window.authState.user) {
+        console.error("AuthState or user not available. Cannot determine leaderboard access.");
+        // Fallback: Could show login or the paywall directly if unsure
+        const newPaywallScreen = document.getElementById("newPaywallScreen");
+        if (newPaywallScreen) {
+            ensureAllScreensHidden(); // Hide other main screens
+            newPaywallScreen.style.display = 'flex';
+        }
+        return;
+      }
+
+      const accessTier = window.authState.accessTier;
+      const isAnonymousUser = window.authState.user.isAnonymous; // Get from authState
+
+      console.log(`Leaderboard menu item clicked. User Access Tier: ${accessTier}, Is Anonymous: ${isAnonymousUser}`);
+
+      // Check if user is anonymous OR if they are registered but on the "free_guest" tier
+      if (isAnonymousUser || accessTier === "free_guest") {
+        console.log("User is anonymous or free_guest. Redirecting to paywall.");
+        ensureAllScreensHidden(); // Hide other main screens
+        
+        const newPaywallScreen = document.getElementById("newPaywallScreen");
+        if (newPaywallScreen) {
+          newPaywallScreen.style.display = 'flex';
+        } else {
+          console.error("New Paywall screen element not found!");
+          // Fallback: show main options if paywall is missing
+          const mainOptions = document.getElementById("mainOptions");
+          if (mainOptions) mainOptions.style.display = 'flex';
+        }
+      } else {
+        // User has a paying tier, show the leaderboard
+        console.log("User has a paying tier. Showing leaderboard.");
+        // Ensure other views are hidden before showing leaderboard
+        const cmeDashboard = document.getElementById("cmeDashboardView");
+        if (cmeDashboard) cmeDashboard.style.display = "none";
+        // showLeaderboard() should handle hiding mainOptions, etc.
+        if (typeof showLeaderboard === 'function') {
+          showLeaderboard();
+        } else {
+            console.error("showLeaderboard function not found!");
+        }
+      }
     });
   }
+  // --- END MODIFIED LEADERBOARD MENU ITEM LISTENER ---
   
   // FAQ
   const faqItem = document.getElementById("faqItem");
