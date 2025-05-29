@@ -1785,7 +1785,7 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
         }
         
         // --- CORRECTED Firestore call ---
-        const contactCollectionRef = collection(db, "contactSubmissions"); // Use a descriptive collection name, e.g., "contactSubmissions" or "userMessages"
+        const contactCollectionRef = collection(db, "contactMessages"); // Use a descriptive collection name, e.g., "contactSubmissions" or "userMessages"
         await addDoc(contactCollectionRef, { // Use addDoc
           email: email, // User-provided email (optional)
           message: message,
