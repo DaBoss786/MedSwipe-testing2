@@ -1,5 +1,5 @@
 // app.js - Top of file
-import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc } from './firebase-config.js'; // Adjust path if needed
+import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc, addDoc } from './firebase-config.js'; // Adjust path if needed
 // Import needed functions from user.js
 import { updateUserXP, updateUserMenu, calculateLevelProgress, getLevelInfo, toggleBookmark, saveOnboardingSelections } from './user.v2.js';
 import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
@@ -1691,38 +1691,40 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
     });
   }
   
-  // FEEDBACK modal close
-  const closeFeedbackModal = document.getElementById("closeFeedbackModal");
-  if (closeFeedbackModal) {
-    closeFeedbackModal.addEventListener("click", function() {
-      const feedbackModal = document.getElementById("feedbackModal");
-      if (feedbackModal) {
-        feedbackModal.style.display = "none";
-      }
-    });
-  }
-  
   // FEEDBACK submit
   const submitFeedback = document.getElementById("submitFeedback");
   if (submitFeedback) {
-    submitFeedback.addEventListener("click", async function() {
-      const feedbackText = document.getElementById("feedbackText");
-      if (!feedbackText || !feedbackText.value.trim()) {
+    // Clone and replace to ensure fresh listener
+    const newSubmitFeedback = submitFeedback.cloneNode(true);
+    submitFeedback.parentNode.replaceChild(newSubmitFeedback, submitFeedback);
+
+    newSubmitFeedback.addEventListener("click", async function() {
+      const feedbackTextElement = document.getElementById("feedbackText"); // Renamed for clarity
+      if (!feedbackTextElement || !feedbackTextElement.value.trim()) {
         alert("Please enter your feedback.");
         return;
       }
       
+      // currentFeedbackQuestionId and currentFeedbackQuestionText should be set 
+      // when the feedback modal is opened.
+
       try {
-        await Doc(collection(db, "feedback"), {
-          questionId: currentFeedbackQuestionId,
-          questionText: currentFeedbackQuestionText,
-          feedback: feedbackText.value.trim(),
-          timestamp: serverTimestamp()
+        // --- CORRECTED Firestore call ---
+        const feedbackCollectionRef = collection(db, "feedback"); // Get a reference to the 'feedback' collection
+        await addDoc(feedbackCollectionRef, { // Use addDoc with the collection reference
+          questionId: currentFeedbackQuestionId, // This should be correctly set when modal opens
+          questionText: currentFeedbackQuestionText, // This should be correctly set
+          feedback: feedbackTextElement.value.trim(),
+          timestamp: serverTimestamp(),
+          userId: auth.currentUser ? auth.currentUser.uid : 'anonymous_or_unknown', // Store user ID if available
+          userEmail: auth.currentUser ? auth.currentUser.email : null // Store user email if available
         });
+        // --- END CORRECTION ---
+
         alert("Thank you for your feedback!");
         
-        if (feedbackText) {
-          feedbackText.value = "";
+        if (feedbackTextElement) {
+          feedbackTextElement.value = "";
         }
         
         const feedbackModal = document.getElementById("feedbackModal");
