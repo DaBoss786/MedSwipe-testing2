@@ -112,6 +112,8 @@ function initAuth() {
           createdAt: serverTimestamp(),
           isRegistered: currentAuthIsRegistered,
           accessTier: "free_guest", // Default for new doc
+          specialty: "ENT", // <<< NEW: Default specialty for brand new users
+          experienceLevel: null, // Will be set by onboarding if they go through it
 
           // Default stats scaffold
           stats: {
@@ -184,6 +186,13 @@ function initAuth() {
         ) {
           userDataForWrite.username = generateGuestUsername();
         }
+
+         // --- BACK-FILL SPECIALTY (NEW) ---
+         if (typeof existingData.specialty === 'undefined' || existingData.specialty === null || existingData.specialty === "") {
+          console.log(`User ${user.uid} is missing specialty. Back-filling with 'ENT'.`);
+          userDataForWrite.specialty = "ENT";
+        }
+        // --- END BACK-FILL SPECIALTY ---
 
         // --- Read subscription details and determine effective access tier ---
         let brActive = existingData.boardReviewActive || false;
