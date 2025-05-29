@@ -9,13 +9,6 @@ import {
   ReCaptchaV3Provider
 } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app-check.js";
 
-// TEMPORARY: Enable debug token logging so you can see your site key
-self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-
-const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider('FAKE_SITE_KEY'), // You'll replace this shortly
-  isTokenAutoRefreshEnabled: true
-});
 // Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
@@ -30,6 +23,13 @@ const firebaseConfig = {
 // Initialize Firebase services
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
+// TEMPORARY: Enable debug token logging so you can see your site key
+self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+
+const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider('FAKE_SITE_KEY'), // You'll replace this shortly
+  isTokenAutoRefreshEnabled: true
+});
 const db = getFirestore(app);
 const auth = getAuth(app);
 const functionsInstance = getFunctions(app); // Renamed to avoid conflicts
