@@ -7,18 +7,15 @@ import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { closeSideMenu, closeUserMenu, shuffleArray, getCurrentQuestionId } from './utils.js';
 import { displayPerformance } from './stats.js';
 
-// --- Get a reference to the getLeaderboardData Callable Function ---
+// Initialize the cloud function handle
 let getLeaderboardDataFunctionApp;
 try {
-    if (functions && httpsCallable) {
-        getLeaderboardDataFunctionApp = httpsCallable(functions, 'getLeaderboardData');
-        console.log("Callable function reference 'getLeaderboardData' created in app.js.");
-    } else {
-        console.error("Firebase Functions or httpsCallable not imported correctly in app.js, getLeaderboardDataFunctionApp will be undefined.");
-    }
-} catch (error) {
-    console.error("Error getting 'getLeaderboardData' callable function reference in app.js:", error);
+  getLeaderboardDataFunctionApp = httpsCallable(functions, 'getLeaderboardData');
+  console.log("✅ getLeaderboardDataFunctionApp initialized");
+} catch (err) {
+  console.error("❌ Error initializing getLeaderboardDataFunctionApp:", err);
 }
+
 // --- End Callable Function Reference ---
 
 let selectedSpecialty = null;
