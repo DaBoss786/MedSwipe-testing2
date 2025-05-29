@@ -1,18 +1,21 @@
 // Firebase App, Analytics, Firestore & Auth (Modular)
-import { initializeApp, ReCaptchaV3Provider, intializeAppCheck } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
 import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs, setDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, signOut, updateProfile, sendPasswordResetEmail, getIdToken, EmailAuthProvider, linkWithCredential } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-functions.js"; // Added Functions import
+import {
+  initializeAppCheck,
+  ReCaptchaV3Provider
+} from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app-check.js";
 
-// TEMP: Enable debug logging so you can see the site key
+// TEMPORARY: Enable debug token logging so you can see your site key
 self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 
 const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider('FAKE_SITE_KEY_PLACEHOLDER'), // We’ll replace this soon
+  provider: new ReCaptchaV3Provider('FAKE_SITE_KEY'), // You'll replace this shortly
   isTokenAutoRefreshEnabled: true
 });
-
 // Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
