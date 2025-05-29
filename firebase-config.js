@@ -23,11 +23,8 @@ const firebaseConfig = {
 // Initialize Firebase services
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
-// TEMPORARY: Enable debug token logging so you can see your site key
-self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-
 const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider('FAKE_SITE_KEY'), // You'll replace this shortly
+  provider: new ReCaptchaV3Provider('09e3243e-e8dc-466b-9217-1f69b48240b8'), // You'll replace this shortly
   isTokenAutoRefreshEnabled: true
 });
 const db = getFirestore(app);
