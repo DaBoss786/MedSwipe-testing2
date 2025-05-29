@@ -128,6 +128,14 @@ document.addEventListener('DOMContentLoaded', function() {
   const experienceContinueBtn = document.getElementById('experienceContinueBtn'); // <<<--- ADD
   const experienceOptionButtons = document.querySelectorAll('#experiencePickScreen .onboarding-option-button'); // <<<--- ADD
   // --- END NEW element references ---
+
+  // Initialize window properties if they don't exist, to be safe
+  if (typeof window.selectedSpecialty === 'undefined') {
+    window.selectedSpecialty = null;
+  }
+  if (typeof window.selectedExperienceLevel === 'undefined') {
+    window.selectedExperienceLevel = null;
+  }
   
   // Update the auth state change listener to properly handle welcome screen
 window.addEventListener('authStateChanged', function(event) {
@@ -373,114 +381,111 @@ window.addEventListener('authStateChanged', function(event) {
   });
 }
 
-// --- NEW listeners for Specialty Screen ---
+// --- Specialty Screen Logic ---
 if (specialtyOptionCards.length > 0 && specialtyContinueBtn) {
   specialtyOptionCards.forEach(card => {
     card.addEventListener('click', function() {
       if (this.classList.contains('disabled-option')) return;
+
       specialtyOptionCards.forEach(c => c.classList.remove('selected'));
       this.classList.add('selected');
-      selectedSpecialty = this.dataset.specialty;
-      console.log("Selected specialty:", selectedSpecialty);
-      specialtyContinueBtn.disabled = false;
+      
+      window.selectedSpecialty = this.dataset.specialty; // Set on window
+      console.log("Specialty selected and set on window:", window.selectedSpecialty);
+      
+      // Directly enable/disable based on window.selectedSpecialty
+      specialtyContinueBtn.disabled = !window.selectedSpecialty; 
     });
   });
+
+  // Ensure continue button state is correct on load (it's disabled by default in HTML)
+  specialtyContinueBtn.disabled = !window.selectedSpecialty;
 }
 
-// --- MODIFIED specialtyContinueBtn listener ---
-if (specialtyContinueBtn && specialtyPickScreen && experiencePickScreen) { // Added experiencePickScreen check
+if (specialtyContinueBtn && specialtyPickScreen && experiencePickScreen) {
   specialtyContinueBtn.addEventListener('click', function() {
-    if (!window.selectedSpecialty) {
-      alert("Please select a specialty.");
+    console.log("Specialty Continue Btn Clicked. Current window.selectedSpecialty:", window.selectedSpecialty); // Debug log
+    
+    if (!window.selectedSpecialty) { // Check window.selectedSpecialty
+      alert("Please select a specialty."); // This is the alert you're seeing
       return;
     }
-    console.log("Continue from Specialty screen. Specialty:", window.selectedSpecialty);
+    
+    console.log("Proceeding from Specialty screen. Specialty:", window.selectedSpecialty);
     specialtyPickScreen.style.opacity = '0';
     setTimeout(function() {
       specialtyPickScreen.style.display = 'none';
-      
-      // NOW, show Experience Pick Screen
-      experiencePickScreen.style.display = 'flex'; // <<<--- CHANGE HERE
-      experiencePickScreen.style.opacity = '1';   // <<<--- CHANGE HERE
-
+      experiencePickScreen.style.display = 'flex';
+      experiencePickScreen.style.opacity = '1';
+      // Reset experience selection when showing this screen
+      window.selectedExperienceLevel = null;
+      experienceOptionButtons.forEach(b => b.classList.remove('selected'));
+      if(experienceContinueBtn) experienceContinueBtn.disabled = true;
     }, 500);
   });
 }
-// --- END MODIFIED specialtyContinueBtn listener ---
 
-// --- NEW listeners for Experience Screen ---
+// --- Experience Screen Logic ---
 if (experienceOptionButtons.length > 0 && experienceContinueBtn) {
   experienceOptionButtons.forEach(button => {
     button.addEventListener('click', function() {
-      // Remove 'selected' from all buttons
       experienceOptionButtons.forEach(b => b.classList.remove('selected'));
-      // Add 'selected' to the clicked button
       this.classList.add('selected');
       
-      window.selectedSpecialty = this.dataset.specialty;
-      console.log("Selected experience level:", selectedExperienceLevel);
-      experienceContinueBtn.disabled = false; // Enable continue button
+      window.selectedExperienceLevel = this.dataset.experience; // Set on window
+      console.log("Experience selected and set on window:", window.selectedExperienceLevel);
+      
+      experienceContinueBtn.disabled = !window.selectedExperienceLevel;
     });
   });
+  // Ensure continue button state is correct on load
+  experienceContinueBtn.disabled = !window.selectedExperienceLevel;
 }
 
 if (experienceContinueBtn && experiencePickScreen && onboardingLoadingScreen) {
-  experienceContinueBtn.addEventListener('click', async function() { // <<<--- Make this async
-    if (!selectedExperienceLevel) {
+  experienceContinueBtn.addEventListener('click', async function() {
+    console.log("Experience Continue Btn Clicked. Current window.selectedExperienceLevel:", window.selectedExperienceLevel, "Current window.selectedSpecialty:", window.selectedSpecialty);
+
+    if (!window.selectedExperienceLevel) {
       alert("Please select your experience level.");
       return;
     }
     if (!window.selectedSpecialty) {
-      // This should ideally not happen if the flow is correct, but good to check.
       alert("Specialty not selected. Please go back and select a specialty.");
-      // You might want to add a "Back" button to the experience screen in a future step.
-      // For now, we could try to send them back to the specialty screen.
+      // Code to go back to specialty screen
       experiencePickScreen.style.opacity = '0';
       setTimeout(() => {
           experiencePickScreen.style.display = 'none';
-          const specialtyScreen = document.getElementById('specialtyPickScreen');
-          if (specialtyScreen) {
-              specialtyScreen.style.display = 'flex';
-              specialtyScreen.style.opacity = '1';
+          if (specialtyPickScreen) {
+              specialtyPickScreen.style.display = 'flex';
+              specialtyPickScreen.style.opacity = '1';
           }
       }, 500);
       return;
     }
-
-    console.log("Continue from Experience screen. Specialty:", window.selectedSpecialty, "Experience:", selectedExperienceLevel);
     
-    // Disable button to prevent multiple clicks
     this.disabled = true;
     this.textContent = "Saving...";
 
     try {
-      // --- SAVE TO FIRESTORE ---
-      await saveOnboardingSelections(window.selectedSpecialty, selectedExperienceLevel); // <<<--- CALL SAVE FUNCTION
+      await saveOnboardingSelections(window.selectedSpecialty, window.selectedExperienceLevel);
       console.log("Successfully saved onboarding selections to Firestore.");
 
-      // Proceed to onboarding loading / quiz
       experiencePickScreen.style.opacity = '0';
       setTimeout(function() {
         experiencePickScreen.style.display = 'none';
-        
         onboardingLoadingScreen.style.display = 'flex';
-        
         setTimeout(function() {
           onboardingLoadingScreen.style.display = 'none';
-          if (typeof startOnboardingQuiz === 'function') {
-            startOnboardingQuiz();
-          } else if (typeof window.startOnboardingQuiz === 'function') {
-            window.startOnboardingQuiz();
-          } else {
-            console.error("startOnboardingQuiz function not found!");
-          }
+          if (typeof startOnboardingQuiz === 'function') startOnboardingQuiz();
+          else if (typeof window.startOnboardingQuiz === 'function') window.startOnboardingQuiz();
+          else console.error("startOnboardingQuiz function not found!");
         }, 2000);
       }, 500);
 
     } catch (error) {
       console.error("Failed to save onboarding selections:", error);
       alert("There was an error saving your selections. Please try again.");
-      // Re-enable button on error
       this.disabled = false;
       this.textContent = "Continue";
     }
