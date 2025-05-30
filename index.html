@@ -1015,7 +1015,7 @@
             <ul>
                 <li>Answer CME-eligible questions within the CME Module.</li>
                 <li>Score at least 70% overall on questions attempted for CME credit.</li>
-                <li>Credits accrue in 0.25-credit blocks (~3 questions / 15 min each) up to a maximum of 24 credits.</li>
+                <li>Every 12 questions answered (with >=70% accuracy) earns approximately 1 CME credit. (1 question = 4.8 min).</li>
                 <li>You can claim credits in increments of 0.25 (i.e., after every ~3 questions meeting the criteria).</li>
                 <li>Claim available credits anytime using the "Claim CME Credits" button.</li>
                 <li>A short evaluation is required before generating your certificate.</li>
@@ -1090,138 +1090,111 @@
   <div id="claimModalError" class="auth-error" style="text-align: center; margin-bottom: 15px;"></div>
 
   <form id="cmeClaimForm">
-      <!-- Full Name -->
-      <div class="formGroup">
-          <label for="certificateFullName">Full Name (for Certificate):</label>
-          <input type="text" id="certificateFullName" name="certificateFullName" required placeholder="Enter your full name as you want it on the certificate">
-          <small class="formHelper" style="display: block; margin-top: 5px;">This name will appear on your CME certificate.</small>
-      </div>
-      <!-- Credits to Claim -->
-      <div class="formGroup">
-          <label for="creditsToClaimInput">Credits to Claim:</label>
-          <input type="number" id="creditsToClaimInput" value="0.25" min="0.25" step="0.25" required style="max-width: 100px; display: inline-block; margin-left: 10px;">
-          <small class="formHelper" style="display: block; margin-top: 5px;">Enter amount in increments of 0.25.</small>
-      </div>
+    <!-- Full Name -->
+    <div class="formGroup">
+        <label for="certificateFullName">Full Name:</label>
+        <input type="text" id="certificateFullName" name="certificateFullName" required placeholder="Enter your full name as you want it on the certificate">
+        <small class="formHelper" style="display: block; margin-top: 5px;">This name will appear on your CME certificate.</small>
+    </div>
 
-      <hr style="margin: 25px 0;">
+    <!-- Degree -->
+    <div class="formGroup">
+        <label for="certificateDegree">Degree:</label>
+        <select id="certificateDegree" name="certificateDegree" required>
+            <option value="" disabled selected>Select your degree</option>
+            <option value="MD">MD</option>
+            <option value="DO">DO</option>
+            <option value="PA-C">PA-C</option>
+            <option value="NP">NP</option>
+            <option value="RN">RN</option>
+            <option value="Other">Other</option>
+        </select>
+        <small class="formHelper" style="display: block; margin-top: 5px;">Select your professional degree.</small>
+    </div>
 
-      <h3 style="text-align: center; color: #0056b3; margin-bottom: 20px;">Activity Evaluation</h3>
+    <!-- Credits to Claim -->
+    <div class="formGroup">
+        <label for="creditsToClaimInput">Credits to Claim:</label>
+        <input type="number" id="creditsToClaimInput" name="creditsToClaimInput" value="0.25" min="0.25" step="0.25" required style="max-width: 100px; display: inline-block; margin-left: 10px;">
+        <small class="formHelper" style="display: block; margin-top: 5px;">Available: <span id="claimModalAvailableCredits">0.00</span>. Enter amount in increments of 0.25.</small>
+    </div>
 
-      <!-- Question 1: Objectives Met -->
-      <div class="formGroup">
-          <label>1. The course objectives were met.</label>
-          <div class="radio-group" style="margin-top: 5px; display: flex; flex-wrap: wrap; gap: 15px;">
-              <label style="font-weight: normal;"><input type="radio" name="evalObjectivesMet" value="Strongly Agree" required> Strongly Agree</label>
-              <label style="font-weight: normal;"><input type="radio" name="evalObjectivesMet" value="Agree"> Agree</label>
-              <label style="font-weight: normal;"><input type="radio" name="evalObjectivesMet" value="Disagree"> Disagree</label>
-              <label style="font-weight: normal;"><input type="radio" name="evalObjectivesMet" value="Strongly Disagree"> Strongly Disagree</label>
-              <label style="font-weight: normal;"><input type="radio" name="evalObjectivesMet" value="N/A"> N/A</label>
-          </div>
-      </div>
+    <hr style="margin: 25px 0;">
 
-      <!-- Question 2: Confidence Improvement -->
-      <div class="formGroup">
-          <label>2. As a result of participating in this activity, I am confident I will improve my knowledge, competence, performance and/or patient outcomes.</label>
-           <div class="radio-group" style="margin-top: 5px; display: flex; flex-wrap: wrap; gap: 15px;">
-               <label style="font-weight: normal;"><input type="radio" name="evalConfidence" value="Strongly Agree" required> Strongly Agree</label>
-               <label style="font-weight: normal;"><input type="radio" name="evalConfidence" value="Agree"> Agree</label>
-               <label style="font-weight: normal;"><input type="radio" name="evalConfidence" value="Disagree"> Disagree</label>
-               <label style="font-weight: normal;"><input type="radio" name="evalConfidence" value="Strongly Disagree"> Strongly Disagree</label>
-               <label style="font-weight: normal;"><input type="radio" name="evalConfidence" value="N/A"> N/A</label>
-          </div>
-      </div>
+    <h3 style="text-align: center; color: #0056b3; margin-bottom: 10px;">Evaluation Questions:</h3>
 
-      <!-- Question 3: Usefulness -->
-       <div class="formGroup">
-          <label>3. Please answer only if the course content relates directly to your current area of practice: "The content will be useful in my practice."</label>
-           <div class="radio-group" style="margin-top: 5px; display: flex; flex-wrap: wrap; gap: 15px;">
-               <label style="font-weight: normal;"><input type="radio" name="evalUsefulness" value="Strongly Agree"> Strongly Agree</label>
-               <label style="font-weight: normal;"><input type="radio" name="evalUsefulness" value="Agree"> Agree</label>
-               <label style="font-weight: normal;"><input type="radio" name="evalUsefulness" value="Disagree"> Disagree</label>
-               <label style="font-weight: normal;"><input type="radio" name="evalUsefulness" value="Strongly Disagree"> Strongly Disagree</label>
-               <label style="font-weight: normal;"><input type="radio" name="evalUsefulness" value="N/A" checked> N/A</label> <!-- Default to N/A -->
-           </div>
-           <small class="formHelper" style="display: block; margin-top: 5px;">Optional if content is not directly related to your practice.</small>
-      </div>
+    <!-- DESIRED OUTCOMES Table -->
+    <div class="formGroup">
+        <h4 style="text-align: left; margin-bottom: 10px; color: #333; font-size: 1.1em; font-weight: 500;">DESIRED OUTCOMES – As a result of this activity, are you now better able to:</h4>
+        <table class="evaluation-table">
+            <thead>
+                <tr>
+                    <th style="width: 30px;">#</th>
+                    <th style="text-align: left;">Outcome</th>
+                    <th style="width: 60px;">YES</th>
+                    <th style="width: 60px;">NO</th>
+                    <th style="width: 60px;">N/A</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1.</td>
+                    <td>Evaluate knowledge and competence in screening, diagnosing, and treating patients with ear, nose, and throat (ENT) conditions</td>
+                    <td><input type="radio" name="desiredOutcome1" value="Yes" required></td>
+                    <td><input type="radio" name="desiredOutcome1" value="No"></td>
+                    <td><input type="radio" name="desiredOutcome1" value="N/A"></td>
+                </tr>
+                <tr>
+                    <td>2.</td>
+                    <td>Adhere to clinical guidelines and protocols within ENT medicine</td>
+                    <td><input type="radio" name="desiredOutcome2" value="Yes" required></td>
+                    <td><input type="radio" name="desiredOutcome2" value="No"></td>
+                    <td><input type="radio" name="desiredOutcome2" value="N/A"></td>
+                </tr>
+                <tr>
+                    <td>3.</td>
+                    <td>Recognize knowledge gaps in ENT disease states and identify resources to assist in closing those gaps</td>
+                    <td><input type="radio" name="desiredOutcome3" value="Yes" required></td>
+                    <td><input type="radio" name="desiredOutcome3" value="No"></td>
+                    <td><input type="radio" name="desiredOutcome3" value="N/A"></td>
+                </tr>
+                <tr>
+                    <td>4.</td>
+                    <td>Apply evidence-based strategies in ENT diagnosis and management</td>
+                    <td><input type="radio" name="desiredOutcome4" value="Yes" required></td>
+                    <td><input type="radio" name="desiredOutcome4" value="No"></td>
+                    <td><input type="radio" name="desiredOutcome4" value="N/A"></td>
+                </tr>
+                <tr>
+                    <td>5.</td>
+                    <td>Recognize vulnerable patient populations and consider how cultural disparities and implicit bias may impact the appropriate care of these patients</td>
+                    <td><input type="radio" name="desiredOutcome5" value="Yes" required></td>
+                    <td><input type="radio" name="desiredOutcome5" value="No"></td>
+                    <td><input type="radio" name="desiredOutcome5" value="N/A"></td>
+                </tr>
+            </tbody>
+        </table>
+        <small class="formHelper" style="display: block; margin-top: 5px;">All "Desired Outcomes" questions (1-5) are required.</small>
+    </div>
 
+    <!-- Open-ended Question 1 -->
+    <div class="formGroup" style="margin-top: 25px;">
+        <label for="evalPracticeChangesText" style="font-weight: 500; font-size: 1.1em;">1. WHAT CHANGES WILL YOU MAKE TO YOUR PRACTICE AS A RESULT OF THIS ACTIVITY?</label>
+        <textarea id="evalPracticeChangesText" name="evalPracticeChangesText" rows="4" placeholder="Describe any changes... (Optional)"></textarea>
+    </div>
 
-      <!-- Question 4: Practice Change Areas -->
-      <div class="formGroup">
-          <label>4. What areas of practice will you change as a result of attending this course? (Select all that apply)</label>
-          <div class="checkbox-group" style="margin-top: 5px;"> <!-- Use simpler layout -->
-              <label><input type="checkbox" name="evalPracticeChange" value="Patient assessment"> Patient assessment</label>
-              <label><input type="checkbox" name="evalPracticeChange" value="Patient treatment planning or care delivery"> Patient treatment planning or care delivery</label>
-              <label><input type="checkbox" name="evalPracticeChange" value="Patient education"> Patient education</label>
-              <label><input type="checkbox" name="evalPracticeChange" value="Protocols, policies and/or procedures"> Protocols, policies and/or procedures</label>
-              <label><input type="checkbox" name="evalPracticeChange" value="Team-based care and/or team science"> Team-based care and/or team science</label>
-              <label><input type="checkbox" name="evalPracticeChange" value="Team communication"> Team communication</label>
-              <label><input type="checkbox" name="evalPracticeChange" value="Communication skills"> Communication skills</label>
-              <label><input type="checkbox" name="evalPracticeChange" value="Research and/or scholarly work"> Research and/or scholarly work</label>
-              <label><input type="checkbox" name="evalPracticeChange" value="Quality Improvement"> Quality Improvement</label>
-              <label><input type="checkbox" name="evalPracticeChange" value="No change — validates current practice"> No change — validates current practice</label>
-              <div style="display: flex; align-items: center; gap: 5px; margin-top: 5px;">
-                   <label style="white-space: nowrap;"><input type="checkbox" name="evalPracticeChange" value="Other"> Other:</label>
-                   <input type="text" id="evalPracticeChangeOtherText" name="evalPracticeChangeOtherText" style="flex-grow: 1; padding: 4px;">
-              </div>
-          </div>
-           <small class="formHelper" style="display: block; margin-top: 5px;">Required: Select at least one option.</small>
-      </div>
+    <!-- Open-ended Question 2 -->
+    <div class="formGroup">
+        <label for="evalCommercialBiasExplainText" style="font-weight: 500; font-size: 1.1em;">2. IF YOU PERCEIVED ANY COMMERCIAL BIAS IN THIS ACTIVITY, PLEASE EXPLAIN:</label>
+        <textarea id="evalCommercialBiasExplainText" name="evalCommercialBiasExplainText" rows="3" placeholder="Explain any perceived commercial bias... (Optional)"></textarea>
+    </div>
 
-       <!-- Question 5: Implicit Bias Change Areas -->
-      <div class="formGroup">
-          <label>5. With respect to Implicit Bias and Cultural and Linguistic Competency what areas of practice will you change as a result of this course? (Select all that apply)</label>
-          <div class="checkbox-group" style="margin-top: 5px;"> <!-- Use simpler layout -->
-              <label><input type="checkbox" name="evalBiasChange" value="Patient assessment"> Patient assessment</label>
-              <label><input type="checkbox" name="evalBiasChange" value="Patient treatment planning or care delivery"> Patient treatment planning or care delivery</label>
-              <label><input type="checkbox" name="evalBiasChange" value="Patient education"> Patient education</label>
-              <label><input type="checkbox" name="evalBiasChange" value="Protocols, policies and/or procedures"> Protocols, policies and/or procedures</label>
-              <label><input type="checkbox" name="evalBiasChange" value="Team-based care and/or team science"> Team-based care and/or team science</label>
-              <label><input type="checkbox" name="evalBiasChange" value="Communication skills"> Communication skills</label>
-              <label><input type="checkbox" name="evalBiasChange" value="Research and/or scholarly work"> Research and/or scholarly work</label>
-              <label><input type="checkbox" name="evalBiasChange" value="Quality Improvement"> Quality Improvement</label>
-               <div style="display: flex; align-items: center; gap: 5px; margin-top: 5px;">
-                   <label style="white-space: nowrap;"><input type="checkbox" name="evalBiasChange" value="Other"> Other:</label>
-                   <input type="text" id="evalBiasChangeOtherText" name="evalBiasChangeOtherText" style="flex-grow: 1; padding: 4px;">
-              </div>
-               <label><input type="checkbox" name="evalBiasChange" value="No change"> No change</label> <!-- Added No change option -->
-          </div>
-           <small class="formHelper" style="display: block; margin-top: 5px;">Required: Select at least one option.</small>
-      </div>
-
-      <!-- Question 6: Delivery Method -->
-      <div class="formGroup">
-          <label>6. The educational delivery method selected was effective.</label>
-           <div class="radio-group" style="margin-top: 5px;">
-              <label><input type="radio" name="evalDelivery" value="Yes" required> Yes</label>
-              <label><input type="radio" name="evalDelivery" value="No"> No</label>
-          </div>
-      </div>
-
-      <!-- Question 7: Commercial Bias -->
-      <div class="formGroup">
-          <label>7. This activity was free of commercial bias.</label>
-           <div class="radio-group" style="margin-top: 5px;">
-              <label><input type="radio" name="evalCommercialBias" value="Yes" required> Yes</label>
-              <label><input type="radio" name="evalCommercialBias" value="No"> No</label>
-           </div>
-           <div id="commercialBiasCommentDiv" style="margin-top: 8px; display: none;">
-               <label for="evalCommercialBiasComment" style="font-weight: normal; font-size: 0.9em;">If no, please comment:</label>
-               <textarea id="evalCommercialBiasComment" name="evalCommercialBiasComment" rows="2" style="width: 100%; margin-top: 3px;"></textarea>
-           </div>
-      </div>
-
-      <!-- Additional Comments -->
-       <div class="formGroup">
-          <label for="evalAdditionalComments">Additional Comments (Optional):</label>
-          <textarea id="evalAdditionalComments" name="evalAdditionalComments" rows="3" placeholder="Any other feedback about the activity?"></textarea>
-      </div>
-
-      <!-- Buttons -->
-      <div class="btnRow" style="margin-top: 25px;">
-          <button type="button" id="cancelCmeClaimBtn" class="cancel">Cancel</button>
-          <button type="submit" id="submitCmeClaimBtn">Submit Claim & Get Certificate</button>
-      </div>
-  </form>
+    <!-- Buttons -->
+    <div class="btnRow" style="margin-top: 25px;">
+        <button type="button" id="cancelCmeClaimBtn" class="cancel">Cancel</button>
+        <button type="submit" id="submitCmeClaimBtn">Submit Claim & Get Certificate</button>
+    </div>
+</form>
 
   <!-- Download Link Area -->
   <div id="claimModalLink" style="text-align: center; margin: 15px 0; display: none;"> <!-- Start hidden, shown via JS -->

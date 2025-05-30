@@ -3723,63 +3723,64 @@ function showCmeDashboard() {
 
 window.showCmeDashboard = showCmeDashboard; // Make the function globally accessible
 
+
 // --- Step 12b: Helper Function to Prepare Claim Modal ---
 
 async function prepareClaimModal() {
-    console.log("Preparing claim modal...");
-    const availableCreditsSpan = document.getElementById("claimModalAvailableCredits");
-    const creditsInput = document.getElementById("creditsToClaimInput");
-    const errorDiv = document.getElementById("claimModalError");
-    const form = document.getElementById("cmeClaimForm");
-    const biasCommentDiv = document.getElementById("commercialBiasCommentDiv");
-    const biasCommentTextarea = document.getElementById("evalCommercialBiasComment");
-    const loadingIndicator = document.getElementById('claimLoadingIndicator');
-    const submitButton = document.getElementById('submitCmeClaimBtn');
+  console.log("Preparing claim modal...");
+  const availableCreditsSpan = document.getElementById("claimModalAvailableCredits");
+  const creditsInput = document.getElementById("creditsToClaimInput");
+  const errorDiv = document.getElementById("claimModalError");
+  const form = document.getElementById("cmeClaimForm");
+  // const biasCommentDiv = document.getElementById("commercialBiasCommentDiv"); // No longer used with new form
+  // const biasCommentTextarea = document.getElementById("evalCommercialBiasComment"); // No longer used with new form
+  const loadingIndicator = document.getElementById('claimLoadingIndicator');
+  const submitButton = document.getElementById('submitCmeClaimBtn');
 
-    // Reset form elements and messages
-    if (form) form.reset(); // Clear previous entries
-    if (errorDiv) errorDiv.textContent = ''; // Clear errors
-    if (biasCommentDiv) biasCommentDiv.style.display = 'none'; // Hide bias comment initially
-    if (biasCommentTextarea) biasCommentTextarea.value = ''; // Clear bias comment
-    if (loadingIndicator) loadingIndicator.style.display = 'none'; // Hide loader
-    if (submitButton) submitButton.disabled = false; // Ensure submit button is enabled
+  // Reset form elements and messages
+  if (form) form.reset(); // Clear previous entries, including the new degree select
+  if (errorDiv) errorDiv.textContent = ''; // Clear errors
+  // if (biasCommentDiv) biasCommentDiv.style.display = 'none'; // No longer used
+  // if (biasCommentTextarea) biasCommentTextarea.value = ''; // No longer used
+  if (loadingIndicator) loadingIndicator.style.display = 'none'; // Hide loader
+  if (submitButton) submitButton.disabled = false; // Ensure submit button is enabled
 
-    // Fetch latest available credits
-    let availableCredits = 0.00;
-    if (window.authState && window.authState.user && !window.authState.user.isAnonymous) {
-        try {
-            const uid = window.authState.user.uid;
-            const userDocRef = doc(db, 'users', uid);
-            const userDocSnap = await getDoc(userDocRef);
-            if (userDocSnap.exists()) {
-                const cmeStats = userDocSnap.data().cmeStats || {};
-                const earned = parseFloat(cmeStats.creditsEarned || 0);
-                const claimed = parseFloat(cmeStats.creditsClaimed || 0);
-                availableCredits = Math.max(0, earned - claimed);
-            }
-        } catch (error) {
-            console.error("Error fetching available credits for modal:", error);
-            if (errorDiv) errorDiv.textContent = "Error loading available credits.";
-        }
-    }
+  // Fetch latest available credits
+  let availableCredits = 0.00;
+  if (window.authState && window.authState.user && !window.authState.user.isAnonymous) {
+      try {
+          const uid = window.authState.user.uid;
+          const userDocRef = doc(db, 'users', uid);
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+              const cmeStats = userDocSnap.data().cmeStats || {};
+              const earned = parseFloat(cmeStats.creditsEarned || 0);
+              const claimed = parseFloat(cmeStats.creditsClaimed || 0);
+              availableCredits = Math.max(0, earned - claimed);
+          }
+      } catch (error) {
+          console.error("Error fetching available credits for modal:", error);
+          if (errorDiv) errorDiv.textContent = "Error loading available credits.";
+      }
+  }
 
-    // Update display and input attributes
-    const formattedAvailable = availableCredits.toFixed(2);
-    if (availableCreditsSpan) {
-        availableCreditsSpan.textContent = formattedAvailable;
-    }
-    if (creditsInput) {
-        creditsInput.value = formattedAvailable; // Default input to max available
-        creditsInput.max = formattedAvailable; // Set max attribute dynamically
-        creditsInput.min = "0.25"; // Ensure min is set
-        creditsInput.step = "0.25"; // Ensure step is set
-    }
+  // Update display and input attributes
+  const formattedAvailable = availableCredits.toFixed(2);
+  if (availableCreditsSpan) {
+      availableCreditsSpan.textContent = formattedAvailable;
+  }
+  if (creditsInput) {
+      creditsInput.value = formattedAvailable; // Default input to max available
+      creditsInput.max = formattedAvailable; // Set max attribute dynamically
+      creditsInput.min = "0.25"; // Ensure min is set
+      creditsInput.step = "0.25"; // Ensure step is set
+  }
 
-    console.log(`Claim modal prepared. Available credits: ${formattedAvailable}`);
+  console.log(`Claim modal prepared. Available credits: ${formattedAvailable}`);
 }
 
 // --- End of Step 12b ---
-// In app.js
+
 
 async function handleCmeClaimSubmission(event) {
   event.preventDefault(); // Prevent default form submission
@@ -3797,17 +3798,16 @@ async function handleCmeClaimSubmission(event) {
   // --- Helper function for cleanup ---
   const cleanup = (enableButtons = true, showLoader = false) => {
       if (loadingIndicator) loadingIndicator.style.display = showLoader ? 'block' : 'none';
-      if (submitButton) submitButton.disabled = !enableButtons || showLoader; // Disable if loading or explicitly told
-      if (cancelButton) cancelButton.disabled = !enableButtons || showLoader; // Disable if loading or explicitly told
-      // Keep buttons visible unless explicitly hiding on final success/error
-      if (submitButton) submitButton.style.display = 'inline-block';
-      if (cancelButton) cancelButton.style.display = 'inline-block';
+      if (submitButton) submitButton.disabled = !enableButtons || showLoader;
+      if (cancelButton) cancelButton.disabled = !enableButtons || showLoader;
+      if (submitButton) submitButton.style.display = 'inline-block'; // Or 'block' if they are full width
+      if (cancelButton) cancelButton.style.display = 'inline-block'; // Or 'block'
   };
 
   // --- Clear previous errors & Show Loader ---
   if (errorDiv) {
       errorDiv.textContent = '';
-      errorDiv.style.color = ''; // Reset styles
+      errorDiv.style.color = '';
       errorDiv.style.border = '';
       errorDiv.style.backgroundColor = '';
       errorDiv.style.padding = '';
@@ -3820,53 +3820,54 @@ async function handleCmeClaimSubmission(event) {
   // --- Ensure user is still valid ---
   if (!auth || !auth.currentUser || auth.currentUser.isAnonymous) {
       if (errorDiv) errorDiv.textContent = "Authentication error. Please log in again.";
-      cleanup(true, false); // Re-enable buttons, hide loader
+      cleanup(true, false);
       return;
   }
   const uid = auth.currentUser.uid;
   const userDocRef = doc(db, 'users', uid);
-  const claimTimestamp = new Date(); // Capture timestamp for potential history update
-  const claimTimestampISO = claimTimestamp.toISOString(); // Use ISO string for reliable history matching
+  const claimTimestamp = new Date();
+  const claimTimestampISO = claimTimestamp.toISOString();
 
   try {
       // --- 1. Get Form Data & Validate ---
       const formData = new FormData(form);
       const creditsToClaim = parseFloat(creditsInput.value);
       const certificateFullName = formData.get('certificateFullName')?.trim() || '';
-      // --- Extract Evaluation Data ---
+      const certificateDegree = formData.get('certificateDegree'); // New degree field
+
+      // --- Extract NEW Evaluation Data ---
       const evaluationData = {
-          certificateFullName: certificateFullName, // Include name here
-          objectivesMet: formData.get('evalObjectivesMet'),
-          confidence: formData.get('evalConfidence'),
-          usefulness: formData.get('evalUsefulness') || 'N/A', // Default if not applicable
-          practiceChange: formData.getAll('evalPracticeChange'), // Gets all checked values
-          practiceChangeOtherText: formData.get('evalPracticeChangeOtherText')?.trim() || '',
-          biasChange: formData.getAll('evalBiasChange'), // Gets all checked values
-          biasChangeOtherText: formData.get('evalBiasChangeOtherText')?.trim() || '',
-          delivery: formData.get('evalDelivery'),
-          commercialBias: formData.get('evalCommercialBias'),
-          commercialBiasComment: formData.get('evalCommercialBiasComment')?.trim() || '',
-          additionalComments: formData.get('evalAdditionalComments')?.trim() || ''
+          certificateFullName: certificateFullName,
+          certificateDegree: certificateDegree,
+
+          desiredOutcome1: formData.get('desiredOutcome1'),
+          desiredOutcome2: formData.get('desiredOutcome2'),
+          desiredOutcome3: formData.get('desiredOutcome3'),
+          desiredOutcome4: formData.get('desiredOutcome4'),
+          desiredOutcome5: formData.get('desiredOutcome5'),
+
+          practiceChangesText: formData.get('evalPracticeChangesText')?.trim() || '',
+          commercialBiasExplainText: formData.get('evalCommercialBiasExplainText')?.trim() || '',
       };
       // --- End Evaluation Data Extraction ---
 
       // --- Form Validation ---
       if (!certificateFullName) throw new Error("Please enter your full name.");
+      if (!certificateDegree) throw new Error("Please select your degree."); // Validation for degree
+
       if (isNaN(creditsToClaim) || creditsToClaim <= 0 || creditsToClaim % 0.25 !== 0) {
            throw new Error("Invalid credits amount. Must be positive and in increments of 0.25.");
       }
-      if (!evaluationData.objectivesMet || !evaluationData.confidence || !evaluationData.delivery || !evaluationData.commercialBias) {
-           throw new Error("Please complete required evaluation questions (1, 2, 6, 7).");
+
+      // Validation for Desired Outcomes (1-5)
+      if (!evaluationData.desiredOutcome1 ||
+          !evaluationData.desiredOutcome2 ||
+          !evaluationData.desiredOutcome3 ||
+          !evaluationData.desiredOutcome4 ||
+          !evaluationData.desiredOutcome5) {
+           throw new Error("Please answer all 'Desired Outcomes' questions (1-5).");
       }
-      if (evaluationData.practiceChange.length === 0) {
-           throw new Error("Please select at least one Practice Change Area (Question 4).");
-      }
-      if (evaluationData.biasChange.length === 0) {
-           throw new Error("Please select at least one Implicit Bias Change Area (Question 5).");
-      }
-      if (evaluationData.commercialBias === 'No' && !evaluationData.commercialBiasComment) {
-           throw new Error("Please comment if you indicated commercial bias was present (Question 7).");
-      }
+      // The two textareas are optional, so no specific validation for them being empty.
       // --- End Validation ---
 
 
@@ -3879,64 +3880,48 @@ async function handleCmeClaimSubmission(event) {
           }
 
           const data = userDoc.data();
-          // Read values needed INSIDE the transaction for consistency
           const hasActiveAnnualSub = data.cmeSubscriptionActive === true;
           const cmeStats = data.cmeStats || { creditsEarned: 0, creditsClaimed: 0 };
-          const availableOneTimeCredits = data.cmeCreditsAvailable || 0; // Read one-time credits balance
+          const availableOneTimeCredits = data.cmeCreditsAvailable || 0;
 
           console.log(`Transaction Check: hasActiveAnnualSub=${hasActiveAnnualSub}, availableOneTimeCredits=${availableOneTimeCredits}`);
 
-          // Re-validate available credits INSIDE the transaction
-          // This check is only relevant if the user DOES NOT have an active subscription
           if (!hasActiveAnnualSub && availableOneTimeCredits < creditsToClaim) {
               throw new Error(`Insufficient credits within transaction. Available: ${availableOneTimeCredits.toFixed(2)}, Trying to claim: ${creditsToClaim}`);
           }
 
-          // Prepare updates object
           const currentClaimedInStats = parseFloat(cmeStats.creditsClaimed || 0);
           const newCreditsClaimedInStats = currentClaimedInStats + creditsToClaim;
-          // Update the cmeStats object
           const updatedCmeStats = {
-              ...cmeStats, // Keep existing stats like totalAnswered, totalCorrect, creditsEarned
-              creditsClaimed: parseFloat(newCreditsClaimedInStats.toFixed(2)) // Update only claimed credits
+              ...cmeStats,
+              creditsClaimed: parseFloat(newCreditsClaimedInStats.toFixed(2))
           };
 
-          // Create the new history entry
           const newHistoryEntry = {
-              timestamp: claimTimestamp, // Use the Date object captured earlier
+              timestamp: claimTimestamp,
               creditsClaimed: creditsToClaim,
-              evaluationData: evaluationData, // Store the collected evaluation data
-              // downloadUrl and pdfFileName will be added later if needed after function call
+              evaluationData: evaluationData, // Store the NEWLY structured evaluation data
           };
-          // Add the new entry to the existing history array (or create one)
           const updatedHistory = [...(data.cmeClaimHistory || []), newHistoryEntry];
 
-          // Initialize the object containing all updates for the transaction.set call
           let updates = {
-              cmeStats: updatedCmeStats, // Include the updated stats
-              cmeClaimHistory: updatedHistory // Include the updated history
+              cmeStats: updatedCmeStats,
+              cmeClaimHistory: updatedHistory
           };
 
-          // --- *** CREDIT DEDUCTION LOGIC *** ---
           if (!hasActiveAnnualSub) {
-              // Only deduct if NO active annual sub (meaning they are using one-time credits)
               const newAvailableCredits = availableOneTimeCredits - creditsToClaim;
-              // Safety check (though validation above should prevent this)
               if (newAvailableCredits < 0) {
                   throw new Error("Credit balance calculation resulted in negative value. Transaction aborted.");
               }
-              // Add the deduction of one-time credits to the 'updates' object
               updates.cmeCreditsAvailable = newAvailableCredits;
               console.log(`DEDUCTING ${creditsToClaim} credits from cmeCreditsAvailable for user ${uid}. New balance will be: ${newAvailableCredits}`);
           } else {
-              // Log if deduction is skipped due to active subscription
               console.log(`User ${uid} has active annual sub. Skipping deduction from cmeCreditsAvailable.`);
           }
-          // --- *** END CREDIT DEDUCTION LOGIC *** ---
 
-          // Apply all updates gathered in the 'updates' object atomically
           console.log("Applying Firestore updates within transaction:", updates);
-          transaction.set(userDocRef, updates, { merge: true }); // Use merge: true to avoid overwriting other user fields
+          transaction.set(userDocRef, updates, { merge: true });
           console.log("Firestore Transaction successful.");
       });
       // --- End of Firestore Transaction ---
@@ -3946,7 +3931,6 @@ async function handleCmeClaimSubmission(event) {
       if(loadingIndicator) loadingIndicator.querySelector('p').textContent = 'Generating certificate...';
       console.log("Calling Firebase Function 'generateCmeCertificate'...");
 
-      // --- Keep the User Check / Token Refresh Block ---
       if (!auth.currentUser) {
         console.error("CRITICAL: auth.currentUser is NULL immediately before function call!");
         if (errorDiv) { errorDiv.textContent = "Authentication error. Please reload and try again."; }
@@ -3955,51 +3939,43 @@ async function handleCmeClaimSubmission(event) {
       } else {
         console.log(`DEBUG: User confirmed before call. UID: ${auth.currentUser.uid}, Email: ${auth.currentUser.email}, Anonymous: ${auth.currentUser.isAnonymous}`);
         try {
-            const idTokenResult = await auth.currentUser.getIdTokenResult(true);
+            await auth.currentUser.getIdTokenResult(true); // Force token refresh
             console.log("DEBUG: Forced token refresh successful.");
         } catch (tokenError) {
             console.error("DEBUG: Error forcing token refresh:", tokenError);
         }
       }
-      // --- End User Check / Token Refresh Block ---
 
       const result = await generateCmeCertificateFunction({
           certificateFullName: certificateFullName,
           creditsToClaim: creditsToClaim
+          // Note: certificateDegree is NOT sent to this function currently
       });
       console.log("Cloud Function result received:", result);
       // --- End Cloud Function Call ---
 
 
       // --- 4. Handle Cloud Function Response (Update History with Link) ---
-      cleanup(false, false); // Hide loader, keep buttons disabled until modal is closed
-
-      console.log("Detailed Check - Success value:", result.data.success, "(Type:", typeof result.data.success + ")");
-      console.log("Detailed Check - Public URL value:", result.data.publicUrl, "(Type:", typeof result.data.publicUrl + ")");
+      cleanup(false, false);
 
       if (result.data.success === true && typeof result.data.publicUrl === 'string' && result.data.publicUrl.length > 0) {
-          // ✅ Success!
           const publicUrl = result.data.publicUrl;
           const pdfFileName = result.data.fileName || `CME_Certificate_${certificateFullName.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
           console.log("Certificate generated successfully. Public URL:", publicUrl);
 
-          // --- Update History Entry with URL ---
           try {
               console.log("Attempting to update Firestore history with certificate URL...");
-              const userDoc = await getDoc(userDocRef); // Get the latest user doc data again
+              const userDoc = await getDoc(userDocRef);
               if (userDoc.exists()) {
                   let history = userDoc.data().cmeClaimHistory || [];
-                  // Find the specific history entry using the ISO timestamp string for matching
                   const historyIndex = history.findIndex(entry =>
                       entry.timestamp && typeof entry.timestamp.toDate === 'function' &&
                       entry.timestamp.toDate().toISOString() === claimTimestampISO
                   );
 
                   if (historyIndex > -1) {
-                      // Update the found entry
                       history[historyIndex].downloadUrl = publicUrl;
                       history[historyIndex].pdfFileName = pdfFileName;
-                      // Update the document with the modified history array
                       await updateDoc(userDocRef, { cmeClaimHistory: history });
                       console.log(`Successfully updated history entry at index ${historyIndex} with URL.`);
                   } else {
@@ -4010,14 +3986,10 @@ async function handleCmeClaimSubmission(event) {
               }
           } catch (updateError) {
               console.error("Error updating Firestore history with certificate URL:", updateError);
-              // Log error, but don't block user from seeing the link below
           }
-          // --- End Update History Entry ---
 
-          // --- Display Download Link ---
           const linkContainer = document.getElementById("claimModalLink");
           if (linkContainer) {
-              console.log("Found link container (claimModalLink). Injecting link.");
               linkContainer.innerHTML = `
                   <p style="color: #28a745; font-weight: bold; margin-bottom: 10px;">
                     🎉 Your CME certificate is ready!
@@ -4031,42 +4003,35 @@ async function handleCmeClaimSubmission(event) {
                   </a>
                   <p style="font-size: 0.8em; color: #666; margin-top: 10px;">(Link opens in a new tab. You might need to allow pop-ups.)</p>
               `;
-              linkContainer.style.display = 'block'; // Make the link section visible
+              linkContainer.style.display = 'block';
 
-              // Hide the submit/cancel buttons, show only close button
               if (submitButton) submitButton.style.display = 'none';
               if (cancelButton) cancelButton.style.display = 'none';
               const closeButton = document.getElementById('closeCmeClaimModal');
               if(closeButton) {
-                   closeButton.style.display = 'block'; // Ensure close button is visible
-                   // Re-attach listener just in case (though it should persist)
-                   closeButton.onclick = function() { // Use simple assignment
+                   closeButton.style.display = 'block';
+                   closeButton.onclick = function() {
                        document.getElementById('cmeModalOverlay').style.display = 'none';
                        cmeClaimModal.style.display = 'none';
                    };
               }
-
           } else {
               console.error("CRITICAL: Could not find #claimModalLink element to display download link!");
               if (errorDiv) errorDiv.textContent = "Internal error: Cannot display download link.";
-              if (errorDiv && publicUrl) { // Show URL as fallback
+              if (errorDiv && publicUrl) {
                    errorDiv.innerHTML += `<br>URL (Copy): <input type='text' value='${publicUrl}' readonly style='width: 80%;'>`;
               }
-              cleanup(true, false); // Re-enable buttons if link injection failed
+              cleanup(true, false);
           }
-          // --- End Display Download Link ---
-
       } else {
-          // --- Handle Cloud Function Failure ---
           console.error("Cloud function failed to return success or valid URL. Result data:", result.data);
           let failureReason = "Certificate generation failed in the cloud function.";
-          if (!result.data.success) {
+          if (result.data && !result.data.success) { // Check if result.data exists
               failureReason += ` Error: ${result.data.error || 'Unknown cloud error'}`;
           } else {
               failureReason += " Missing public URL in response.";
           }
           throw new Error(failureReason);
-          // --- End Handle Cloud Function Failure ---
       }
       // --- End Handle Cloud Function Response ---
 
@@ -4074,34 +4039,35 @@ async function handleCmeClaimSubmission(event) {
       // --- 5. Refresh Dashboard Data ---
       if (typeof loadCmeDashboardData === 'function') {
           console.log("Scheduling dashboard data refresh...");
-          setTimeout(loadCmeDashboardData, 500); // Refresh dashboard after a short delay
+          setTimeout(loadCmeDashboardData, 500);
       }
 
-  } catch (error) { // Catch errors from Validation, Transaction, or Cloud Function Call
+  } catch (error) {
       console.error("Error during claim processing:", error);
-      cleanup(true, false); // Re-enable buttons, hide loader on error
+      cleanup(true, false);
 
       if (errorDiv) {
           let displayMessage = `Claim failed: ${error.message}`;
-          // Add more specific error checks if needed
-          if (error.message.includes("Insufficient credits")) {
+          // More specific messages based on new validation
+          if (error.message.includes("select your degree")) {
                displayMessage = error.message;
-          } else if (error.message.includes("required evaluation questions")) {
+          } else if (error.message.includes("Desired Outcomes")) {
                displayMessage = error.message;
-          } else if (error.code && error.details) { // Firebase HttpsError
+          } else if (error.message.includes("Insufficient credits")) {
+               displayMessage = error.message;
+          } else if (error.code && error.details) {
                displayMessage = `Claim failed: ${error.message} (Details: ${error.details})`;
           }
 
           errorDiv.textContent = displayMessage;
-          // Apply error styling
           errorDiv.style.color = '#dc3545';
           errorDiv.style.border = '1px solid #f5c6cb';
           errorDiv.style.backgroundColor = '#f8d7da';
           errorDiv.style.padding = '10px';
           errorDiv.style.borderRadius = '5px';
-          errorDiv.style.textAlign = 'left'; // Keep error text aligned left
+          errorDiv.style.textAlign = 'left';
       } else {
-          alert(`Claim failed: ${error.message}`); // Fallback alert
+          alert(`Claim failed: ${error.message}`);
       }
   } finally {
        console.log("--- CME Claim Form Submission Handler END ---");

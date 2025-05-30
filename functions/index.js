@@ -92,175 +92,185 @@ async function getActiveYearId() {
 }
 // --- End Helper Function ---
 
-
-// --- generateCmeCertificate Function (Keep As Is - No Changes) ---
-exports.generateCmeCertificate = onCall({
-    secrets: [], // Add secrets if this function needs any in the future
+// --------------------------------------------------------------------------
+//  generateCmeCertificate  – landscape PDF with centred accreditation + border
+// ---------------------------------------------------------------------------
+exports.generateCmeCertificate = onCall(
+  {
+    secrets: [],
     timeoutSeconds: 120,
-    memory: "512MiB"
-    }, async (request) => {
-  // 1. Auth check
-  if (!request.auth) {
-    logger.error("Authentication failed: No auth context.");
-    throw new HttpsError("unauthenticated", "Please log in.");
-  }
-  const uid = request.auth.uid;
-  logger.log(`Function called by authenticated user: ${uid}`);
+    memory: "512MiB",
+  },
+  async (request) => {
+    /* ───────── 1. Auth check ───────── */
+    if (!request.auth) throw new HttpsError("unauthenticated", "Please log in.");
+    const uid = request.auth.uid;
 
-  // 2. Input validation
-  const { certificateFullName, creditsToClaim } = request.data;
-  if (
-    !certificateFullName ||
-    typeof certificateFullName !== "string" ||
-    certificateFullName.trim() === ""
-  ) {
-    logger.error("Validation failed: Invalid certificateFullName.", { data: request.data });
-    throw new HttpsError("invalid-argument", "Please provide a valid full name.");
-  }
-  if (
-    typeof creditsToClaim !== "number" ||
-    creditsToClaim <= 0 ||
-    isNaN(creditsToClaim)
-  ) {
-    logger.error("Validation failed: Invalid creditsToClaim.", { data: request.data });
-    throw new HttpsError("invalid-argument", "Please provide a valid credits amount.");
-  }
-  const formattedCredits = creditsToClaim.toFixed(2); // Format credits to 2 decimal places
-  const claimDate = new Date().toLocaleDateString(); // Generate date string
+    /* ───────── 2. Input validation ───────── */
+    const { certificateFullName, creditsToClaim } = request.data;
+    if (!certificateFullName?.trim())
+      throw new HttpsError("invalid-argument", "Please provide a valid full name.");
+    if (typeof creditsToClaim !== "number" || creditsToClaim <= 0 || isNaN(creditsToClaim))
+      throw new HttpsError("invalid-argument", "Please provide a valid credits amount.");
 
-  logger.log(`Generating certificate for: ${certificateFullName}, Credits: ${formattedCredits}, Date: ${claimDate}`);
+    /* Round credits to nearest 0.25 */
+    const rounded = Math.round(creditsToClaim * 4) / 4;
+    let formattedCredits = rounded.toFixed(2);
+    if (formattedCredits.endsWith("00") || formattedCredits.endsWith("50"))
+      formattedCredits = rounded.toFixed(1);
 
-  try {
-    // 3. Create a new PDF document
+    const claimDate = new Date().toLocaleDateString("en-US", {
+      month: "long",
+      day:   "numeric",
+      year:  "numeric",
+    });
+
+    /* ───────── 3. Create PDF (landscape) & fonts ───────── */
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([612, 792]); // US Letter size (width, height)
+    const page   = pdfDoc.addPage([792, 612]);               // 11×8.5 in landscape
     const { width, height } = page.getSize();
 
-    // 4. Embed fonts
-    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const fontBold    = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const fontItalic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+    const fontItalic  = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
 
-    // 5. Load and embed Logos from Cloud Storage
-    let logo1Image, logo2Image;
-    let logo1Dims = { width: 0, height: 0 };
-    let logo2Dims = { width: 0, height: 0 };
-    const desiredLogoHeight = 50;
-
+    /* ───────── 4. MedSwipe logo (smaller) ───────── */
+    const CENTER_LOGO_FILENAME = "MedSwipe Logo gradient.png";             // adjust if different
+    let centerLogoImg  = null;
+    let centerLogoDims = { width: 0, height: 0 };
     try {
-      logger.log(`Attempting to download logo 1: ${LOGO1_FILENAME_IN_BUCKET}`);
-      const logo1File = bucket.file(LOGO1_FILENAME_IN_BUCKET);
-      const [logo1Data] = await logo1File.download();
-      if (LOGO1_FILENAME_IN_BUCKET.toLowerCase().endsWith(".png")) {
-         logo1Image = await pdfDoc.embedPng(logo1Data);
-      } else if (LOGO1_FILENAME_IN_BUCKET.toLowerCase().endsWith(".jpg") || LOGO1_FILENAME_IN_BUCKET.toLowerCase().endsWith(".jpeg")) {
-         logo1Image = await pdfDoc.embedJpg(logo1Data);
-      } else {
-         throw new Error(`Unsupported file type for logo 1: ${LOGO1_FILENAME_IN_BUCKET}`);
-      }
-      logo1Dims = logo1Image.scale(desiredLogoHeight / logo1Image.height);
-      logger.log(`Logo 1 (${LOGO1_FILENAME_IN_BUCKET}) embedded successfully.`);
-    } catch (error) {
-      logger.error(`Failed to load or embed logo 1 (${LOGO1_FILENAME_IN_BUCKET}):`, error);
+      const [bytes] = await bucket.file(CENTER_LOGO_FILENAME).download();
+      centerLogoImg = CENTER_LOGO_FILENAME.toLowerCase().endsWith(".png")
+        ? await pdfDoc.embedPng(bytes)
+        : await pdfDoc.embedJpg(bytes);
+      centerLogoDims = centerLogoImg.scale(45 / centerLogoImg.height); // ≈45 px tall
+    } catch {
+      logger.warn(`Logo ${CENTER_LOGO_FILENAME} not found – falling back to text.`);
     }
 
-    if (LOGO2_FILENAME_IN_BUCKET) {
-        try {
-            logger.log(`Attempting to download logo 2: ${LOGO2_FILENAME_IN_BUCKET}`);
-            const logo2File = bucket.file(LOGO2_FILENAME_IN_BUCKET);
-            const [logo2Data] = await logo2File.download();
-            if (LOGO2_FILENAME_IN_BUCKET.toLowerCase().endsWith(".png")) {
-                logo2Image = await pdfDoc.embedPng(logo2Data);
-            } else if (LOGO2_FILENAME_IN_BUCKET.toLowerCase().endsWith(".jpg") || LOGO2_FILENAME_IN_BUCKET.toLowerCase().endsWith(".jpeg")) {
-                logo2Image = await pdfDoc.embedJpg(logo2Data);
-            } else {
-                throw new Error(`Unsupported file type for logo 2: ${LOGO2_FILENAME_IN_BUCKET}`);
-            }
-            logo2Dims = logo2Image.scale(desiredLogoHeight / logo2Image.height);
-            logger.log(`Logo 2 (${LOGO2_FILENAME_IN_BUCKET}) embedded successfully.`);
-        } catch (error) {
-            logger.error(`Failed to load or embed logo 2 (${LOGO2_FILENAME_IN_BUCKET}):`, error);
-        }
-    }
+    /* ───────── 5. Helper drawing functions ───────── */
+    const gray = rgb(0.15, 0.15, 0.15);
 
-    // 6. Draw content
-    const logoMargin = 50;
-    if (logo1Image) {
-      page.drawImage(logo1Image, { x: logoMargin, y: height - logoMargin - logo1Dims.height, width: logo1Dims.width, height: logo1Dims.height });
-    }
-    if (logo2Image) {
-      page.drawImage(logo2Image, { x: width - logoMargin - logo2Dims.width, y: height - logoMargin - logo2Dims.height, width: logo2Dims.width, height: logo2Dims.height });
-    }
-
-    let currentY = height - 150;
-    const drawCenteredText = (text, font, size, y, color = rgb(0.1, 0.1, 0.1)) => {
-        const textWidth = font.widthOfTextAtSize(text, size);
-        page.drawText(text, { x: (width - textWidth) / 2, y: y, size: size, font: font, color: color });
-        return y - size - 10; // Adjust spacing based on font size
+    const center = (txt, font, size, y, col = gray) => {
+      const w = font.widthOfTextAtSize(txt, size);
+      page.drawText(txt, { x: (width - w) / 2, y, size, font, color: col });
+      return y - size - 6;
     };
 
-    currentY = drawCenteredText("Certificate of Participation", fontBold, 24, currentY);
-    currentY -= 30;
-    currentY = drawCenteredText("This certifies that", fontRegular, 14, currentY, rgb(0.2, 0.2, 0.2));
-    currentY -= 15;
-    currentY = drawCenteredText(certificateFullName, fontBold, 22, currentY, rgb(0, 0.3, 0.6));
-    currentY -= 10;
-    currentY = drawCenteredText("has successfully completed the educational activity entitled:", fontRegular, 12, currentY, rgb(0.2, 0.2, 0.2));
-    currentY -= 10;
-    currentY = drawCenteredText("MedSwipe Otolaryngology CME Module", fontBold, 16, currentY);
-    currentY -= 10;
-    currentY = drawCenteredText("and is awarded", fontRegular, 12, currentY, rgb(0.2, 0.2, 0.2));
-    currentY -= 10;
-    currentY = drawCenteredText(`${formattedCredits} AMA PRA Category 1 Credits™`, fontBold, 14, currentY);
-    currentY -= 10;
-    currentY = drawCenteredText("on", fontRegular, 12, currentY, rgb(0.2, 0.2, 0.2));
-    currentY -= 10;
-    currentY = drawCenteredText(claimDate, fontRegular, 14, currentY);
-    currentY -= 40;
+    const centerMixed = (leftTxt, leftFont, rightTxt, rightFont, size, y) => {
+      const leftW  = leftFont .widthOfTextAtSize(leftTxt , size);
+      const rightW = rightFont.widthOfTextAtSize(rightTxt, size);
+      const xStart = (width - (leftW + rightW)) / 2;
+      page.drawText(leftTxt , { x: xStart       , y, size, font: leftFont , color: gray });
+      page.drawText(rightTxt, { x: xStart+leftW , y, size, font: rightFont, color: gray });
+      return y - size - 6;
+    };
 
-    const accreditationText = [
-        "Accreditation Statement:",
-        "This activity has been planned and implemented in accordance with the accreditation",
-        "requirements and policies of the Accreditation Council for Continuing Medical Education",
-        "(ACCME) through the joint providership of CME Consultants and MedSwipe."
-    ];
-    const accreditationTextSize = 9;
-    const accreditationLineHeight = 12;
-    const accreditationStartX = 72;
+    /* ───────── 6. Draw decorative border ───────── */
+    const borderM   = 24;                                   // margin
+    page.drawRectangle({
+      x: borderM,
+      y: borderM,
+      width:  width  - 2 * borderM,
+      height: height - 2 * borderM,
+      borderWidth: 2,
+      borderColor: rgb(0.45, 0.45, 0.45),
+    });
 
-    page.drawText(accreditationText[0], { x: accreditationStartX, y: currentY, size: accreditationTextSize, font: fontBold, color: rgb(0.3, 0.3, 0.3) });
-    currentY -= accreditationLineHeight;
-    for (let i = 1; i < accreditationText.length; i++) {
-        page.drawText(accreditationText[i], { x: accreditationStartX, y: currentY, size: accreditationTextSize, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
-        currentY -= accreditationLineHeight;
+    /* ───────── 7. Draw certificate content ───────── */
+    let y = height - 90;                                    // start near top
+
+    y = center("CME Consultants", fontBold, 24, y);         // bigger
+    y = center("in association with", fontRegular, 12, y);
+
+    if (centerLogoImg) {
+      page.drawImage(centerLogoImg, {
+        x: (width - centerLogoDims.width) / 2,
+        y: y - centerLogoDims.height,
+        width:  centerLogoDims.width,
+        height: centerLogoDims.height,
+      });
+      y -= centerLogoDims.height + 20;
+    } else {
+      y = center("MedSwipe", fontBold, 20, y);
+      y -= 20;
     }
 
-    // 7. Serialize PDF
+    y = center("Certifies that:", fontRegular, 14, y);
+    y = center(certificateFullName, fontBold, 22, y, rgb(0, 0.3, 0.6));
+    y = center("has participated in the enduring material titled", fontRegular, 12, y);
+    y = center("“MedSwipe ENT CME Module”", fontBold, 14, y);
+    y = center("on", fontRegular, 12, y);
+    y = center(claimDate, fontRegular, 14, y);
+    y = center("and is awarded", fontRegular, 12, y);
+
+    y = centerMixed(`${formattedCredits} `, fontBold,
+                    "AMA PRA Category 1 Credits™", fontItalic, 14, y);
+    y -= 24;
+
+    /* Accreditation statement – centred across the page */
+    const accLines = [
+      "This activity has been planned and implemented in accordance with the",
+      "accreditation requirements and policies of the Accreditation Council for",
+      "Continuing Medical Education (ACCME) through the joint providership of",
+      "CME Consultants and MedSwipe. CME Consultants is accredited by the ACCME",
+      "to provide continuing medical education for physicians.",
+      "",
+      "CME Consultants designates this enduring material for a maximum of",
+      "24.0 AMA PRA Category 1 Credits™.",
+      "",
+      "Physicians should claim only the credit commensurate with the extent of",
+      "their participation in the activity.",
+    ];
+    const accSize = 9;
+    accLines.forEach((ln) => {
+      if (ln.includes("AMA PRA Category 1 Credits™")) {
+        const [pre] = ln.split("AMA PRA Category 1 Credits™");
+        const fullW =
+          fontRegular.widthOfTextAtSize(pre, accSize) +
+          fontItalic .widthOfTextAtSize("AMA PRA Category 1 Credits™", accSize);
+        const xStart = (width - fullW) / 2;
+        page.drawText(pre, {
+          x: xStart,
+          y,
+          size: accSize,
+          font: fontRegular,
+          color: gray,
+        });
+        page.drawText("AMA PRA Category 1 Credits™", {
+          x: xStart + fontRegular.widthOfTextAtSize(pre, accSize),
+          y,
+          size: accSize,
+          font: fontItalic,
+          color: gray,
+        });
+      } else {
+        const w = fontRegular.widthOfTextAtSize(ln, accSize);
+        page.drawText(ln, {
+          x: (width - w) / 2,
+          y,
+          size: accSize,
+          font: ln.startsWith("CME Consultants designates") ? fontBold : fontRegular,
+          color: gray,
+        });
+      }
+      y -= accSize + 2;
+    });
+
+    /* ───────── 8. Save, upload, respond ───────── */
     const pdfBytes = await pdfDoc.save();
-    logger.log("PDF generated successfully in memory.");
-
-    // 8. Upload to Cloud Storage
     const safeName = certificateFullName.replace(/[^a-zA-Z0-9]/g, "_");
-    const timestamp = Date.now();
-    const pdfFileName = `${timestamp}_${safeName}_CME.pdf`;
-    const filePath = `cme_certificates/${uid}/${pdfFileName}`;
-    const file = bucket.file(filePath);
+    const path     = `cme_certificates/${uid}/${Date.now()}_${safeName}_CME.pdf`;
+    await bucket.file(path).save(Buffer.from(pdfBytes), {
+      metadata: { contentType: "application/pdf" },
+      public: true,
+    });
 
-    logger.log(`Attempting to upload PDF to gs://${BUCKET_NAME}/${filePath}`);
-    await file.save(Buffer.from(pdfBytes), { metadata: { contentType: "application/pdf" }, public: true });
-    logger.log("PDF successfully uploaded to Cloud Storage.");
-
-    // 9. Return public URL
-    const publicUrl = file.publicUrl();
-    logger.log("Returning success response with public URL:", publicUrl);
-    return { success: true, publicUrl: publicUrl, fileName: pdfFileName };
-
-  } catch (error) {
-    logger.error("Error during PDF generation or upload:", error);
-    if (error instanceof HttpsError) { throw error; }
-    throw new HttpsError("internal", "Failed to generate or save the certificate.", error.message);
+    return { success: true, publicUrl: bucket.file(path).publicUrl() };
   }
-});
+);
+
+
 
 /*  ────────────────────────────────────────────────────────────────
     Stripe Webhook Handler – FULLY REPLACED

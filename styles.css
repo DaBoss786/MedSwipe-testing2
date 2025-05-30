@@ -4925,3 +4925,59 @@ html, body {
     padding: 12px;
   }
 }
+
+/* === CME Claim Modal Evaluation Table Styles === */
+#cmeClaimModal .evaluation-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 0.9rem; /* Adjust as needed */
+  table-layout: fixed; /* Helps with column width consistency */
+}
+
+#cmeClaimModal .evaluation-table th,
+#cmeClaimModal .evaluation-table td {
+  border: 1px solid #ddd;
+  padding: 10px 8px; /* Adjust padding */
+  text-align: center;
+  vertical-align: middle;
+}
+
+#cmeClaimModal .evaluation-table th {
+  background-color: #f2f7ff; /* Light blue background for header */
+  font-weight: 500;
+  color: #333;
+}
+
+/* Style for the outcome description column */
+#cmeClaimModal .evaluation-table td:nth-child(2) {
+  text-align: left;
+  word-wrap: break-word; /* Allow long text to wrap */
+}
+
+#cmeClaimModal .evaluation-table input[type="radio"] {
+  transform: scale(1.2); /* Make radio buttons slightly larger */
+  accent-color: #0C72D3; /* Use theme color for selected radio */
+  cursor: pointer;
+}
+
+#cmeClaimModal .formGroup h4 { /* Styling for the "DESIRED OUTCOMES" title */
+  font-weight: 600; /* Bolder */
+  color: #0056b3; /* Theme blue */
+}
+
+#cmeClaimModal .formGroup textarea { /* Ensure textareas are styled consistently */
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  min-height: 80px; /* Minimum height for textareas */
+}
+#cmeClaimModal .formGroup textarea:focus {
+ border-color: #0C72D3;
+ box-shadow: 0 0 0 2px rgba(12, 114, 211, 0.2);
+ outline: none;
+}
