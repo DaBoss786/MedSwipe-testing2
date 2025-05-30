@@ -20,6 +20,8 @@ const firebaseConfig = {
   measurementId: "G-748P8P634B"
 };
 
+self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+
 // Initialize Firebase services
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
