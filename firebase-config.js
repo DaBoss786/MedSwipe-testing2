@@ -23,7 +23,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider('6Lc30xkrAAAAAH4ixjQmRk6PAldFnoDKEHrb-lPb'),
+  provider: new ReCaptchaV3Provider('6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag'),
   isTokenAutoRefreshEnabled: true
 });
 const db = getFirestore(app);
