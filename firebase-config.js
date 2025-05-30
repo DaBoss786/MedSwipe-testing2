@@ -3,10 +3,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebas
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
 import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, signOut, updateProfile, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
-import {
-  initializeAppCheck,
-  ReCaptchaV3Provider
-} from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app-check.js";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -22,10 +18,6 @@ const firebaseConfig = {
 // Initialize Firebase services
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
-const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider('6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag'),
-  isTokenAutoRefreshEnabled: true
-});
 const db = getFirestore(app);
 const auth = getAuth(app);
 
