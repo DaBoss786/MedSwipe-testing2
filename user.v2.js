@@ -991,66 +991,113 @@ window.fetchSpacedRepetitionData = fetchSpacedRepetitionData;
    async function recordCmeAnswer(questionId, category, isCorrect, timeSpent) {
     if (!auth || !auth.currentUser || auth.currentUser.isAnonymous) {
       console.log("User not authenticated or is guest; CME answer not submitted to CF.");
-      return; 
+      // Optionally, you could prompt the user to log in/register here if CME is a core feature they're trying to access.
+      return;
     }
   
     if (!recordCmeAnswerFunction) {
-      console.error("recordCmeAnswer Cloud Function reference is not available. Cannot record CME answer.");
-      alert("There was a problem connecting to the CME recording service. Please try again later.");
+      console.error("recordCmeAnswer Cloud Function reference (for recordCmeAnswerV2) is not available. Cannot record CME answer.");
+      alert("There was a problem connecting to the CME recording service. Please try again later or contact support if the issue persists.");
       return;
     }
   
     const uid = auth.currentUser.uid;
-    console.log(`Calling Cloud Function (target: recordCmeAnswerV2) for user ${uid}, QID: ${questionId}`);
+    console.log(`Calling Cloud Function (target: recordCmeAnswerV2) for user ${uid}, QID: ${questionId.substring(0,50)}...`);
   
     try {
       const dataToSend = {
-        questionId: questionId,
+        questionId: questionId, // This is the full question text
         category: category,
         isCorrect: isCorrect,
-        timeSpent: timeSpent, 
+        timeSpent: timeSpent, // timeSpent is sent, though the new CF doesn't currently use it.
       };
   
       const result = await recordCmeAnswerFunction(dataToSend);
-      const cfResponse = result.data; 
+      const cfResponse = result.data;
   
-      console.log("Cloud Function 'recordCmeAnswerV2' response:", cfResponse);
+      console.log("Cloud Function 'recordCmeAnswerV2' raw response:", JSON.stringify(cfResponse, null, 2));
   
       if (cfResponse) {
         // --- STORE activeYearId from response ---
         if (cfResponse.activeYearId && typeof window.setActiveCmeYearClientSide === 'function') {
           window.setActiveCmeYearClientSide(cfResponse.activeYearId);
+          console.log(`Client-side active CME year updated to: ${cfResponse.activeYearId}`);
+        } else if (cfResponse.activeYearId === null && cfResponse.status === "no_active_year") {
+          // If CF explicitly says no active year, clear client-side cache too
+          if (typeof window.setActiveCmeYearClientSide === 'function') window.setActiveCmeYearClientSide(null);
         }
         // --- END STORE ---
   
-        // (rest of your existing response handling logic)
-        if (cfResponse.status === "success" || cfResponse.status === "already_recorded_this_year" || cfResponse.status === "limit_reached" || cfResponse.status === "accuracy_low") {
-          console.log(`CME Status for QID ${questionId} (${cfResponse.activeYearId}): ${cfResponse.message}. Credits this answer: ${cfResponse.creditedThisAnswer}, Year Total Credits: ${cfResponse.newYearTotalCredits}, Year Total Answered: ${cfResponse.totalAnsweredInYear}`);
-        } else if (cfResponse.status === "no_active_year") {
-          console.warn("CME recording: No active CME year. " + cfResponse.message);
-        } else if (cfResponse.status === "tier_ineligible") {
-          console.warn("CME recording: User tier ineligible. " + cfResponse.message);
-        } else {
-          console.warn("CME recording: Received an unexpected status from CF: ", cfResponse.status);
+        // Log the detailed response from the Cloud Function
+        console.log(
+          `CME CF Response Details:
+          Status: ${cfResponse.status}
+          Message: ${cfResponse.message}
+          Active Year ID: ${cfResponse.activeYearId || 'N/A'}
+          Credits This Answer: ${cfResponse.creditedThisAnswer !== undefined ? cfResponse.creditedThisAnswer.toFixed(2) : 'N/A'}
+          New Year Total Credits: ${cfResponse.newYearTotalCredits !== undefined ? cfResponse.newYearTotalCredits.toFixed(2) : 'N/A'}
+          Total Answered In Year: ${cfResponse.totalAnsweredInYear !== undefined ? cfResponse.totalAnsweredInYear : 'N/A'}
+          Overall Credits Earned: ${cfResponse.overallCreditsEarned !== undefined ? cfResponse.overallCreditsEarned.toFixed(2) : 'N/A'}
+          Overall Total Answered: ${cfResponse.overallTotalAnswered !== undefined ? cfResponse.overallTotalAnswered : 'N/A'}
+          Overall Total Correct: ${cfResponse.overallTotalCorrect !== undefined ? cfResponse.overallTotalCorrect : 'N/A'}`
+        );
+  
+        // Handle specific statuses for user feedback
+        switch (cfResponse.status) {
+          case "tier_ineligible":
+            alert(`CME Credits: ${cfResponse.message}`); // Inform user they are not eligible
+            break;
+          case "no_active_year":
+            alert(`CME Credits: ${cfResponse.message}`); // Inform user about no active year
+            break;
+          case "success":
+          case "already_correct":
+          case "still_incorrect":
+          case "limit_reached":
+          case "accuracy_low":
+          case "no_change":
+            // For these statuses, the CF message is usually sufficient for console.
+            // The main action is to refresh the dashboard.
+            // You could add a more subtle UI notification here if desired, instead of an alert.
+            console.log(`CME Update: ${cfResponse.message}`);
+            break;
+          default:
+            console.warn("CME recording: Received an unexpected status from CF: ", cfResponse.status, cfResponse.message);
+            // alert(`Received an unexpected response from CME service: ${cfResponse.status}`);
+            break;
         }
   
-        // Refresh dashboards
+        // Refresh dashboards to reflect any changes in CME stats.
+        // These functions should fetch the latest data from Firestore.
         if (typeof window.loadCmeDashboardData === 'function') {
+           console.log("Refreshing CME dashboard data after CF call...");
            window.loadCmeDashboardData();
         }
-        if (typeof window.initializeDashboard === 'function' && document.getElementById('mainOptions')?.style.display !== 'none') {
-            window.initializeDashboard();
+        // Also refresh the main dashboard if it's visible, as it might show overall CME stats too
+        if (typeof window.initializeDashboard === 'function') {
+            const mainOptionsEl = document.getElementById('mainOptions');
+            if (mainOptionsEl && mainOptionsEl.style.display !== 'none') {
+                console.log("Refreshing main dashboard data after CF call...");
+                window.initializeDashboard();
+            }
         }
+  
       } else {
-        console.error("Cloud Function 'recordCmeAnswerV2' returned undefined or no data.");
+        console.error("Cloud Function 'recordCmeAnswerV2' returned undefined or no data in result.data.");
+        alert("Received an incomplete response from the CME recording service. Please try again.");
       }
     } catch (error) {
       console.error("Error calling 'recordCmeAnswerV2' Cloud Function:", error);
-      if (error.code && error.message && error.details) {
-        alert(`Error recording CME answer: ${error.message} (Details: ${JSON.stringify(error.details)})`);
-      } else {
-        alert(`An error occurred while recording your CME answer: ${error.message}`);
+      let alertMessage = `An error occurred while recording your CME answer. Please try again.`;
+      if (error.code && error.message) { // Firebase HttpsError
+        alertMessage = `Error: ${error.message}`;
+        if (error.details) { // v2 HttpsError might not have 'details' in the same way as v1
+          alertMessage += ` (Details: ${JSON.stringify(error.details)})`;
+        }
+      } else if (error.message) { // Generic error
+        alertMessage = error.message;
       }
+      alert(alertMessage);
     }
   }
 // --- End of new recordCmeAnswer function ---
