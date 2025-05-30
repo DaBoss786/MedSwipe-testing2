@@ -715,6 +715,93 @@ if (modalStartCmeQuizBtn) {
 
 // --- End of Step 7 Code ---
 
+// --- Event Listener for "Review Incorrect CME Questions" Button ---
+const reviewIncorrectCmeBtn = document.getElementById("reviewIncorrectCmeBtn");
+if (reviewIncorrectCmeBtn) {
+    reviewIncorrectCmeBtn.addEventListener("click", async function() {
+        console.log("Review Incorrect CME Questions button clicked.");
+
+        if (!auth || !auth.currentUser || auth.currentUser.isAnonymous) {
+            alert("Please log in to review your incorrect CME questions.");
+            return;
+        }
+        const uid = auth.currentUser.uid;
+
+        // 1. Get the active CME year ID
+        let activeCmeYear = window.clientActiveCmeYearId;
+        if (!activeCmeYear) {
+            if (typeof window.getActiveCmeYearIdFromFirestore === 'function') {
+                activeCmeYear = await window.getActiveCmeYearIdFromFirestore();
+                if (activeCmeYear && typeof window.setActiveCmeYearClientSide === 'function') {
+                    window.setActiveCmeYearClientSide(activeCmeYear);
+                }
+            }
+        }
+
+        if (!activeCmeYear) {
+            alert("Could not determine the current CME year. Please try answering a CME question first or check back later.");
+            return;
+        }
+        console.log(`Fetching incorrect CME answers for user ${uid}, year ${activeCmeYear}`);
+
+        // 2. Fetch incorrect question IDs for the current year
+        const incorrectQuestionOriginalIds = [];
+        try {
+            const cmeAnswersCollectionRef = collection(db, 'users', uid, 'cmeAnswers');
+            // Query for documents in the current year that are marked as incorrect
+            const q = query(cmeAnswersCollectionRef,
+                            where('__name__', '>=', `${activeCmeYear}_`),
+                            where('__name__', '<', `${activeCmeYear}_\uffff`),
+                            where('isCorrect', '==', false)
+                           );
+            const querySnapshot = await getDocs(q);
+
+            querySnapshot.forEach((docSnap) => {
+                const answerData = docSnap.data();
+                if (answerData.originalQuestionId) {
+                    incorrectQuestionOriginalIds.push(answerData.originalQuestionId.trim());
+                }
+            });
+
+            console.log(`Found ${incorrectQuestionOriginalIds.length} incorrect CME questions for year ${activeCmeYear}.`);
+
+        } catch (error) {
+            console.error("Error fetching incorrect CME question IDs:", error);
+            alert("An error occurred while fetching your incorrect questions. Please try again.");
+            return;
+        }
+
+        // 3. Handle if no incorrect questions are found
+        if (incorrectQuestionOriginalIds.length === 0) {
+            alert("Great job! You have no incorrect CME questions to review for the current year.");
+            return;
+        }
+
+        // 4. Hide CME Dashboard and load quiz with these specific questions
+        const cmeDashboard = document.getElementById("cmeDashboardView");
+        if (cmeDashboard) {
+            cmeDashboard.style.display = "none";
+        }
+
+        if (typeof loadQuestions === 'function') { // loadQuestions is from quiz.js
+            loadQuestions({
+                quizType: 'cme', // Still a CME quiz for recording purposes
+                reviewIncorrectCmeOnly: true,
+                incorrectCmeQuestionIds: incorrectQuestionOriginalIds, // Pass the IDs
+                num: incorrectQuestionOriginalIds.length, // Load all of them
+                includeAnswered: true // Important: We want to re-attempt these specific questions
+            });
+        } else {
+            console.error("loadQuestions function is not defined or accessible.");
+            alert("Error starting review quiz. Function not found.");
+            if (cmeDashboard) cmeDashboard.style.display = "block"; // Show dashboard again as fallback
+        }
+    });
+} else {
+    console.error("Review Incorrect CME Questions button (#reviewIncorrectCmeBtn) not found.");
+}
+// --- End of Event Listener for "Review Incorrect CME Questions" Button ---
+
 // --- Step 12a: Claim Modal Button Event Listeners ---
 
 const claimCmeBtn = document.getElementById("claimCmeBtn"); // Button on CME Dashboard
