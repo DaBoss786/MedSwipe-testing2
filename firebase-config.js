@@ -4,10 +4,6 @@ import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.
 import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs, setDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, signOut, updateProfile, sendPasswordResetEmail, getIdToken, EmailAuthProvider, linkWithCredential } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-functions.js"; // Added Functions import
-import {
-  initializeAppCheck,
-  ReCaptchaV3Provider
-} from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app-check.js";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -20,15 +16,9 @@ const firebaseConfig = {
   measurementId: "G-748P8P634B"
 };
 
-self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-
 // Initialize Firebase services
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
-const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider('6LeiqE8rAAAAADrOwcegUWTdxyN5L-niNyeMJSuX'), // You'll replace this shortly
-  isTokenAutoRefreshEnabled: true
-});
 const db = getFirestore(app);
 const auth = getAuth(app);
 const functionsInstance = getFunctions(app); // Renamed to avoid conflicts
