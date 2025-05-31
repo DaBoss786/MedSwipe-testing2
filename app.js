@@ -608,10 +608,10 @@ if(cmeDashboardBackBtn) {
         // Ensure mainOptions exists before trying to show it
         if (mainOptions) {
             mainOptions.style.display = "flex"; // Show main options again
+            showMainToolbarInfo();
         } else {
              console.error("Main options element (#mainOptions) not found when going back.");
         }
-        showMainToolbarInfo();
     });
 } else {
      console.error("CME Dashboard Back button (#cmeDashboardBackBtn) not found.");
@@ -898,7 +898,6 @@ const viewAccreditationBtn = document.getElementById("viewCmeAccreditationBtn");
         });
     }
     showMainToolbarInfo();
-  
 });
 
 // Function to show the login form modal
@@ -1985,20 +1984,22 @@ function updateLevelProgress(percent) {
   }
 }
 
+
 // Helper function to show the main XP/Level in the toolbar
 function showMainToolbarInfo() {
   const xpDisplay = document.getElementById('xpDisplay');
   const mainLevelCircleContainer = document.getElementById('mainLevelCircleContainer');
   const cmeToolbarTracker = document.getElementById('cmeToolbarTracker');
 
-  if (xpDisplay) xpDisplay.style.display = 'block'; // Or 'flex' if it's a flex item
-  if (mainLevelCircleContainer) mainLevelCircleContainer.style.display = 'block'; // Or 'flex'
+  if (xpDisplay) xpDisplay.style.display = 'block';
+  if (mainLevelCircleContainer) mainLevelCircleContainer.style.display = 'block';
   if (cmeToolbarTracker) cmeToolbarTracker.style.display = 'none';
   console.log("Toolbar switched to: Main XP/Level Display");
 }
 
 // Helper function to show the CME Tracker in the toolbar and update its values
 async function showCmeToolbarInfo() {
+  console.log("Attempting to show CME Toolbar Info...");
   const xpDisplay = document.getElementById('xpDisplay');
   const mainLevelCircleContainer = document.getElementById('mainLevelCircleContainer');
   const cmeToolbarTracker = document.getElementById('cmeToolbarTracker');
@@ -2006,21 +2007,37 @@ async function showCmeToolbarInfo() {
   const cmeAccuracyCircleValue = document.getElementById('cmeAccuracyCircleValue');
   const cmeAccuracyCircleProgress = document.getElementById('cmeAccuracyCircleProgress');
 
+  // Log if elements are found
+  console.log("xpDisplay found:", !!xpDisplay);
+  console.log("mainLevelCircleContainer found:", !!mainLevelCircleContainer);
+  console.log("cmeToolbarTracker found:", !!cmeToolbarTracker);
+  console.log("cmeCreditsDisplay found:", !!cmeCreditsDisplay);
+  console.log("cmeAccuracyCircleValue found:", !!cmeAccuracyCircleValue);
+  console.log("cmeAccuracyCircleProgress found:", !!cmeAccuracyCircleProgress);
+
   if (xpDisplay) xpDisplay.style.display = 'none';
   if (mainLevelCircleContainer) mainLevelCircleContainer.style.display = 'none';
-  if (cmeToolbarTracker) cmeToolbarTracker.style.display = 'flex'; // Use flex for its internal alignment
+  
+  if (cmeToolbarTracker) {
+      cmeToolbarTracker.style.display = 'flex'; // Use flex for its internal alignment
+      console.log("cmeToolbarTracker display set to flex");
+  } else {
+      console.error("CRITICAL: cmeToolbarTracker element NOT FOUND!");
+      return; // Exit if the main container isn't there
+  }
 
-  // Fetch latest CME data (simplified - adapt from your loadCmeDashboardData)
   let creditsAvailable = "0.00";
   let cmeAccuracy = 0;
 
   if (window.authState && window.authState.user && !window.authState.user.isAnonymous) {
       const uid = window.authState.user.uid;
+      console.log(`Fetching CME data for toolbar for user: ${uid}`);
       const userDocRef = doc(db, 'users', uid);
       try {
           const userDocSnap = await getDoc(userDocRef);
           if (userDocSnap.exists()) {
               const data = userDocSnap.data();
+              console.log("User data for toolbar:", data);
               const cmeStats = data.cmeStats || { totalAnswered: 0, totalCorrect: 0, creditsEarned: 0, creditsClaimed: 0 };
               
               const earned = parseFloat(cmeStats.creditsEarned || 0);
@@ -2032,16 +2049,31 @@ async function showCmeToolbarInfo() {
               if (totalAnswered > 0) {
                   cmeAccuracy = Math.round((totalCorrect / totalAnswered) * 100);
               }
+              console.log(`Calculated for toolbar - Credits: ${creditsAvailable}, Accuracy: ${cmeAccuracy}%`);
+          } else {
+              console.warn("User document does not exist for toolbar CME data.");
           }
       } catch (error) {
           console.error("Error fetching CME data for toolbar:", error);
       }
+  } else {
+      console.warn("Cannot fetch CME data for toolbar: User not authenticated or is anonymous.");
   }
 
-  if (cmeCreditsDisplay) cmeCreditsDisplay.textContent = `CME: ${creditsAvailable}`;
-  if (cmeAccuracyCircleValue) cmeAccuracyCircleValue.textContent = `${cmeAccuracy}%`;
+  if (cmeCreditsDisplay) {
+      cmeCreditsDisplay.textContent = `CME: ${creditsAvailable}`;
+  } else {
+      console.warn("cmeCreditsDisplay element not found for update.");
+  }
+  if (cmeAccuracyCircleValue) {
+      cmeAccuracyCircleValue.textContent = `${cmeAccuracy}%`;
+  } else {
+      console.warn("cmeAccuracyCircleValue element not found for update.");
+  }
   if (cmeAccuracyCircleProgress) {
       cmeAccuracyCircleProgress.style.setProperty('--progress', `${cmeAccuracy}%`);
+  } else {
+      console.warn("cmeAccuracyCircleProgress element not found for update.");
   }
   console.log(`Toolbar switched to: CME Display (Credits: ${creditsAvailable}, Accuracy: ${cmeAccuracy}%)`);
 }
