@@ -868,6 +868,39 @@ if (cmeClaimForm) {
     cmeClaimForm.addEventListener('submit', handleCmeClaimSubmission); // Call submission handler
 }
 
+// --- CME Accreditation Statement Modal Logic ---
+document.addEventListener('DOMContentLoaded', function() {
+  const viewAccreditationBtn = document.getElementById("viewCmeAccreditationBtn");
+  const accreditationModal = document.getElementById("cmeAccreditationModal");
+  const closeAccreditationModalBtn = document.getElementById("closeCmeAccreditationModal");
+
+  if (viewAccreditationBtn && accreditationModal) {
+      viewAccreditationBtn.addEventListener("click", function() {
+          console.log("View CME Accreditation button clicked.");
+          accreditationModal.style.display = "flex"; // Show the modal
+      });
+  } else {
+      if (!viewAccreditationBtn) console.error("View CME Accreditation button not found.");
+      if (!accreditationModal) console.error("CME Accreditation modal not found.");
+  }
+
+  if (closeAccreditationModalBtn && accreditationModal) {
+      closeAccreditationModalBtn.addEventListener("click", function() {
+          accreditationModal.style.display = "none"; // Hide the modal
+      });
+  }
+
+  // Optional: Close modal if clicking outside the content
+  if (accreditationModal) {
+      accreditationModal.addEventListener('click', function(event) {
+          if (event.target === accreditationModal) { // Clicked on the modal background
+              accreditationModal.style.display = 'none';
+          }
+      });
+  }
+});
+// --- End CME Accreditation Statement Modal Logic ---
+
 // --- End of Step 12a ---
   
 });

@@ -1025,11 +1025,18 @@
         </div>
     </div>
 
-     <!-- Back Button -->
-     <div style="text-align: center; margin-top: 20px;">
-          <!-- Using start-quiz-btn class for consistency, adjust if needed -->
-          <button id="cmeDashboardBackBtn" class="start-quiz-btn">Back to Main Dashboard</button>
-     </div>
+      <!-- START: New Accreditation Info Button/Link -->
+    <div style="text-align: center; margin-top: 20px; margin-bottom: 10px;">
+      <button id="viewCmeAccreditationBtn" class="auth-secondary-btn" style="padding: 8px 15px; font-size: 0.9rem;">
+          View Accreditation Statement
+      </button>
+  </div>
+  <!-- END: New Accreditation Info Button/Link -->
+
+   <!-- Back Button -->
+   <div style="text-align: center; margin-top: 20px;">
+        <button id="cmeDashboardBackBtn" class="start-quiz-btn">Back to Main Dashboard</button>
+   </div>
 
 </div> <!-- End of cmeDashboardView -->
 
@@ -1223,11 +1230,11 @@
 
       <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" style="max-width: 150px; margin-bottom: 5px;">
 
-      <h1 style="color: #0056b3; font-size: 1.4rem; margin-bottom: 15px;">Earn AMA PRA Category 1 Credits™ – Anytime, Anywhere</h1>
+      <h1 style="color: #0056b3; font-size: 1.4rem; margin-bottom: 15px;">Earn <i>AMA PRA Category 1 Credits™</i> – Anytime, Anywhere</h1>
 
       <ul style="list-style: none; padding: 0; margin-bottom: 25px; text-align: left; display: inline-block;">
           <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Jointly provided by <strong>CME Consultants</strong> and <strong>MedSwipe</strong></li>
-          <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Earn up to 24 AMA PRA Category 1 Credits™</li>
+          <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Earn up to 24 <i>AMA PRA Category 1 Credits™</i></li>
           <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Printable certificates on demand</li>
           <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Get credit for questions you've already answered</li>
       </ul>
@@ -1284,7 +1291,7 @@
               <!-- Keep your existing annual features -->
               <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Over 60% less than other CME providers</li>
               <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> 1 CME credit per 12 questions (≥70% accuracy)</li>
-              <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Claim up to 24 AMA PRA Category 1 Credits™</li>
+              <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Claim up to 24 <i>AMA PRA Category 1 Credits™</i></li>
               <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Track progress & download certificates</li>
               <li style="margin-bottom: 12px; font-size: 1.1rem;"><span style="color: #28a745; margin-right: 10px;">✔</span> Auto-renews yearly (cancel anytime)</li>
           </ul>
@@ -1338,9 +1345,9 @@
           <h3>What do I get?</h3>
           <ul style="list-style: none; padding-left: 5px;">
               <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> Swipeable MCQs in the exact format as the regular version of MedSwipe but now with the ability to claim CME credits</li>
-              <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> ~1 AMA PRA Category 1 Credit™ for every 12 questions answered with ≥70% accuracy</li>
+              <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> ~1 <i>AMA PRA Category 1 Credit™</i> for every 12 questions answered with ≥70% accuracy</li>
               <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> 300+ CME-eligible questions</li>
-              <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> Ability to claim up to 24 AMA PRA Category 1 Credits™</li>
+              <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> Ability to claim up to 24 <i>AMA PRA Category 1 Credits™</i></li>
               <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> Downloadable, printable CME certificates</li>
               <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> Automatic tracking of your CME progress</li>
               <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> No extra steps — earn as you learn</li>
@@ -1348,6 +1355,14 @@
 
           <h3>Who accredits this?</h3>
           <p>This activity is jointly provided by MedSwipe and CME Consultants, and has been planned and implemented in accordance with the ACCME accreditation requirements.</p>
+
+          <!-- START: Added Accreditation Statement -->
+          <h3>Accreditation Statement</h3>
+          <p>This activity has been planned and implemented in accordance with the accreditation requirements and policies of the Accreditation Council for Continuing Medical Education (ACCME) through the joint providership of CME Consultants and MedSwipe. CME Consultants is accredited by the ACCME to provide continuing medical education for physicians.</p>
+          <p>CME Consultants designates this enduring material for a maximum of 24.0 <i>AMA PRA Category 1 Credits™</i>. Physicians should claim only the credit commensurate with the extent of their participation in the activity.</p>
+          <p>There was no commercial support for this activity.</p>
+          <p>The planners, authors, and reviewers of this activity have no relevant financial relationships to disclose.</p>
+          <p><strong>Credit Term:</strong> June 10, 2025 - June 9, 2026</p>
 
           <h3>How do credits get calculated?</h3>
           <p>We award ~1 credit for every 12 questions answered correctly (at least 70% correct), based on user testing that showed an average time of ~5 minutes per question.</p>
@@ -1372,6 +1387,32 @@
       </div> <!-- End modal-body -->
   </div> <!-- End modal-content -->
 </div> <!-- End cmeLearnMoreModal -->
+
+<!-- ===================================== -->
+<!-- == CME Accreditation Statement Modal == -->
+<!-- ===================================== -->
+<div id="cmeAccreditationModal" class="modal" style="z-index: 2250;"> <!-- Ensure high z-index -->
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Accreditation Information</h2>
+      <span id="closeCmeAccreditationModal" class="close-modal">×</span>
+    </div>
+    <div class="modal-body">
+      <p>This activity has been planned and implemented in accordance with the accreditation requirements and policies of the Accreditation Council for Continuing Medical Education (ACCME) through the joint providership of CME Consultants and MedSwipe. CME Consultants is accredited by the ACCME to provide continuing medical education for physicians.</p>
+      <p>CME Consultants designates this enduring material for a maximum of 24.0 AMA PRA Category 1 Credits™. Physicians should claim only the credit commensurate with the extent of their participation in the activity.</p>
+      <p>There was no commercial support for this activity.</p>
+      <p>The planners, authors, and reviewers of this activity have no relevant financial relationships to disclose.</p>
+      <p><strong>Credit Term:</strong> [YOUR CREDIT TERM START DATE - END DATE] <!-- <<< IMPORTANT: REPLACE THIS PLACEHOLDER --></p>
+      <!-- You might want to add a small note about where to find more info if needed -->
+      <p style="margin-top: 20px; font-size: 0.85em; color: #555;">
+        For further details regarding accreditation, please refer to the information provided during the CME module purchase or contact support.
+      </p>
+    </div>
+  </div>
+</div>
+<!-- ========================================= -->
+<!-- == END CME Accreditation Statement Modal == -->
+<!-- ========================================= -->
 
 </body>
 </html>

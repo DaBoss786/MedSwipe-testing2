@@ -5021,3 +5021,12 @@ html, body {
     transform: scale(1.1); /* Slightly smaller radio buttons if needed, or keep as is */
   }
 }
+
+#cmeAccreditationModal .modal-body p {
+  margin-bottom: 1em; /* Add some space between paragraphs */
+  line-height: 1.6;   /* Improve readability */
+}
+
+#cmeAccreditationModal .modal-body strong {
+  color: #333; /* Make "Credit Term:" slightly darker or more prominent if needed */
+}
