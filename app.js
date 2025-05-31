@@ -611,6 +611,7 @@ if(cmeDashboardBackBtn) {
         } else {
              console.error("Main options element (#mainOptions) not found when going back.");
         }
+        showMainToolbarInfo();
     });
 } else {
      console.error("CME Dashboard Back button (#cmeDashboardBackBtn) not found.");
@@ -896,6 +897,7 @@ const viewAccreditationBtn = document.getElementById("viewCmeAccreditationBtn");
             }
         });
     }
+    showMainToolbarInfo();
   
 });
 
@@ -1276,6 +1278,19 @@ window.addEventListener('load', function() {
       }
     });
   }
+
+  const cmeAccuracyCircleValue = document.getElementById('cmeAccuracyCircleValue');
+if (cmeAccuracyCircleValue) {
+    cmeAccuracyCircleValue.addEventListener('click', function() {
+        const userMenu = document.getElementById("userMenu");
+        const menuOverlay = document.getElementById("menuOverlay");
+        if (userMenu && menuOverlay) {
+            userMenu.classList.add("open");
+            menuOverlay.classList.add("show");
+            console.log("CME Accuracy Circle clicked, opening user menu.");
+        }
+    });
+}
   
   // User menu score circle click => go to FAQ
   const userScoreCircle = document.getElementById("userScoreCircle");
@@ -1594,6 +1609,7 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
       
       const mainOptions = document.getElementById("mainOptions");
       if (mainOptions) mainOptions.style.display = "flex";
+      showMainToolbarInfo();
     });
   }
   
@@ -1651,6 +1667,7 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
             console.error("showLeaderboard function not found!");
         }
       }
+      showMainToolbarInfo();
     });
   }
   // --- END MODIFIED LEADERBOARD MENU ITEM LISTENER ---
@@ -1663,6 +1680,7 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
       const cmeDashboard = document.getElementById("cmeDashboardView");
 if (cmeDashboard) cmeDashboard.style.display = "none";
       showFAQ();
+      showMainToolbarInfo();
     });
   }
   
@@ -1674,6 +1692,7 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
       const cmeDashboard = document.getElementById("cmeDashboardView");
 if (cmeDashboard) cmeDashboard.style.display = "none";
       showAbout();
+      showMainToolbarInfo();
     });
   }
   
@@ -1774,6 +1793,7 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
       
       const mainOptions = document.getElementById("mainOptions");
       if (mainOptions) mainOptions.style.display = "flex";
+      showMainToolbarInfo();
     });
   }
   
@@ -1963,6 +1983,67 @@ function updateLevelProgress(percent) {
   if (levelProgressBar) {
     levelProgressBar.style.width = `${percent}%`;
   }
+}
+
+// Helper function to show the main XP/Level in the toolbar
+function showMainToolbarInfo() {
+  const xpDisplay = document.getElementById('xpDisplay');
+  const mainLevelCircleContainer = document.getElementById('mainLevelCircleContainer');
+  const cmeToolbarTracker = document.getElementById('cmeToolbarTracker');
+
+  if (xpDisplay) xpDisplay.style.display = 'block'; // Or 'flex' if it's a flex item
+  if (mainLevelCircleContainer) mainLevelCircleContainer.style.display = 'block'; // Or 'flex'
+  if (cmeToolbarTracker) cmeToolbarTracker.style.display = 'none';
+  console.log("Toolbar switched to: Main XP/Level Display");
+}
+
+// Helper function to show the CME Tracker in the toolbar and update its values
+async function showCmeToolbarInfo() {
+  const xpDisplay = document.getElementById('xpDisplay');
+  const mainLevelCircleContainer = document.getElementById('mainLevelCircleContainer');
+  const cmeToolbarTracker = document.getElementById('cmeToolbarTracker');
+  const cmeCreditsDisplay = document.getElementById('cmeCreditsDisplay');
+  const cmeAccuracyCircleValue = document.getElementById('cmeAccuracyCircleValue');
+  const cmeAccuracyCircleProgress = document.getElementById('cmeAccuracyCircleProgress');
+
+  if (xpDisplay) xpDisplay.style.display = 'none';
+  if (mainLevelCircleContainer) mainLevelCircleContainer.style.display = 'none';
+  if (cmeToolbarTracker) cmeToolbarTracker.style.display = 'flex'; // Use flex for its internal alignment
+
+  // Fetch latest CME data (simplified - adapt from your loadCmeDashboardData)
+  let creditsAvailable = "0.00";
+  let cmeAccuracy = 0;
+
+  if (window.authState && window.authState.user && !window.authState.user.isAnonymous) {
+      const uid = window.authState.user.uid;
+      const userDocRef = doc(db, 'users', uid);
+      try {
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+              const data = userDocSnap.data();
+              const cmeStats = data.cmeStats || { totalAnswered: 0, totalCorrect: 0, creditsEarned: 0, creditsClaimed: 0 };
+              
+              const earned = parseFloat(cmeStats.creditsEarned || 0);
+              const claimed = parseFloat(cmeStats.creditsClaimed || 0);
+              creditsAvailable = Math.max(0, earned - claimed).toFixed(2);
+
+              const totalAnswered = cmeStats.totalAnswered || 0;
+              const totalCorrect = cmeStats.totalCorrect || 0;
+              if (totalAnswered > 0) {
+                  cmeAccuracy = Math.round((totalCorrect / totalAnswered) * 100);
+              }
+          }
+      } catch (error) {
+          console.error("Error fetching CME data for toolbar:", error);
+      }
+  }
+
+  if (cmeCreditsDisplay) cmeCreditsDisplay.textContent = `CME: ${creditsAvailable}`;
+  if (cmeAccuracyCircleValue) cmeAccuracyCircleValue.textContent = `${cmeAccuracy}%`;
+  if (cmeAccuracyCircleProgress) {
+      cmeAccuracyCircleProgress.style.setProperty('--progress', `${cmeAccuracy}%`);
+  }
+  console.log(`Toolbar switched to: CME Display (Credits: ${creditsAvailable}, Accuracy: ${cmeAccuracy}%)`);
 }
 
 // Update user XP display function call
@@ -3829,6 +3910,7 @@ function showCmeDashboard() {
       console.log("Set #cmeDashboardView display to 'block'.");
       // Load data AFTER showing the view
       loadCmeDashboardData();
+      showCmeToolbarInfo();   // <--- ADD THIS LINE to update the toolbar
   } else {
       console.error("CRITICAL: CME Dashboard element (#cmeDashboardView) not found.");
   }

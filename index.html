@@ -284,7 +284,7 @@
       <!-- XP Display -->
       <div id="xpDisplay">0 XP</div>
       <!-- Level with Progress Circle (replaces the score circle) -->
-      <div class="level-circle-container">
+      <div class="level-circle-container" id="mainLevelCircleContainer">
         <div class="level-progress-circle">
           <div class="level-circle-background"></div>
           <div class="level-circle-progress" id="levelCircleProgress"></div>
@@ -293,6 +293,24 @@
       </div>
     </div>
   </div>
+
+  <!-- ================================= -->
+  <!-- == NEW CME Toolbar Tracker     == -->
+  <!-- ================================= -->
+  <div id="cmeToolbarTracker" style="display: none; align-items: center; justify-content: flex-end;">
+    <div id="cmeCreditsDisplay" style="margin-right: 10px; font-size: 0.9rem; color: #0056b3; font-weight: 500;">CME: 0.00</div>
+    <div class="level-circle-container" id="cmeAccuracyCircleContainer"> <!-- Container for the CME accuracy circle -->
+      <div class="level-progress-circle">
+        <div class="level-circle-background"></div>
+        <div class="level-circle-progress" id="cmeAccuracyCircleProgress"></div> <!-- For the accuracy progress ring -->
+        <div class="level-number clickable" id="cmeAccuracyCircleValue">0%</div> <!-- Displays accuracy percentage -->
+      </div>
+    </div>
+  </div>
+  <!-- ================================= -->
+  <!-- == END CME Toolbar Tracker       == -->
+  <!-- ================================= -->
+</div>
   
   <!-- Main Options -->
 <!-- Dashboard View with Fixed Spacing and Centered Button -->
@@ -1018,6 +1036,7 @@
                 <li>Score at least 70% overall on questions attempted for CME credit.</li>
                 <li>Every 12 questions answered (with >=70% accuracy) earns approximately 1 CME credit. (1 question = 4.8 min).</li>
                 <li>You can claim credits in increments of 0.25 (i.e., after every ~3 questions meeting the criteria).</li>
+                <li>Master the Material: Re-answer questions as many times as needed to achieve the 70% accuracy for credit.</li>
                 <li>Claim available credits anytime using the "Claim CME Credits" button.</li>
                 <li>A short evaluation is required before generating your certificate.</li>
                 <li>Certificates are downloadable and available on the dashboard at any time.</li>
@@ -1236,7 +1255,7 @@
           <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Jointly provided by <strong>CME Consultants</strong> and <strong>MedSwipe</strong></li>
           <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Earn up to 24 <i>AMA PRA Category 1 Credits™</i></li>
           <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Printable certificates on demand</li>
-          <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Get credit for questions you've already answered</li>
+          <li style="margin-bottom: 10px; font-size: 1.1rem;"><span style="color: #0056b3; margin-right: 8px;">•</span> Re-answer questions as needed to achieve >70% accuracy and earn credits.</li>
       </ul>
 
       <!-- Sample Certificate Preview -->
@@ -1348,6 +1367,7 @@
               <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> ~1 <i>AMA PRA Category 1 Credit™</i> for every 12 questions answered with ≥70% accuracy</li>
               <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> 300+ CME-eligible questions</li>
               <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> Ability to claim up to 24 <i>AMA PRA Category 1 Credits™</i></li>
+              <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> Unlimited Attempts: Re-answer questions as often as needed to solidify your knowledge and earn credits.</li>
               <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> Downloadable, printable CME certificates</li>
               <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> Automatic tracking of your CME progress</li>
               <li style="margin-bottom: 8px;"><span style="color: #0C72D3; margin-right: 8px;">•</span> No extra steps — earn as you learn</li>
@@ -1365,7 +1385,7 @@
           <p><strong>Credit Term:</strong> June 10, 2025 - June 9, 2026</p>
 
           <h3>How do credits get calculated?</h3>
-          <p>We award ~1 credit for every 12 questions answered correctly (at least 70% correct), based on user testing that showed an average time of ~5 minutes per question.</p>
+          <p>We award ~1 credit for every 12 questions answered correctly (at least 70% correct), based on user testing that showed an average time of ~5 minutes per question. <strong>Feel free to re-attempt questions to reach the accuracy threshold!</strong></p>
 
           <h3>Is this accepted by my hospital/board?</h3>
           <p>Yes — these credits are Category 1 AMA PRA credits, accepted for:</p>
