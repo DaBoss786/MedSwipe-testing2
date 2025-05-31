@@ -181,6 +181,7 @@ window.addEventListener('authStateChanged', function(event) {
                         } else if (typeof initializeDashboard === 'function') {
                             initializeDashboard();
                         }
+                        if (typeof window.updateUserXP === 'function') window.updateUserXP(); 
                     }, 100);
                 } else {
                     console.error("Main options element not found for paying user!");
@@ -1971,10 +1972,16 @@ function updateLevelProgress(percent) {
   
   if (levelCircleProgress) {
     levelCircleProgress.style.setProperty('--progress', `${percent}%`);
+    console.log(`Main Toolbar levelCircleProgress updated to: ${percent}%`); // Added log
+  } else {
+    console.warn("Main Toolbar levelCircleProgress element not found for update."); // Added log
   }
   
   if (userLevelProgress) {
     userLevelProgress.style.setProperty('--progress', `${percent}%`);
+  }
+  if (dashboardLevelProgress) { // Added check for dashboard progress circle
+    dashboardLevelProgress.style.setProperty('--progress', `${percent}%`);
   }
   
   // Update the horizontal progress bar
@@ -1984,17 +1991,58 @@ function updateLevelProgress(percent) {
   }
 }
 
-
 // Helper function to show the main XP/Level in the toolbar
-function showMainToolbarInfo() {
+async function showMainToolbarInfo() { // Make it async
   const xpDisplay = document.getElementById('xpDisplay');
   const mainLevelCircleContainer = document.getElementById('mainLevelCircleContainer');
   const cmeToolbarTracker = document.getElementById('cmeToolbarTracker');
+  const scoreCircle = document.getElementById('scoreCircle');
+  const levelCircleProgress = document.getElementById('levelCircleProgress'); // Main toolbar progress
 
   if (xpDisplay) xpDisplay.style.display = 'block';
   if (mainLevelCircleContainer) mainLevelCircleContainer.style.display = 'block';
   if (cmeToolbarTracker) cmeToolbarTracker.style.display = 'none';
-  console.log("Toolbar switched to: Main XP/Level Display");
+
+  // Fetch latest user data to update toolbar accurately
+  if (window.authState && window.authState.user && !window.authState.user.isAnonymous) {
+      const uid = window.authState.user.uid;
+      const userDocRef = doc(db, 'users', uid);
+      try {
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+              const data = userDocSnap.data();
+              const totalXP = data.stats?.xp || 0;
+              const currentLevel = data.stats?.level || 1;
+              
+              // Use calculateLevelProgress from user.v2.js
+              // Ensure it's available, e.g., by making it global or importing if app.js is a module
+              let progressPercent = 0;
+              if (typeof window.calculateLevelProgress === 'function') { // If made global from user.v2.js
+                  progressPercent = window.calculateLevelProgress(totalXP);
+              } else if (typeof calculateLevelProgress === 'function') { // If imported into app.js
+                   progressPercent = calculateLevelProgress(totalXP);
+              } else {
+                  console.warn("calculateLevelProgress function not available in showMainToolbarInfo");
+              }
+
+
+              if (xpDisplay) xpDisplay.textContent = `${totalXP} XP`;
+              if (scoreCircle) scoreCircle.textContent = currentLevel;
+              if (levelCircleProgress) {
+                  levelCircleProgress.style.setProperty('--progress', `${progressPercent}%`);
+              }
+              console.log(`Main Toolbar refreshed by showMainToolbarInfo: XP: ${totalXP}, Level: ${currentLevel}, Progress: ${progressPercent}%`);
+          }
+      } catch (error) {
+          console.error("Error fetching user data for main toolbar refresh:", error);
+      }
+  } else {
+      // Default for logged-out or anonymous state
+      if (xpDisplay) xpDisplay.textContent = `0 XP`;
+      if (scoreCircle) scoreCircle.textContent = '1';
+      if (levelCircleProgress) levelCircleProgress.style.setProperty('--progress', `0%`);
+  }
+  console.log("Toolbar switched to: Main XP/Level Display (and refreshed by showMainToolbarInfo)");
 }
 
 // Helper function to show the CME Tracker in the toolbar and update its values
@@ -2296,9 +2344,11 @@ async function loadLeaderboardPreview() {
 
 // Dashboard initialization and functionality
 async function initializeDashboard() {
+  console.log("Initializing dashboard..."); // Added for clarity
+
   if (!auth || !auth.currentUser || !db) {
-    console.log("Auth or DB not initialized for dashboard");
-    setTimeout(initializeDashboard, 1000);
+    console.log("Auth or DB not initialized for dashboard. Will retry.");
+    setTimeout(initializeDashboard, 1000); // Retry if not ready
     return;
   }
   
@@ -2312,42 +2362,76 @@ async function initializeDashboard() {
       const stats = data.stats || {};
       const streaks = data.streaks || { currentStreak: 0 };
       
-      // Update level and XP display
-      const xp = stats.xp || 0;
-      const level = stats.level || 1;
-      const progress = calculateLevelProgress(xp);
+      const totalXP = stats.xp || 0;       // Get totalXP from user's stats
+      const currentLevel = stats.level || 1; // Get currentLevel from user's stats
       
-      // Set level number
+      // Calculate progress percentage using the function (ensure it's accessible)
+      let progressPercent = 0;
+      if (typeof calculateLevelProgress === 'function') { // Check if imported directly
+          const levelProgressData = calculateLevelProgress(totalXP); // Assuming it returns an object
+          progressPercent = levelProgressData.progressPercent !== undefined ? levelProgressData.progressPercent : (typeof levelProgressData === 'number' ? levelProgressData : 0);
+      } else if (typeof window.calculateLevelProgress === 'function') { // Check if global
+          const levelProgressData = window.calculateLevelProgress(totalXP);
+          progressPercent = levelProgressData.progressPercent !== undefined ? levelProgressData.progressPercent : (typeof levelProgressData === 'number' ? levelProgressData : 0);
+      } else {
+          console.warn("calculateLevelProgress function not found in initializeDashboard. Progress will be 0.");
+      }
+
+      // --- Update Main Toolbar Elements ---
+      const mainToolbarScoreCircle = document.getElementById("scoreCircle");
+      if (mainToolbarScoreCircle) {
+        mainToolbarScoreCircle.textContent = currentLevel;
+      }
+      const mainToolbarXpDisplay = document.getElementById("xpDisplay");
+      if (mainToolbarXpDisplay) {
+        mainToolbarXpDisplay.textContent = `${totalXP} XP`;
+      }
+      const mainToolbarLevelCircleProgress = document.getElementById("levelCircleProgress");
+      if (mainToolbarLevelCircleProgress) {
+        mainToolbarLevelCircleProgress.style.setProperty('--progress', `${progressPercent}%`);
+        console.log(`Main Toolbar #levelCircleProgress initialized to: ${progressPercent}% from initializeDashboard`);
+      }
+      // --- End Main Toolbar Update ---
+
+      // --- Update Dashboard Card: User Progress ---
       const dashboardLevel = document.getElementById("dashboardLevel");
       if (dashboardLevel) {
-        dashboardLevel.textContent = level;
+        dashboardLevel.textContent = currentLevel;
       }
       
-      // Set XP display
       const dashboardXP = document.getElementById("dashboardXP");
       if (dashboardXP) {
-        dashboardXP.textContent = `${xp} XP`;
+        dashboardXP.textContent = `${totalXP} XP`;
       }
       
-      // Set next level info
       const dashboardNextLevel = document.getElementById("dashboardNextLevel");
       if (dashboardNextLevel) {
-        const levelInfo = getLevelInfo(level);
+        // Ensure getLevelInfo is accessible
+        let levelInfo;
+        if (typeof getLevelInfo === 'function') {
+            levelInfo = getLevelInfo(currentLevel);
+        } else if (typeof window.getLevelInfo === 'function') {
+            levelInfo = window.getLevelInfo(currentLevel);
+        } else {
+            console.warn("getLevelInfo function not found in initializeDashboard.");
+            levelInfo = { nextLevelXp: null }; // Fallback
+        }
+
         if (levelInfo.nextLevelXp) {
-          const xpNeeded = levelInfo.nextLevelXp - xp;
-          dashboardNextLevel.textContent = `${xpNeeded} XP to Level ${level + 1}`;
+          const xpNeeded = levelInfo.nextLevelXp - totalXP;
+          dashboardNextLevel.textContent = `${xpNeeded > 0 ? xpNeeded : 0} XP to Level ${currentLevel + 1}`;
         } else {
           dashboardNextLevel.textContent = 'Max Level Reached!';
         }
       }
       
-      // Update progress circle
       const dashboardLevelProgress = document.getElementById("dashboardLevelProgress");
       if (dashboardLevelProgress) {
-        dashboardLevelProgress.style.setProperty('--progress', `${progress}%`);
+        dashboardLevelProgress.style.setProperty('--progress', `${progressPercent}%`);
       }
+      // --- End Dashboard Card: User Progress ---
       
-      // Update quick stats
+      // --- Update Dashboard Card: Quick Stats ---
       const totalAnswered = stats.totalAnswered || 0;
       const totalCorrect = stats.totalCorrect || 0;
       const accuracy = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
@@ -2361,89 +2445,79 @@ async function initializeDashboard() {
       if (dashboardAccuracy) {
         dashboardAccuracy.textContent = `${accuracy}%`;
       }
+      // --- End Dashboard Card: Quick Stats ---
       
-      // Update streak display
-      const currentStreak = document.getElementById("currentStreak");
-      if (currentStreak) {
-        currentStreak.textContent = streaks.currentStreak || 0;
+      // --- Update Dashboard Card: Streak Display ---
+      const currentStreakEl = document.getElementById("currentStreak"); // Renamed for clarity
+      if (currentStreakEl) {
+        currentStreakEl.textContent = streaks.currentStreak || 0;
       }
+      fixStreakCalendar(streaks); // Assuming fixStreakCalendar is defined and accessible
+      // --- End Dashboard Card: Streak Display ---
       
-      // Generate streak calendar
-      fixStreakCalendar(data.streaks);
-      
-      // Also load leaderboard preview
-      loadLeaderboardPreview();
+      loadLeaderboardPreview(); // Assuming loadLeaderboardPreview is defined
+      updateReviewQueue();    // Assuming updateReviewQueue is defined
 
-      // Also load review queue data
-      updateReviewQueue();
-          // --- START: Logic for Dashboard CME Card (TIER-BASED VISIBILITY) ---
-    const dashboardCmeCard = document.getElementById("dashboardCmeCard");
-    const dashboardCmeAnswered = document.getElementById("dashboardCmeAnswered");
-    const dashboardCmeAccuracy = document.getElementById("dashboardCmeAccuracy");
-    const dashboardCmeAvailable = document.getElementById("dashboardCmeAvailable");
+      // --- Logic for Dashboard CME Card (Tier-Based Visibility) ---
+      const dashboardCmeCard = document.getElementById("dashboardCmeCard");
+      const dashboardCmeAnswered = document.getElementById("dashboardCmeAnswered");
+      const dashboardCmeAccuracy = document.getElementById("dashboardCmeAccuracy");
+      const dashboardCmeAvailable = document.getElementById("dashboardCmeAvailable");
 
-    const accessTier = window.authState?.accessTier;
+      const accessTier = window.authState?.accessTier;
 
-    // Show CME card only for cme_annual or cme_credits_only tiers
-    if (window.authState.isRegistered && (accessTier === "cme_annual" || accessTier === "cme_credits_only") &&
-        dashboardCmeCard && dashboardCmeAnswered && dashboardCmeAccuracy && dashboardCmeAvailable) {
+      if (window.authState?.isRegistered && (accessTier === "cme_annual" || accessTier === "cme_credits_only") &&
+          dashboardCmeCard && dashboardCmeAnswered && dashboardCmeAccuracy && dashboardCmeAvailable) {
 
-        const cmeStats = data.cmeStats || {
-            totalAnswered: 0, totalCorrect: 0, creditsEarned: 0.00, creditsClaimed: 0.00
-        };
-        const uniqueAnswered = cmeStats.totalAnswered || 0;
-        const uniqueCorrect = cmeStats.totalCorrect || 0;
-        const uniqueAccuracy = uniqueAnswered > 0 ? Math.round((uniqueCorrect / uniqueAnswered) * 100) : 0;
-        const creditsEarned = parseFloat(cmeStats.creditsEarned || 0);
-        const creditsClaimed = parseFloat(cmeStats.creditsClaimed || 0);
-        const availableCredits = Math.max(0, creditsEarned - creditsClaimed).toFixed(2);
+          const cmeStats = data.cmeStats || {
+              totalAnswered: 0, totalCorrect: 0, creditsEarned: 0.00, creditsClaimed: 0.00
+          };
+          const uniqueAnswered = cmeStats.totalAnswered || 0;
+          const uniqueCorrect = cmeStats.totalCorrect || 0;
+          const uniqueAccuracy = uniqueAnswered > 0 ? Math.round((uniqueCorrect / uniqueAnswered) * 100) : 0;
+          const creditsEarned = parseFloat(cmeStats.creditsEarned || 0);
+          const creditsClaimed = parseFloat(cmeStats.creditsClaimed || 0);
+          const availableCredits = Math.max(0, creditsEarned - creditsClaimed).toFixed(2);
 
-        dashboardCmeAnswered.textContent = uniqueAnswered;
-        dashboardCmeAccuracy.textContent = `${uniqueAccuracy}%`;
-        dashboardCmeAvailable.textContent = availableCredits;
-        dashboardCmeCard.style.display = "block";
-        console.log(`Displayed CME card on dashboard for user tier: ${accessTier}.`);
+          dashboardCmeAnswered.textContent = uniqueAnswered;
+          dashboardCmeAccuracy.textContent = `${uniqueAccuracy}%`;
+          dashboardCmeAvailable.textContent = availableCredits;
+          dashboardCmeCard.style.display = "block";
+          console.log(`Displayed CME card on dashboard for user tier: ${accessTier}.`);
 
-        // --- Add Click Listener for Dashboard CME Card (No change to existing listener logic itself) ---
-        const newCard = dashboardCmeCard.cloneNode(true);
-        dashboardCmeCard.parentNode.replaceChild(newCard, dashboardCmeCard);
-        newCard.addEventListener('click', async () => {
-            console.log("Dashboard CME card clicked by tier:", accessTier);
-            newCard.style.opacity = '0.7'; newCard.style.cursor = 'wait';
-            try {
-                // For cme_annual or cme_credits_only, they have access.
-                // The checkUserCmeSubscriptionStatus will be true for cme_annual.
-                // For cme_credits_only, they might not have a "subscription" but have credits.
-                // The original logic of showCmeDashboard() vs showCmeInfoScreen() based on
-                // checkUserCmeSubscriptionStatus() should still largely work if we assume
-                // cme_credits_only users are treated as "not subscribed to annual plan"
-                // by checkUserCmeSubscriptionStatus.
-                // The cmeModuleBtn click handler will also need tier-based logic.
+          const newCard = dashboardCmeCard.cloneNode(true);
+          dashboardCmeCard.parentNode.replaceChild(newCard, dashboardCmeCard);
+          newCard.addEventListener('click', async () => {
+              console.log("Dashboard CME card clicked by tier:", accessTier);
+              newCard.style.opacity = '0.7'; newCard.style.cursor = 'wait';
+              try {
+                  if (typeof showCmeDashboard === 'function') {
+                      showCmeDashboard();
+                  } else {
+                      console.error("showCmeDashboard function not found!");
+                      alert("Error navigating to CME module.");
+                  }
+              } catch (error) {
+                  console.error("Error during CME card click handling:", error);
+                  alert("An error occurred. Please try again.");
+              } finally {
+                  newCard.style.opacity = '1'; newCard.style.cursor = 'pointer';
+              }
+          });
+      } else if (dashboardCmeCard) {
+          dashboardCmeCard.style.display = "none";
+          console.log(`Hiding CME card on dashboard (user tier: ${accessTier}, or anonymous, or elements missing).`);
+      }
+      // --- End Logic for Dashboard CME Card ---
 
-                // For these tiers, they should go directly to the CME dashboard.
-                if (typeof showCmeDashboard === 'function') {
-                    showCmeDashboard();
-                } else {
-                    console.error("showCmeDashboard function not found!");
-                    alert("Error navigating to CME module.");
-                }
-            } catch (error) {
-                console.error("Error during CME card click handling:", error);
-                alert("An error occurred. Please try again.");
-            } finally {
-                newCard.style.opacity = '1'; newCard.style.cursor = 'pointer';
-            }
-        });
-    } else if (dashboardCmeCard) {
-        dashboardCmeCard.style.display = "none";
-        console.log(`Hiding CME card on dashboard (user tier: ${accessTier}, or anonymous, or elements missing).`);
+    } else {
+      console.warn("User document does not exist in initializeDashboard. Cannot update UI fully.");
+      // Optionally, reset UI elements to default for a non-existent user doc if needed
     }
-    // --- END: Logic for Dashboard CME Card ---
-
-  } // End of if (userDocSnap.exists())
   } catch (error) {
     console.error("Error loading dashboard data:", error);
   }
+  console.log("Dashboard initialization complete.");
 }
 
 // --- Function to Show CME Claim History Modal ---

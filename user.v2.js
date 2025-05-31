@@ -436,60 +436,79 @@ async function updateUserXP() {
     const userDocSnap = await getDoc(userDocRef);
     if (userDocSnap.exists()) {
       const data = userDocSnap.data();
-      const xp = data.stats?.xp || 0;
-      const level = data.stats?.level || 1;
-      const progress = calculateLevelProgress(xp);
+      const totalXP = data.stats?.xp || 0; // Use totalXP from stats
+      const currentLevel = data.stats?.level || 1; // Use currentLevel from stats
       
-      // Update level display
+      // Use your existing calculateLevelProgress to get the percentage
+      // Assuming calculateLevelProgress is defined in this file and returns an object like { progressPercent: number }
+      // or just the number directly. Let's assume it returns the percentage directly for this example.
+      // If it returns an object, adjust accordingly: const { progressPercent } = calculateLevelProgress(totalXP);
+      const progressPercent = calculateLevelProgress(totalXP); // This should be the percentage
+
+      // Update level display in the main toolbar
       const scoreCircle = document.getElementById("scoreCircle");
       if (scoreCircle) {
-        scoreCircle.textContent = level;
+        scoreCircle.textContent = currentLevel;
       }
       
-      // Update XP display
+      // Update XP display in the main toolbar
       const xpDisplay = document.getElementById("xpDisplay");
       if (xpDisplay) {
-        xpDisplay.textContent = `${xp} XP`;
+        xpDisplay.textContent = `${totalXP} XP`;
       }
+
+      // --- THIS IS THE KEY PART FOR THE MAIN TOOLBAR PROGRESS RING ---
+      const mainToolbarLevelCircleProgress = document.getElementById("levelCircleProgress");
+      if (mainToolbarLevelCircleProgress) {
+        mainToolbarLevelCircleProgress.style.setProperty('--progress', `${progressPercent}%`);
+        console.log(`Main Toolbar levelCircleProgress in updateUserXP set to: ${progressPercent}%`);
+      } else {
+        console.warn("Main Toolbar #levelCircleProgress element NOT FOUND in updateUserXP.");
+      }
+      // --- END KEY PART ---
       
       // Update user menu level display
       const userScoreCircle = document.getElementById("userScoreCircle");
       if (userScoreCircle) {
-        userScoreCircle.textContent = level;
+        userScoreCircle.textContent = currentLevel;
       }
       
       // Update user menu XP display
       const userXpDisplay = document.getElementById("userXpDisplay");
       if (userXpDisplay) {
-        const levelInfo = getLevelInfo(level);
+        const levelInfo = getLevelInfo(currentLevel); // Use currentLevel
         if (levelInfo.nextLevelXp) {
-          userXpDisplay.textContent = `${xp}/${levelInfo.nextLevelXp} XP`;
+          userXpDisplay.textContent = `${totalXP}/${levelInfo.nextLevelXp} XP`;
         } else {
-          userXpDisplay.textContent = `${xp} XP`;
+          userXpDisplay.textContent = `${totalXP} XP`;
         }
       }
       
-      // Update progress bars and circles
-      if (typeof updateLevelProgress === 'function') {
-        updateLevelProgress(progress);
+      // Update user menu progress circle and bar
+      const userLevelProgress = document.getElementById("userLevelProgress");
+      if (userLevelProgress) {
+        userLevelProgress.style.setProperty('--progress', `${progressPercent}%`);
+      }
+      const levelProgressBar = document.getElementById("levelProgressBar");
+      if (levelProgressBar) {
+        levelProgressBar.style.width = `${progressPercent}%`;
       }
       
-      // Update dashboard if it exists
-      if (typeof initializeDashboard === 'function') {
+      // Update dashboard if it exists (this will also update the dashboard's progress circle)
+      if (typeof initializeDashboard === 'function') { // Check if initializeDashboard is in global scope (app.js)
         initializeDashboard();
+      } else if (typeof window.initializeDashboard === 'function') { // Fallback check
+        window.initializeDashboard();
       }
       
-      // Check for and display bonus messages - only if they exist AND we're not already showing notifications
+      // Check for and display bonus messages
       const lastBonusMessages = data.stats?.lastBonusMessages;
       const notificationsExist = document.getElementById("xpNotifications") && 
                                 document.getElementById("xpNotifications").children.length > 0;
                                 
       if (lastBonusMessages && Array.isArray(lastBonusMessages) && 
           lastBonusMessages.length > 0 && !notificationsExist) {
-        
         showBonusMessages(lastBonusMessages);
-        
-        // Clear the messages after displaying them
         await runTransaction(db, async (transaction) => {
           const userDoc = await transaction.get(userDocRef);
           if (userDoc.exists()) {
