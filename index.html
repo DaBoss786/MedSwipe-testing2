@@ -270,47 +270,47 @@
   </div>
 </div>
   
-  <!-- Top Toolbar -->
-  <div class="toolbar">
-    <div class="toolbar-left">
-      <button class="menu-button" id="menuToggle">&#9776;</button>
-    </div>
-    <div class="toolbar-center">
-      <div class="logo" id="logoClick">
-        <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo">
+    <!-- Top Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="menu-button" id="menuToggle">☰</button>
       </div>
-    </div>
-    <div class="toolbar-right">
-      <!-- XP Display -->
-      <div id="xpDisplay">0 XP</div>
-      <!-- Level with Progress Circle (replaces the score circle) -->
-      <div class="level-circle-container" id="mainLevelCircleContainer">
-        <div class="level-progress-circle">
-          <div class="level-circle-background"></div>
-          <div class="level-circle-progress" id="levelCircleProgress"></div>
-          <div class="level-number clickable" id="scoreCircle">1</div>
+      <div class="toolbar-center">
+        <div class="logo" id="logoClick">
+          <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo">
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- ================================= -->
-  <!-- == NEW CME Toolbar Tracker     == -->
-  <!-- ================================= -->
-  <div id="cmeToolbarTracker" style="display: none; align-items: center; justify-content: flex-end;">
-    <div id="cmeCreditsDisplay" style="margin-right: 10px; font-size: 0.9rem; color: #0056b3; font-weight: 500;">CME: 0.00</div>
-    <div class="level-circle-container" id="cmeAccuracyCircleContainer"> <!-- Container for the CME accuracy circle -->
-      <div class="level-progress-circle">
-        <div class="level-circle-background"></div>
-        <div class="level-circle-progress" id="cmeAccuracyCircleProgress"></div> <!-- For the accuracy progress ring -->
-        <div class="level-number clickable" id="cmeAccuracyCircleValue">0%</div> <!-- Displays accuracy percentage -->
-      </div>
-    </div>
-  </div>
-  <!-- ================================= -->
-  <!-- == END CME Toolbar Tracker       == -->
-  <!-- ================================= -->
-</div>
+      <div class="toolbar-right">  <!-- .toolbar-right STARTS HERE -->
+        <!-- XP Display -->
+        <div id="xpDisplay">0 XP</div>
+        <!-- Level with Progress Circle -->
+        <div class="level-circle-container" id="mainLevelCircleContainer">
+          <div class="level-progress-circle">
+            <div class="level-circle-background"></div>
+            <div class="level-circle-progress" id="levelCircleProgress"></div>
+            <div class="level-number clickable" id="scoreCircle">1</div>
+          </div>
+        </div>
+  
+        <!-- ================================= -->
+        <!-- == NEW CME Toolbar Tracker     == -->
+        <!-- MOVED INSIDE .toolbar-right     == -->
+        <!-- ================================= -->
+        <div id="cmeToolbarTracker" style="display: none; align-items: center; justify-content: flex-end; gap: 5px;"> <!-- Added gap to match toolbar-right -->
+          <div id="cmeCreditsDisplay" style="font-size: 0.9rem; color: #0056b3; font-weight: 500;">CME: 0.00</div>
+          <div class="level-circle-container" id="cmeAccuracyCircleContainer">
+            <div class="level-progress-circle">
+              <div class="level-circle-background"></div>
+              <div class="level-circle-progress" id="cmeAccuracyCircleProgress"></div>
+              <div class="level-number clickable" id="cmeAccuracyCircleValue">0%</div>
+            </div>
+          </div>
+        </div>
+        <!-- ================================= -->
+        <!-- == END CME Toolbar Tracker       == -->
+        <!-- ================================= -->
+      </div> <!-- .toolbar-right ENDS HERE -->
+    </div> <!-- .toolbar ENDS HERE -->
   
   <!-- Main Options -->
 <!-- Dashboard View with Fixed Spacing and Centered Button -->
