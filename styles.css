@@ -4616,17 +4616,16 @@ html, body {
 }
 
 .paywall-option-card .price-highlight {
-  font-size: 1.2rem;
+  font-size: 2.2rem;  /* Increased from default */
   font-weight: bold;
-  color: #0C72D3;
-  margin-bottom: 15px;
-  display: block;
+  color: #0056b3;
+  margin: 15px 0;
 }
 
 .paywall-option-card .price-details {
-  font-size: 0.9rem;
-  font-weight: normal;
-  color: #777;
+  font-size: 1rem;  /* Keep details smaller for contrast */
+  color: #666;
+  margin-left: 5px;
 }
 
 .paywall-option-card ul {

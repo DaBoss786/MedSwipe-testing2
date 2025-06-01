@@ -294,7 +294,7 @@ exports.generateCmeCertificate = onCall(
           logger.error("Stripe keys missing from environment for webhook.");
           return res.status(500).send("Server mis-configured (webhook keys).");
         }
-        const stripeClient = stripe(stripeSecret);
+        const stripeClient = stripe(stripeSecret); // stripeClient is initialized here
     
         if (req.method === "GET") return res.status(200).send("Webhook OK");
     
@@ -314,32 +314,23 @@ exports.generateCmeCertificate = onCall(
         logger.info(`Received Stripe event: ${event.type}, ID: ${event.id}`);
     
         // --- Helper function to determine accessTier based on user data ---
-// REPLACE the old block with this one
-const determineAccessTier = (userData) => {
-  // helper: confirm a real Firestore Timestamp
-  const tsMs = (ts) =>
-    ts && typeof ts === "object" && typeof ts.toMillis === "function"
-      ? ts.toMillis()
-      : 0;            // treat missing/invalid as expired
+        const determineAccessTier = (userData) => {
+          const tsMs = (ts) =>
+            ts && typeof ts === "object" && typeof ts.toMillis === "function"
+              ? ts.toMillis()
+              : 0;
 
-  const nowMs       = Date.now();
-  const cmeEndMs    = tsMs(userData.cmeSubscriptionEndDate);
-  const brEndMs     = tsMs(userData.boardReviewSubscriptionEndDate);
-  const credits     = userData.cmeCreditsAvailable || 0;
+          const nowMs       = Date.now();
+          const cmeEndMs    = tsMs(userData.cmeSubscriptionEndDate);
+          const brEndMs     = tsMs(userData.boardReviewSubscriptionEndDate);
+          const credits     = userData.cmeCreditsAvailable || 0;
 
-  // 1. CME Annual (includes Board Review)
-  if (userData.cmeSubscriptionActive && cmeEndMs > nowMs) return "cme_annual";
-
-  // 2. Board-Review standalone
-  if (userData.boardReviewActive && brEndMs > nowMs)      return "board_review";
-
-  // 3. CME-credits-only (no active annual sub)
-  if (credits > 0 && !(userData.cmeSubscriptionActive && cmeEndMs > nowMs))
-      return "cme_credits_only";
-
-  // 4. Free / Guest
-  return "free_guest";
-};
+          if (userData.cmeSubscriptionActive && cmeEndMs > nowMs) return "cme_annual";
+          if (userData.boardReviewActive && brEndMs > nowMs)      return "board_review";
+          if (credits > 0 && !(userData.cmeSubscriptionActive && cmeEndMs > nowMs))
+              return "cme_credits_only";
+          return "free_guest";
+        };
     
         // --- Handle checkout.session.completed ---
         if (event.type === "checkout.session.completed") {
@@ -352,20 +343,33 @@ const determineAccessTier = (userData) => {
     
           logger.info(`➡️ checkout.session.completed: ${session.id} | tier=${tier} | mode=${session.mode} | uid=${uid} | paid=${paid}`);
     
-          if (!uid || !paid) {
-            logger.warn("No uid or not paid in checkout.session.completed – aborting Firestore write.");
-            return res.status(200).send("No-op (uid/paid check)");
+          if (!uid || !paid) { // Note: For 100% off promo, 'paid' might still be true if an invoice is generated for $0.
+                               // Or, if Stripe considers it a trial, payment_status might be 'no_payment_required'.
+                               // The crucial part is that a subscription object is created.
+                               // We will proceed if uid is present and session.mode is 'subscription' or 'payment'.
+            if (!uid) {
+                logger.warn("No uid in checkout.session.completed – aborting Firestore write.");
+                return res.status(200).send("No-op (uid check)");
+            }
+            if (session.mode === "subscription" && !session.subscription) {
+                logger.warn("Subscription mode but no subscription ID in checkout.session.completed - aborting.");
+                return res.status(200).send("No-op (subscription ID check)");
+            }
+            // If it's a 100% off promo, 'paid' might not be 'paid' in the traditional sense,
+            // but the session is still completed and a subscription is created.
+            // We'll rely on the presence of session.subscription for subscriptions.
+            logger.info(`Checkout session for UID ${uid} completed. Payment status: ${session.payment_status}. Mode: ${session.mode}.`);
           }
     
           const userRef = admin.firestore().collection("users").doc(uid);
           const updates = {
             stripeCustomerId: custId,
-            isRegistered: true, // User made a purchase, so they are registered
+            isRegistered: true,
             lastStripeEvent: admin.firestore.Timestamp.now(),
             lastStripeEventType: event.type,
           };
     
-          let newAccessTier = "free_guest"; // Default, will be updated
+          let newAccessTier = "free_guest";
     
           if (session.mode === "subscription") {
             const subId = session.subscription;
@@ -374,17 +378,18 @@ const determineAccessTier = (userData) => {
               return res.status(200).send("No subId in session");
             }
     
-            let subscription;
+            let subscriptionFromStripe; // Renamed to avoid conflict with webhook 'subscription' variable
             try {
-              subscription = await stripeClient.subscriptions.retrieve(subId, { expand: ["items"] });
+              // Retrieve the full subscription object to get all details, including discount/coupon
+              subscriptionFromStripe = await stripeClient.subscriptions.retrieve(subId, { expand: ["items", "discount.coupon"] });
             } catch (err) {
               logger.error("Subscription fetch failed for checkout.session.completed:", err);
               return res.status(200).send("Sub fetch failed");
             }
     
-            const item0 = subscription.items?.data?.[0] || {};
-            const startUnix = item0.current_period_start ?? subscription.current_period_start;
-            const endUnix = item0.current_period_end ?? subscription.current_period_end;
+            const item0 = subscriptionFromStripe.items?.data?.[0] || {};
+            const startUnix = item0.current_period_start ?? subscriptionFromStripe.current_period_start;
+            const endUnix = item0.current_period_end ?? subscriptionFromStripe.current_period_end;
             const startTS = startUnix ? admin.firestore.Timestamp.fromMillis(startUnix * 1000) : null;
             const endTS = endUnix ? admin.firestore.Timestamp.fromMillis(endUnix * 1000) : null;
     
@@ -404,10 +409,9 @@ const determineAccessTier = (userData) => {
                 cmeSubscriptionId: subId,
                 cmeSubscriptionStartDate: startTS ?? admin.firestore.FieldValue.serverTimestamp(),
                 cmeSubscriptionEndDate: endTS,
-                // CME Annual also grants Board Review access
                 boardReviewActive: true, 
                 boardReviewTier: "Granted by CME Annual",
-                boardReviewSubscriptionId: subId, // Can use the same subId for tracking
+                boardReviewSubscriptionId: subId,
                 boardReviewSubscriptionStartDate: startTS ?? admin.firestore.FieldValue.serverTimestamp(),
                 boardReviewSubscriptionEndDate: endTS,
               });
@@ -415,6 +419,34 @@ const determineAccessTier = (userData) => {
             } else {
               logger.warn(`Unhandled subscription tier "${tier}" in checkout.session.completed`);
             }
+
+            // --- START: MODIFIED/NEW BLOCK for auto-canceling based on coupon metadata ---
+            if (subscriptionFromStripe.discount && subscriptionFromStripe.discount.coupon && subscriptionFromStripe.discount.coupon.metadata) {
+              if (subscriptionFromStripe.discount.coupon.metadata.auto_cancel_after_promo === 'true') {
+                logger.info(`Subscription ${subId} used a coupon with auto_cancel_after_promo. Setting cancel_at_period_end=true.`);
+                try {
+                  await stripeClient.subscriptions.update(subId, {
+                    cancel_at_period_end: true,
+                  });
+                  logger.info(`Subscription ${subId} successfully set to cancel at period end.`);
+                  // The `customer.subscription.updated` webhook will fire due to this change,
+                  // and your existing logic there should handle updating Firestore with `cancel_at_period_end`.
+                  // We can also proactively add it to the 'updates' object for Firestore here if desired,
+                  // though the subsequent webhook is the more canonical way Stripe handles this.
+                  if (tier === "board_review") {
+                    updates.boardReviewWillCancelAtPeriodEnd = true;
+                  } else if (tier === "cme_annual") {
+                    updates.cmeSubscriptionWillCancelAtPeriodEnd = true;
+                  }
+
+                } catch (err) {
+                  logger.error(`Error setting cancel_at_period_end for subscription ${subId}:`, err);
+                  // Continue with Firestore update even if this fails, but log the error.
+                }
+              }
+            }
+            // --- END: MODIFIED/NEW BLOCK ---
+
           } else if (session.mode === "payment") {
             if (tier === "cme_credits") {
               let credits = parseInt(session.metadata?.credits ?? "0", 10);
@@ -428,8 +460,6 @@ const determineAccessTier = (userData) => {
                 cmeCreditsAvailable: admin.firestore.FieldValue.increment(credits),
                 lastCmeCreditPurchaseDate: admin.firestore.Timestamp.now(),
               });
-              // Determine access tier after incrementing credits
-              // We need to fetch current user data to see if they have an active cme_annual sub
               try {
                 const userDoc = await userRef.get();
                 if (userDoc.exists()) {
@@ -437,14 +467,12 @@ const determineAccessTier = (userData) => {
                     const tempUpdatedData = { ...currentData, ...updates, cmeCreditsAvailable: (currentData.cmeCreditsAvailable || 0) + credits };
                     newAccessTier = determineAccessTier(tempUpdatedData);
                 } else {
-                    // New user, only credits
                     newAccessTier = "cme_credits_only";
                 }
               } catch (docError) {
                 logger.error("Error fetching user doc for tier determination after credit purchase:", docError);
-                newAccessTier = "cme_credits_only"; // Fallback
+                newAccessTier = "cme_credits_only";
               }
-    
             } else {
               logger.warn(`Unhandled payment tier "${tier}" in checkout.session.completed`);
             }
@@ -452,7 +480,7 @@ const determineAccessTier = (userData) => {
             logger.warn(`Unhandled session mode "${session.mode}" in checkout.session.completed`);
           }
     
-          updates.accessTier = newAccessTier; // Set the determined access tier
+          updates.accessTier = newAccessTier;
     
           await userRef.set(updates, { merge: true });
           logger.info(`✅ Firestore updated for ${uid} from checkout.session.completed. New accessTier: ${newAccessTier}`);
@@ -460,12 +488,11 @@ const determineAccessTier = (userData) => {
         }
     
         // --- Handle customer.subscription.updated, customer.subscription.deleted ---
-        // These events handle changes like renewals, cancellations, and expirations.
         if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
-          const subscription = dataObject;
+          const subscription = dataObject; // This is the Stripe subscription object from the event
           const customerId = subscription.customer;
           const status = subscription.status;
-          const cancelAtPeriodEnd = subscription.cancel_at_period_end;
+          const cancelAtPeriodEnd = subscription.cancel_at_period_end; // This is key!
       
           logger.info(`Subscription details: ID=${subscription.id}, Status=${status}, CancelAtPeriodEnd=${cancelAtPeriodEnd}, Start=${subscription.current_period_start}, End=${subscription.current_period_end}`);
       
@@ -487,90 +514,102 @@ const determineAccessTier = (userData) => {
             lastStripeEventType: event.type,
           };
     
-          const planName = subscription.metadata?.planName || userData.boardReviewTier || userData.cmeSubscriptionPlan || "Subscription";
-          const tier = subscription.metadata?.tier || (userData.boardReviewActive ? "board_review" : (userData.cmeSubscriptionActive ? "cme_annual" : "unknown"));
-    
+          // --- START: Determine tier based on subscription metadata or existing user data ---
+          let tier = "unknown";
+          let planName = "Subscription";
+
+          // Attempt to get tier and planName from the subscription's metadata first
+          if (subscription.metadata && subscription.metadata.tier) {
+            tier = subscription.metadata.tier;
+          } else if (subscription.items && subscription.items.data.length > 0 && subscription.items.data[0].price && subscription.items.data[0].price.metadata && subscription.items.data[0].price.metadata.tier) {
+            tier = subscription.items.data[0].price.metadata.tier; // Check price metadata
+          } else if (subscription.plan && subscription.plan.metadata && subscription.plan.metadata.tier) {
+            tier = subscription.plan.metadata.tier; // Fallback to plan metadata (older Stripe versions)
+          } else {
+            // Fallback to user data if subscription metadata is missing tier
+            if (userData.boardReviewSubscriptionId === subscription.id) {
+                tier = "board_review";
+            } else if (userData.cmeSubscriptionId === subscription.id) {
+                tier = "cme_annual";
+            }
+          }
+
+          if (subscription.metadata && subscription.metadata.planName) {
+            planName = subscription.metadata.planName;
+          } else if (subscription.items && subscription.items.data.length > 0 && subscription.items.data[0].price && subscription.items.data[0].price.nickname) {
+            planName = subscription.items.data[0].price.nickname; // Use price nickname as planName
+          } else if (userData.boardReviewSubscriptionId === subscription.id && userData.boardReviewTier) {
+            planName = userData.boardReviewTier;
+          } else if (userData.cmeSubscriptionId === subscription.id && userData.cmeSubscriptionPlan) {
+            planName = userData.cmeSubscriptionPlan;
+          }
+          // --- END: Determine tier ---
+
           const isActiveStatus = status === "active" || status === "trialing";
           
-          // --- Define startTS and endTS safely ---
-let startTS = null;
-let endTS   = null;
+          let startTS = null;
+          let endTS   = null;
+          const startSec = Number(subscription.current_period_start);
+          if (Number.isFinite(startSec) && startSec > 0) {
+            startTS = admin.firestore.Timestamp.fromMillis(startSec * 1000);
+          }
+          const endSec = Number(subscription.current_period_end);
+          if (Number.isFinite(endSec) && endSec > 0) {
+            endTS = admin.firestore.Timestamp.fromMillis(endSec * 1000);
+          }
 
-const startSec = Number(subscription.current_period_start);
-if (Number.isFinite(startSec) && startSec > 0) {
-  startTS = admin.firestore.Timestamp.fromMillis(startSec * 1000);
-} else {
-  logger.warn(
-    `Subscription ${subscription.id} has invalid current_period_start: ${subscription.current_period_start}`
-  );
-}
-
-const endSec = Number(subscription.current_period_end);
-if (Number.isFinite(endSec) && endSec > 0) {
-  endTS = admin.firestore.Timestamp.fromMillis(endSec * 1000);
-} else {
-  logger.warn(
-    `Subscription ${subscription.id} has invalid current_period_end: ${subscription.current_period_end}`
-  );
-}
-// --- End safe definition ---
-
-
-          // Update specific subscription type fields
           if (tier === "board_review") {
             updates.boardReviewActive = isActiveStatus;
-            updates.boardReviewTier = isActiveStatus ? planName : "Expired/Canceled";
-            updates.boardReviewWillCancelAtPeriodEnd = cancelAtPeriodEnd;
+            updates.boardReviewTier = isActiveStatus ? planName : (cancelAtPeriodEnd ? `${planName} (Cancels ${endTS ? endTS.toDate().toLocaleDateString() : 'soon'})` : "Expired/Canceled");
+            updates.boardReviewWillCancelAtPeriodEnd = cancelAtPeriodEnd; // Store this directly
 
             if (isActiveStatus) {
-            updates.boardReviewSubscriptionStartDate = startTS || admin.firestore.FieldValue.delete();
-            updates.boardReviewSubscriptionEndDate = endTS || admin.firestore.FieldValue.delete();
-        } else {
-                // If not active, we might want to keep the end date or clear it
-                // For now, we'll rely on boardReviewActive: false
+                updates.boardReviewSubscriptionStartDate = startTS || userData.boardReviewSubscriptionStartDate || admin.firestore.FieldValue.delete();
+                updates.boardReviewSubscriptionEndDate = endTS || userData.boardReviewSubscriptionEndDate || admin.firestore.FieldValue.delete();
+            } else if (!cancelAtPeriodEnd) { // If not active AND not set to cancel (i.e., truly expired/deleted)
+                // Optionally clear dates or set specific "expired" values
+                // updates.boardReviewSubscriptionEndDate = admin.firestore.FieldValue.delete(); // Or keep last known end date
             }
           } else if (tier === "cme_annual") {
             updates.cmeSubscriptionActive = isActiveStatus;
-            updates.cmeSubscriptionPlan = isActiveStatus ? planName : "Expired/Canceled";
-            updates.cmeSubscriptionWillCancelAtPeriodEnd = cancelAtPeriodEnd;
+            updates.cmeSubscriptionPlan = isActiveStatus ? planName : (cancelAtPeriodEnd ? `${planName} (Cancels ${endTS ? endTS.toDate().toLocaleDateString() : 'soon'})` : "Expired/Canceled");
+            updates.cmeSubscriptionWillCancelAtPeriodEnd = cancelAtPeriodEnd; // Store this directly
 
             if (isActiveStatus) {
-              updates.cmeSubscriptionStartDate = startTS || admin.firestore.FieldValue.delete();
-              updates.cmeSubscriptionEndDate = endTS || admin.firestore.FieldValue.delete();
-          }
+              updates.cmeSubscriptionStartDate = startTS || userData.cmeSubscriptionStartDate || admin.firestore.FieldValue.delete();
+              updates.cmeSubscriptionEndDate = endTS || userData.cmeSubscriptionEndDate || admin.firestore.FieldValue.delete();
+            }
 
-             // CME Annual also affects Board Review status
-        updates.boardReviewActive = isActiveStatus;
-        updates.boardReviewTier = isActiveStatus
-            ? "Granted by CME Annual"
-            : (userData.boardReviewActive ? "Expired/Canceled" : userData.boardReviewTier);
+            // CME Annual also affects Board Review status
+            updates.boardReviewActive = isActiveStatus; // If CME annual is active, BR is active
+            updates.boardReviewTier = isActiveStatus
+                ? "Granted by CME Annual"
+                : (cancelAtPeriodEnd && userData.cmeSubscriptionId === subscription.id ? `Granted by CME Annual (Cancels ${endTS ? endTS.toDate().toLocaleDateString() : 'soon'})` : "Expired/Canceled");
+            updates.boardReviewWillCancelAtPeriodEnd = (userData.cmeSubscriptionId === subscription.id) ? cancelAtPeriodEnd : userData.boardReviewWillCancelAtPeriodEnd;
 
-        if (isActiveStatus) {
-            if (startTS) updates.boardReviewSubscriptionStartDate = startTS;
-            if (endTS) updates.boardReviewSubscriptionEndDate = endTS;
+
+            if (isActiveStatus) {
+                if (startTS) updates.boardReviewSubscriptionStartDate = startTS;
+                if (endTS) updates.boardReviewSubscriptionEndDate = endTS;
+            }
+        } else {
+            logger.warn(`Unhandled subscription tier "${tier}" in ${event.type} for subscription ID ${subscription.id}`);
         }
-    } else {
-        logger.warn(`Unhandled subscription tier "${tier}" in ${event.type}`);
+
+        const potentiallyUpdatedUserData = { ...userData, ...updates };
+        updates.accessTier = determineAccessTier(potentiallyUpdatedUserData);
+
+        await userRef.set(updates, { merge: true });
+
+        logger.info(`Firestore updated for ${uid} from ${event.type}. New accessTier: ${updates.accessTier}. CancelAtPeriodEnd: ${cancelAtPeriodEnd}`);
+        return res.status(200).send(`OK (${event.type})`);
     }
-
-    const potentiallyUpdatedUserData = { ...userData, ...updates };
-
-    // Ensure that if start/end dates became null due to missing Stripe data,
-    // determineAccessTier can handle it (it should, as it checks for existence of end date).
-    updates.accessTier = determineAccessTier(potentiallyUpdatedUserData);
-
-    await userRef.set(updates, { merge: true });
-
-    logger.info(`Firestore updated for ${uid} from ${event.type}. New accessTier: ${updates.accessTier}`);
-    return res.status(200).send(`OK (${event.type})`);
-}
         
         // --- Handle invoice.payment_failed ---
-        // Useful for downgrading access if a recurring payment fails.
         if (event.type === 'invoice.payment_failed') {
             const invoice = dataObject;
             const customerId = invoice.customer;
-            const subscriptionId = invoice.subscription; // ID of the subscription that failed
+            const subscriptionId = invoice.subscription; 
     
             logger.info(`➡️ Invoice payment failed for Sub ID: ${subscriptionId}, Cust ID: ${customerId}`);
     
@@ -597,22 +636,22 @@ if (Number.isFinite(endSec) && endSec > 0) {
                 lastStripeEventType: event.type,
             };
     
-            // Determine which subscription failed and mark it inactive
             if (userData.boardReviewSubscriptionId === subscriptionId) {
                 updates.boardReviewActive = false;
                 updates.boardReviewTier = "Payment Failed";
+                updates.boardReviewWillCancelAtPeriodEnd = false; // Payment failed, so it's not "canceling at period end" anymore, it's just inactive.
                 logger.info(`Marking Board Review inactive for user ${uid} due to payment failure.`);
             }
             if (userData.cmeSubscriptionId === subscriptionId) {
                 updates.cmeSubscriptionActive = false;
                 updates.cmeSubscriptionPlan = "Payment Failed";
-                // If CME Annual fails, Board Review granted by it also becomes inactive
+                updates.cmeSubscriptionWillCancelAtPeriodEnd = false;
                 updates.boardReviewActive = false; 
                 updates.boardReviewTier = "Payment Failed (CME Annual)";
+                updates.boardReviewWillCancelAtPeriodEnd = false;
                 logger.info(`Marking CME Annual (and associated Board Review) inactive for user ${uid} due to payment failure.`);
             }
     
-            // Re-determine accessTier
             const potentiallyUpdatedUserData = { ...userData, ...updates };
             updates.accessTier = determineAccessTier(potentiallyUpdatedUserData);
     
@@ -683,6 +722,7 @@ if (Number.isFinite(endSec) && endSec > 0) {
             tier,
             ...(mode === "payment" ? { credits: String(quantity) } : {}),
           },
+          allow_promotion_codes: true,
         };
     
         if (mode === "subscription") {
