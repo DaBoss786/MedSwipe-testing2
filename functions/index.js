@@ -2,12 +2,17 @@
 // --- v2 Imports ---
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onRequest } = require("firebase-functions/v2/https"); // For webhook
-const { logger } = require("firebase-functions"); // Use v1 logger for now, or switch to v2 logger if preferred
+const { logger } = require("firebase-functions/v2"); // <<<< KEEP THIS ONE (or one like it)
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+
+// --- Other Imports ---
 const admin = require("firebase-admin");
-const stripe = require("stripe");
+const stripe = require("stripe"); // Assuming you still use stripe
 const { defineString } = require("firebase-functions/params");
-const { PDFDocument, StandardFonts, rgb, degrees } = require("pdf-lib"); // Added degrees
+const { PDFDocument, StandardFonts, rgb, degrees } = require("pdf-lib");
 const crypto = require("crypto");
+const axios = require("axios"); // For MailerLite
+
 
 // Initialize Firebase Admin SDK only once
 if (admin.apps.length === 0) {
@@ -18,7 +23,7 @@ if (admin.apps.length === 0) {
 }
 
 // Initialize Firestore DB INSTANCE - THIS IS CRITICAL
-let db = admin.firestore(); // Changed to let to allow potential re-assignment for testing
+const db = admin.firestore(); // Use the initialized db instance from your global scope
 logger.info("Firestore db object initialized in module scope. typeof db:", typeof db, "Is db truthy?", !!db);
 if (!db || typeof db.collection !== 'function') {
     logger.error("CRITICAL FAILURE: admin.firestore() did not return a valid db instance at module scope! Re-initializing...");
@@ -1185,3 +1190,160 @@ exports.getLeaderboardData = onCall(
   }
 );
 // --- END LEADERBOARD CLOUD FUNCTION ---
+
+const MAILERLITE_GROUP_ID = "156027000658593431"; // Your MailerLite Group ID
+
+const MAX_USERS_TO_PROCESS_PER_RUN = 100; // Adjustable: How many users to process in one go
+
+exports.syncUsersToMailerLiteDaily = onSchedule(
+  {
+    schedule: "every day 19:50", // Example: Runs daily at 3:00 AM
+    timeZone: "America/New_York",    // Optional: Specify your preferred timezone
+    secrets: ["MAILERLITE_API_KEY"], // Ensure this secret is set in Firebase
+    timeoutSeconds: 540,             // Max timeout for scheduled functions (9 minutes)
+    memory: "512MiB",                // Adjust memory as needed
+    retryConfig: {                   // Optional: Configure retries on failure
+        retryCount: 2,
+    }
+  },
+  async (event) => {
+    logger.info(`Scheduled MailerLite sync started. Event ID: ${event.jobName}, Timestamp: ${event.scheduleTime}`);
+
+    const mailerLiteApiKey = process.env.MAILERLITE_API_KEY;
+    if (!mailerLiteApiKey) {
+      logger.error("MAILERLITE_API_KEY secret is not configured. Aborting MailerLite sync.");
+      return; // Critical configuration missing
+    }
+
+    try {
+      const usersRef = db.collection("users");
+      const snapshot = await usersRef
+        .where("marketingOptIn", "==", true)
+        .where("email", "!=", null) // Basic check that email field exists
+        .where("mailerLiteSubscriberId", "==", null) // Key: Only get users not yet synced
+        .limit(MAX_USERS_TO_PROCESS_PER_RUN) // Process in batches
+        .get();
+
+      if (snapshot.empty) {
+        logger.info("No new users to sync to MailerLite at this time.");
+        return;
+      }
+
+      logger.info(`Found ${snapshot.docs.length} users to potentially sync to MailerLite.`);
+      let successCount = 0;
+      let errorCount = 0;
+      let skippedCount = 0;
+
+      // Process each user found
+      for (const userDoc of snapshot.docs) {
+        const userId = userDoc.id;
+        const userData = userDoc.data();
+
+        // Additional validation for email format (optional, MailerLite will also validate)
+        if (!userData.email || typeof userData.email !== 'string' || !userData.email.includes('@')) {
+            logger.warn(`User ${userId} has invalid or missing email ('${userData.email}'). Skipping MailerLite sync for this user.`);
+            // Optionally mark this user so they are not picked up again if email is truly bad
+            // await userDoc.ref.update({ mailerLiteSubscriberId: "INVALID_EMAIL_SKIPPED" });
+            skippedCount++;
+            continue;
+        }
+
+        const email = userData.email;
+        const name = userData.firstName || userData.displayName || ""; // Use available name fields
+        const lastName = userData.lastName || ""; // Optional: if you collect last name
+
+        logger.info(`Processing user ${userId} (Email: ${email}) for MailerLite sync.`);
+
+        try {
+          const response = await axios.post(
+            `https://connect.mailerlite.com/api/subscribers`, // MailerLite API v2 (new API)
+            {
+              email: email,
+              fields: { // MailerLite's current API often uses a 'fields' object
+                name: name,
+                last_name: lastName,
+              },
+              groups: [MAILERLITE_GROUP_ID], // Add to specific group(s)
+              status: "active", // Or "unconfirmed" if you use double opt-in via MailerLite
+              // You can add more fields here if needed, like 'source', 'country', etc.
+            },
+            {
+              headers: {
+                "Authorization": `Bearer ${mailerLiteApiKey}`,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+              },
+              timeout: 10000, // 10 second timeout for the API call
+            }
+          );
+
+          const subscriberId = response.data?.data?.id;
+          logger.info(`Successfully added/updated ${email} (User ID: ${userId}) in MailerLite. Subscriber ID: ${subscriberId}`);
+          successCount++;
+
+          // Update Firestore to mark as synced and store MailerLite ID
+          await userDoc.ref.update({
+            mailerLiteSubscriberId: subscriberId || `SYNCED_NO_ID_${Date.now()}`, // Store ID, or a generic synced marker if ID is missing
+            mailerLiteLastSyncTimestamp: admin.firestore.FieldValue.serverTimestamp(),
+            mailerLiteSyncError: admin.firestore.FieldValue.delete() // Clear any previous error
+          });
+          logger.info(`Updated Firestore for user ${userId} with MailerLite subscriber ID: ${subscriberId}.`);
+
+        } catch (apiError) {
+          errorCount++;
+          let errorMessage = apiError.message;
+          let errorStatus = "UNKNOWN";
+          let errorData = null;
+
+          if (apiError.response) {
+            // The request was made and the server responded with a status code
+            // that falls out of the range of 2xx
+            errorStatus = apiError.response.status;
+            errorData = apiError.response.data;
+            errorMessage = errorData?.message || JSON.stringify(errorData) || apiError.message;
+            logger.error(`MailerLite API Error for ${email} (User ID: ${userId}): Status ${errorStatus}`, { errorData });
+          } else if (apiError.request) {
+            // The request was made but no response was received
+            logger.error(`MailerLite API No Response for ${email} (User ID: ${userId}):`, apiError.request);
+            errorMessage = "No response from MailerLite API.";
+          } else {
+            // Something happened in setting up the request that triggered an Error
+            logger.error(`MailerLite API Request Setup Error for ${email} (User ID: ${userId}):`, apiError.message);
+          }
+
+          // Mark user with error to prevent constant retries for persistent issues
+          // (e.g., invalid email format rejected by MailerLite)
+          if (errorStatus === 422 || errorStatus === 400) { // 422 Unprocessable Entity, 400 Bad Request
+            await userDoc.ref.update({
+              mailerLiteSubscriberId: `ERROR_API_${errorStatus}`, // Mark to avoid re-querying
+              mailerLiteSyncError: {
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                message: errorMessage,
+                status: errorStatus,
+                data: errorData ? JSON.stringify(errorData).substring(0, 500) : null, // Store some data, truncated
+                groupId: MAILERLITE_GROUP_ID
+              }
+            });
+            logger.warn(`Marked user ${userId} with persistent MailerLite sync error ${errorStatus}.`);
+          }
+          // For other errors (like network issues, 5xx), they will be retried on the next run
+          // because mailerLiteSubscriberId remains null.
+        }
+        // Optional: Add a small delay if processing many users to respect API rate limits
+        // await new Promise(resolve => setTimeout(resolve, 250)); // 250ms delay
+      } // End of for loop
+
+      logger.info(`MailerLite sync finished. Processed: ${snapshot.docs.length}, Success: ${successCount}, Errors: ${errorCount}, Skipped: ${skippedCount}.`);
+
+      // If there were more users than MAX_USERS_TO_PROCESS_PER_RUN, you might want to
+      // re-trigger this function or log that more processing is needed.
+      // For simplicity, this example processes one batch per scheduled run.
+
+    } catch (error) {
+      logger.error("Unhandled error during scheduled MailerLite sync execution:", error);
+      // Depending on the error, you might want to throw it to trigger Firebase's retry mechanism
+      // if you've configured retries on the function.
+      // throw error; // Uncomment to utilize Firebase Function retries for this type of error
+    }
+  }
+);

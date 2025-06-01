@@ -17,7 +17,8 @@ import {
   updateProfile,
   // --- Added for linkWithCredential ---
   EmailAuthProvider,
-  linkWithCredential
+  linkWithCredential,
+  updateDoc
   // --- End added ---
 } from './firebase-config.js';
 
@@ -149,6 +150,8 @@ function initAuth() {
           cmeSubscriptionActive: false,
           cmeSubscriptionEndDate: null,
           cmeCreditsAvailable: 0,
+          marketingOptIn: false, // Default to false for new users
+          mailerLiteSubscriberId: null,
         };
 
         if (currentAuthIsRegistered && user.email) {
@@ -193,6 +196,15 @@ function initAuth() {
           userDataForWrite.specialty = "ENT";
         }
         // --- END BACK-FILL SPECIALTY ---
+
+        // --- Ensure MailerLite fields exist on older documents ---
+    if (typeof existingData.marketingOptIn === 'undefined') {
+      userDataForWrite.marketingOptIn = false; // Default if missing
+    }
+    if (typeof existingData.mailerLiteSubscriberId === 'undefined') {
+      userDataForWrite.mailerLiteSubscriberId = null; // Default if missing
+    }
+    // --- End MailerLite field check ---
 
         // --- Read subscription details and determine effective access tier ---
         let brActive = existingData.boardReviewActive || false;
@@ -344,7 +356,7 @@ function getCurrentUser() {
 
 // ----------------------------------------------------
 // Direct email/password registration (not upgrade)
-async function registerUser(email, password, username) {
+async function registerUser(email, password, username, _experienceLevel_not_used, marketingOptInValue) {
   try {
     console.log(`registerUser: creating ${email}`);
     const { user } = await createUserWithEmailAndPassword(auth, email, password);
@@ -362,9 +374,25 @@ await setDoc(
     username,
     email,
     isRegistered: true,
-    marketingOptIn: marketingOptIn,
+    marketingOptIn: marketingOptInValue, // <<<< USE THE PASSED VALUE
+    mailerLiteSubscriberId: null,       // <<<< INITIALIZE
     createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
+    updatedAt: serverTimestamp(),
+    // Add other default fields consistent with onAuthStateChanged new user creation
+    accessTier: "free_guest",
+    specialty: "ENT",
+    experienceLevel: null, // Or pass if available
+    stats: { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0, xp: 0, level: 1, achievements: {}, currentCorrectStreak: 0 },
+    streaks: { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 },
+    bookmarks: [],
+    cmeStats: { totalAnswered: 0, totalCorrect: 0, eligibleAnswerCount: 0, creditsEarned: 0.0, creditsClaimed: 0.0 },
+    cmeAnsweredQuestions: {},
+    cmeClaimHistory: [],
+    boardReviewActive: false,
+    boardReviewSubscriptionEndDate: null,
+    cmeSubscriptionActive: false,
+    cmeSubscriptionEndDate: null,
+    cmeCreditsAvailable: 0,
   },
   { merge: true }
 );
@@ -387,7 +415,7 @@ await setDoc(
 
 // ----------------------------------------------------
 // Upgrade currently anonymous user to permanent account
-async function upgradeAnonymousUser(email, password, username) {
+async function upgradeAnonymousUser(email, password, username, _experienceLevel_not_used, marketingOptInValue) {
   const anonUser = auth.currentUser;
 
   if (!anonUser || !anonUser.isAnonymous) {
@@ -413,10 +441,13 @@ await setDoc(
     username,
     email,
     isRegistered: true,
-    marketingOptIn: marketingOptIn,
+    marketingOptIn: marketingOptInValue, // <<<< USE THE PASSED VALUE
+    // mailerLiteSubscriberId is likely already null from onAuthStateChanged,
+    // or if it was somehow set for an anonymous user (unlikely),
+    // you might decide if you want to reset it here.
+    // For now, we assume onAuthStateChanged handles its presence.
     updatedAt: serverTimestamp()
   },
-  { merge: true }
 );
 
     window.authState.user        = upgradedUser;

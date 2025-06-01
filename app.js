@@ -1140,6 +1140,8 @@ newForm.addEventListener('submit', async function(e) {
   const username = newForm.querySelector('#registerUsername').value;
   const email = newForm.querySelector('#registerEmail').value;
   const password = newForm.querySelector('#registerPassword').value;
+  const marketingOptInCheckbox = newForm.querySelector('#marketingOptIn'); // <<<< ADD THIS LINE
+  const marketingOptIn = marketingOptInCheckbox ? marketingOptInCheckbox.checked : false;
   // Experience is no longer read from here
 
   if (errorElement) errorElement.textContent = '';
@@ -1147,10 +1149,10 @@ newForm.addEventListener('submit', async function(e) {
   try {
     if (window.authState.user && window.authState.user.isAnonymous) {
       // Pass undefined or null for experience, as it's handled by onboarding
-      await window.authFunctions.upgradeAnonymousUser(email, password, username, null);
+      await window.authFunctions.upgradeAnonymousUser(email, password, username, null, marketingOptIn);
     } else {
       // Pass undefined or null for experience
-      await window.authFunctions.registerUser(email, password, username, null);
+      await window.authFunctions.registerUser(email, password, username, null, marketingOptIn);
     }
     
     modalElement.style.display = 'none';
