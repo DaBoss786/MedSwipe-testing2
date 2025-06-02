@@ -1138,45 +1138,47 @@ newForm.addEventListener('submit', async function(e) {
   const currentNextStep = modalElement.dataset.nextStep || initialNextStep;
 
   const username = newForm.querySelector('#registerUsername').value;
-  const email = newForm.querySelector('#registerEmail').value;
-  const password = newForm.querySelector('#registerPassword').value;
-  // Experience is no longer read from here
+      const email = newForm.querySelector('#registerEmail').value;
+      const password = newForm.querySelector('#registerPassword').value;
+      // Experience is no longer read from here
+      const marketingOptInCheckbox = newForm.querySelector('#marketingOptIn'); // <<< ADD THIS LINE
+      const marketingOptInValue = marketingOptInCheckbox ? marketingOptInCheckbox.checked : false; // <<< ADD THIS LINE
 
-  if (errorElement) errorElement.textContent = '';
+      if (errorElement) errorElement.textContent = '';
 
-  try {
-    if (window.authState.user && window.authState.user.isAnonymous) {
-      // Pass undefined or null for experience, as it's handled by onboarding
-      await window.authFunctions.upgradeAnonymousUser(email, password, username, null);
-    } else {
-      // Pass undefined or null for experience
-      await window.authFunctions.registerUser(email, password, username, null);
-    }
-    
-    modalElement.style.display = 'none';
+      try {
+        if (window.authState.user && window.authState.user.isAnonymous) {
+          // Pass undefined or null for experience, as it's handled by onboarding
+          await window.authFunctions.upgradeAnonymousUser(email, password, username, null, marketingOptInValue); // <<< MODIFIED THIS LINE
+        } else {
+          // Pass undefined or null for experience
+          await window.authFunctions.registerUser(email, password, username, null, marketingOptInValue); // <<< MODIFIED THIS LINE
+        }
+        
+        modalElement.style.display = 'none';
 
-    // Handle redirection based on currentNextStep
-    if (currentNextStep === 'board_review_pricing') {
-      sessionStorage.setItem('pendingRedirectAfterRegistration', 'board_review_pricing');
-      // The authStateChanged listener will handle the actual redirect
-    } else if (currentNextStep === 'cme_pricing') {
-      sessionStorage.setItem('pendingRedirectAfterRegistration', 'cme_pricing');
-    } else if (currentNextStep === 'cme_info') {
-      sessionStorage.setItem('pendingRedirectAfterRegistration', 'cme_info');
-    } else {
-      // Default to dashboard or main options if no specific redirect
-      const mainOptions = document.getElementById('mainOptions');
-      if (mainOptions) mainOptions.style.display = 'flex';
-    }
-    // The authStateChanged listener in app.js should now pick up the isRegistered=true
-    // and pendingRedirect to show the correct screen.
-    // ensureEventListenersAttached(); // May not be needed if authStateChanged handles UI fully
-  } catch (error) {
-    console.error("Full registration error object:", error); // <<<--- ADD THIS LINE
-    console.error("Error code:", error.code);                 // <<<--- ADD THIS LINE
-    console.error("Error message:", error.message);           // <<<--- ADD THIS LINE
-    if (errorElement) errorElement.textContent = getAuthErrorMessage(error);
-  }
+        // Handle redirection based on currentNextStep
+        if (currentNextStep === 'board_review_pricing') {
+          sessionStorage.setItem('pendingRedirectAfterRegistration', 'board_review_pricing');
+          // The authStateChanged listener will handle the actual redirect
+        } else if (currentNextStep === 'cme_pricing') {
+          sessionStorage.setItem('pendingRedirectAfterRegistration', 'cme_pricing');
+        } else if (currentNextStep === 'cme_info') {
+          sessionStorage.setItem('pendingRedirectAfterRegistration', 'cme_info');
+        } else {
+          // Default to dashboard or main options if no specific redirect
+          const mainOptions = document.getElementById('mainOptions');
+          if (mainOptions) mainOptions.style.display = 'flex';
+        }
+        // The authStateChanged listener in app.js should now pick up the isRegistered=true
+        // and pendingRedirect to show the correct screen.
+        // ensureEventListenersAttached(); // May not be needed if authStateChanged handles UI fully
+      } catch (error) {
+        console.error("Full registration error object:", error); 
+        console.error("Error code:", error.code);                 
+        console.error("Error message:", error.message);           
+        if (errorElement) errorElement.textContent = getAuthErrorMessage(error);
+      }
 });
 }
 
