@@ -18,7 +18,7 @@ import {
   // --- Added for linkWithCredential ---
   EmailAuthProvider,
   linkWithCredential,
-  updateDoc
+  updateDoc // Make sure updateDoc is here if you use it
   // --- End added ---
 } from './firebase-config.js';
 
@@ -89,19 +89,18 @@ function initAuth() {
         userDocSnap = await getDoc(userDocRef);
       } catch (docError) {
         console.error(`Error fetching user document for ${user.uid}:`, docError);
-        // Keep user as guest if doc fetch fails, or handle as critical error
         window.authState.isLoading = false;
         window.dispatchEvent(
           new CustomEvent('authStateChanged', { detail: { ...window.authState } })
         );
-        return; // Stop further processing for this user
+        return;
       }
       
       let userDataForWrite = {};
       const isNewUserDocument = !userDocSnap.exists();
-      const currentAuthIsRegistered = !user.isAnonymous; // Based on Firebase Auth type
+      const currentAuthIsRegistered = !user.isAnonymous;
 
-      let effectiveAccessTier = "free_guest"; // To be determined
+      let effectiveAccessTier = "free_guest";
 
       if (isNewUserDocument) {
         console.log(`User doc for ${user.uid} not found, creating with defaults...`);
@@ -112,11 +111,9 @@ function initAuth() {
           email: user.email || null,
           createdAt: serverTimestamp(),
           isRegistered: currentAuthIsRegistered,
-          accessTier: "free_guest", // Default for new doc
-          specialty: "ENT", // <<< NEW: Default specialty for brand new users
-          experienceLevel: null, // Will be set by onboarding if they go through it
-
-          // Default stats scaffold
+          accessTier: "free_guest", 
+          specialty: "ENT", 
+          experienceLevel: null, 
           stats: {
             totalAnswered: 0,
             totalCorrect:  0,
@@ -134,7 +131,7 @@ function initAuth() {
             longestStreak: 0
           },
           bookmarks: [],
-
+          answeredQuestions: {}, // Initialize answeredQuestions for new users
           cmeStats: {
             totalAnswered: 0,
             totalCorrect:  0,
@@ -144,22 +141,20 @@ function initAuth() {
           },
           cmeAnsweredQuestions: {},
           cmeClaimHistory: [],
-          // Initialize subscription fields to false/null
           boardReviewActive: false,
           boardReviewSubscriptionEndDate: null,
           cmeSubscriptionActive: false,
           cmeSubscriptionEndDate: null,
           cmeCreditsAvailable: 0,
-          marketingOptIn: false, // Default to false for new users
-          mailerLiteSubscriberId: null,
+          // marketingOptIn: false, // This was added in later suggestions
+          // mailerLiteSubscriberId: null, // This was added in later suggestions
         };
 
         if (currentAuthIsRegistered && user.email) {
           userDataForWrite.email = user.email;
         }
-        window.authState.isRegistered = currentAuthIsRegistered; // Set from auth type
-        window.authState.accessTier = "free_guest"; // Set explicitly for new user
-        // Other authState fields remain default (false/null/0)
+        window.authState.isRegistered = currentAuthIsRegistered;
+        window.authState.accessTier = "free_guest";
       } else {
         // ---- Existing Firestore user doc ----
         const existingData = userDocSnap.data();
@@ -167,19 +162,16 @@ function initAuth() {
           `Found user doc for ${user.uid}. AuthIsAnon=${user.isAnonymous}, StoredIsReg=${existingData.isRegistered}, StoredTier=${existingData.accessTier}`
         );
 
-        // Sync isRegistered flag if Firebase Auth state and Firestore are misaligned
         if (existingData.isRegistered !== currentAuthIsRegistered) {
           console.log(`Correcting isRegistered for ${user.uid} in Firestore.`);
           userDataForWrite.isRegistered = currentAuthIsRegistered;
         }
-        window.authState.isRegistered = currentAuthIsRegistered; // Set from auth type
+        window.authState.isRegistered = currentAuthIsRegistered;
 
-        // Update email in Firestore if newly registered via Firebase Auth and not matching
         if (currentAuthIsRegistered && user.email && existingData.email !== user.email) {
           userDataForWrite.email = user.email;
         }
 
-        // Ensure anonymous users keep a guest-style username if current one isn't guest-like
         if (
           user.isAnonymous &&
           (!existingData.username ||
@@ -190,23 +182,19 @@ function initAuth() {
           userDataForWrite.username = generateGuestUsername();
         }
 
-         // --- BACK-FILL SPECIALTY (NEW) ---
          if (typeof existingData.specialty === 'undefined' || existingData.specialty === null || existingData.specialty === "") {
           console.log(`User ${user.uid} is missing specialty. Back-filling with 'ENT'.`);
           userDataForWrite.specialty = "ENT";
         }
-        // --- END BACK-FILL SPECIALTY ---
+        
+        // Initialize potentially missing structures on older documents
+        // This was a good safeguard from later suggestions, you might want to keep it or ensure your old docs are fine.
+        if (!existingData.stats) userDataForWrite.stats = { xp: 0, level: 1, totalAnswered: 0, totalCorrect: 0, /* etc. */ };
+        if (!existingData.answeredQuestions) userDataForWrite.answeredQuestions = {};
+        if (!existingData.bookmarks) userDataForWrite.bookmarks = [];
+        if (!existingData.cmeStats) userDataForWrite.cmeStats = { creditsEarned: 0, creditsClaimed: 0, totalAnswered: 0, totalCorrect: 0, /* etc. */ };
 
-        // --- Ensure MailerLite fields exist on older documents ---
-    if (typeof existingData.marketingOptIn === 'undefined') {
-      userDataForWrite.marketingOptIn = false; // Default if missing
-    }
-    if (typeof existingData.mailerLiteSubscriberId === 'undefined') {
-      userDataForWrite.mailerLiteSubscriberId = null; // Default if missing
-    }
-    // --- End MailerLite field check ---
 
-        // --- Read subscription details and determine effective access tier ---
         let brActive = existingData.boardReviewActive || false;
         let brEndDate = existingData.boardReviewSubscriptionEndDate || null;
         let cmeActive = existingData.cmeSubscriptionActive || false;
@@ -216,27 +204,22 @@ function initAuth() {
 
         const now = new Date();
 
-        // Client-side expiry check for Board Review
         if (brActive && brEndDate && brEndDate.toDate() < now) {
           console.log(`Client-side: Board Review for ${user.uid} expired.`);
           brActive = false;
-          userDataForWrite.boardReviewActive = false; // Mark for Firestore update
-          // Optionally clear/update boardReviewTier if it was specific
+          userDataForWrite.boardReviewActive = false;
         }
 
-        // Client-side expiry check for CME Annual
         if (cmeActive && cmeEndDate && cmeEndDate.toDate() < now) {
           console.log(`Client-side: CME Annual for ${user.uid} expired.`);
           cmeActive = false;
-          userDataForWrite.cmeSubscriptionActive = false; // Mark for Firestore update
-          // If CME Annual expires, any BR access granted by it also expires
+          userDataForWrite.cmeSubscriptionActive = false;
           if (existingData.boardReviewTier === "Granted by CME Annual") {
              userDataForWrite.boardReviewActive = false;
           }
         }
         
-        // Determine effective tier based on (potentially client-side updated) active flags
-        if (cmeActive) { // cmeSubscriptionActive implies cme_annual
+        if (cmeActive) {
             effectiveAccessTier = "cme_annual";
         } else if (brActive) {
             effectiveAccessTier = "board_review";
@@ -246,13 +229,11 @@ function initAuth() {
             effectiveAccessTier = "free_guest";
         }
 
-        // If client-side determined tier differs from stored, update Firestore
         if (effectiveAccessTier !== storedTier) {
             console.log(`Client-side tier re-evaluation for ${user.uid}: Stored='${storedTier}', NewEffective='${effectiveAccessTier}'. Updating Firestore.`);
             userDataForWrite.accessTier = effectiveAccessTier;
         }
         
-        // Populate window.authState with current effective values
         window.authState.accessTier = effectiveAccessTier;
         window.authState.boardReviewActive = brActive;
         window.authState.boardReviewSubscriptionEndDate = brEndDate ? brEndDate.toDate() : null;
@@ -261,12 +242,12 @@ function initAuth() {
         window.authState.cmeCreditsAvailable = credits;
       }
 
-      // Write new or updated fields to Firestore if needed
       if (isNewUserDocument || Object.keys(userDataForWrite).length > 0) {
-        if (!isNewUserDocument) { // Add updatedAt for existing doc updates
+        if (!isNewUserDocument && Object.keys(userDataForWrite).length > 0) {
             userDataForWrite.updatedAt = serverTimestamp();
         }
         try {
+          // Using { merge: true } is generally safe and good practice.
           await setDoc(userDocRef, userDataForWrite, { merge: true });
           console.log(
             `User doc ${isNewUserDocument ? 'created' : 'updated'} for ${user.uid}. Effective Tier: ${window.authState.accessTier}`
@@ -278,39 +259,45 @@ function initAuth() {
          console.log(`User doc for ${user.uid} exists and is up-to-date. Effective Tier: ${window.authState.accessTier}`);
       }
 
+      // Re-fetch after any potential write to ensure window.authState is based on the latest from DB
+      // This was a good addition from later suggestions.
+      const finalUserDocSnap = await getDoc(userDocRef);
+      if (finalUserDocSnap.exists()) {
+          const finalUserData = finalUserDocSnap.data();
+          window.authState.isRegistered = finalUserData.isRegistered || false;
+          window.authState.accessTier = finalUserData.accessTier || "free_guest";
+          window.authState.boardReviewActive = finalUserData.boardReviewActive || false;
+          window.authState.boardReviewSubscriptionEndDate = finalUserData.boardReviewSubscriptionEndDate?.toDate() || null;
+          window.authState.cmeSubscriptionActive = finalUserData.cmeSubscriptionActive || false;
+          window.authState.cmeSubscriptionEndDate = finalUserData.cmeSubscriptionEndDate?.toDate() || null;
+          window.authState.cmeCreditsAvailable = finalUserData.cmeCreditsAvailable || 0;
+      }
+
+
     } else {
-      // ---------- No user signed in (or explicitly signed out) ----------
-      // This block will be followed by an anonymous sign-in attempt
       console.log('No user currently signed in. Preparing for anonymous sign-in or state clear.');
-      // window.authState is already reset at the beginning of onAuthStateChanged
-      // Anonymous sign-in will trigger onAuthStateChanged again.
       try {
         await signInAnonymously(auth);
         console.log('Signed in anonymously after explicit logout/no user.');
-        // The onAuthStateChanged listener will run again for this anonymous user.
       } catch (err) {
         console.error('Anonymous sign-in error after explicit logout/no user:', err);
-        window.authState.isLoading = false; // Stop loading if anon sign-in fails
-        // Dispatch event with cleared state if anon sign-in fails
+        window.authState.isLoading = false;
         window.dispatchEvent(
           new CustomEvent('authStateChanged', { detail: { ...window.authState } })
         );
       }
-      return; // Return here to avoid dispatching event before anon user is processed
+      return; 
     }
 
-    // This check ensures isLoading is false only when processing is truly done for the current user state
-    // (either a logged-in user processed, or an anonymous user successfully signed in and processed)
-    if (window.authState.user || !user) { // If user is now set, or if there was no initial user (and anon sign-in failed)
+    if (window.authState.user || !user) { 
         window.authState.isLoading = false;
     }
-
 
     console.log("Dispatching authStateChanged with detail:", {
         user: window.authState.user,
         isRegistered: window.authState.isRegistered,
         isLoading: window.authState.isLoading,
-        accessTier: window.authState.accessTier, // <<< INCLUDE NEW TIER
+        accessTier: window.authState.accessTier,
         boardReviewActive: window.authState.boardReviewActive,
         boardReviewSubscriptionEndDate: window.authState.boardReviewSubscriptionEndDate,
         cmeSubscriptionActive: window.authState.cmeSubscriptionActive,
@@ -324,8 +311,7 @@ function initAuth() {
           user: window.authState.user,
           isRegistered: window.authState.isRegistered,
           isLoading: window.authState.isLoading,
-          accessTier: window.authState.accessTier, // <<< INCLUDE NEW TIER
-          // Also include other relevant flags for convenience if needed by listeners
+          accessTier: window.authState.accessTier,
           boardReviewActive: window.authState.boardReviewActive,
           boardReviewSubscriptionEndDate: window.authState.boardReviewSubscriptionEndDate,
           cmeSubscriptionActive: window.authState.cmeSubscriptionActive,
@@ -356,6 +342,7 @@ function getCurrentUser() {
 
 // ----------------------------------------------------
 // Direct email/password registration (not upgrade)
+// This version takes marketingOptIn from the form via app.js
 async function registerUser(email, password, username, _experienceLevel_not_used, marketingOptInValue) {
   try {
     console.log(`registerUser: creating ${email}`);
@@ -364,47 +351,42 @@ async function registerUser(email, password, username, _experienceLevel_not_used
     await updateProfile(user, { displayName: username });
 
     const userDocRef = doc(db, 'users', user.uid);
-    // Get marketing opt-in value from the checkbox
-const marketingOptInCheckbox = document.getElementById('marketingOptIn');
-const marketingOptIn = marketingOptInCheckbox ? marketingOptInCheckbox.checked : false;
 
-await setDoc(
-  userDocRef,
-  {
-    username,
-    email,
-    isRegistered: true,
-    marketingOptIn: marketingOptInValue, // <<<< USE THE PASSED VALUE
-    mailerLiteSubscriberId: null,       // <<<< INITIALIZE
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    // Add other default fields consistent with onAuthStateChanged new user creation
-    accessTier: "free_guest",
-    specialty: "ENT",
-    experienceLevel: null, // Or pass if available
-    stats: { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0, xp: 0, level: 1, achievements: {}, currentCorrectStreak: 0 },
-    streaks: { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 },
-    bookmarks: [],
-    cmeStats: { totalAnswered: 0, totalCorrect: 0, eligibleAnswerCount: 0, creditsEarned: 0.0, creditsClaimed: 0.0 },
-    cmeAnsweredQuestions: {},
-    cmeClaimHistory: [],
-    boardReviewActive: false,
-    boardReviewSubscriptionEndDate: null,
-    cmeSubscriptionActive: false,
-    cmeSubscriptionEndDate: null,
-    cmeCreditsAvailable: 0,
-  },
-  { merge: true }
-);
-
-    window.authState.user        = user;
-    window.authState.isRegistered = true;
-
-    window.dispatchEvent(
-      new CustomEvent('authStateChanged', {
-        detail: { ...window.authState, isRegistered: true }
-      })
+    // This setDoc will be merged by onAuthStateChanged if it runs after,
+    // or it will create the doc if onAuthStateChanged hasn't run yet for this new user.
+    // It's important that onAuthStateChanged uses { merge: true } for its setDoc.
+    await setDoc(
+      userDocRef,
+      {
+        username,
+        email,
+        isRegistered: true,
+        marketingOptIn: marketingOptInValue, // Set from form
+        // Initialize other fields as onAuthStateChanged would for a new user
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        accessTier: "free_guest",
+        specialty: "ENT",
+        experienceLevel: null,
+        stats: { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0, xp: 0, level: 1, achievements: {}, currentCorrectStreak: 0 },
+        streaks: { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 },
+        bookmarks: [],
+        answeredQuestions: {},
+        cmeStats: { totalAnswered: 0, totalCorrect: 0, eligibleAnswerCount: 0, creditsEarned: 0.0, creditsClaimed: 0.0 },
+        cmeAnsweredQuestions: {},
+        cmeClaimHistory: [],
+        boardReviewActive: false,
+        boardReviewSubscriptionEndDate: null,
+        cmeSubscriptionActive: false,
+        cmeSubscriptionEndDate: null,
+        cmeCreditsAvailable: 0,
+        // mailerLiteSubscriberId: null, // This was added in later suggestions
+      },
+      { merge: true } // Use merge: true here as well
     );
+
+    // onAuthStateChanged will handle updating window.authState and dispatching the event
+    // No need to manually set window.authState here as onAuthStateChanged will run.
 
     return user;
   } catch (err) {
@@ -415,6 +397,7 @@ await setDoc(
 
 // ----------------------------------------------------
 // Upgrade currently anonymous user to permanent account
+// This version takes marketingOptIn from the form via app.js
 async function upgradeAnonymousUser(email, password, username, _experienceLevel_not_used, marketingOptInValue) {
   const anonUser = auth.currentUser;
 
@@ -431,33 +414,22 @@ async function upgradeAnonymousUser(email, password, username, _experienceLevel_
     await updateProfile(upgradedUser, { displayName: username });
 
     const userDocRef = doc(db, 'users', upgradedUser.uid);
-    // Get marketing opt-in value from the checkbox
-const marketingOptInCheckbox = document.getElementById('marketingOptIn');
-const marketingOptIn = marketingOptInCheckbox ? marketingOptInCheckbox.checked : false;
-
-await setDoc(
-  userDocRef,
-  {
-    username,
-    email,
-    isRegistered: true,
-    marketingOptIn: marketingOptInValue, // <<<< USE THE PASSED VALUE
-    // mailerLiteSubscriberId is likely already null from onAuthStateChanged,
-    // or if it was somehow set for an anonymous user (unlikely),
-    // you might decide if you want to reset it here.
-    // For now, we assume onAuthStateChanged handles its presence.
-    updatedAt: serverTimestamp()
-  },
-);
-
-    window.authState.user        = upgradedUser;
-    window.authState.isRegistered = true;
-
-    window.dispatchEvent(
-      new CustomEvent('authStateChanged', {
-        detail: { ...window.authState, user: upgradedUser, isRegistered: true }
-      })
+    // ONLY update fields that change due to registration.
+    // Let onAuthStateChanged handle the full state update and ensure other data is preserved.
+    await updateDoc( // Using updateDoc is appropriate here as the doc for anon user should exist
+      userDocRef,
+      {
+        username,
+        email,
+        isRegistered: true,
+        marketingOptIn: marketingOptInValue, // Set from form
+        updatedAt: serverTimestamp()
+        // DO NOT touch stats, answeredQuestions, etc. here.
+      }
     );
+
+    // onAuthStateChanged will handle updating window.authState and dispatching the event
+    // for the newly registered (non-anonymous) user.
 
     return upgradedUser;
   } catch (err) {
@@ -471,7 +443,7 @@ await setDoc(
 async function loginUser(email, password) {
   try {
     const { user } = await signInWithEmailAndPassword(auth, email, password);
-    return user;
+    return user; // onAuthStateChanged will handle the rest
   } catch (err) {
     console.error('loginUser error:', err);
     throw err;
@@ -480,11 +452,15 @@ async function loginUser(email, password) {
 
 async function logoutUser() {
   try {
-    if (typeof cleanupOnLogout === 'function') {
-      await cleanupOnLogout(); // defined elsewhere
+    // cleanupOnLogout might be defined in app.js or user.v2.js
+    if (typeof window.cleanupOnLogout === 'function') { // Check if it's on window
+        await window.cleanupOnLogout();
+    } else if (typeof cleanupOnLogout === 'function') { // Check if it's in scope (less likely for module)
+        await cleanupOnLogout();
     }
     await signOut(auth);
     console.log('Logged out – anonymous sign-in will run via onAuthStateChanged.');
+    // onAuthStateChanged will handle signing in anonymously and updating UI
   } catch (err) {
     console.error('logoutUser error:', err);
     throw err;
