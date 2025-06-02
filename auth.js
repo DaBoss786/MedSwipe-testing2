@@ -363,6 +363,7 @@ await setDoc(
     email,
     isRegistered: true,
     marketingOptIn: marketingOptIn,
+    mailerLiteSubscriberId: null,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   },
@@ -414,6 +415,7 @@ await setDoc(
     email,
     isRegistered: true,
     marketingOptIn: marketingOptIn,
+    mailerLiteSubscriberId: null,
     updatedAt: serverTimestamp()
   },
   { merge: true }

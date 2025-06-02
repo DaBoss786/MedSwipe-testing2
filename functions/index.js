@@ -1197,7 +1197,7 @@ const MAX_USERS_TO_PROCESS_PER_RUN = 100; // Adjustable: How many users to proce
 
 exports.syncUsersToMailerLiteDaily = onSchedule(
   {
-    schedule: "every day 19:50", // Example: Runs daily at 3:00 AM
+    schedule: "every day 00:32", // Example: Runs daily at 3:00 AM
     timeZone: "America/New_York",    // Optional: Specify your preferred timezone
     secrets: ["MAILERLITE_API_KEY"], // Ensure this secret is set in Firebase
     timeoutSeconds: 540,             // Max timeout for scheduled functions (9 minutes)
