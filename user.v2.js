@@ -1064,10 +1064,12 @@ window.fetchSpacedRepetitionData = fetchSpacedRepetitionData;
         // Handle specific statuses for user feedback
         switch (cfResponse.status) {
           case "tier_ineligible":
-            alert(`CME Credits: ${cfResponse.message}`); // Inform user they are not eligible
+            // alert(`CME Credits: ${cfResponse.message}`); // OLD: Show alert
+            console.log(`CME Credits (Info): ${cfResponse.message} (User tier not eligible, no alert shown)`); // NEW: Log to console instead of alert
             break;
           case "no_active_year":
-            alert(`CME Credits: ${cfResponse.message}`); // Inform user about no active year
+            // alert(`CME Credits: ${cfResponse.message}`); // Inform user about no active year
+            console.log(`CME Credits (no active year): ${cfResponse.message}`);
             break;
           case "success":
           case "already_correct":
