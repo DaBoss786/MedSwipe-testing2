@@ -544,6 +544,26 @@ if (continueFreeAccessBtn) {
 } else {
     console.error("Button with ID 'continueFreeAccessBtn' not found.");
 }
+
+// --- Quiz Setup Modal (quizSetupModal) - Click Outside to Close ---
+const quizSetupModal = document.getElementById("quizSetupModal");
+
+if (quizSetupModal) {
+    quizSetupModal.addEventListener('click', function(event) {
+        // Check if the click was directly on the modal background itself
+        // (i.e., event.target is the modal div with ID quizSetupModal,
+        // and NOT an element inside it like a button, input, label, etc.).
+        if (event.target === quizSetupModal) {
+            console.log("Quiz Setup Modal background (event.target === quizSetupModal) clicked, closing modal.");
+            quizSetupModal.style.display = 'none'; // Hide the modal
+        }
+    });
+    console.log("Click-outside-to-close listener attached to #quizSetupModal.");
+} else {
+    console.error("Quiz Setup Modal (#quizSetupModal) not found for click-outside listener setup.");
+}
+// --- End Quiz Setup Modal - Click Outside to Close ---
+
 // --- Updated CME Module Button Logic (Replaces the existing listener for #cmeModuleBtn) ---
 const cmeModuleBtn = document.getElementById("cmeModuleBtn");
 if (cmeModuleBtn) {
@@ -2919,8 +2939,34 @@ function setupDashboardEvents() {
       });
     });
   }
+
+  // --- Quiz Setup Modal - Cancel Button Listener ---
+const modalCancelQuizButton = document.getElementById("modalCancelQuiz");
+const quizSetupModalForCancel = document.getElementById("quizSetupModal"); // Get a reference again or pass it
+
+if (modalCancelQuizButton && quizSetupModalForCancel) {
+    // To ensure no old listeners interfere, clone and replace the button
+    const newCancelButton = modalCancelQuizButton.cloneNode(true);
+    modalCancelQuizButton.parentNode.replaceChild(newCancelButton, modalCancelQuizButton);
+
+    // Add the event listener to the new button
+    newCancelButton.addEventListener("click", function() {
+        console.log("Modal Cancel Quiz button (#modalCancelQuiz) clicked.");
+        if (quizSetupModalForCancel) {
+            quizSetupModalForCancel.style.display = "none";
+        } else {
+            // Fallback if the modal reference was lost, though unlikely here
+            const modalToHide = document.getElementById("quizSetupModal");
+            if (modalToHide) modalToHide.style.display = "none";
+        }
+    });
+    console.log("Cancel button listener attached to #modalCancelQuiz.");
+} else {
+    if (!modalCancelQuizButton) console.error("Modal Cancel Quiz button (#modalCancelQuiz) not found.");
+    if (!quizSetupModalForCancel && modalCancelQuizButton) console.error("Quiz Setup Modal (#quizSetupModal) not found for cancel button action.");
+}
+// --- End Quiz Setup Modal - Cancel Button Listener ---
   
-  // ... (rest of your setupDashboardEvents function, e.g., modalCancelQuiz, card click listeners) ...
   // User Progress card click - go to Performance
   const userProgressCard = document.getElementById("userProgressCard");
   if (userProgressCard) {
