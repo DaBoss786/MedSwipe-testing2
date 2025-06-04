@@ -4723,6 +4723,26 @@ html, body {
 }
 /* END: New CME Eligible Badge Style */
 
+/* *** NEW CSS FOR THE TRIAL BADGE *** */
+.trial-badge {
+  position: absolute; /* Keep absolute positioning */
+  top: 10px;          /* Adjust top position as needed */
+  left: 10px;         /* Position to the left */
+  transform: none;    /* Reset transform from the generic .card-badge */
+  background-color: #007bff; /* A distinct blue for trial, or choose another color */
+  color: white;
+  padding: 4px 10px;  /* Slightly smaller padding */
+  font-size: 0.75rem; /* Slightly smaller font */
+  font-weight: bold;
+  border-radius: 5px; /* Less rounded, more like a tag */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  z-index: 2; /* Ensure it's above other badges if they overlap, or adjust as needed */
+    /* Optional: if you want a slight rotation for a "banner" feel */
+  transform: rotate(-5deg); 
+     left: -5px; 
+     top: 15px; */
+}
+
 /* Specific card styling if needed */
 .board-review-card {
   border-top: 4px solid #0C72D3; /* Blue accent */
