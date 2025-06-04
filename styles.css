@@ -4726,7 +4726,7 @@ html, body {
 /* *** NEW CSS FOR THE TRIAL BADGE *** */
 .trial-badge {
   position: absolute; /* Keep absolute positioning */
-  top: 10px;          /* Adjust top position as needed */
+  top: -10px;          /* Adjust top position as needed */
   left: 10px;         /* Position to the left */
   transform: none;    /* Reset transform from the generic .card-badge */
   background-color: #007bff; /* A distinct blue for trial, or choose another color */
@@ -4738,7 +4738,7 @@ html, body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
   z-index: 2; /* Ensure it's above other badges if they overlap, or adjust as needed */
     /* Optional: if you want a slight rotation for a "banner" feel */
-  transform: rotate(-5deg); 
+  /* transform: rotate(-5deg); 
      left: -5px; 
      top: 15px; */
 }
