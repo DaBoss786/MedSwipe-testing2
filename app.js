@@ -849,6 +849,25 @@ if (cancelCmeClaimBtn && cmeClaimModal) {
     });
 }
 
+// --- CME Claim Modal - Click Outside to Close ---
+const cmeModalOverlay = document.getElementById("cmeModalOverlay"); // Assuming you have an overlay element
+
+if (cmeClaimModal && cmeModalOverlay) {
+    cmeModalOverlay.addEventListener('click', function(event) {
+        // Check if the click was directly on the overlay itself,
+        // and not on any of its children (like the modal content).
+        if (event.target === cmeModalOverlay) {
+            console.log("CME Claim Modal Overlay clicked, closing modal.");
+            cmeModalOverlay.style.display = 'none'; // Hide the overlay
+            cmeClaimModal.style.display = 'none';   // Hide the modal content
+        }
+    });
+} else {
+    if (!cmeClaimModal) console.error("CME Claim Modal (#cmeClaimModal) not found for click-outside listener.");
+    if (!cmeModalOverlay) console.error("CME Modal Overlay (#cmeModalOverlay) not found for click-outside listener.");
+}
+// --- End CME Claim Modal - Click Outside to Close ---
+
 // Listener for the Commercial Bias radio buttons to show/hide comment box
 if (commercialBiasRadios.length > 0 && commercialBiasCommentDiv) {
     commercialBiasRadios.forEach(radio => {
@@ -4079,7 +4098,7 @@ async function prepareClaimModal() {
       // If its onclick was changed, you might need to reset it, but usually not necessary if it just closes.
   }
   // --- END KEY CHANGES ---
-  
+
   // Fetch latest available credits
   let availableCredits = 0.00;
   if (window.authState && window.authState.user && !window.authState.user.isAnonymous) {
