@@ -4038,15 +4038,48 @@ async function prepareClaimModal() {
   // const biasCommentTextarea = document.getElementById("evalCommercialBiasComment"); // No longer used with new form
   const loadingIndicator = document.getElementById('claimLoadingIndicator');
   const submitButton = document.getElementById('submitCmeClaimBtn');
+  const cancelButton = document.getElementById('cancelCmeClaimBtn'); // Get the cancel button
+  const linkContainer = document.getElementById('claimModalLink');   // Get the link container
+  const closeButtonX = document.getElementById('closeCmeClaimModal'); // Get the 'X' close button
 
   // Reset form elements and messages
-  if (form) form.reset(); // Clear previous entries, including the new degree select
-  if (errorDiv) errorDiv.textContent = ''; // Clear errors
-  // if (biasCommentDiv) biasCommentDiv.style.display = 'none'; // No longer used
-  // if (biasCommentTextarea) biasCommentTextarea.value = ''; // No longer used
-  if (loadingIndicator) loadingIndicator.style.display = 'none'; // Hide loader
-  if (submitButton) submitButton.disabled = false; // Ensure submit button is enabled
+  if (form) form.reset();
+  if (errorDiv) {
+      errorDiv.textContent = '';
+      // Also reset any styling applied to the errorDiv on failure
+      errorDiv.style.color = '';
+      errorDiv.style.border = '';
+      errorDiv.style.backgroundColor = '';
+      errorDiv.style.padding = '';
+      errorDiv.style.borderRadius = '';
+      errorDiv.innerHTML = ''; // Clear any HTML content like the input field for URL
+  }
+  if (loadingIndicator) loadingIndicator.style.display = 'none';
 
+  // --- KEY CHANGES FOR UI RESET ---
+  if (linkContainer) {
+      linkContainer.innerHTML = ''; // Clear any old link HTML
+      linkContainer.style.display = 'none'; // Hide the link container
+  }
+
+  if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.style.display = 'inline-block'; // Or 'block' if it's full width, match original CSS
+      // If you changed its text (e.g., "Processing..."), reset it here if needed, though usually handled in submit logic
+      // submitButton.textContent = "Submit Claim";
+  }
+
+  if (cancelButton) {
+      cancelButton.disabled = false;
+      cancelButton.style.display = 'inline-block'; // Or 'block', match original CSS
+  }
+
+  if (closeButtonX) {
+      closeButtonX.style.display = 'block'; // Ensure the 'X' close button is visible
+      // If its onclick was changed, you might need to reset it, but usually not necessary if it just closes.
+  }
+  // --- END KEY CHANGES ---
+  
   // Fetch latest available credits
   let availableCredits = 0.00;
   if (window.authState && window.authState.user && !window.authState.user.isAnonymous) {

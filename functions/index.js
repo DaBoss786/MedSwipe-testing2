@@ -102,23 +102,50 @@ async function getActiveYearId() {
 // ---------------------------------------------------------------------------
 exports.generateCmeCertificate = onCall(
   {
-    secrets: [],
+    secrets: [], // Ensure no secrets are listed if none are used by this specific function
     timeoutSeconds: 120,
     memory: "512MiB",
   },
   async (request) => {
     /* ───────── 1. Auth check ───────── */
-    if (!request.auth) throw new HttpsError("unauthenticated", "Please log in.");
+    if (!request.auth) {
+      logger.error("generateCmeCertificate: Unauthenticated access attempt.");
+      throw new HttpsError("unauthenticated", "Please log in.");
+    }
     const uid = request.auth.uid;
+    logger.info(`generateCmeCertificate called by UID: ${uid}.`);
+    logger.info("Raw request.data received:", JSON.stringify(request.data)); // Log the entire incoming data object
 
     /* ───────── 2. Input validation ───────── */
-    const { certificateFullName, creditsToClaim } = request.data;
-    if (!certificateFullName?.trim())
+    // Ensure this destructuring line is exactly as follows:
+    const { certificateFullName, creditsToClaim, certificateDegree } = request.data; 
+
+    // Log the destructured values to confirm
+    logger.info("Destructured values:", {
+        fullName: certificateFullName, // Using different key for clarity in logs
+        credits: creditsToClaim,       // Using different key for clarity in logs
+        degree: certificateDegree      // Using different key for clarity in logs
+    });
+    logger.info("Type of certificateDegree after destructuring:", typeof certificateDegree);
+
+
+    if (!certificateFullName || typeof certificateFullName !== 'string' || certificateFullName.trim() === "") {
+      logger.error("Validation failed: certificateFullName is invalid.", { certificateFullName });
       throw new HttpsError("invalid-argument", "Please provide a valid full name.");
-    if (typeof creditsToClaim !== "number" || creditsToClaim <= 0 || isNaN(creditsToClaim))
+    }
+    if (typeof creditsToClaim !== "number" || creditsToClaim <= 0 || isNaN(creditsToClaim)) {
+      logger.error("Validation failed: creditsToClaim is invalid.", { creditsToClaim });
       throw new HttpsError("invalid-argument", "Please provide a valid credits amount.");
-    if (!certificateDegree?.trim()) // <<<--- ADDED VALIDATION
-      throw new HttpsError("invalid-argument", "Please provide a valid degree.");
+    }
+
+    // This is the critical validation for certificateDegree (around line 120 in your error)
+    // Check if certificateDegree is undefined, null, or an empty string after trimming
+    if (certificateDegree === undefined || certificateDegree === null || typeof certificateDegree !== 'string' || certificateDegree.trim() === "") {
+      logger.error("Validation failed: certificateDegree is invalid or missing.", { certificateDegreeValue: certificateDegree, type: typeof certificateDegree });
+      throw new HttpsError("invalid-argument", "Please provide a valid degree. Received: " + certificateDegree);
+    }
+    
+    logger.info(`Validation passed. Name: ${certificateFullName}, Credits: ${creditsToClaim}, Degree: ${certificateDegree}`);
 
     /* Round credits to nearest 0.25 */
     const rounded = Math.round(creditsToClaim * 4) / 4;
