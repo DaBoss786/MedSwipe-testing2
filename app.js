@@ -4250,7 +4250,8 @@ async function handleCmeClaimSubmission(event) {
 
       const result = await generateCmeCertificateFunction({
           certificateFullName: certificateFullName,
-          creditsToClaim: creditsToClaim
+          creditsToClaim: creditsToClaim,
+          certificateDegree: certificateDegree
           // Note: certificateDegree is NOT sent to this function currently
       });
       console.log("Cloud Function result received:", result);

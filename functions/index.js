@@ -117,6 +117,8 @@ exports.generateCmeCertificate = onCall(
       throw new HttpsError("invalid-argument", "Please provide a valid full name.");
     if (typeof creditsToClaim !== "number" || creditsToClaim <= 0 || isNaN(creditsToClaim))
       throw new HttpsError("invalid-argument", "Please provide a valid credits amount.");
+    if (!certificateDegree?.trim()) // <<<--- ADDED VALIDATION
+      throw new HttpsError("invalid-argument", "Please provide a valid degree.");
 
     /* Round credits to nearest 0.25 */
     const rounded = Math.round(creditsToClaim * 4) / 4;
@@ -206,61 +208,90 @@ exports.generateCmeCertificate = onCall(
     y = center("has participated in the enduring material titled", fontRegular, 12, y);
     y = center("“MedSwipe ENT CME Module”", fontBold, 14, y);
     y = center("on", fontRegular, 12, y);
-    y = center(claimDate, fontRegular, 14, y);
-    y = center("and is awarded", fontRegular, 12, y);
+    y = center(claimDate, fontRegular, 14, y); // Date is drawn here
 
-    y = centerMixed(`${formattedCredits} `, fontBold,
-                    "AMA PRA Category 1 Credits™", fontItalic, 14, y);
-    y -= 24;
+    // --- START OF CONDITIONAL TEXT BLOCK ---
+    if (certificateDegree === "MD" || certificateDegree === "DO") {
+        y = center("and is awarded", fontRegular, 12, y);
+        y = centerMixed(`${formattedCredits} `, fontBold,
+                        "AMA PRA Category 1 Credits™", fontItalic, 14, y);
+        y -= 24; // Space before accreditation statement
 
-    /* Accreditation statement – centred across the page */
-    const accLines = [
-      "This activity has been planned and implemented in accordance with the",
-      "accreditation requirements and policies of the Accreditation Council for",
-      "Continuing Medical Education (ACCME) through the joint providership of",
-      "CME Consultants and MedSwipe. CME Consultants is accredited by the ACCME",
-      "to provide continuing medical education for physicians.",
-      "",
-      "CME Consultants designates this enduring material for a maximum of",
-      "24.0 AMA PRA Category 1 Credits™.",
-      "",
-      "Physicians should claim only the credit commensurate with the extent of",
-      "their participation in the activity.",
-    ];
-    const accSize = 9;
-    accLines.forEach((ln) => {
-      if (ln.includes("AMA PRA Category 1 Credits™")) {
-        const [pre] = ln.split("AMA PRA Category 1 Credits™");
-        const fullW =
-          fontRegular.widthOfTextAtSize(pre, accSize) +
-          fontItalic .widthOfTextAtSize("AMA PRA Category 1 Credits™", accSize);
-        const xStart = (width - fullW) / 2;
-        page.drawText(pre, {
-          x: xStart,
-          y,
-          size: accSize,
-          font: fontRegular,
-          color: gray,
+        /* Accreditation statement for MD/DO – centred across the page */
+        const accLines = [
+          "This activity has been planned and implemented in accordance with the",
+          "accreditation requirements and policies of the Accreditation Council for",
+          "Continuing Medical Education (ACCME) through the joint providership of",
+          "CME Consultants and MedSwipe. CME Consultants is accredited by the ACCME",
+          "to provide continuing medical education for physicians.",
+          "",
+          "CME Consultants designates this enduring material for a maximum of",
+          "24.0 AMA PRA Category 1 Credits™.",
+          "",
+          "Physicians should claim only the credit commensurate with the extent of",
+          "their participation in the activity.",
+        ];
+        const accSize = 9;
+        accLines.forEach((ln) => {
+          if (ln.includes("AMA PRA Category 1 Credits™")) {
+            const [pre] = ln.split("AMA PRA Category 1 Credits™");
+            const fullW =
+              fontRegular.widthOfTextAtSize(pre, accSize) +
+              fontItalic .widthOfTextAtSize("AMA PRA Category 1 Credits™", accSize);
+            const xStart = (width - fullW) / 2;
+            page.drawText(pre, {
+              x: xStart,
+              y,
+              size: accSize,
+              font: fontRegular,
+              color: gray,
+            });
+            page.drawText("AMA PRA Category 1 Credits™", {
+              x: xStart + fontRegular.widthOfTextAtSize(pre, accSize),
+              y,
+              size: accSize,
+              font: fontItalic,
+              color: gray,
+            });
+          } else {
+            const w = fontRegular.widthOfTextAtSize(ln, accSize);
+            page.drawText(ln, {
+              x: (width - w) / 2,
+              y,
+              size: accSize,
+              font: ln.startsWith("CME Consultants designates") ? fontBold : fontRegular,
+              color: gray,
+            });
+          }
+          y -= accSize + 2;
         });
-        page.drawText("AMA PRA Category 1 Credits™", {
-          x: xStart + fontRegular.widthOfTextAtSize(pre, accSize),
-          y,
-          size: accSize,
-          font: fontItalic,
-          color: gray,
+
+    } else { // For RN, NP, PA-C, PharmD, Other, etc.
+        y = center(`and attended ${formattedCredits} hours of this accredited activity.`, fontRegular, 12, y);
+        y -= 6; // Add a small space
+
+        const designationText = "(This activity was designated for 24.0 AMA PRA Category 1 Credits™)";
+        y = center(designationText, fontRegular, 10, y); // Using fontRegular as per screenshot
+        y -= 18; // Space before the final footer lines
+
+        const nonMdFooterLines = [
+            "CME Consultants is accredited by the Accreditation Council for Continuing Medical",
+            "Education (ACCME) to provide continuing medical education for physicians."
+        ];
+        const nonMdFooterSize = 9;
+        nonMdFooterLines.forEach((ln) => {
+            const w = fontRegular.widthOfTextAtSize(ln, nonMdFooterSize);
+            page.drawText(ln, {
+                x: (width - w) / 2,
+                y,
+                size: nonMdFooterSize,
+                font: fontRegular,
+                color: gray,
+            });
+            y -= nonMdFooterSize + 2;
         });
-      } else {
-        const w = fontRegular.widthOfTextAtSize(ln, accSize);
-        page.drawText(ln, {
-          x: (width - w) / 2,
-          y,
-          size: accSize,
-          font: ln.startsWith("CME Consultants designates") ? fontBold : fontRegular,
-          color: gray,
-        });
-      }
-      y -= accSize + 2;
-    });
+    }
+    // --- END OF CONDITIONAL TEXT BLOCK ---
 
     /* ───────── 8. Save, upload, respond ───────── */
     const pdfBytes = await pdfDoc.save();
