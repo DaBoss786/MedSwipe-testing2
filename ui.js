@@ -129,10 +129,6 @@ function showFAQ() {
         • Weekly Activity: Most questions answered in the current week
       </li>
       <li>
-        <strong>Is MedSwipe Free?</strong><br>
-        For now, MedSwipe is completely free. Our aim is to build an engaged community before we roll out any premium features.
-      </li>
-      <li>
         <strong>How Do I Provide Feedback?</strong><br>
         Use the in‑app feedback button to let us know what you think or if you encounter any issues. Your input is crucial for our continued improvement.
       </li>
