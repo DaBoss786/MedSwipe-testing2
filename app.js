@@ -5593,3 +5593,19 @@ async function getActiveCmeYearIdFromFirestore() {
       return null; 
   }
 }
+
+// --- Event Listener for Accreditation Button on CME Info Screen ---
+const viewAccreditationInfoBtn = document.getElementById("viewAccreditationInfoBtn");
+if (viewAccreditationInfoBtn) {
+    viewAccreditationInfoBtn.addEventListener("click", function() {
+        const accreditationModal = document.getElementById("cmeAccreditationModal");
+        if (accreditationModal) {
+            console.log("View Accreditation button on Info Screen clicked.");
+            accreditationModal.style.display = "flex"; // Show the modal
+        } else {
+            console.error("CME Accreditation modal not found.");
+        }
+    });
+} else {
+    console.error("View Accreditation button on Info Screen (#viewAccreditationInfoBtn) not found.");
+}
