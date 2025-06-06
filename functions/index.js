@@ -325,16 +325,21 @@ exports.generateCmeCertificate = onCall(
     }
     // --- END OF CONDITIONAL TEXT BLOCK ---
 
+    // --- Replace the old section with this new one ---
+
     /* ───────── 8. Save, upload, respond ───────── */
     const pdfBytes = await pdfDoc.save();
     const safeName = certificateFullName.replace(/[^a-zA-Z0-9]/g, "_");
-    const path     = `cme_certificates/${uid}/${Date.now()}_${safeName}_CME.pdf`;
-    await bucket.file(path).save(Buffer.from(pdfBytes), {
+    // The path is perfect as is, because it includes the UID for our security rules.
+    const filePath = `cme_certificates/${uid}/${Date.now()}_${safeName}_CME.pdf`; 
+    
+    await bucket.file(filePath).save(Buffer.from(pdfBytes), {
       metadata: { contentType: "application/pdf" },
-      public: true,
+      // REMOVED: public: true
     });
 
-    return { success: true, publicUrl: bucket.file(path).publicUrl() };
+    // Return the file's path, NOT a public URL.
+    return { success: true, filePath: filePath };
   }
 );
 
@@ -875,6 +880,59 @@ exports.createStripePortalSession = onCall(
     }
   }
 ); // End createStripePortalSession
+
+// --- Add this entire new function right here ---
+
+exports.getCertificateDownloadUrl = onCall(
+  {
+    secrets: [], // No secrets needed for this one
+    region: "us-central1",
+  },
+  async (request) => {
+    // 1. Authentication Check
+    if (!request.auth) {
+      logger.error("getCertificateDownloadUrl: Unauthenticated access attempt.");
+      throw new HttpsError("unauthenticated", "You must be logged in to download certificates.");
+    }
+    const uid = request.auth.uid;
+
+    // 2. Input Validation
+    const { filePath } = request.data;
+    if (!filePath || typeof filePath !== 'string') {
+      throw new HttpsError("invalid-argument", "A valid file path must be provided.");
+    }
+
+    // 3. CRITICAL: Ownership Verification
+    // Ensure the requested file path belongs to the user making the request.
+    // The path format is `cme_certificates/${uid}/...`
+    if (!filePath.startsWith(`cme_certificates/${uid}/`)) {
+        logger.error(`SECURITY VIOLATION: User ${uid} attempted to access forbidden path ${filePath}`);
+        throw new HttpsError("permission-denied", "You do not have permission to access this file.");
+    }
+
+    // 4. Generate the Signed URL
+    try {
+      const options = {
+        version: "v4",
+        action: "read",
+        expires: Date.now() + 15 * 60 * 1000, // 15 minutes
+      };
+
+      // Get a signed URL for the file
+      const [signedUrl] = await admin.storage().bucket(BUCKET_NAME).file(filePath).getSignedUrl(options);
+      
+      logger.info(`Successfully generated signed URL for user ${uid} for file ${filePath}`);
+      return { success: true, downloadUrl: signedUrl };
+
+    } catch (error) {
+      logger.error(`Error generating signed URL for ${filePath}:`, error);
+      if (error.code === 404) {
+          throw new HttpsError("not-found", "The requested certificate file does not exist.");
+      }
+      throw new HttpsError("internal", "Could not generate the download link. Please try again.");
+    }
+  }
+);
 
 // --- Callable Function to Record CME Answer and Award Credits Annually ---
 // --- Define Configuration Parameters (Keep as is from your file) ---

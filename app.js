@@ -24,10 +24,12 @@ let selectedExperienceLevel = null;
 // --- Get reference to Firebase Callable Function ---
 let createCheckoutSessionFunction;
 let createPortalSessionFunction;
+let getCertificateDownloadUrlFunction;
 try {
     if (functions && httpsCallable) { // Check if imports exist
          createCheckoutSessionFunction = httpsCallable(functions, 'createStripeCheckoutSession');
          createPortalSessionFunction = httpsCallable(functions, 'createStripePortalSession');
+         getCertificateDownloadUrlFunction = httpsCallable(functions, 'getCertificateDownloadUrl');
          console.log("Callable function reference 'createStripeCheckoutSession' created.");
     } else {
          console.error("Firebase Functions or httpsCallable not imported correctly.");
@@ -2643,18 +2645,19 @@ async function showCmeHistoryModal() {
                   }
 
 
-                  // Create download link/button if URL exists
-                  let downloadCellContent = '-'; // Default if no URL
-                  if (claim.downloadUrl) {
+                  // Create download link/button if filePath exists
+                  let downloadCellContent = '-'; // Default if no path
+                  if (claim.filePath) {
+                      const filePath = claim.filePath;
                       const fileName = claim.pdfFileName || 'CME_Certificate.pdf';
+                      // Use a button with an onclick event instead of an <a> tag with href
                       downloadCellContent = `
-                          <a href="${claim.downloadUrl}"
-                             target="_blank"
-                             download="${fileName}"
+                          <button
+                             onclick="handleCertificateDownload(this, '${filePath}', '${fileName}')"
                              class="cme-history-download-btn"
                              title="Download ${fileName}">
                               ⬇️ PDF
-                          </a>`;
+                          </button>`;
                   }
 
                   tableHtml += `
@@ -2688,6 +2691,45 @@ async function showCmeHistoryModal() {
       historyBody.innerHTML = `<p style="color: red; text-align: center;">Error loading history. Please try again.</p>`;
   }
 }
+
+// --- Add this entire new function to app.js ---
+
+async function handleCertificateDownload(buttonElement, filePath, fileName) {
+  if (!getCertificateDownloadUrlFunction) {
+      alert("Download service is not available. Please refresh the page.");
+      return;
+  }
+
+  // Disable button and show loading state
+  buttonElement.disabled = true;
+  buttonElement.textContent = '...';
+
+  try {
+      console.log(`Requesting signed URL for: ${filePath}`);
+      const result = await getCertificateDownloadUrlFunction({ filePath: filePath });
+
+      if (result.data.success && result.data.downloadUrl) {
+          const signedUrl = result.data.downloadUrl;
+          console.log("Received signed URL, opening in new tab.");
+          // Open the URL in a new tab, which will start the download or display the PDF
+          window.open(signedUrl, '_blank');
+      } else {
+          throw new Error(result.data.error || "Failed to get a valid download link from the server.");
+      }
+
+  } catch (error) {
+      console.error("Error getting certificate download URL:", error);
+      alert(`Could not download certificate: ${error.message}`);
+  } finally {
+      // Re-enable the button
+      buttonElement.disabled = false;
+      buttonElement.textContent = '⬇️ PDF';
+  }
+}
+
+// Make it globally accessible so the inline onclick can find it
+window.handleCertificateDownload = handleCertificateDownload;
+
 // --- End of showCmeHistoryModal Function ---
 
 // Function to count questions due for review today
@@ -4182,6 +4224,10 @@ async function prepareClaimModal() {
 // --- End of Step 12b ---
 
 
+// app.js
+
+// --- Replace your entire handleCmeClaimSubmission function with this one ---
+
 async function handleCmeClaimSubmission(event) {
   event.preventDefault(); // Prevent default form submission
   console.log("CME Claim Form submitted - processing (Firebase Function Version)...");
@@ -4350,89 +4396,68 @@ async function handleCmeClaimSubmission(event) {
           certificateFullName: certificateFullName,
           creditsToClaim: creditsToClaim,
           certificateDegree: certificateDegree
-          // Note: certificateDegree is NOT sent to this function currently
       });
       console.log("Cloud Function result received:", result);
       // --- End Cloud Function Call ---
 
 
-      // --- 4. Handle Cloud Function Response (Update History with Link) ---
+      // --- 4. Handle Cloud Function Response (Update History with filePath) ---
+      // THIS IS THE CORRECTED SECTION
       cleanup(false, false);
 
-      if (result.data.success === true && typeof result.data.publicUrl === 'string' && result.data.publicUrl.length > 0) {
-          const publicUrl = result.data.publicUrl;
-          const pdfFileName = result.data.fileName || `CME_Certificate_${certificateFullName.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
-          console.log("Certificate generated successfully. Public URL:", publicUrl);
+      // The result now contains a filePath, not a publicUrl
+      if (result.data.success === true && typeof result.data.filePath === 'string') {
+          const filePath = result.data.filePath; // Get the private file path
+          const pdfFileName = filePath.split('/').pop(); // Extract filename from path
+          console.log("Certificate generated successfully. File Path:", filePath);
 
+          // Now, update the history entry in Firestore with this filePath
           try {
-              console.log("Attempting to update Firestore history with certificate URL...");
+              console.log("Attempting to update Firestore history with certificate filePath...");
               const userDoc = await getDoc(userDocRef);
               if (userDoc.exists()) {
                   let history = userDoc.data().cmeClaimHistory || [];
+                  // Find the entry we just created
                   const historyIndex = history.findIndex(entry =>
                       entry.timestamp && typeof entry.timestamp.toDate === 'function' &&
                       entry.timestamp.toDate().toISOString() === claimTimestampISO
                   );
 
                   if (historyIndex > -1) {
-                      history[historyIndex].downloadUrl = publicUrl;
+                      // Store the filePath and fileName instead of the downloadUrl
+                      history[historyIndex].filePath = filePath;
                       history[historyIndex].pdfFileName = pdfFileName;
                       await updateDoc(userDocRef, { cmeClaimHistory: history });
-                      console.log(`Successfully updated history entry at index ${historyIndex} with URL.`);
+                      console.log(`Successfully updated history entry at index ${historyIndex} with filePath.`);
                   } else {
-                      console.warn("Could not find the exact history entry to update with URL based on timestamp.", { claimTimestampISO: claimTimestampISO });
+                      console.warn("Could not find the exact history entry to update with filePath.");
                   }
-              } else {
-                  console.warn("User document doesn't exist while trying to update history with URL.");
               }
           } catch (updateError) {
-              console.error("Error updating Firestore history with certificate URL:", updateError);
+              console.error("Error updating Firestore history with certificate filePath:", updateError);
           }
 
+          // Since we don't have a URL yet, we can't show a direct download link here.
+          // We can just show a success message.
           const linkContainer = document.getElementById("claimModalLink");
           if (linkContainer) {
               linkContainer.innerHTML = `
                   <p style="color: #28a745; font-weight: bold; margin-bottom: 10px;">
-                    🎉 Your CME certificate is ready!
+                    🎉 Success! Your certificate has been generated.
                   </p>
-                  <a href="${publicUrl}"
-                     target="_blank"
-                     download="${pdfFileName}"
-                     class="auth-primary-btn"
-                     style="display: inline-block; padding: 10px 15px; text-decoration: none; margin-top: 5px; background-color: #28a745; border: none;">
-                    📄 Download Certificate
-                  </a>
-                  <p style="font-size: 0.8em; color: #666; margin-top: 10px;">(Link opens in a new tab. You might need to allow pop-ups.)</p>
+                  <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                    You can now close this window. Your certificate is available for download anytime from your CME Claim History.
+                  </p>
               `;
               linkContainer.style.display = 'block';
-
               if (submitButton) submitButton.style.display = 'none';
               if (cancelButton) cancelButton.style.display = 'none';
-              const closeButton = document.getElementById('closeCmeClaimModal');
-              if(closeButton) {
-                   closeButton.style.display = 'block';
-                   closeButton.onclick = function() {
-                       document.getElementById('cmeModalOverlay').style.display = 'none';
-                       cmeClaimModal.style.display = 'none';
-                   };
-              }
-          } else {
-              console.error("CRITICAL: Could not find #claimModalLink element to display download link!");
-              if (errorDiv) errorDiv.textContent = "Internal error: Cannot display download link.";
-              if (errorDiv && publicUrl) {
-                   errorDiv.innerHTML += `<br>URL (Copy): <input type='text' value='${publicUrl}' readonly style='width: 80%;'>`;
-              }
-              cleanup(true, false);
           }
+          
       } else {
-          console.error("Cloud function failed to return success or valid URL. Result data:", result.data);
-          let failureReason = "Certificate generation failed in the cloud function.";
-          if (result.data && !result.data.success) { // Check if result.data exists
-              failureReason += ` Error: ${result.data.error || 'Unknown cloud error'}`;
-          } else {
-              failureReason += " Missing public URL in response.";
-          }
-          throw new Error(failureReason);
+          // Handle failure as before
+          console.error("Cloud function failed to return success or valid filePath. Result data:", result.data);
+          throw new Error("Certificate generation failed in the cloud function.");
       }
       // --- End Handle Cloud Function Response ---
 
@@ -4474,7 +4499,6 @@ async function handleCmeClaimSubmission(event) {
        console.log("--- CME Claim Form Submission Handler END ---");
   }
 }
-// --- End of handleCmeClaimSubmission Function ---
 
 
 // --- Step 5b: Populate CME Category Dropdown ---
