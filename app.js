@@ -4850,7 +4850,8 @@ if (learnMoreCmeLink) {
   learnMoreCmeLink.addEventListener("click", function(e) {
       e.preventDefault(); // Prevent default link behavior
       console.log("Learn More link clicked.");
-      showCmeLearnMoreModal();
+      // Pass the return path so the modal knows where to go back to
+      showCmeLearnMoreModal('cmeInfoScreen'); 
   });
 } else {
   console.error("Learn More link (#learnMoreCmeLink) not found.");

@@ -147,8 +147,8 @@ function showContactModal() {
   document.getElementById("contactModal").style.display = "flex";
 }
 
-// START: New function to show the CME Learn More modal
-function showCmeLearnMoreModal() {
+// START: MODIFIED function to show the CME Learn More modal
+function showCmeLearnMoreModal(returnPath = 'mainDashboard') { // Added parameter with a default
   // Hide all other views and modals to ensure a clean slate
   document.querySelector(".swiper").style.display = "none";
   document.getElementById("bottomToolbar").style.display = "none";
@@ -167,15 +167,39 @@ function showCmeLearnMoreModal() {
   const cmeLearnMoreModal = document.getElementById("cmeLearnMoreModal");
   if (cmeLearnMoreModal) {
       cmeLearnMoreModal.style.display = "flex";
-      // Scroll modal body to top when opened
       const modalBody = cmeLearnMoreModal.querySelector('.modal-body');
       if(modalBody) modalBody.scrollTop = 0;
-      console.log("Displayed #cmeLearnMoreModal from menu.");
+      console.log("Displayed #cmeLearnMoreModal.");
+
+      // START: New logic for the close button
+      const closeBtn = document.getElementById("closeCmeLearnMoreModal");
+      if (closeBtn) {
+          // Clone and replace the button to remove any old listeners
+          const newCloseBtn = closeBtn.cloneNode(true);
+          closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+
+          // Add a new listener with the correct return logic
+          newCloseBtn.addEventListener("click", function() {
+              cmeLearnMoreModal.style.display = "none"; // Always hide the modal
+
+              if (returnPath === 'cmeInfoScreen') {
+                  // If we came from the info screen, go back there
+                  const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+                  if (cmeInfoScreen) cmeInfoScreen.style.display = "flex";
+              } else {
+                  // Otherwise, go back to the main dashboard
+                  const mainOptions = document.getElementById("mainOptions");
+                  if (mainOptions) mainOptions.style.display = "flex";
+              }
+          });
+      }
+      // END: New logic for the close button
+
   } else {
       console.error("CME Learn More Modal (#cmeLearnMoreModal) not found!");
   }
 }
-// END: New function
+// END: MODIFIED function
 
 // Add event listener for the new menu item once the page is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -188,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (sideMenu) sideMenu.classList.remove("open");
             if (menuOverlay) menuOverlay.classList.remove("show");
 
-            // Show the modal
+            // Show the modal, it will default to returning to the dashboard
             showCmeLearnMoreModal();
         });
     }
