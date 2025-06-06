@@ -147,6 +147,53 @@ function showContactModal() {
   document.getElementById("contactModal").style.display = "flex";
 }
 
+// START: New function to show the CME Learn More modal
+function showCmeLearnMoreModal() {
+  // Hide all other views and modals to ensure a clean slate
+  document.querySelector(".swiper").style.display = "none";
+  document.getElementById("bottomToolbar").style.display = "none";
+  document.getElementById("iconBar").style.display = "none";
+  document.getElementById("performanceView").style.display = "none";
+  document.getElementById("leaderboardView").style.display = "none";
+  document.getElementById("mainOptions").style.display = "none";
+  document.getElementById("aboutView").style.display = "none";
+  document.getElementById("faqView").style.display = "none";
+  const cmeDashboard = document.getElementById("cmeDashboardView");
+  if (cmeDashboard) cmeDashboard.style.display = "none";
+  const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+  if (cmeInfoScreen) cmeInfoScreen.style.display = "none";
+
+  // Show the Learn More Modal
+  const cmeLearnMoreModal = document.getElementById("cmeLearnMoreModal");
+  if (cmeLearnMoreModal) {
+      cmeLearnMoreModal.style.display = "flex";
+      // Scroll modal body to top when opened
+      const modalBody = cmeLearnMoreModal.querySelector('.modal-body');
+      if(modalBody) modalBody.scrollTop = 0;
+      console.log("Displayed #cmeLearnMoreModal from menu.");
+  } else {
+      console.error("CME Learn More Modal (#cmeLearnMoreModal) not found!");
+  }
+}
+// END: New function
+
+// Add event listener for the new menu item once the page is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    const cmeInfoMenuItem = document.getElementById("cmeInfoMenuItem");
+    if (cmeInfoMenuItem) {
+        cmeInfoMenuItem.addEventListener("click", function() {
+            // Close the side menu first
+            const sideMenu = document.getElementById("sideMenu");
+            const menuOverlay = document.getElementById("menuOverlay");
+            if (sideMenu) sideMenu.classList.remove("open");
+            if (menuOverlay) menuOverlay.classList.remove("show");
+
+            // Show the modal
+            showCmeLearnMoreModal();
+        });
+    }
+});
+
 export {
-  showLeaderboard, showAbout, showFAQ, showContactModal
-  };
+  showLeaderboard, showAbout, showFAQ, showContactModal, showCmeLearnMoreModal
+};
