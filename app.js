@@ -4712,22 +4712,38 @@ async function loadCmeDashboardData() {
               claimButton.textContent = "Claim CME Credits";
           }
 
+          // --- Replace the old block with this new one ---
+
           const cmeHistory = mainData.cmeClaimHistory || [];
-            if (cmeHistory.length > 0) {
-                cmeHistory.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
-                let historyHtml = `<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;"><thead><tr style="border-bottom: 1px solid #ddd; text-align: left;"><th style="padding: 8px 5px;">Date Claimed</th><th style="padding: 8px 5px; text-align: right;">Credits</th><th style="padding: 8px 5px; text-align: center;">Certificate</th></tr></thead><tbody>`;
-                cmeHistory.forEach(claim => {
-                    const credits = parseFloat(claim.creditsClaimed || 0).toFixed(2);
-                    let claimDate = 'Unknown Date';
-                    if (claim.timestamp && typeof claim.timestamp.toDate === 'function') { claimDate = claim.timestamp.toDate().toLocaleDateString(); }
-                    else if (claim.timestamp instanceof Date) { claimDate = claim.timestamp.toLocaleDateString(); }
-                    let downloadCellContent = '-';
-                    if (claim.downloadUrl) { downloadCellContent = `<a href="${claim.downloadUrl}" target="_blank" download="${claim.pdfFileName || 'CME_Certificate.pdf'}" class="cme-download-btn" title="Download PDF">⬇️ PDF</a>`; }
-                    historyHtml += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 8px 5px;">${claimDate}</td><td style="padding: 8px 5px; text-align: right;">${credits}</td><td style="padding: 8px 5px; text-align: center;">${downloadCellContent}</td></tr>`;
-                });
-                historyHtml += `</tbody></table><style>.cme-download-btn { display: inline-block; padding: 3px 8px; font-size: 0.8em; color: white; background-color: #007bff; border: none; border-radius: 4px; text-decoration: none; cursor: pointer; transition: background-color 0.2s; }.cme-download-btn:hover { background-color: #0056b3; }</style>`;
-                historyContent.innerHTML = historyHtml;
-            } else { historyContent.innerHTML = "<p style='text-align: center; color: #666;'>No credits claimed yet.</p>"; }
+          if (cmeHistory.length > 0) {
+              cmeHistory.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
+              let historyHtml = `<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;"><thead><tr style="border-bottom: 1px solid #ddd; text-align: left;"><th style="padding: 8px 5px;">Date Claimed</th><th style="padding: 8px 5px; text-align: right;">Credits</th><th style="padding: 8px 5px; text-align: center;">Certificate</th></tr></thead><tbody>`;
+              cmeHistory.forEach(claim => {
+                  const credits = parseFloat(claim.creditsClaimed || 0).toFixed(2);
+                  let claimDate = 'Unknown Date';
+                  if (claim.timestamp && typeof claim.timestamp.toDate === 'function') { claimDate = claim.timestamp.toDate().toLocaleDateString(); }
+                  else if (claim.timestamp instanceof Date) { claimDate = claim.timestamp.toLocaleDateString(); }
+                  
+                  // THIS IS THE CORRECTED LOGIC
+                  let downloadCellContent = '-';
+                  if (claim.filePath) {
+                      const filePath = claim.filePath;
+                      const fileName = claim.pdfFileName || 'CME_Certificate.pdf';
+                      downloadCellContent = `
+                          <button
+                             onclick="handleCertificateDownload(this, '${filePath}', '${fileName}')"
+                             class="cme-history-download-btn"
+                             title="Download ${fileName}">
+                              ⬇️ PDF
+                          </button>`;
+                  }
+                  // END OF CORRECTED LOGIC
+
+                  historyHtml += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 8px 5px;">${claimDate}</td><td style="padding: 8px 5px; text-align: right;">${credits}</td><td style="padding: 8px 5px; text-align: center;">${downloadCellContent}</td></tr>`;
+              });
+              historyHtml += `</tbody></table><style>.cme-history-download-btn { display: inline-block; padding: 3px 8px; font-size: 0.8em; color: white; background-color: #007bff; border: none; border-radius: 4px; text-decoration: none; cursor: pointer; transition: background-color 0.2s; }.cme-history-download-btn:hover { background-color: #0056b3; }</style>`;
+              historyContent.innerHTML = historyHtml;
+          } else { historyContent.innerHTML = "<p style='text-align: center; color: #666;'>No credits claimed yet.</p>"; }
       } else {
           // Main user document doesn't exist, which is highly unlikely if they are authenticated
           console.error(`Main user document for UID ${uid} not found. Cannot display overall CME stats.`);
