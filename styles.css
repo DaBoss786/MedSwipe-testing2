@@ -1684,6 +1684,15 @@ html, body {
   background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
 }
 
+/* Button container on the CME Dashboard */
+.cme-dashboard-buttons {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
 /* Dashboard Cards Row */
 .dashboard-cards-row {
   display: flex;

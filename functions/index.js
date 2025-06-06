@@ -251,12 +251,10 @@ exports.generateCmeCertificate = onCall(
           "Continuing Medical Education (ACCME) through the joint providership of",
           "CME Consultants and MedSwipe. CME Consultants is accredited by the ACCME",
           "to provide continuing medical education for physicians.",
-          "",
-          "CME Consultants designates this enduring material for a maximum of",
-          "24.0 AMA PRA Category 1 Credits™.",
-          "",
-          "Physicians should claim only the credit commensurate with the extent of",
-          "their participation in the activity.",
+          "", // This creates the space above the block
+          // The next two lines are now structured correctly and will appear as one paragraph
+          "CME Consultants designates this enduring material for a maximum of 24.0 AMA PRA Category 1 Credits™.",
+          "Physicians should claim only the credit commensurate with the extent of their participation in the activity."
         ];
         const accSize = 9;
         accLines.forEach((ln) => {
@@ -297,9 +295,16 @@ exports.generateCmeCertificate = onCall(
         y = center(`and attended ${formattedCredits} hours of this accredited activity.`, fontRegular, 12, y);
         y -= 6; // Add a small space
 
-        const designationText = "(This activity was designated for 24.0 AMA PRA Category 1 Credits™)";
-        y = center(designationText, fontRegular, 10, y); // Using fontRegular as per screenshot
-        y -= 18; // Space before the final footer lines
+        // This helper function draws the text with a mix of regular and italic fonts
+    y = centerMixed(
+      "(This activity was designated for 24.0 ", // Part 1: Regular text
+      fontRegular,
+      "AMA PRA Category 1 Credits™)",            // Part 2: Italic text
+      fontItalic,
+      10,                                        // Font size
+      y
+    );
+    y -= 18; 
 
         const nonMdFooterLines = [
             "CME Consultants is accredited by the Accreditation Council for Continuing Medical",
