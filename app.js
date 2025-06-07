@@ -204,7 +204,7 @@ window.addEventListener('authStateChanged', function(event) {
                         console.error("CME Info Screen not found after registration redirect!");
                         if (newPaywallScreen) newPaywallScreen.style.display = 'flex';
                     }
-                } else if (pendingRedirect === 'board_review_pricing') {
+                  } else if (pendingRedirect === 'board_review_pricing') {
                     console.log('Redirecting to Board Review Pricing Screen after registration.');
                     sessionStorage.removeItem('pendingRedirectAfterRegistration');
                     const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
@@ -218,6 +218,18 @@ window.addEventListener('authStateChanged', function(event) {
                         if (newPaywallScreen) newPaywallScreen.style.display = 'flex';
                     }
                 
+                } else if (pendingRedirect === 'cme_pricing') {
+                    console.log('Redirecting to CME Pricing Screen after registration.');
+                    sessionStorage.removeItem('pendingRedirectAfterRegistration');
+                    ensureAllScreensHidden(); // Ensure other screens are hidden
+                    const cmePricingScreen = document.getElementById("cmePricingScreen");
+                    if (cmePricingScreen) {
+                        cmePricingScreen.style.display = 'flex';
+                    } else {
+                        console.error("CME Pricing Screen not found after registration redirect!");
+                        if (newPaywallScreen) newPaywallScreen.style.display = 'flex';
+                    }
+    
                 } else {
                     console.log('No pending redirect. Showing main paywall screen.');
                     if (newPaywallScreen) {
@@ -4921,6 +4933,7 @@ if (cmeInfoBackBtn) {
 } else {
   console.error("CME Info Back button (#cmeInfoBackBtn) not found.");
 }
+
 // Unlock CME Button
 const unlockCmeBtn = document.getElementById("unlockCmeBtn");
 if (unlockCmeBtn) {
@@ -4933,9 +4946,16 @@ if (unlockCmeBtn) {
           console.log("User is registered. Showing CME Pricing Screen.");
           showCmePricingScreen();
       } else {
-          // User is anonymous (guest), show the registration modal first.
-          // Then, after registration, they should be redirected to CME pricing.
-          console.log("User is anonymous. Showing registration form, will redirect to CME pricing after.");
+          // User is anonymous (guest), hide the current screen and show the registration modal.
+          console.log("User is anonymous. Hiding info screen and showing registration form, will redirect to CME pricing after.");
+
+          // --- FIX: Hide the current screen before showing the modal ---
+          const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+          if (cmeInfoScreen) {
+              cmeInfoScreen.style.display = "none";
+          }
+          // --- END FIX ---
+
           if (typeof showRegisterForm === 'function') {
               // Set a flag for post-registration redirection
               sessionStorage.setItem('pendingRedirectAfterRegistration', 'cme_pricing');
