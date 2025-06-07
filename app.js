@@ -4312,12 +4312,15 @@ async function handleCmeClaimSubmission(event) {
       const formData = new FormData(form);
       const creditsToClaim = parseFloat(creditsInput.value);
       const certificateFullName = formData.get('certificateFullName')?.trim() || '';
-      const certificateDegree = formData.get('certificateDegree'); // New degree field
+      const certificateDegree = formData.get('certificateDegree');
 
       // --- Extract NEW Evaluation Data ---
       const evaluationData = {
           certificateFullName: certificateFullName,
           certificateDegree: certificateDegree,
+          licenseNumber: formData.get('licenseNumber')?.trim() || '',       // <<< NEW
+          locationCity: formData.get('locationCity')?.trim() || '',         // <<< NEW
+          locationState: formData.get('locationState'),                     // <<< NEW
 
           desiredOutcome1: formData.get('desiredOutcome1'),
           desiredOutcome2: formData.get('desiredOutcome2'),
@@ -4332,7 +4335,10 @@ async function handleCmeClaimSubmission(event) {
 
       // --- Form Validation ---
       if (!certificateFullName) throw new Error("Please enter your full name.");
-      if (!certificateDegree) throw new Error("Please select your degree."); // Validation for degree
+      if (!certificateDegree) throw new Error("Please select your degree.");
+      if (!evaluationData.licenseNumber) throw new Error("Please enter your license number."); // <<< NEW
+      if (!evaluationData.locationCity) throw new Error("Please enter your city.");             // <<< NEW
+      if (!evaluationData.locationState) throw new Error("Please select your state.");           // <<< NEW
 
       if (isNaN(creditsToClaim) || creditsToClaim <= 0 || creditsToClaim % 0.25 !== 0) {
            throw new Error("Invalid credits amount. Must be positive and in increments of 0.25.");

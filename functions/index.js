@@ -797,7 +797,7 @@ exports.generateCmeCertificate = onCall(
           params.subscription_data = {
             metadata: { planName, tier },
             // Add a 7-day trial period for all subscriptions
-            trial_period_days: 1,
+            trial_period_days: 7,
           };
         }
     
