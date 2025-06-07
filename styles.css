@@ -5124,3 +5124,152 @@ html, body {
   background: rgba(12, 114, 211, 0.1);
   color: #0C72D3;
 }
+
+/* --- UPDATED LEADERBOARD STYLES --- */
+
+/* Main container for the entire view */
+#leaderboardView {
+  max-width: 600px; /* Limit width for better readability */
+  margin: 70px auto 20px auto; /* Top margin for toolbar, auto for centering */
+  padding: 20px;
+  background: transparent; /* Make background transparent */
+  border-radius: 0;
+  box-shadow: none; /* Remove the main card shadow */
+}
+
+#leaderboardView h2 {
+  text-align: center;
+  color: #0056b3;
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+/* Main Tabs Container */
+.leaderboard-main-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* Individual Main Tab Buttons */
+.leaderboard-main-tab {
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  border: 1px solid #0C72D3;
+  border-radius: 8px;
+  background-color: #FFFFFF;
+  color: #0C72D3;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.leaderboard-main-tab.active,
+.leaderboard-main-tab:hover {
+  background-color: #0C72D3;
+  color: #FFFFFF;
+  box-shadow: 0 3px 8px rgba(12, 114, 211, 0.3);
+}
+
+/* Content Area that holds the lists */
+.leaderboard-content-area {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* Sub-tabs (Weekly/All-Time) */
+.time-range-tabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  background: #f2f7ff;
+  padding: 5px;
+  border-radius: 50px;
+  max-width: 250px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.time-range-tab {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  margin: 0 2px;
+  border-radius: 50px;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.time-range-tab.active {
+  background: #0C72D3;
+  color: white;
+  box-shadow: 0 2px 6px rgba(12, 114, 211, 0.3);
+}
+
+/* Your Ranking Section */
+.your-ranking {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eef2f7;
+}
+
+.your-ranking h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  color: #333;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Back button at the bottom */
+.leaderboard-back-btn {
+  display: block;
+  margin: 25px auto 10px auto;
+  padding: 12px 30px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 50px;
+  background: #0C72D3;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(12, 114, 211, 0.3);
+}
+
+.leaderboard-back-btn:hover {
+  background: #0056b3;
+  box-shadow: 0 6px 15px rgba(12, 114, 211, 0.4);
+}
+
+/* General list styles (re-using from previous step) */
+.leaderboard-entry-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leaderboard-entry {
+  background: white;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  padding: 12px 15px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-left: 5px solid transparent;
+}
+
+.leaderboard-entry.current-user {
+  border-left-color: #0C72D3;
+  background-color: #f2f7ff;
+}
