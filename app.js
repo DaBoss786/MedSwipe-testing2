@@ -2269,9 +2269,10 @@ let isLeaderboardPreviewLoadingOrLoaded = false;
 
 async function loadLeaderboardPreview() {
   const leaderboardPreview = document.getElementById("leaderboardPreview");
+  const leaderboardCard = document.getElementById("leaderboardPreviewCard"); // Get the card itself
 
-  if (!leaderboardPreview) {
-    console.error("loadLeaderboardPreview: #leaderboardPreview element NOT FOUND.");
+  if (!leaderboardPreview || !leaderboardCard) {
+    console.error("loadLeaderboardPreview: #leaderboardPreview or its card element NOT FOUND.");
     return;
   }
 
@@ -2284,7 +2285,8 @@ async function loadLeaderboardPreview() {
   console.log("loadLeaderboardPreview: Called.");
   isLeaderboardPreviewLoadingOrLoaded = true;
 
-  const cardFooter = document.querySelector("#leaderboardPreviewCard .card-footer span:first-child");
+  const cardFooter = leaderboardCard.querySelector(".card-footer span:first-child");
+  const cardHeader = leaderboardCard.querySelector(".card-header h3"); // Get the header h3
 
   // 1. Check if the callable function reference is valid
   if (typeof getLeaderboardDataFunctionApp !== 'function') {
@@ -2312,6 +2314,7 @@ async function loadLeaderboardPreview() {
 
   if (isUserAnonymous || accessTier === "free_guest") {
     console.log("loadLeaderboardPreview: User is anonymous or free_guest. Showing upgrade prompt.");
+    if (cardHeader) cardHeader.textContent = "Leaderboard"; // Reset header text
     const message1 = "Leaderboards are a premium feature.";
     const message2 = "Upgrade your account to unlock this feature!";
     const buttonText = "Upgrade to Access";
@@ -2352,25 +2355,27 @@ async function loadLeaderboardPreview() {
     const leaderboardData = result.data;
     console.log("loadLeaderboardPreview: Received data:", leaderboardData);
 
-    if (!leaderboardData || !leaderboardData.xpLeaderboard || !leaderboardData.currentUserRanks) {
+    if (!leaderboardData || !leaderboardData.weeklyXpLeaderboard || !leaderboardData.currentUserRanks) { // Check for weekly data
         console.error("loadLeaderboardPreview: Invalid data structure from Cloud Function.", leaderboardData);
         leaderboardPreview.innerHTML = '<div class="leaderboard-loading" style="color:red;">Error: Invalid data.</div>';
         if (cardFooter) cardFooter.textContent = "Error";
         isLeaderboardPreviewLoadingOrLoaded = false;
         
-        // Retry after 5 seconds on data structure error
         setTimeout(() => loadLeaderboardPreview(), 5000);
         return;
     }
 
+    if (cardHeader) cardHeader.textContent = "Weekly Leaderboard"; // --- NEW: Update header text ---
+
     const currentUid = currentUser.uid;
 
-    const top3 = (leaderboardData.xpLeaderboard || []).slice(0, 3);
-    const currentUserRankData = leaderboardData.currentUserRanks?.xp;
+    // --- NEW: Use weeklyXpLeaderboard and currentUserRanks.weeklyXp for the preview ---
+    const top3 = (leaderboardData.weeklyXpLeaderboard || []).slice(0, 3);
+    const currentUserRankData = leaderboardData.currentUserRanks?.weeklyXp;
 
     let html = '';
     if (top3.length === 0 && !currentUserRankData) {
-      html = '<div class="leaderboard-loading" style="text-align:center; padding-top:10px;">No ranked players yet.</div>';
+      html = '<div class="leaderboard-loading" style="text-align:center; padding-top:10px;">No one has earned XP this week. Be the first!</div>';
     } else {
       top3.forEach((entry) => {
         const isCurrentUser = entry.uid === currentUid;
@@ -2379,7 +2384,7 @@ async function loadLeaderboardPreview() {
             <div class="leaderboard-rank leaderboard-rank-${entry.rank}">${entry.rank}</div>
             <div class="leaderboard-user-info">
               <div class="leaderboard-username">${entry.username}</div>
-              <div class="leaderboard-user-xp">${entry.xp} XP</div>
+              <div class="leaderboard-user-xp">${entry.weeklyXp} XP</div>
             </div>
           </div>
         `;
@@ -2392,7 +2397,7 @@ async function loadLeaderboardPreview() {
             <div class="leaderboard-rank">${currentUserRankData.rank}</div>
             <div class="leaderboard-user-info">
               <div class="leaderboard-username">${currentUserRankData.username} (You)</div>
-              <div class="leaderboard-user-xp">${currentUserRankData.xp} XP</div>
+              <div class="leaderboard-user-xp">${currentUserRankData.weeklyXp} XP</div>
             </div>
           </div>
         `;
@@ -2400,9 +2405,8 @@ async function loadLeaderboardPreview() {
     }
     leaderboardPreview.innerHTML = html || '<div class="leaderboard-loading" style="text-align:center; padding-top:10px;">No ranked players yet.</div>';
     if (cardFooter) cardFooter.textContent = "View Full Leaderboard";
-    console.log("loadLeaderboardPreview: Preview updated successfully.");
+    console.log("loadLeaderboardPreview: Preview updated successfully with WEEKLY data.");
     
-    // Successfully loaded - keep the flag true to prevent unnecessary reloads
     isLeaderboardPreviewLoadingOrLoaded = true;
 
   } catch (error) {
@@ -2410,7 +2414,6 @@ async function loadLeaderboardPreview() {
     let errorMsg = "Error loading preview.";
     if (error.code === 'unauthenticated' || (error.message && error.message.toLowerCase().includes("authenticated"))) {
         errorMsg = "Please log in.";
-        // Retry after 3 seconds if it's an auth error
         setTimeout(() => loadLeaderboardPreview(), 3000);
     } else if (error.message) {
         errorMsg = `Error: ${error.message.substring(0, 60)}${error.message.length > 60 ? '...' : ''}`;

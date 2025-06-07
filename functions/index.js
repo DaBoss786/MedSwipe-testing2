@@ -1219,12 +1219,16 @@ exports.getLeaderboardData = onCall(
     }
     const currentAuthUid = request.auth.uid;
 
+    // --- NEW: Helper function to get the start of the current week (Monday) ---
     function getStartOfWeekMilliseconds(date = new Date()) {
       const d = new Date(date);
+      // d.getDay() returns 0 for Sunday, 1 for Monday, etc.
+      // We want to find the most recent Monday.
       const day = d.getDay();
-      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      // If today is Sunday (0), we subtract 6 days. If Monday (1), subtract 0. If Tuesday (2), subtract 1.
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
       const startOfWeekDate = new Date(d.setDate(diff));
-      startOfWeekDate.setHours(0, 0, 0, 0);
+      startOfWeekDate.setHours(0, 0, 0, 0); // Set to midnight
       return startOfWeekDate.getTime();
     }
 
@@ -1243,11 +1247,21 @@ exports.getLeaderboardData = onCall(
         const userData = doc.data();
         if (userData.isRegistered === true) {
           let weeklyAnsweredCount = 0;
+          let weeklyXp = 0; // --- NEW: Initialize weekly XP counter ---
+
           if (userData.answeredQuestions) {
             for (const questionKey in userData.answeredQuestions) {
               const answer = userData.answeredQuestions[questionKey];
+              // Check if the answer was within the current week
               if (answer.timestamp && answer.timestamp >= weekStartMillis) {
                 weeklyAnsweredCount++;
+                // --- NEW: Calculate weekly XP based on answers ---
+                // 1 XP for answering, +2 additional for correct
+                weeklyXp += 1; 
+                if (answer.isCorrect === true) {
+                    weeklyXp += 2;
+                }
+                // --- END NEW ---
               }
             }
           }
@@ -1255,6 +1269,7 @@ exports.getLeaderboardData = onCall(
             uid: doc.id,
             username: userData.username || "Anonymous",
             xp: userData.stats?.xp || 0,
+            weeklyXp: weeklyXp, // --- NEW: Add weeklyXp to the user's data ---
             level: userData.stats?.level || 1,
             currentStreak: userData.streaks?.currentStreak || 0,
             weeklyAnsweredCount: weeklyAnsweredCount,
@@ -1263,17 +1278,30 @@ exports.getLeaderboardData = onCall(
       });
 
       logger.info(`Processed ${allEligibleUsersData.length} eligible users for leaderboards.`);
-      let currentUserRanks = { xp: null, streak: null, answered: null };
+      let currentUserRanks = { xp: null, weeklyXp: null, streak: null, answered: null }; // --- NEW: Added weeklyXp rank ---
 
+      // --- All-Time XP Leaderboard (No changes here) ---
       const sortedByXp = [...allEligibleUsersData].sort((a, b) => b.xp - a.xp);
       const xpLeaderboard = sortedByXp
         .slice(0, TOP_N_LEADERBOARD)
-        .map((user, index) => ({ ...user, rank: index + 1 })); // Spread user to include all its props
+        .map((user, index) => ({ ...user, rank: index + 1 }));
       const currentUserXpIndex = sortedByXp.findIndex(u => u.uid === currentAuthUid);
       if (currentUserXpIndex !== -1) {
         currentUserRanks.xp = { ...sortedByXp[currentUserXpIndex], rank: currentUserXpIndex + 1 };
       }
 
+      // --- NEW: Weekly XP Leaderboard ---
+      const sortedByWeeklyXp = [...allEligibleUsersData].sort((a, b) => b.weeklyXp - a.weeklyXp);
+      const weeklyXpLeaderboard = sortedByWeeklyXp
+        .slice(0, TOP_N_LEADERBOARD)
+        .map((user, index) => ({ ...user, rank: index + 1 }));
+      const currentUserWeeklyXpIndex = sortedByWeeklyXp.findIndex(u => u.uid === currentAuthUid);
+      if (currentUserWeeklyXpIndex !== -1) {
+        currentUserRanks.weeklyXp = { ...sortedByWeeklyXp[currentUserWeeklyXpIndex], rank: currentUserWeeklyXpIndex + 1 };
+      }
+      // --- END NEW ---
+
+      // --- Streak Leaderboard (No changes here) ---
       const sortedByStreak = [...allEligibleUsersData].sort((a, b) => b.currentStreak - a.currentStreak);
       const streakLeaderboard = sortedByStreak
         .slice(0, TOP_N_LEADERBOARD)
@@ -1283,6 +1311,7 @@ exports.getLeaderboardData = onCall(
         currentUserRanks.streak = { ...sortedByStreak[currentUserStreakIndex], rank: currentUserStreakIndex + 1 };
       }
 
+      // --- Weekly Answered Leaderboard (No changes here) ---
       const sortedByAnswered = [...allEligibleUsersData].sort((a, b) => b.weeklyAnsweredCount - a.weeklyAnsweredCount);
       const answeredLeaderboard = sortedByAnswered
         .slice(0, TOP_N_LEADERBOARD)
@@ -1295,6 +1324,7 @@ exports.getLeaderboardData = onCall(
       logger.info("Leaderboard data prepared successfully.");
       return {
         xpLeaderboard,
+        weeklyXpLeaderboard, // --- NEW: Return the weekly leaderboard data ---
         streakLeaderboard,
         answeredLeaderboard,
         currentUserRanks,
@@ -1310,7 +1340,6 @@ exports.getLeaderboardData = onCall(
     }
   }
 );
-// --- END LEADERBOARD CLOUD FUNCTION ---
 
 const MAILERLITE_GROUP_ID = "156027000658593431"; // Your MailerLite Group ID
 

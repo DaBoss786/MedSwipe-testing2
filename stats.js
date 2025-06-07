@@ -3,12 +3,6 @@ import {fetchQuestionBank} from './quiz.js';
 import { getOrGenerateUsername } from './user.v2.js';
 import { getStartOfWeek } from './utils.js';
 
-// Make functions globally available
-window.displayPerformance = displayPerformance;
-window.loadOverallData = loadOverallData;
-window.loadStreaksData = loadStreaksData;
-window.loadTotalAnsweredData = loadTotalAnsweredData;
-
 // --- Get a reference to the getLeaderboardData Callable Function ---
 let getLeaderboardDataFunction;
 try {
@@ -23,6 +17,167 @@ try {
 }
 // --- End Callable Function Reference ---
 
+
+// --- NEW: Master function to build the entire leaderboard view ---
+async function initializeLeaderboardView() {
+  console.log("Initializing full leaderboard view...");
+  const leaderboardView = document.getElementById("leaderboardView");
+  
+  // Show a loading state immediately
+  leaderboardView.innerHTML = `
+    <div style="text-align: center; padding: 40px;">
+      <div class="loading-spinner" style="margin: 0 auto 15px; width: 40px; height: 40px; border: 4px solid rgba(12, 114, 211, 0.2); border-radius: 50%; border-top-color: #0C72D3; animation: spin 1s linear infinite;"></div>
+      <p style="color: #0C72D3;">Loading Leaderboards...</p>
+    </div>
+  `;
+
+  if (!getLeaderboardDataFunction) {
+    leaderboardView.innerHTML = `<h2>Error</h2><p>Leaderboard service is not available.</p><button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
+    document.getElementById("leaderboardBack").addEventListener("click", () => {
+        leaderboardView.style.display = "none";
+        document.getElementById("mainOptions").style.display = "flex";
+    });
+    return;
+  }
+
+  try {
+    // Call the cloud function ONCE to get all leaderboard data
+    const result = await getLeaderboardDataFunction();
+    const data = result.data;
+    const currentUid = auth.currentUser.uid;
+
+    // Helper function to build a single leaderboard list
+    const buildList = (listData, statKey, statLabel) => {
+      if (!listData || listData.length === 0) {
+        return '<div class="empty-state">No ranked players yet.</div>';
+      }
+      return listData.map(user => `
+        <li class="leaderboard-entry ${user.uid === currentUid ? 'current-user' : ''}">
+          <div class="rank-container rank-${user.rank}">${user.rank}</div>
+          <div class="user-info">
+            <p class="username">${user.username}</p>
+          </div>
+          <div class="user-stats">
+            <p class="stat-value">${user[statKey]}</p>
+            <p class="stat-label">${statLabel}</p>
+          </div>
+        </li>
+      `).join('');
+    };
+
+    // Helper function to build the "Your Rank" section
+    const buildYourRank = (rankData, statKey, statLabel) => {
+      if (!rankData) {
+        return '<p style="text-align:center; font-style:italic; color:#666;">You are not yet ranked in this category.</p>';
+      }
+      return `
+        <ul class="leaderboard-entry-list" style="padding:0;">
+            <li class="leaderboard-entry current-user">
+            <div class="rank-container">${rankData.rank}</div>
+            <div class="user-info">
+                <p class="username">${rankData.username} (You)</p>
+            </div>
+            <div class="user-stats">
+                <p class="stat-value">${rankData[statKey]}</p>
+                <p class="stat-label">${statLabel}</p>
+            </div>
+            </li>
+        </ul>
+      `;
+    };
+
+    // Build the final HTML for the entire leaderboard view
+    leaderboardView.innerHTML = `
+      <h2>Leaderboards</h2>
+      <button class="leaderboard-back-btn" id="leaderboardBack">Back</button>
+
+      <!-- XP Leaderboard Section with Tabs -->
+      <div class="leaderboard-section" style="margin-bottom: 25px;">
+        <h3 style="text-align:center; color:#0056b3;">XP Rankings</h3>
+        <div id="xpTimeRangeTabs" class="time-range-tabs">
+          <button class="time-range-tab active" data-target="weeklyXpBoard">Weekly</button>
+          <button class="time-range-tab" data-target="allTimeXpBoard">All-Time</button>
+        </div>
+        <div id="weeklyXpBoard" class="leaderboard-content">
+          <ul class="leaderboard-entry-list">${buildList(data.weeklyXpLeaderboard, 'weeklyXp', 'XP This Week')}</ul>
+        </div>
+        <div id="allTimeXpBoard" class="leaderboard-content" style="display: none;">
+          <ul class="leaderboard-entry-list">${buildList(data.xpLeaderboard, 'xp', 'Total XP')}</ul>
+        </div>
+        <div class="your-ranking">
+          <h4>Your XP Rank</h4>
+          <div id="yourWeeklyXpRank">${buildYourRank(data.currentUserRanks.weeklyXp, 'weeklyXp', 'XP This Week')}</div>
+          <div id="yourAllTimeXpRank" style="display: none;">${buildYourRank(data.currentUserRanks.xp, 'xp', 'Total XP')}</div>
+        </div>
+      </div>
+
+      <!-- Streak Leaderboard Section -->
+      <div class="leaderboard-section" style="margin-bottom: 25px;">
+        <h3 style="text-align:center; color:#0056b3;">Longest Streak</h3>
+        <div class="leaderboard-content">
+          <ul class="leaderboard-entry-list">${buildList(data.streakLeaderboard, 'currentStreak', 'Days')}</ul>
+        </div>
+        <div class="your-ranking">
+          <h4>Your Streak Rank</h4>
+          ${buildYourRank(data.currentUserRanks.streak, 'currentStreak', 'Days')}
+        </div>
+      </div>
+
+      <!-- Weekly Answered Leaderboard Section -->
+      <div class="leaderboard-section">
+        <h3 style="text-align:center; color:#0056b3;">Most Active (This Week)</h3>
+        <div class="leaderboard-content">
+          <ul class="leaderboard-entry-list">${buildList(data.answeredLeaderboard, 'weeklyAnsweredCount', 'Answered')}</ul>
+        </div>
+        <div class="your-ranking">
+          <h4>Your Activity Rank</h4>
+          ${buildYourRank(data.currentUserRanks.answered, 'weeklyAnsweredCount', 'Answered')}
+        </div>
+      </div>
+    `;
+
+    // Add event listener for the back button
+    document.getElementById("leaderboardBack").addEventListener("click", function() {
+      leaderboardView.style.display = "none";
+      document.getElementById("mainOptions").style.display = "flex";
+    });
+
+    // Add event listeners for the new XP tabs
+    const xpTabs = document.querySelectorAll('#xpTimeRangeTabs .time-range-tab');
+    xpTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        xpTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        const targetId = tab.dataset.target;
+        document.getElementById('weeklyXpBoard').style.display = (targetId === 'weeklyXpBoard') ? 'block' : 'none';
+        document.getElementById('allTimeXpBoard').style.display = (targetId === 'allTimeXpBoard') ? 'block' : 'none';
+        
+        document.getElementById('yourWeeklyXpRank').style.display = (targetId === 'weeklyXpBoard') ? 'block' : 'none';
+        document.getElementById('yourAllTimeXpRank').style.display = (targetId === 'allTimeXpBoard') ? 'block' : 'none';
+      });
+    });
+
+  } catch (error) {
+    console.error("Error loading leaderboard data:", error);
+    leaderboardView.innerHTML = `
+      <h2>Leaderboards</h2>
+      <p style="color: red; text-align: center;">Could not load leaderboard data. Please try again later.</p>
+      <button class="leaderboard-back-btn" id="leaderboardBack">Back</button>
+    `;
+    document.getElementById("leaderboardBack").addEventListener("click", function() {
+      leaderboardView.style.display = "none";
+      document.getElementById("mainOptions").style.display = "flex";
+    });
+  }
+}
+
+// Make the new master function globally available
+window.initializeLeaderboardView = initializeLeaderboardView;
+
+
+// --- The rest of the file remains the same, but we are replacing the whole file ---
+// --- so this is the complete content for stats.js ---
 
 // Display performance stats with both accuracy chart and XP display
 async function displayPerformance() {
@@ -118,13 +273,12 @@ async function displayPerformance() {
     <hr>
     <h3 style="text-align:center; color:#0056b3;">By Category</h3>
     <div id="categoryBreakdownInternal"></div>
-    <button id="backToMain" style="margin-top:20px;">Back</button>
+    <button id="backToMain" style="margin-top:20px; display:block; margin-left:auto; margin-right:auto;" class="start-quiz-btn">Back</button>
   `;
 
   // Now populate the categoryBreakdownInternal div
   const categoryBreakdownContainer = document.getElementById("categoryBreakdownInternal");
   const accessTier = window.authState?.accessTier;
-  // isRegistered is not strictly needed for this simplified logic but can be kept for logging
   const isRegistered = window.authState?.isRegistered; 
 
   if (categoryBreakdownContainer) {
@@ -133,7 +287,7 @@ async function displayPerformance() {
         const message1 = "Detailed subject-specific analytics are a premium feature.";
         const message2 = "Upgrade your account to track your performance across different subspecialties!";
         const buttonText = "Upgrade to Access";
-        const buttonId = "upgradeForAnalyticsBtn_stats"; // Make ID unique if needed
+        const buttonId = "upgradeForAnalyticsBtn_stats";
 
         categoryBreakdownContainer.innerHTML = `
             <div class="guest-analytics-prompt" style="margin-top: 20px; padding: 15px; background: #f2f7ff; border-left: 4px solid #0C72D3; border-radius: 8px; text-align: center;">
@@ -165,13 +319,12 @@ async function displayPerformance() {
             });
         }
     } else if (isRegistered && (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only")) {
-        // Logic for paying tiers to display detailed category breakdown
         let categoryBreakdownHtml = "";
         if (stats.categories && Object.keys(stats.categories).length > 0) {
             categoryBreakdownHtml = Object.keys(stats.categories).map(cat => {
                 const c = stats.categories[cat];
-                const catAnswered = c.answered || 0; // Ensure defined
-                const catCorrect = c.correct || 0;   // Ensure defined
+                const catAnswered = c.answered || 0;
+                const catCorrect = c.correct || 0;
                 const percent = catAnswered > 0 ? Math.round((catCorrect / catAnswered) * 100) : 0;
                 return `
                 <div class="category-item">
@@ -187,14 +340,11 @@ async function displayPerformance() {
         }
         categoryBreakdownContainer.innerHTML = categoryBreakdownHtml;
     } else {
-        // Fallback or if authState is not yet loaded (should ideally not happen here)
         categoryBreakdownContainer.innerHTML = "<p>Loading analytics data...</p>";
         console.warn("Access tier not 'free_guest' and not a recognized paying tier, or user not registered for detailed analytics display.");
     }
   }
 
-
-  // Draw accuracy doughnut chart (ensure ctx is valid)
   const canvasElement = document.getElementById("overallScoreChart");
   if (canvasElement) {
     const ctx = canvasElement.getContext("2d");
@@ -207,7 +357,7 @@ async function displayPerformance() {
             backgroundColor: ["#28a745", "#dc3545"]
         }]
         },
-        options: { /* ... your chart options ... */ 
+        options: { 
             responsive: false,
             cutout: "60%",
             plugins: { legend: { display: true } }
@@ -215,13 +365,11 @@ async function displayPerformance() {
     });
   }
   
-  // Set the level progress circle fill
   const performanceLevelProgress = document.getElementById("performanceLevelProgress");
   if (performanceLevelProgress) {
     performanceLevelProgress.style.setProperty('--progress', `${levelProgress}%`);
   }
   
-  // Back button listener
   const backButton = document.getElementById("backToMain");
   if (backButton) {
     const newBackButton = backButton.cloneNode(true);
@@ -232,317 +380,10 @@ async function displayPerformance() {
         if (mainOptions) mainOptions.style.display = "flex";
     });
   }
-
-  // Remove the old #registerForAnalyticsBtn listener as it's no longer generated with that ID
-  // The new button #upgradeForAnalyticsBtn_stats has its listener attached above.
 }
 
-// Load XP Rankings leaderboard with weekly/all-time toggle
-async function loadOverallData() {
-  console.log("Loading XP rankings leaderboard data via Cloud Function...");
-  const leaderboardView = document.getElementById("leaderboardView");
-  leaderboardView.innerHTML = `<h2>Leaderboard - XP Rankings</h2><div class="leaderboard-loading">Loading...</div>`; // Loading state
+// Make displayPerformance globally available
+window.displayPerformance = displayPerformance;
 
-  if (!getLeaderboardDataFunction) {
-    leaderboardView.innerHTML = `<h2>Leaderboard - XP Rankings</h2><p>Error: Leaderboard service not available.</p><button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
-    attachLeaderboardBackAndTabListeners(null, 'overallTab');
-    return;
-  }
-
-  try {
-    const result = await getLeaderboardDataFunction();
-    const leaderboardData = result.data;
-
-    const currentUid = auth.currentUser.uid;
-    // const currentUsername = await getOrGenerateUsername(); // Username now comes from CF
-
-    const top10 = leaderboardData.xpLeaderboard || [];
-    const currentUserRankData = leaderboardData.currentUserRanks?.xp;
-
-    let html = `
-      <h2>Leaderboard - XP Rankings</h2>
-      <div id="leaderboardTabs">
-        <button class="leaderboard-tab active" id="overallTab">XP Rankings</button>
-        <button class="leaderboard-tab" id="streaksTab">Streaks</button>
-        <button class="leaderboard-tab" id="answeredTab">Total Answered</button>
-      </div>
-      <ul class="leaderboard-entry-list">
-    `;
-
-    if (top10.length === 0) {
-      html += `<div class="empty-state">No leaderboard data available yet. Start answering questions to be the first on the leaderboard!</div>`;
-    } else {
-      top10.forEach((entry) => { // Rank comes from CF
-        const isCurrentUser = entry.uid === currentUid;
-        html += `
-          <li class="leaderboard-entry ${isCurrentUser ? 'current-user' : ''}">
-            <div class="rank-container rank-${entry.rank}">${entry.rank}</div>
-            <div class="user-info">
-              <p class="username">${entry.username}</p>
-            </div>
-            <div class="user-stats">
-              <p class="stat-value">${entry.xp}</p>
-              <p class="stat-label">XP</p>
-            </div>
-          </li>
-        `;
-      });
-    }
-    html += `</ul>`;
-
-    // Add current user's ranking if they exist and are not in the displayed top10
-    if (currentUserRankData && !top10.some(e => e.uid === currentUid)) {
-      html += `
-        <div class="your-ranking">
-          <h3>Your Ranking</h3>
-          <div class="leaderboard-entry current-user">
-            <div class="rank-container">${currentUserRankData.rank}</div>
-            <div class="user-info">
-              <p class="username">${currentUserRankData.username} (You)</p>
-            </div>
-            <div class="user-stats">
-              <p class="stat-value">${currentUserRankData.xp}</p>
-              <p class="stat-label">XP</p>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-    html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
-    leaderboardView.innerHTML = html;
-    attachLeaderboardBackAndTabListeners(leaderboardData, 'overallTab');
-
-  } catch (error) {
-    console.error("Error loading overall leaderboard data:", error);
-    leaderboardView.innerHTML = `<h2>Leaderboard - XP Rankings</h2><p>Error loading data: ${error.message}</p><button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
-    attachLeaderboardBackAndTabListeners(null, 'overallTab');
-  }
-}
-
-// MODIFIED: Load Streaks leaderboard
-async function loadStreaksData() {
-  console.log("Loading Streaks leaderboard data via Cloud Function...");
-  const leaderboardView = document.getElementById("leaderboardView");
-  leaderboardView.innerHTML = `<h2>Leaderboard - Streaks</h2><div class="leaderboard-loading">Loading...</div>`;
-
-  if (!getLeaderboardDataFunction) {
-    leaderboardView.innerHTML = `<h2>Leaderboard - Streaks</h2><p>Error: Leaderboard service not available.</p><button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
-    attachLeaderboardBackAndTabListeners(null, 'streaksTab');
-    return;
-  }
-
-  try {
-    const result = await getLeaderboardDataFunction();
-    const leaderboardData = result.data;
-
-    const currentUid = auth.currentUser.uid;
-    // const currentUsername = await getOrGenerateUsername();
-
-    const top10 = leaderboardData.streakLeaderboard || [];
-    const currentUserRankData = leaderboardData.currentUserRanks?.streak;
-
-    let html = `
-      <h2>Leaderboard - Streaks</h2>
-      <div id="leaderboardTabs">
-        <button class="leaderboard-tab" id="overallTab">XP Rankings</button>
-        <button class="leaderboard-tab active" id="streaksTab">Streaks</button>
-        <button class="leaderboard-tab" id="answeredTab">Total Answered</button>
-      </div>
-      <ul class="leaderboard-entry-list">
-    `;
-
-    if (top10.length === 0) {
-      html += `<div class="empty-state">No streak data available yet. Use the app daily to build your streak!</div>`;
-    } else {
-      top10.forEach((entry) => {
-        const isCurrentUser = entry.uid === currentUid;
-        html += `
-          <li class="leaderboard-entry ${isCurrentUser ? 'current-user' : ''}">
-            <div class="rank-container rank-${entry.rank}">${entry.rank}</div>
-            <div class="user-info">
-              <p class="username">${entry.username}</p>
-            </div>
-            <div class="user-stats">
-              <p class="stat-value">${entry.currentStreak}</p>
-              <p class="stat-label">DAYS</p>
-            </div>
-          </li>
-        `;
-      });
-    }
-    html += `</ul>`;
-
-    if (currentUserRankData && !top10.some(e => e.uid === currentUid)) {
-      html += `
-        <div class="your-ranking">
-          <h3>Your Ranking</h3>
-          <div class="leaderboard-entry current-user">
-            <div class="rank-container">${currentUserRankData.rank}</div>
-            <div class="user-info">
-              <p class="username">${currentUserRankData.username} (You)</p>
-            </div>
-            <div class="user-stats">
-              <p class="stat-value">${currentUserRankData.currentStreak}</p>
-              <p class="stat-label">DAYS</p>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-    html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
-    leaderboardView.innerHTML = html;
-    attachLeaderboardBackAndTabListeners(leaderboardData, 'streaksTab');
-
-  } catch (error) {
-    console.error("Error loading streaks leaderboard data:", error);
-    leaderboardView.innerHTML = `<h2>Leaderboard - Streaks</h2><p>Error loading data: ${error.message}</p><button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
-    attachLeaderboardBackAndTabListeners(null, 'streaksTab');
-  }
-}
-
-// MODIFIED: Load Total Answered leaderboard (Weekly)
-async function loadTotalAnsweredData() {
-  console.log("Loading Total Answered (Weekly) leaderboard data via Cloud Function...");
-  const leaderboardView = document.getElementById("leaderboardView");
-  leaderboardView.innerHTML = `<h2>Leaderboard - Total Answered Questions This Week</h2><div class="leaderboard-loading">Loading...</div>`;
-
-  if (!getLeaderboardDataFunction) {
-    leaderboardView.innerHTML = `<h2>Leaderboard - Total Answered Questions This Week</h2><p>Error: Leaderboard service not available.</p><button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
-    attachLeaderboardBackAndTabListeners(null, 'answeredTab');
-    return;
-  }
-
-  try {
-    const result = await getLeaderboardDataFunction();
-    const leaderboardData = result.data;
-
-    const currentUid = auth.currentUser.uid;
-    // const currentUsername = await getOrGenerateUsername();
-
-    const top10 = leaderboardData.answeredLeaderboard || [];
-    const currentUserRankData = leaderboardData.currentUserRanks?.answered;
-
-    let html = `
-      <h2>Leaderboard - Total Answered Questions This Week</h2>
-      <div id="leaderboardTabs">
-        <button class="leaderboard-tab" id="overallTab">XP Rankings</button>
-        <button class="leaderboard-tab" id="streaksTab">Streaks</button>
-        <button class="leaderboard-tab active" id="answeredTab">Total Answered</button>
-      </div>
-      <ul class="leaderboard-entry-list">
-    `;
-
-    if (top10.length === 0) {
-      html += `<div class="empty-state">No questions answered this week yet. Start answering questions to appear on the leaderboard!</div>`;
-    } else {
-      top10.forEach((entry) => {
-        const isCurrentUser = entry.uid === currentUid;
-        html += `
-          <li class="leaderboard-entry ${isCurrentUser ? 'current-user' : ''}">
-            <div class="rank-container rank-${entry.rank}">${entry.rank}</div>
-            <div class="user-info">
-              <p class="username">${entry.username}</p>
-            </div>
-            <div class="user-stats">
-              <p class="stat-value">${entry.weeklyAnsweredCount}</p>
-              <p class="stat-label">QUESTIONS</p>
-            </div>
-          </li>
-        `;
-      });
-    }
-    html += `</ul>`;
-
-    if (currentUserRankData && !top10.some(e => e.uid === currentUid)) {
-      html += `
-        <div class="your-ranking">
-          <h3>Your Ranking</h3>
-          <div class="leaderboard-entry current-user">
-            <div class="rank-container">${currentUserRankData.rank}</div>
-            <div class="user-info">
-              <p class="username">${currentUserRankData.username} (You)</p>
-            </div>
-            <div class="user-stats">
-              <p class="stat-value">${currentUserRankData.weeklyAnsweredCount}</p>
-              <p class="stat-label">QUESTIONS</p>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-    html += `<button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
-    leaderboardView.innerHTML = html;
-    attachLeaderboardBackAndTabListeners(leaderboardData, 'answeredTab');
-
-  } catch (error) {
-    console.error("Error loading total answered leaderboard data:", error);
-    leaderboardView.innerHTML = `<h2>Leaderboard - Total Answered Questions This Week</h2><p>Error loading data: ${error.message}</p><button class="leaderboard-back-btn" id="leaderboardBack">Back</button>`;
-    attachLeaderboardBackAndTabListeners(null, 'answeredTab');
-  }
-}
-
-// Helper function to attach leaderboard event listeners
-// This avoids duplicating listener attachment code.
-function attachLeaderboardBackAndTabListeners(leaderboardData, activeTabId) {
-    const overallTab = document.getElementById("overallTab");
-    const streaksTab = document.getElementById("streaksTab");
-    const answeredTab = document.getElementById("answeredTab");
-    const backButton = document.getElementById("leaderboardBack");
-
-    if (overallTab) {
-        overallTab.addEventListener("click", function() { loadOverallData(); });
-        overallTab.classList.toggle('active', activeTabId === 'overallTab');
-    }
-    if (streaksTab) {
-        streaksTab.addEventListener("click", function() { loadStreaksData(); });
-        streaksTab.classList.toggle('active', activeTabId === 'streaksTab');
-    }
-    if (answeredTab) {
-        answeredTab.addEventListener("click", function() { loadTotalAnsweredData(); });
-        answeredTab.classList.toggle('active', activeTabId === 'answeredTab');
-    }
-
-    if (backButton) {
-        backButton.addEventListener("click", function() {
-            document.getElementById("leaderboardView").style.display = "none";
-            document.getElementById("mainOptions").style.display = "flex";
-            // document.getElementById("aboutView").style.display = "none"; // Already hidden by showLeaderboard
-        });
-    }
-}
-
-// Default function to show leaderboard
-function showLeaderboard() {
-  if (auth && auth.currentUser && auth.currentUser.isAnonymous) {
-    if (typeof window.showRegistrationBenefitsModal === 'function') {
-      window.showRegistrationBenefitsModal();
-    } else {
-      alert("Leaderboards are only available for registered users. Please create a free account to access this feature.");
-    }
-    return;
-  }
-  
-  document.querySelector(".swiper").style.display = "none";
-  document.getElementById("bottomToolbar").style.display = "none";
-  document.getElementById("iconBar").style.display = "none";
-  document.getElementById("performanceView").style.display = "none";
-  document.getElementById("mainOptions").style.display = "none";
-  document.getElementById("aboutView").style.display = "none";
-  document.getElementById("faqView").style.display = "none";
-  document.getElementById("leaderboardView").style.display = "block";
-  
-  // Call the modified loadOverallData which now uses the Cloud Function
-  if (typeof window.loadOverallData === 'function') {
-    window.loadOverallData(); // This will now use the Cloud Function
-  } else {
-    document.getElementById("leaderboardView").innerHTML = `
-      <h2>Leaderboard</h2>
-      <p>Leaderboards are loading... Please try again in a moment.</p>
-      <button class="leaderboard-back-btn" id="leaderboardBack">Back</button>
-    `;
-    attachLeaderboardBackAndTabListeners(null, null); // Attach back button listener
-    console.log("loadOverallData function not found on window");
-  }
-}
-
-export { showLeaderboard, loadOverallData, loadStreaksData, loadTotalAnsweredData, displayPerformance };
+// We are keeping the export for modularity, though we are also attaching to window
+export { initializeLeaderboardView, displayPerformance };

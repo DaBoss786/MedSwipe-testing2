@@ -13,7 +13,7 @@ function showLeaderboard() {
     return;
   }
   
-  // Continue with showing leaderboard for registered users
+  // Hide all other main views
   document.querySelector(".swiper").style.display = "none";
   document.getElementById("bottomToolbar").style.display = "none";
   document.getElementById("iconBar").style.display = "none";
@@ -24,24 +24,15 @@ function showLeaderboard() {
   const cmeDashboard = document.getElementById("cmeDashboardView");
   if (cmeDashboard) cmeDashboard.style.display = "none";
 
+  // Show the leaderboard container
   document.getElementById("leaderboardView").style.display = "block";
   
-  // Use the loadOverallData function from window object
-  if (typeof window.loadOverallData === 'function') {
-    window.loadOverallData();
+  // Call the master function from stats.js to build and display the content
+  if (typeof window.initializeLeaderboardView === 'function') {
+    window.initializeLeaderboardView();
   } else {
-    // Fallback message if function is not available
-    document.getElementById("leaderboardView").innerHTML = `
-      <h2>Leaderboard</h2>
-      <p>Leaderboards are loading... Please try again in a moment.</p>
-      <button class="leaderboard-back-btn" id="leaderboardBack">Back</button>
-    `;
-    document.getElementById("leaderboardBack").addEventListener("click", function(){
-      document.getElementById("leaderboardView").style.display = "none";
-      document.getElementById("mainOptions").style.display = "flex";
-    });
-    
-    console.log("loadOverallData function not found");
+    console.error("initializeLeaderboardView function not found. Make sure stats.js is loaded.");
+    document.getElementById("leaderboardView").innerHTML = `<h2>Error</h2><p>Could not load leaderboard content.</p>`;
   }
 }
 
@@ -218,6 +209,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-export {
-  showLeaderboard, showAbout, showFAQ, showContactModal, showCmeLearnMoreModal
-};
+export { showLeaderboard, showAbout, showFAQ, showContactModal, showCmeLearnMoreModal };
