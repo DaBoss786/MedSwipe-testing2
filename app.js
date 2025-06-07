@@ -2275,17 +2275,14 @@ async function loadLeaderboardPreview() {
     return;
   }
 
-  // Check the flag: If already loading/loaded by a recent call, and content is not "Loading...", skip resetting innerHTML.
-  if (isLeaderboardPreviewLoadingOrLoaded && 
-      leaderboardPreview.innerHTML.trim() !== '' && // Check if it has some content
-      !leaderboardPreview.innerHTML.includes('<div class="leaderboard-loading">Loading preview...</div>')) { // And it's not the loading message
-    console.log("loadLeaderboardPreview: Preview content already exists or is being loaded. Avoiding reset to 'Loading...'. Will still attempt data fetch for potential refresh.");
-  } else {
-    leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Loading preview...</div>';
-  }
+  // Reset the flag on each call to allow retries
+  isLeaderboardPreviewLoadingOrLoaded = false;
+  
+  // Always show loading state when starting a fresh load
+  leaderboardPreview.innerHTML = '<div class="leaderboard-loading">Loading preview...</div>';
   
   console.log("loadLeaderboardPreview: Called.");
-  isLeaderboardPreviewLoadingOrLoaded = true; // Indicate that a load attempt has started or is in progress
+  isLeaderboardPreviewLoadingOrLoaded = true;
 
   const cardFooter = document.querySelector("#leaderboardPreviewCard .card-footer span:first-child");
 
@@ -2294,7 +2291,7 @@ async function loadLeaderboardPreview() {
     console.error("loadLeaderboardPreview: getLeaderboardDataFunctionApp is not a function or not initialized.");
     leaderboardPreview.innerHTML = '<div class="leaderboard-loading" style="color:red;">Error: Service unavailable.</div>';
     if (cardFooter) cardFooter.textContent = "Error";
-    isLeaderboardPreviewLoadingOrLoaded = false; // Reset flag on error
+    isLeaderboardPreviewLoadingOrLoaded = false;
     return;
   }
 
@@ -2305,10 +2302,12 @@ async function loadLeaderboardPreview() {
 
   console.log(`loadLeaderboardPreview: UID: ${currentUser?.uid}, Anonymous: ${isUserAnonymous}, Tier: ${accessTier}`);
 
-  if (!currentUser) {
-      console.warn("loadLeaderboardPreview: User not authenticated yet. Cloud function call will likely fail if it requires auth.");
-      // No explicit return here, let the cloud function handle auth error if it's called without auth.
-      // The UI will show "Loading preview..." until the call fails or succeeds.
+  // Wait a bit if auth is not ready yet
+  if (!currentUser || !window.authState) {
+    console.log("loadLeaderboardPreview: Auth not ready, retrying in 2 seconds...");
+    isLeaderboardPreviewLoadingOrLoaded = false;
+    setTimeout(() => loadLeaderboardPreview(), 2000);
+    return;
   }
 
   if (isUserAnonymous || accessTier === "free_guest") {
@@ -2342,7 +2341,7 @@ async function loadLeaderboardPreview() {
         });
     }
     if (cardFooter) cardFooter.textContent = "Upgrade to Access";
-    isLeaderboardPreviewLoadingOrLoaded = false; // Reset flag as data wasn't loaded
+    isLeaderboardPreviewLoadingOrLoaded = false;
     return;
   }
 
@@ -2357,7 +2356,10 @@ async function loadLeaderboardPreview() {
         console.error("loadLeaderboardPreview: Invalid data structure from Cloud Function.", leaderboardData);
         leaderboardPreview.innerHTML = '<div class="leaderboard-loading" style="color:red;">Error: Invalid data.</div>';
         if (cardFooter) cardFooter.textContent = "Error";
-        isLeaderboardPreviewLoadingOrLoaded = false; // Reset flag on error
+        isLeaderboardPreviewLoadingOrLoaded = false;
+        
+        // Retry after 5 seconds on data structure error
+        setTimeout(() => loadLeaderboardPreview(), 5000);
         return;
     }
 
@@ -2399,20 +2401,23 @@ async function loadLeaderboardPreview() {
     leaderboardPreview.innerHTML = html || '<div class="leaderboard-loading" style="text-align:center; padding-top:10px;">No ranked players yet.</div>';
     if (cardFooter) cardFooter.textContent = "View Full Leaderboard";
     console.log("loadLeaderboardPreview: Preview updated successfully.");
-    // isLeaderboardPreviewLoadingOrLoaded remains true after a successful load to prevent immediate flicker.
-    // If you need a manual refresh button, that button's handler could set this to false before calling loadLeaderboardPreview.
+    
+    // Successfully loaded - keep the flag true to prevent unnecessary reloads
+    isLeaderboardPreviewLoadingOrLoaded = true;
 
   } catch (error) {
     console.error("loadLeaderboardPreview: Error calling Cloud Function or processing result:", error);
     let errorMsg = "Error loading preview.";
     if (error.code === 'unauthenticated' || (error.message && error.message.toLowerCase().includes("authenticated"))) {
         errorMsg = "Please log in.";
+        // Retry after 3 seconds if it's an auth error
+        setTimeout(() => loadLeaderboardPreview(), 3000);
     } else if (error.message) {
         errorMsg = `Error: ${error.message.substring(0, 60)}${error.message.length > 60 ? '...' : ''}`;
     }
     leaderboardPreview.innerHTML = `<div class="leaderboard-loading" style="color:red;">${errorMsg}</div>`;
     if (cardFooter) cardFooter.textContent = "Error";
-    isLeaderboardPreviewLoadingOrLoaded = false; // Reset flag on error to allow another attempt
+    isLeaderboardPreviewLoadingOrLoaded = false;
   }
 }
 
@@ -2529,7 +2534,10 @@ async function initializeDashboard() {
       fixStreakCalendar(streaks); // Assuming fixStreakCalendar is defined and accessible
       // --- End Dashboard Card: Streak Display ---
       
-      loadLeaderboardPreview(); // Assuming loadLeaderboardPreview is defined
+      // Load leaderboard preview with a delay to ensure auth is ready
+setTimeout(() => {
+  loadLeaderboardPreview();
+}, 1000);
       updateReviewQueue();    // Assuming updateReviewQueue is defined
 
       // --- Logic for Dashboard CME Card (Tier-Based Visibility) ---
@@ -3568,6 +3576,9 @@ function ensureAllScreensHidden(exceptScreenId) {
 // Add this function to your auth.js or app.js file
 async function cleanupOnLogout() {
   console.log("Cleaning up after logout...");
+
+  // Reset the leaderboard loading flag
+  isLeaderboardPreviewLoadingOrLoaded = false;
   
   // Clear any cached user data in the UI
   const xpDisplays = [
