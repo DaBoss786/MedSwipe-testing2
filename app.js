@@ -217,6 +217,7 @@ window.addEventListener('authStateChanged', function(event) {
                         console.error("Board Review Pricing Screen not found after registration redirect!");
                         if (newPaywallScreen) newPaywallScreen.style.display = 'flex';
                     }
+                
                 } else {
                     console.log('No pending redirect. Showing main paywall screen.');
                     if (newPaywallScreen) {
@@ -310,12 +311,32 @@ window.addEventListener('authStateChanged', function(event) {
                       console.error("Board Review Pricing Screen not found after registration redirect (no splash)!");
                       if (newPaywallScreen) newPaywallScreen.style.display = 'flex';
                   }
-              } else {
+              } else if (pendingRedirect === 'cme_pricing') { // <<<--- MODIFICATION STARTS HERE
+                  console.log('Redirecting to CME Pricing Screen after registration (no splash).');
+                  sessionStorage.removeItem('pendingRedirectAfterRegistration');
+                  ensureAllScreensHidden(); // Ensure other screens are hidden
+                  const cmePricingScreen = document.getElementById("cmePricingScreen");
+                  if (cmePricingScreen) {
+                      cmePricingScreen.style.display = 'flex'; // Or 'block' based on your CSS
+                      // Optional: if you have a function to set the default tab for CME pricing
+                      // if (typeof updateCmePricingTabView === 'function') {
+                      //     updateCmePricingTabView('annual'); // Or your desired default
+                      // }
+                  } else {
+                      console.error("CME Pricing Screen not found after registration redirect (no splash)!");
+                      // Fallback if pricing screen is missing
+                      if (newPaywallScreen) {
+                          newPaywallScreen.style.display = 'flex';
+                      } else if (mainOptions) { // Assuming mainOptions is defined in this scope
+                          mainOptions.style.display = 'flex';
+                      }
+                  }
+              } else { // <<<--- MODIFICATION ENDS HERE (original else continues)
                   console.log('No pending redirect (no splash). Showing main paywall screen.');
                   if (newPaywallScreen) {
                       newPaywallScreen.style.display = 'flex';
                   } else {
-                       if (welcomeScreen) {
+                       if (welcomeScreen) { // Assuming welcomeScreen is defined in this scope
                           welcomeScreen.style.display = 'flex';
                           welcomeScreen.style.opacity = '1';
                       }
@@ -324,7 +345,7 @@ window.addEventListener('authStateChanged', function(event) {
           }
       } else { // User is not registered (anonymous)
           console.log('User is anonymous guest (no splash). Showing welcome screen.');
-          if (welcomeScreen) {
+          if (welcomeScreen) { // Assuming welcomeScreen is defined in this scope
               welcomeScreen.style.display = 'flex';
               welcomeScreen.style.opacity = '1';
           }
@@ -4900,13 +4921,32 @@ if (cmeInfoBackBtn) {
 } else {
   console.error("CME Info Back button (#cmeInfoBackBtn) not found.");
 }
-
-// Unlock CME Button (Placeholder for Stripe)
+// Unlock CME Button
 const unlockCmeBtn = document.getElementById("unlockCmeBtn");
 if (unlockCmeBtn) {
   unlockCmeBtn.addEventListener("click", function() {
       console.log("Unlock CME button clicked.");
-      showCmePricingScreen(); // <<<--- Call function to show pricing screen
+
+      // Check authentication state
+      if (window.authState && window.authState.isRegistered) {
+          // User is already registered (e.g., free_guest tier), go directly to CME Pricing Screen
+          console.log("User is registered. Showing CME Pricing Screen.");
+          showCmePricingScreen();
+      } else {
+          // User is anonymous (guest), show the registration modal first.
+          // Then, after registration, they should be redirected to CME pricing.
+          console.log("User is anonymous. Showing registration form, will redirect to CME pricing after.");
+          if (typeof showRegisterForm === 'function') {
+              // Set a flag for post-registration redirection
+              sessionStorage.setItem('pendingRedirectAfterRegistration', 'cme_pricing');
+              showRegisterForm('cme_pricing'); // Pass 'cme_pricing' as the next step
+          } else {
+              console.error("showRegisterForm function not found!");
+              // Fallback: maybe show main options or an error
+              const mainOptions = document.getElementById("mainOptions");
+              if (mainOptions) mainOptions.style.display = "flex";
+          }
+      }
   });
 } else {
   console.error("Unlock CME button (#unlockCmeBtn) not found.");
