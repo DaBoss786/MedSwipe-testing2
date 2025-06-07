@@ -4400,58 +4400,86 @@ async function handleCmeClaimSubmission(event) {
       console.log("Cloud Function result received:", result);
       // --- End Cloud Function Call ---
 
-
-      // --- 4. Handle Cloud Function Response (Update History with filePath) ---
-      // THIS IS THE CORRECTED SECTION
+      // --- 4. Handle Cloud Function Response (Update History & Get Immediate Link) ---
       cleanup(false, false);
 
       // The result now contains a filePath, not a publicUrl
       if (result.data.success === true && typeof result.data.filePath === 'string') {
-          const filePath = result.data.filePath; // Get the private file path
-          const pdfFileName = filePath.split('/').pop(); // Extract filename from path
+          const filePath = result.data.filePath;
+          const pdfFileName = filePath.split('/').pop();
           console.log("Certificate generated successfully. File Path:", filePath);
 
-          // Now, update the history entry in Firestore with this filePath
+          // First, update the history in Firestore with the permanent filePath
           try {
               console.log("Attempting to update Firestore history with certificate filePath...");
               const userDoc = await getDoc(userDocRef);
               if (userDoc.exists()) {
                   let history = userDoc.data().cmeClaimHistory || [];
-                  // Find the entry we just created
                   const historyIndex = history.findIndex(entry =>
                       entry.timestamp && typeof entry.timestamp.toDate === 'function' &&
                       entry.timestamp.toDate().toISOString() === claimTimestampISO
                   );
-
                   if (historyIndex > -1) {
-                      // Store the filePath and fileName instead of the downloadUrl
                       history[historyIndex].filePath = filePath;
                       history[historyIndex].pdfFileName = pdfFileName;
                       await updateDoc(userDocRef, { cmeClaimHistory: history });
                       console.log(`Successfully updated history entry at index ${historyIndex} with filePath.`);
-                  } else {
-                      console.warn("Could not find the exact history entry to update with filePath.");
                   }
               }
           } catch (updateError) {
               console.error("Error updating Firestore history with certificate filePath:", updateError);
           }
 
-          // Since we don't have a URL yet, we can't show a direct download link here.
-          // We can just show a success message.
+          // --- NEW PART: Now, immediately get a temporary signed URL to display ---
           const linkContainer = document.getElementById("claimModalLink");
-          if (linkContainer) {
-              linkContainer.innerHTML = `
-                  <p style="color: #28a745; font-weight: bold; margin-bottom: 10px;">
-                    🎉 Success! Your certificate has been generated.
-                  </p>
-                  <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
-                    You can now close this window. Your certificate is available for download anytime from your CME Claim History.
-                  </p>
-              `;
-              linkContainer.style.display = 'block';
-              if (submitButton) submitButton.style.display = 'none';
-              if (cancelButton) cancelButton.style.display = 'none';
+          try {
+              if(loadingIndicator) loadingIndicator.querySelector('p').textContent = 'Preparing download link...';
+              if(loadingIndicator) loadingIndicator.style.display = 'block';
+
+              const urlResult = await getCertificateDownloadUrlFunction({ filePath: filePath });
+              
+              if(loadingIndicator) loadingIndicator.style.display = 'none';
+
+              if (urlResult.data.success && urlResult.data.downloadUrl) {
+                  const signedUrl = urlResult.data.downloadUrl;
+                  // Now display the success message WITH the download button
+                  if (linkContainer) {
+                      linkContainer.innerHTML = `
+                          <p style="color: #28a745; font-weight: bold; margin-bottom: 10px;">
+                             Your CME certificate is ready!
+                          </p>
+                          <a href="${signedUrl}"
+                             target="_blank"
+                             download="${pdfFileName}"
+                             class="auth-primary-btn"
+                             style="display: inline-block; padding: 10px 15px; text-decoration: none; margin-top: 5px; background-color: #28a745; border: none;">
+                            Download Certificate
+                          </a>
+                          <p style="font-size: 0.8em; color: #666; margin-top: 10px;">(Link opens in a new tab and is valid for 15 minutes.)</p>
+                      `;
+                      linkContainer.style.display = 'block';
+                      if (submitButton) submitButton.style.display = 'none';
+                      if (cancelButton) cancelButton.style.display = 'none';
+                  }
+              } else {
+                  throw new Error("Failed to get download URL after certificate creation.");
+              }
+          } catch (urlError) {
+              console.error("Could not get immediate download URL:", urlError);
+              // Fallback to the generic success message if getting the URL fails
+              if (linkContainer) {
+                  linkContainer.innerHTML = `
+                      <p style="color: #28a745; font-weight: bold; margin-bottom: 10px;">
+                        🎉 Success! Your certificate has been generated.
+                      </p>
+                      <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                        An error occurred creating an immediate download link, but your certificate is saved and available in your CME Claim History.
+                      </p>
+                  `;
+                  linkContainer.style.display = 'block';
+                  if (submitButton) submitButton.style.display = 'none';
+                  if (cancelButton) cancelButton.style.display = 'none';
+              }
           }
           
       } else {
