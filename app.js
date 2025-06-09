@@ -1153,9 +1153,9 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
   
   <!-- New Marketing Email Opt-in Checkbox -->
   <div class="terms-checkbox" style="margin-top: 10px;">
-    <input type="checkbox" id="marketingOptIn">
+    <input type="checkbox" id="marketingOptIn" checked>
     <label for="marketingOptIn">
-      Send me occasional updates, notifications and feature news. Unsubscribe anytime.
+      Send me occasional notifications and updates to keep me motivated. Unsubscribe anytime.
     </label>
   </div>
 </div>

@@ -67,13 +67,13 @@ function renderXpLeaderboard(data, container) {
             <button class="time-range-tab" data-target="allTimeXpBoard">All-Time</button>
         </div>
         <div id="weeklyXpBoard" class="leaderboard-content">
-            <ul class="leaderboard-entry-list">${buildUserList(data.weeklyXpLeaderboard, 'weeklyXp', 'XP This Week')}</ul>
+            <ul class="leaderboard-entry-list">${buildUserList(data.weeklyXpLeaderboard, 'weeklyXp', 'XP')}</ul>
         </div>
         <div id="allTimeXpBoard" class="leaderboard-content" style="display: none;">
-            <ul class="leaderboard-entry-list">${buildUserList(data.xpLeaderboard, 'xp', 'Total XP')}</ul>
+            <ul class="leaderboard-entry-list">${buildUserList(data.xpLeaderboard, 'xp', 'XP')}</ul>
         </div>
-        <div id="yourWeeklyXpRank">${buildYourRank(data.currentUserRanks.weeklyXp, 'weeklyXp', 'XP This Week')}</div>
-        <div id="yourAllTimeXpRank" style="display: none;">${buildYourRank(data.currentUserRanks.xp, 'xp', 'Total XP')}</div>
+        <div id="yourWeeklyXpRank">${buildYourRank(data.currentUserRanks.weeklyXp, 'weeklyXp', 'XP')}</div>
+        <div id="yourAllTimeXpRank" style="display: none;">${buildYourRank(data.currentUserRanks.xp, 'xp', 'XP')}</div>
     `;
     container.innerHTML = content;
 
