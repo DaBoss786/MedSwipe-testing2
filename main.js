@@ -1,12 +1,15 @@
+// app.js - TOP OF FILE
+import { auth, db, doc, getDoc, runTransaction, serverTimestamp, addDoc, collection, getDocs } from './firebase-config.js'; // Adjust path if needed
+
 // Global helper functions
 window.shuffleArray = function(array) {
   return array.sort(() => Math.random() - 0.5);
 };
 
 window.fetchPersistentAnsweredIds = async function() {
-  const uid = window.auth.currentUser.uid;
-  const userDocRef = window.doc(window.db, 'users', uid);
-  const userDocSnap = await window.getDoc(userDocRef);
+  const uid = auth.currentUser.uid;
+  const userDocRef = doc(db, 'users', uid);
+  const userDocSnap = await getDoc(userDocRef);
   if (userDocSnap.exists()){
     let data = userDocSnap.data();
     return Object.keys(data.answeredQuestions || {});
@@ -75,9 +78,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Global functions that must be available to other parts of the code.
   async function updateUserCompositeScore() {
     try {
-      const uid = window.auth.currentUser.uid;
-      const userDocRef = window.doc(window.db, 'users', uid);
-      const userDocSnap = await window.getDoc(userDocRef);
+      const uid = auth.currentUser.uid;
+      const userDocRef = doc(db, 'users', uid);
+      const userDocSnap = await getDoc(userDocRef);
       if (userDocSnap.exists()) {
         const data = userDocSnap.data();
         const totalAnswered = data.stats?.totalAnswered || 0;
@@ -96,9 +99,9 @@ document.addEventListener('DOMContentLoaded', function() {
   window.updateUserCompositeScore = updateUserCompositeScore;
 
   async function loadOverallData() {
-    const currentUid = window.auth.currentUser.uid;
+    const currentUid = auth.currentUser.uid;
     const currentUsername = await getOrGenerateUsername();
-    const querySnapshot = await window.getDocs(window.collection(window.db, 'users'));
+    const querySnapshot = await getDocs(collection(db, 'users'));
     let leaderboardEntries = [];
     querySnapshot.forEach(docSnap => {
       const data = docSnap.data();
@@ -182,9 +185,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   async function updateQuestionStats(questionId, isCorrect) {
     console.log("updateQuestionStats called for:", questionId, "isCorrect:", isCorrect);
-    const questionStatsRef = window.doc(window.db, "questionStats", questionId);
+    const questionStatsRef = doc(db, "questionStats", questionId);
     try {
-      await window.runTransaction(window.db, async (transaction) => {
+      await runTransaction(db, async (transaction) => {
         const statsDoc = await transaction.get(questionStatsRef);
         let statsData = statsDoc.exists() ? statsDoc.data() : { totalAttempts: 0, correctAttempts: 0 };
         statsData.totalAttempts++;
@@ -321,9 +324,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById("faqView").style.display = "none";
     document.getElementById("performanceView").style.display = "block";
     
-    const uid = window.auth.currentUser.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
-    const userDocSnap = await window.getDoc(userDocRef);
+    const uid = auth.currentUser.uid;
+    const userDocRef = doc(db, 'users', uid);
+    const userDocSnap = await getDoc(userDocRef);
     console.log("User document exists:", userDocSnap.exists());
     
     if (!userDocSnap.exists()) {
@@ -426,15 +429,15 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   async function getOrGenerateUsername() {
-    const uid = window.auth.currentUser.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
-    const userDocSnap = await window.getDoc(userDocRef);
+    const uid = auth.currentUser.uid;
+    const userDocRef = doc(db, 'users', uid);
+    const userDocSnap = await getDoc(userDocRef);
     let username;
     if (userDocSnap.exists() && userDocSnap.data().username) {
       username = userDocSnap.data().username;
     } else {
       username = generateRandomName();
-      await window.runTransaction(window.db, async (transaction) => {
+      await runTransaction(db, async (transaction) => {
         const docSnap = await transaction.get(userDocRef);
         let data = docSnap.exists() ? docSnap.data() : {};
         data.username = username;
@@ -616,8 +619,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const selected = this.getAttribute('data-option');
         const isCorrect = (selected === correct);
         const timeSpent = Date.now() - questionStartTime;
-        if (window.analytics && window.logEvent) {
-          window.logEvent(window.analytics, 'question_answered', { questionId: qId, isCorrect });
+        if (analytics && window.logEvent) {
+          window.logEvent(analytics, 'question_answered', { questionId: qId, isCorrect });
         }
         options.forEach(option => {
           option.disabled = true;
@@ -821,10 +824,10 @@ document.addEventListener('DOMContentLoaded', function() {
     e.preventDefault();
     const confirmReset = confirm("Are you sure you want to reset all progress?");
     if (!confirmReset) return;
-    const uid = window.auth.currentUser.uid;
-    const userDocRef = window.doc(window.db, 'users', uid);
+    const uid = auth.currentUser.uid;
+    const userDocRef = doc(db, 'users', uid);
     try {
-      await window.runTransaction(window.db, async (transaction) => {
+      await runTransaction(db, async (transaction) => {
         const userDoc = await transaction.get(userDocRef);
         if (userDoc.exists()) {
           let data = userDoc.data();
@@ -881,11 +884,11 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     try {
-      await window.addDoc(window.collection(window.db, "feedback"), {
+      await addDoc(collection(db, "feedback"), {
         questionId: currentFeedbackQuestionId,
         questionText: currentFeedbackQuestionText,
         feedback: feedbackText,
-        timestamp: window.serverTimestamp()
+        timestamp: serverTimestamp()
       });
       alert("Thank you for your feedback!");
       document.getElementById("feedbackText").value = "";

@@ -1,5 +1,5 @@
 // Define csvUrl globally so all functions can access it
-const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
+//const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ85bci-l8eImMlvV2Vw8LqnTpmSVoTqbZFscvQ5w6ptGZzb5q1DLyeFS7uIqoLtEw4lXLQohCfofXd/pub?output=csv";
 
 // Global filter mode
 window.filterMode = "all";
@@ -72,3 +72,14 @@ async function updateFavoriteIcon() {
     favoriteButton.style.color = "";
   }
 }
+// utils.js - BOTTOM OF FILE
+export {
+  shuffleArray, // Export other utils if needed
+  getCurrentQuestionId, // Export other utils if needed
+  getStartOfWeek, // Export other utils if needed
+  leaderboardTabsHTML, // Export other utils if needed
+  closeSideMenu, // Export other utils if needed
+  closeUserMenu, // Export other utils if needed
+  updateFavoriteIcon // Export other utils if needed
+  // Add any other functions/variables from utils.js needed elsewhere
+};

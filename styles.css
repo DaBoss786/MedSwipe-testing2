@@ -449,6 +449,148 @@ html, body {
   background-color: #aaa;
 }
 
+/* Keep your existing .modalForm rules as they are for other modals */
+.modalForm {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  padding: 20px; /* Keep original padding */
+  z-index: 2100; /* Keep original z-index or increase if needed */
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  width: 90%;
+  max-width: 400px; /* Keep original max-width for other modals */
+  /* DO NOT add max-height or overflow here by default */
+}
+
+/* --- Overrides and Additions for the CME Claim Modal (Simplified Centering) --- */
+
+/* Target the specific modal ID - Outer full-screen background */
+#cmeClaimModal {
+    position: fixed; /* Cover the whole screen */
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent background */
+    z-index: 2200; /* High z-index */
+    display: none; /* Keep hidden by default */
+    /* We will NOT use flexbox here, centering handled by inner */
+    overflow-y: auto; /* Allow scrolling the background if inner content is huge */
+    padding: 20px; /* Add padding so content isn't stuck to edges */
+    box-sizing: border-box;
+}
+
+/* Style the inner content box specifically for the claim modal */
+#cmeClaimModal .modal-content-inner {
+    background: #fff;
+    padding: 25px 30px;
+    border-radius: 8px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
+    width: 90%;
+    max-width: 650px; /* Wider */
+    max-height: 85vh; /* Limit height */
+    overflow-y: auto; /* Make the CONTENT scrollable */
+    position: relative; /* Relative for close button AND centering */
+
+    /* --- Centering using margin auto and positioning hints --- */
+    margin: 3vh auto; /* Vertical margin (e.g., 3% of viewport height) + auto horizontal */
+    /* These help ensure it stays within flow for margin:auto */
+    /* We don't use top/transform like the original .modalForm */
+}
+
+/* Adjustments within the CME Claim Modal (Keep these from previous attempt) */
+#cmeClaimModal h2 {
+  margin-top: 10px;
+  margin-bottom: 20px;
+  color: #0056b3;
+  text-align: center;
+  font-size: 1.5rem;
+}
+#cmeClaimModal .formGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+ #cmeClaimModal .formGroup label {
+   font-size: 1rem;
+   color: #333;
+   margin-bottom: 8px;
+   font-weight: 500;
+ }
+ #cmeClaimModal .formGroup input[type="number"],
+ #cmeClaimModal .formGroup input[type="text"],
+ #cmeClaimModal .formGroup textarea,
+ #cmeClaimModal .formGroup select {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+ }
+ #cmeClaimModal #creditsToClaimInput {
+     max-width: 100px;
+     display: inline-block;
+     margin-left: 10px;
+ }
+ #cmeClaimModal .radio-group label,
+ #cmeClaimModal .checkbox-group label {
+     font-weight: normal;
+     font-size: 0.95rem;
+     display: flex;
+     align-items: center;
+     gap: 5px;
+ }
+  #cmeClaimModal .radio-group input,
+  #cmeClaimModal .checkbox-group input {
+      width: auto;
+      margin-right: 5px;
+  }
+#cmeClaimModal .btnRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 25px;
+  gap: 10px;
+}
+ #cmeClaimModal .btnRow button {
+   margin-left: 0;
+   padding: 10px 20px;
+   font-size: 1rem;
+   font-weight: 500;
+   /* ... other button styles ... */
+   border: none;
+   border-radius: 5px;
+   cursor: pointer;
+   background-color: #0056b3;
+   color: #fff;
+   transition: background-color 0.2s ease;
+ }
+ #cmeClaimModal .btnRow button.cancel { background-color: #aaa; }
+ #cmeClaimModal .btnRow button:hover { background-color: #004a95; }
+ #cmeClaimModal .btnRow button.cancel:hover { background-color: #888; }
+
+/* Close button specific to this modal */
+#cmeClaimModal #closeCmeClaimModal {
+    position: absolute; /* Position relative to modal-content-inner */
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+    /* ... other close button styles ... */
+    font-size: 1.8rem;
+    padding: 5px;
+    line-height: 1;
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+}
+ #cmeClaimModal #closeCmeClaimModal:hover { color: #333; }
+
+/* --- End of CSS Fix --- */
+
 /* Performance View */
 #performanceView {
   display: none;
@@ -516,7 +658,7 @@ html, body {
   position: relative;
   background: #fff;
   border-radius: 6px;
-  padding: 20px 15px 15px 15px;
+  padding: 30px 15px 15px 15px;
   margin: 10px auto;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   max-width: 600px;
@@ -526,6 +668,25 @@ html, body {
   -webkit-overflow-scrolling: touch;
   text-align: center;
 }
+
+/* --- NEW --- CME Eligible Tag Styles */
+.cme-tag {
+  position: absolute; /* Position relative to the card */
+  top: 0;             /* Stick to the top */
+  left: 0;            /* Stick to the left */
+  background-color: #0C72D3; /* Your theme's blue */
+  color: white;       /* White text */
+  padding: 4px 10px;  /* Space inside the tag (top/bottom, left/right) */
+  font-size: 0.7rem;  /* Small font size */
+  font-weight: bold;  /* Bold text */
+  /* Creates the ribbon-like corner cut */
+  border-radius: 6px 0 6px 0; /* Top-left, top-right, bottom-right, bottom-left */
+  z-index: 5;         /* Ensure it's above card content if needed */
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.2); /* Optional subtle shadow */
+  text-transform: uppercase; /* Optional: Makes text all caps */
+  letter-spacing: 0.5px;  /* Optional: Spacing between letters */
+}
+/* --- End of NEW Styles --- */
 
 .question {
   white-space: pre-line;
@@ -619,24 +780,39 @@ html, body {
   right: 0;
   width: 280px;
   height: 100vh;
+  max-height: 100vh; /* ADDED or ensure it's there */
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(5px);
   box-shadow: -2px 0 8px rgba(0,0,0,0.2);
   transform: translateX(100%);
   transition: transform 0.3s ease-in-out;
   z-index: 1600;
-  padding: 20px;
+  /* padding: 20px; */ /* REMOVED padding from here */
+  display: flex; /* ADDED */
+  flex-direction: column; /* ADDED */
+  overflow: hidden; /* ADDED */
 }
 
 #userMenu.open {
   transform: translateX(0);
 }
 
+/* ADD THIS NEW WRAPPER CLASS */
+.user-menu-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%; 
+  overflow: hidden; 
+  padding: 20px; /* MOVED padding here */
+  box-sizing: border-box;
+}
+
 #userInfoSection {
-  margin-bottom: 30px;
+  margin-bottom: 20px; /* MODIFIED (was 30px) */
   text-align: center;
   border-bottom: 1px solid #eee;
-  padding-bottom: 20px;
+  padding-bottom: 15px; /* MODIFIED (was 20px) */
+  flex-shrink: 0; /* ADDED */
 }
 
 #usernameDisplay {
@@ -645,11 +821,12 @@ html, body {
   font-size: 1.3rem;
 }
 
-#menuHeader, #userMenuHeader {
+#menuHeader, #userMenuHeader { /* Assuming #userMenuHeader is for the right menu */
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  flex-shrink: 0; /* ADDED */
 }
 
 #menuTitle {
@@ -689,20 +866,26 @@ html, body {
 }
 
 /* Menu List Items */
-#menuList, #userMenuList {
+#menuList, #userMenuList { /* Assuming #userMenuList is for the right menu */
   list-style: none;
   padding: 0;
   margin: 0;
+  overflow-y: auto; /* ADDED/MODIFIED */
+  flex-grow: 1; /* ADDED */
+  padding-bottom: 20px; /* ADDED */
+  -webkit-overflow-scrolling: touch; /* ADDED */
 }
 
 #menuList > li, #userMenuList > li {
-  margin-bottom: 15px;
+  margin-bottom: 10px; /* MODIFIED (was 15px) */
   padding: 10px 15px;
   font-size: 1.1rem;
   color: #0056b3;
   border-radius: 5px;
   cursor: pointer;
   transition: background 0.3s ease;
+  display: flex; /* ADDED */
+  align-items: center; /* ADDED */
 }
 
 #menuList > li:hover, #userMenuList > li:hover {
@@ -713,6 +896,17 @@ html, body {
   text-decoration: none;
   color: #0056b3;
   font-size: 1.1rem;
+  display: flex; /* ADDED */
+  align-items: center; /* ADDED */
+  width: 100%; /* ADDED */
+}
+
+/* ADD THIS for icons inside menu items */
+#userMenuList > li .menu-icon {
+  margin-right: 10px; 
+  font-size: 1.2em; 
+  min-width: 20px; 
+  text-align: center;
 }
 
 /* Leaderboard View Styles */
@@ -1488,6 +1682,15 @@ html, body {
 
 .dashboard-start-btn:hover {
   background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
+}
+
+/* Button container on the CME Dashboard */
+.cme-dashboard-buttons {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 /* Dashboard Cards Row */
@@ -3372,6 +3575,197 @@ html, body {
   margin: 0;
 }
 
+
+/* ================================= */
+/* == Onboarding Specialty Screens (General) == */
+/* ================================= */
+.onboarding-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #FFFFFF; /* Match welcome screen */
+  display: flex; /* Will be controlled by JS to show/hide */
+  align-items: center;
+  justify-content: center;
+  z-index: 9997; /* Below welcome, above main content */
+  opacity: 1; /* Start visible when display is not 'none' */
+  transition: opacity 0.5s ease-out;
+  padding: 20px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.onboarding-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 500px; /* Max width for content */
+}
+
+.onboarding-logo {
+  width: 200px; /* Slightly smaller than welcome logo */
+  max-width: 70%;
+  margin-bottom: 30px;
+}
+
+.onboarding-title {
+  font-size: 1.6rem; /* Adjust as needed */
+  font-weight: bold;
+  color: #0C72D3; /* MedSwipe blue */
+  margin-bottom: 15px;
+}
+
+.onboarding-subtitle {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 30px;
+  line-height: 1.5;
+}
+
+.onboarding-options-grid {
+  display: grid;
+  /* Keep this for future multi-specialty layout:
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+  */
+  /* For a single item, let's control its width better */
+  grid-template-columns: minmax(0, 320px); /* Max width for the column, same as experience list */
+  justify-content: center; /* Center the grid column itself if it's narrower than container */
+  gap: 15px;
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.onboarding-option-card { /* This is used by the Specialty screen */
+  background-color: #f8f9fa;
+  border: 2px solid #e0e6ed;
+  border-radius: 10px;
+  padding: 20px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px; /* Reduced min-height slightly */
+  /* width: 100%; /* Let the grid column define the width */
+}
+
+.onboarding-option-card:hover:not(:disabled) {
+  border-color: #0C72D3;
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.onboarding-option-card.selected {
+  background-color: #e6f0fa; /* Light blue for selected */
+  border-color: #0C72D3;
+  color: #0056b3;
+  box-shadow: 0 0 0 3px rgba(12, 114, 211, 0.3); /* Outline for selected */
+}
+
+.onboarding-option-icon { /* This was for the specialty card, you mentioned removing it */
+  /* font-size: 2rem;
+  margin-bottom: 10px; */
+  display: none; /* Hide if you removed it from HTML */
+}
+
+.disabled-option {
+  background-color: #e9ecef;
+  color: #adb5bd;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.onboarding-primary-btn {
+  font-size: 1.2rem;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #fff;
+  width: 100%;
+  max-width: 280px; /* Match welcome screen buttons */
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+}
+
+.onboarding-primary-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0056b3 0%, #0C72D3 100%);
+}
+
+.onboarding-primary-btn:disabled {
+  background: #cccccc;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .onboarding-title {
+    font-size: 1.4rem;
+  }
+  .onboarding-subtitle {
+    font-size: 0.9rem;
+  }
+  .onboarding-option-card {
+    font-size: 1rem;
+    padding: 15px;
+  }
+  .onboarding-primary-btn {
+    font-size: 1.1rem;
+  }
+}
+
+.onboarding-options-list {
+  display: flex;
+  flex-direction: column; /* Stack buttons vertically */
+  gap: 10px; /* Space between buttons */
+  width: 100%;
+  max-width: 320px; /* Max width for the list of buttons */
+  margin-bottom: 30px;
+}
+
+.onboarding-option-button {
+  background-color: #f8f9fa;
+  border: 2px solid #e0e6ed;
+  border-radius: 8px; /* Slightly less rounded than cards */
+  padding: 12px 15px; /* Adjust padding as needed */
+  font-size: 1rem;   /* Adjust font size */
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  text-align: center;
+  width: 100%; /* Make buttons full width of their container */
+}
+
+.onboarding-option-button:hover:not(:disabled) {
+  border-color: #0C72D3;
+  background-color: #e9f2fa; /* Lighter hover than selected */
+}
+
+.onboarding-option-button.selected {
+  background-color: #e6f0fa; /* Light blue for selected */
+  border-color: #0C72D3;
+  color: #0056b3;
+  box-shadow: 0 0 0 2px rgba(12, 114, 211, 0.25); /* Softer outline for buttons */
+  font-weight: bold;
+}
+
+.onboarding-option-button:disabled { /* If you ever add disabled experience options */
+  background-color: #e9ecef;
+  color: #adb5bd;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 /* Registration Benefits Modal */
 .benefits-list {
   margin: 20px 0;
@@ -3430,4 +3824,1452 @@ html, body {
 .guest-analytics-prompt p {
   margin-bottom: 15px;
   color: #0056b3;
+}
+
+/* Styling for the CME Info/Paywall Screen */
+#cmeInfoScreen {
+  display: none; /* Start hidden */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff; /* Light background */
+  z-index: 2100; /* High z-index to cover other elements */
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto; /* Allow scrolling if content overflows */
+  display: flex; /* Use flexbox for centering */
+  flex-direction: column;
+  align-items: center; /* Center content horizontally */
+  text-align: center;
+}
+
+#cmeInfoScreen h1 {
+  color: #0056b3; /* MedSwipe blue */
+  font-size: 1.5rem; /* Adjust as needed */
+  margin-bottom: 10px;
+}
+
+#cmeInfoScreen ul {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 15px;
+  text-align: left; /* Align bullet points text left */
+  display: inline-block; /* Make the container only as wide as its content */
+}
+
+#cmeInfoScreen li {
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+  position: relative; /* Enable absolute positioning for child span */
+  padding-left: 20px; /* Make space for the bullet */
+}
+
+#cmeInfoScreen li span {
+  color: #0056b3;
+  /* margin-right: 8px; - This inline style from HTML will be less impactful due to absolute positioning */
+  position: absolute; /* Take span out of the normal flow */
+  left: 0; /* Position at the left edge of the li's padding box */
+  top: 0; /* Align with the top of the li's content */
+}
+
+.certificate-preview {
+  margin-bottom: 30px;
+  text-align: center; /* Center the image container */
+}
+
+.certificate-image {
+  max-width: 60%; /* Responsive width */
+  height: auto;
+  border: 1px solid #ccc; /* Subtle border */
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.1); /* Subtle shadow */
+  background-color: #fff; /* White background for the certificate */
+  padding: 5px; /* Small padding around the image */
+  box-sizing: border-box;
+}
+
+#unlockCmeBtn {
+  /* Inherits from .auth-primary-btn, add overrides if needed */
+  width: 80%;
+  max-width: 300px;
+  padding: 15px;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+#learnMoreCmeLink {
+  color: #0056b3;
+  text-decoration: none;
+  font-size: 1rem;
+}
+
+#learnMoreCmeLink:hover {
+  text-decoration: underline;
+}
+
+#cmeInfoBackBtn {
+  position: absolute;
+  top: 15px; /* Adjust as needed */
+  left: 15px; /* Adjust as needed */
+  background: none;
+  border: none;
+  font-size: 1.2rem; /* Adjust size */
+  color: #0056b3; /* Button color */
+  cursor: pointer;
+  padding: 5px 10px;
+  z-index: 2101; /* Ensure it's above the screen content */
+}
+
+/* Styles for CME Info Screen Buttons */
+
+.cme-back-btn {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: none;
+  border: 1px solid #0C72D3; /* Match secondary button border */
+  color: #0C72D3; /* Match secondary button color */
+  padding: 8px 12px; /* Smaller padding */
+  font-size: 1rem; /* Adjust size */
+  border-radius: 6px; /* Match other buttons */
+  cursor: pointer;
+  z-index: 2101; /* Ensure it's above screen content */
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.cme-back-btn:hover {
+  background-color: #f0f7ff; /* Match secondary button hover */
+}
+
+.cme-unlock-button {
+  /* Inherits base style from auth-primary-btn */
+  width: 80%;
+  max-width: 300px;
+  padding: 15px; /* Restore specific padding */
+  font-size: 1.2rem; /* Restore specific font size */
+  font-weight: bold;
+}
+
+.cme-learn-more-link {
+  color: #0056b3; /* Restore specific color */
+  text-decoration: none; /* Restore specific text-decoration */
+  font-size: 1rem; /* Restore specific font size */
+  display: inline-block; /* Allows margin/padding if needed */
+  margin-top: 5px;
+}
+
+.cme-learn-more-link:hover {
+  text-decoration: underline;
+}
+
+/* Ensure the main screen container allows absolute positioning of back button */
+#cmeInfoScreen {
+  position: fixed; /* Keep fixed */
+  /* ... other styles ... */
+}
+
+/* Styles for CME Pricing Screen */
+#cmePricingScreen {
+  display: none; /* Start hidden */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #f8f9fa; /* Light background */
+  z-index: 2150; /* Higher than info screen */
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto; /* Allow scrolling */
+  display: flex; /* Use flexbox for centering */
+  flex-direction: column;
+  align-items: center; /* Center content horizontally */
+  text-align: center;
+}
+
+/* Pricing Toggle Button Container */
+.cme-pricing-toggle {
+  display: inline-flex; /* Align buttons inline */
+  border: 1px solid #0C72D3; /* Border around the toggle */
+  border-radius: 50px; /* Rounded ends */
+  overflow: hidden; /* Clip button corners */
+  background-color: #fff; /* Background for non-active part */
+}
+
+/* Individual Toggle Buttons */
+.toggle-btn {
+  padding: 10px 25px;
+  border: none;
+  background-color: transparent; /* Default transparent */
+  color: #0C72D3; /* Default text color */
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  border-radius: 0; /* Remove individual radius */
+}
+
+/* Style for the Active Toggle Button */
+.toggle-btn.active {
+  background-color: #0C72D3; /* Active background */
+  color: #fff; /* Active text color */
+  border-radius: 50px; /* Apply radius only to active */
+  box-shadow: 0 2px 5px rgba(12, 114, 211, 0.3);
+}
+
+/* Ensure only one button has radius visually */
+.toggle-btn:first-child.active {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.toggle-btn:last-child.active {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+/* If only one button is active, it gets full radius */
+.toggle-btn:first-child.active:last-child {
+  border-radius: 50px;
+}
+
+
+/* Price Display */
+#cmePriceDisplay {
+  font-size: 2.8rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 25px;
+  transition: opacity 0.3s ease; /* Add transition for price change */
+}
+
+/* Feature List */
+#cmeFeatureList {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 35px;
+  text-align: left; /* Align text left */
+  display: inline-block; /* Center the block */
+}
+
+#cmeFeatureList li {
+  margin-bottom: 12px;
+  font-size: 1.1rem; /* Adjust as needed */
+  color: #333; /* Darker text color */
+  display: flex; /* Align checkmark and text */
+  align-items: center;
+}
+
+#cmeFeatureList li span {
+  color: #28a745; /* Green checkmark */
+  margin-right: 10px;
+  font-size: 1.2rem; /* Slightly larger checkmark */
+}
+
+/* Checkout Button */
+#cmeCheckoutBtn {
+  /* Inherits base style from auth-primary-btn */
+  width: 80%;
+  max-width: 300px;
+  padding: 15px;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+/* Styles for CME Learn More Modal */
+#cmeLearnMoreModal .modal-content {
+  max-width: 700px; /* Allow slightly wider modal for more text */
+  max-height: 85vh; /* Limit height */
+}
+
+#cmeLearnMoreModal .modal-body {
+  padding: 15px 25px 25px 25px; /* Adjust padding */
+  line-height: 1.6; /* Improve readability */
+}
+
+#cmeLearnMoreModal h3 {
+  color: #0056b3; /* Use theme blue */
+  margin-top: 20px;
+  margin-bottom: 8px;
+  font-size: 1.2rem;
+  border-bottom: 1px solid #eee; /* Add subtle separator */
+  padding-bottom: 5px;
+}
+
+#cmeLearnMoreModal h3:first-of-type {
+  margin-top: 0; /* Remove top margin for the first heading */
+}
+
+#cmeLearnMoreModal p {
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+#cmeLearnMoreModal ul {
+  margin-bottom: 15px;
+  padding-left: 20px; /* Indent lists */
+}
+
+#cmeLearnMoreModal li {
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+/* Style for the custom bullet points */
+#cmeLearnMoreModal ul[style*="list-style: none"] li span {
+  color: #0C72D3;
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+/* Action Buttons Container */
+.cme-learn-more-buttons {
+  margin-top: 25px;
+  display: flex;
+  flex-direction: column; /* Stack buttons vertically */
+  gap: 10px; /* Space between buttons */
+  align-items: center; /* Center buttons horizontally */
+  padding-top: 15px;
+  border-top: 1px solid #eee; /* Separator line */
+}
+
+/* Style action buttons */
+.cme-learn-more-buttons button {
+  width: 90%; /* Make buttons wider */
+  max-width: 300px; /* Limit max width */
+  padding: 12px; /* Adjust padding */
+  font-size: 1rem; /* Adjust font size */
+}
+
+/* styles.css */
+
+/* === REVISED CME Claim Modal Styles === */
+
+/* Ensure the base modal form has a solid background */
+.modalForm {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff; /* <<< CRUCIAL: Ensure solid white background */
+  padding: 20px;
+  z-index: 2100;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 400px; /* Default max-width */
+}
+
+/* --- Overrides SPECIFICALLY for CME Claim Modal --- */
+#cmeClaimModal {
+  /* Inherits position, transform, border-radius, shadow from .modalForm */
+  position: fixed;
+  top: 50px; /* Position it near the top of the screen instead of center */
+  left: 50%;
+  transform: translateX(-50%); /* Center horizontally only */
+  background-color: #fff !important; /* FORCE solid white background again */
+  max-width: 580px; /* Wider for the form */
+  max-height: 88vh; /* Limit height */
+  overflow-y: auto;  /* Enable vertical scrolling INSIDE the modal */
+  padding: 30px 35px; /* Adjust padding */
+  z-index: 2200;      /* Set a high z-index for the modal BOX */
+  /* display: none; is handled by JS */
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  margin: 0 auto; /* Add auto margin for better horizontal centering */
+}
+
+/* Add the dark overlay using a separate element instead of a pseudo-element */
+#cmeModalOverlay {
+  content: '';
+  position: fixed; /* Cover the entire viewport */
+  top: 0;
+  left: 0;
+  width: 100%; /* Cover full width */
+  height: 100%; /* Cover full height */
+  background-color: rgba(0, 0, 0, 0.65); /* Dark semi-transparent overlay */
+  z-index: 2199; /* IMPORTANT: Below the modal z-index */
+  display: block; /* Make sure it's displayed */
+}
+
+/* Remove the problematic ::before pseudo-element */
+#cmeClaimModal::before {
+  display: none;
+}
+
+/* Style the close button */
+#cmeClaimModal .auth-close-btn {
+  position: absolute; /* Relative to the modal box */
+  top: 15px;
+  right: 18px;
+  z-index: 2201; /* Above the modal content */
+  font-size: 1.6rem;
+  padding: 5px;
+  line-height: 1;
+  background: none;
+  border: none;
+  color: #aaa; /* Lighter close button */
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+#cmeClaimModal .auth-close-btn:hover { color: #555; }
+
+/* --- Form Element Styling within CME Claim Modal --- */
+/* (Keep these consistent with your other modals) */
+
+#cmeClaimModal h2 {
+  margin-top: 0;
+  margin-bottom: 25px;
+  color: #0C72D3;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+#cmeClaimModal .formGroup {
+  margin-bottom: 20px;
+}
+
+#cmeClaimModal .formGroup label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+#cmeClaimModal .formGroup input[type="number"],
+#cmeClaimModal .formGroup input[type="text"],
+#cmeClaimModal .formGroup textarea,
+#cmeClaimModal .formGroup select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 15px;
+  font-size: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+ #cmeClaimModal .formGroup input:focus,
+ #cmeClaimModal .formGroup textarea:focus,
+ #cmeClaimModal .formGroup select:focus {
+   border-color: #0C72D3;
+   box-shadow: 0 0 0 2px rgba(12, 114, 211, 0.2);
+   outline: none;
+ }
+
+#cmeClaimModal #creditsToClaimInput {
+    max-width: 100px;
+    display: inline-block;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+/* Radio/Checkbox Groups - Vertical Layout */
+#cmeClaimModal .radio-group,
+#cmeClaimModal .checkbox-group {
+   margin-top: 10px;
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
+}
+ #cmeClaimModal .radio-group label,
+ #cmeClaimModal .checkbox-group label {
+    font-weight: normal;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 3px 0;
+ }
+ #cmeClaimModal .radio-group input[type="radio"],
+ #cmeClaimModal .checkbox-group input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    flex-shrink: 0;
+    transform: scale(1.1);
+    accent-color: #0C72D3;
+ }
+ /* 'Other' checkbox + text input layout */
+ #cmeClaimModal .checkbox-group div:has(input[value="Other"]) {
+     display: flex;
+     align-items: center;
+     gap: 5px;
+     margin-top: 5px;
+ }
+ #cmeClaimModal .checkbox-group div label {
+     white-space: nowrap;
+     margin-bottom: 0;
+ }
+ #cmeClaimModal .checkbox-group div input[type="text"] {
+     flex-grow: 1;
+     padding: 6px 8px;
+     font-size: 0.9rem;
+     border-radius: 5px;
+ }
+
+#cmeClaimModal .formHelper {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 5px;
+  display: block;
+}
+
+/* Buttons - Stacked Vertically */
+#cmeClaimModal .btnRow {
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
+   margin-top: 30px;
+ }
+ #cmeClaimModal .btnRow button {
+   width: 100%;
+   padding: 14px;
+   font-size: 1rem;
+   font-weight: 500;
+   border-radius: 8px;
+   border: none;
+   cursor: pointer;
+   transition: background 0.3s, transform 0.2s, box-shadow 0.2s;
+ }
+ #cmeClaimModal .btnRow button#submitCmeClaimBtn {
+   background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+   color: white;
+   order: 1;
+ }
+  #cmeClaimModal .btnRow button#submitCmeClaimBtn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #0056b3 0%, #0C72D3 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+  #cmeClaimModal .btnRow button#submitCmeClaimBtn:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.7;
+    transform: none;
+    box-shadow: none;
+  }
+
+ #cmeClaimModal .btnRow button#cancelCmeClaimBtn {
+    background-color: transparent;
+    color: #0C72D3;
+    border: 1px solid #0C72D3;
+    order: 2;
+ }
+  #cmeClaimModal .btnRow button#cancelCmeClaimBtn:hover {
+     background-color: #f0f7ff;
+  }
+
+/* Error Message Styling */
+#cmeClaimModal #claimModalError {
+  color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.2);
+  padding: 10px 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  text-align: center;
+  display: none; /* Hidden by default */
+  line-height: 1.4;
+}
+ #cmeClaimModal #claimModalError:not(:empty) {
+    display: block;
+ }
+
+ /* Loading Indicator */
+#cmeClaimModal #claimLoadingIndicator {
+    display: none;
+    text-align: center;
+    margin: 20px 0 10px 0;
+}
+#cmeClaimModal #claimLoadingIndicator .spinner {
+    width: 30px;
+    height: 30px;
+    border-width: 3px;
+    margin: 0 auto 10px;
+    border-top-color: #0C72D3;
+    /* animation: spin 1s linear infinite; already defined globally */
+}
+ #cmeClaimModal #claimLoadingIndicator p {
+   color: #0C72D3;
+   font-size: 0.9rem;
+   font-weight: 500;
+ }
+
+/* Download Link Area Styling */
+#cmeClaimModal #claimModalLink {
+    text-align: center;
+    margin: 25px 0 10px 0;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    display: none; /* Hidden by default, shown via JavaScript */
+    width: 100%; /* Ensure it takes full width of the modal */
+    position: relative; /* Ensure proper positioning */
+    z-index: 2201; /* Above other modal elements */
+}
+ #cmeClaimModal #claimModalLink p:first-child {
+    color: #28a745;
+    font-weight: bold;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+ }
+ #cmeClaimModal #claimModalLink .auth-primary-btn {
+   display: inline-block;
+   width: auto;
+   padding: 12px 30px;
+   text-decoration: none;
+   margin-top: 5px;
+   font-size: 1rem;
+   background: #28a745;
+   border: none;
+ }
+ #cmeClaimModal #claimModalLink .auth-primary-btn:hover {
+     background: #218838;
+     transform: translateY(-1px);
+     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+ }
+ #cmeClaimModal #claimModalLink p:last-child {
+   font-size: 0.85rem;
+   color: #666;
+   margin-top: 15px;
+ }
+/* === End of REVISED CME Claim Modal Styles === */
+
+/* === Reduce Top Padding on Explanation/Answer Slides === */
+
+/* Target the card element specifically within the EVEN slides
+   in the Swiper wrapper. Since question slides are odd (1, 3, 5...)
+   and answer slides are even (2, 4, 6...), this targets only
+   the answer/explanation slides. */
+   .swiper-wrapper .swiper-slide:nth-child(even) .card {
+    padding-top: 10px; /* Significantly reduce top padding from the default 30px */
+    /* Optional: You might want to slightly reduce bottom padding too */
+    /* padding-bottom: 10px; */
+  }
+  
+  /* Optional: If the text STILL seems too low, reduce the top margin
+     of the first element inside the answer card (the .answer div) */
+  .swiper-wrapper .swiper-slide:nth-child(even) .card .answer {
+     margin-top: 0; /* Remove any default top margin if present */
+  }
+  
+  /* === End of Explanation Slide Padding Adjustment === */
+
+  /* =================================== */
+/* == CME Claim History Modal Styles == */
+/* =================================== */
+
+/* Base modal styles (.modal, .modal-content, .modal-header, .close-modal, .modal-body) */
+/* are already defined in your styles.css and reused by the HTML structure. */
+/* We only need to style the specific content *within* #cmeHistoryModalBody. */
+
+/* Style for the modal body containing the history */
+#cmeHistoryModalBody {
+  /* max-height and overflow are set inline in HTML, but you could move them here */
+  /* max-height: 60vh; */
+  /* overflow-y: auto; */
+  padding: 15px 20px 20px 20px; /* Adjust padding if needed */
+}
+
+/* Style for the history table */
+#cmeHistoryModalBody table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem; /* Match other table font sizes */
+  margin-top: 10px;
+}
+
+/* Style for table headers and cells */
+#cmeHistoryModalBody th,
+#cmeHistoryModalBody td {
+  border: 1px solid #ddd; /* Consistent border */
+  padding: 8px 10px; /* Consistent padding */
+  text-align: left;
+  vertical-align: middle; /* Align content vertically */
+}
+
+/* Style for table header row */
+#cmeHistoryModalBody th {
+  background-color: #f2f7ff; /* Light blue background, similar to leaderboard/other headers */
+  font-weight: 500; /* Medium weight */
+  color: #0056b3; /* Theme blue color */
+}
+
+/* Optional: Zebra striping for table rows */
+#cmeHistoryModalBody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+/* Specific column alignments */
+#cmeHistoryModalBody td:nth-child(2) { /* Credits column */
+    text-align: right;
+    font-weight: 500; /* Make credits slightly bolder */
+    width: 80px; /* Give credits column a fixed width */
+}
+ #cmeHistoryModalBody td:nth-child(3) { /* Certificate column */
+    text-align: center;
+    width: 100px; /* Give certificate column a fixed width */
+}
+
+/* Style for the download button inside the table */
+/* Using a distinct class name to avoid conflicts if needed */
+.cme-history-download-btn {
+  display: inline-block;
+  padding: 4px 10px; /* Small padding */
+  font-size: 0.85em; /* Slightly smaller font */
+  font-weight: 500;
+  color: white !important; /* Force white text over link defaults */
+  background-color: #007bff; /* Standard blue for action */
+  border: none;
+  border-radius: 4px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  line-height: 1.4;
+  vertical-align: middle;
+}
+
+.cme-history-download-btn:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+  color: white !important;
+}
+
+/* Style for the 'No history' message */
+#cmeHistoryModalBody .no-history-message {
+   text-align: center;
+   color: #666; /* Standard muted text color */
+   padding: 25px 15px; /* Add some padding */
+   font-style: italic;
+   font-size: 0.95rem;
+}
+
+/* Ensure modal body has enough padding at the bottom */
+#cmeHistoryModalBody {
+    padding-bottom: 20px;
+}
+
+/* ========================== */
+/* == New Paywall Screen CSS == */
+/* ========================== */
+
+.paywall-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff; /* Light neutral background */
+  z-index: 9600; /* High z-index, below onboarding loading but above most things */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 30px 20px;
+  box-sizing: border-box;
+  overflow-y: auto; /* Allow scrolling on smaller screens */
+  text-align: center;
+}
+
+.paywall-content {
+  width: 100%;
+  max-width: 700px; /* Max width for the content area */
+  margin-bottom: 30px; /* Center the content block */
+}
+
+.paywall-logo {
+  width: 200px; /* Adjust as needed */
+  max-width: 60%;
+  margin-bottom: 20px;
+}
+
+.paywall-title {
+  font-size: 1.8rem; /* Adjust as needed */
+  font-weight: 600;
+  color: #0C72D3; /* MedSwipe blue */
+  margin-bottom: 10px;
+}
+
+.paywall-subtitle {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 30px;
+}
+
+.paywall-options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Space between cards */
+}
+
+.paywall-option-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  text-align: left; /* Align text inside cards to the left */
+  position: relative; /* For badge positioning */
+  border: 1px solid #e0e0e0;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.paywall-option-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.paywall-option-card h2 {
+  font-size: 1.4rem;
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.paywall-option-card .price-highlight {
+  font-size: 2.2rem;  /* Increased from default */
+  font-weight: bold;
+  color: #0056b3;
+  margin: 15px 0;
+}
+
+.paywall-option-card .price-details {
+  font-size: 1rem;  /* Keep details smaller for contrast */
+  color: #666;
+  margin-left: 5px;
+}
+
+.paywall-option-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px 0;
+}
+
+.paywall-option-card li {
+  font-size: 0.95rem;
+  color: #444;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.paywall-option-card .check-icon {
+  color: #28a745; /* Green check */
+  margin-right: 8px;
+  font-weight: bold;
+}
+.paywall-option-card .cross-icon {
+  color: #dc3545; /* Red cross */
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+
+.paywall-select-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #fff;
+  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  margin-top: 15px;
+}
+
+.paywall-select-btn:hover {
+  background: linear-gradient(135deg, #0056b3 0%, #0C72D3 100%);
+}
+
+.paywall-continue-guest-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #0C72D3;
+  background-color: #ffffff;
+  border: 1px solid #0C72D3;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  margin-top: 15px;
+}
+
+.paywall-continue-guest-btn:hover {
+  background-color: #e6f0fa; /* Light blue hover */
+}
+
+.card-badge {
+  position: absolute;
+  top: -10px; /* Position slightly above the card */
+  left: 50%;
+  transform: translateX(-50%);
+  /* background-color: #ffc107; */ /* Default removed or overridden by specific badges */
+  color: #333; /* Default text color for badges */
+  padding: 5px 15px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  border-radius: 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 1; /* Ensure badge is above card border if card has a thick top border */
+}
+
+.popular-badge {
+  background-color: #ffc107; /* Yellow for popular */
+  /* color: #333; /* Already set by .card-badge */
+}
+
+/* START: New CME Eligible Badge Style */
+.cme-eligible-badge {
+  background-color: #28a745; /* Green color */
+  color: #ffffff; /* White text for better contrast on green */
+}
+/* END: New CME Eligible Badge Style */
+
+/* *** NEW CSS FOR THE TRIAL BADGE *** */
+.trial-badge {
+  position: absolute; /* Keep absolute positioning */
+  top: -10px;          /* Adjust top position as needed */
+  left: 10px;         /* Position to the left */
+  transform: none;    /* Reset transform from the generic .card-badge */
+  background-color: #007bff; /* A distinct blue for trial, or choose another color */
+  color: white;
+  padding: 4px 10px;  /* Slightly smaller padding */
+  font-size: 0.75rem; /* Slightly smaller font */
+  font-weight: bold;
+  border-radius: 5px; /* Less rounded, more like a tag */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  z-index: 2; /* Ensure it's above other badges if they overlap, or adjust as needed */
+    /* Optional: if you want a slight rotation for a "banner" feel */
+  /* transform: rotate(-5deg); 
+     left: -5px; 
+     top: 15px; */
+}
+
+/* Specific card styling if needed */
+.board-review-card {
+  border-top: 4px solid #0C72D3; /* Blue accent */
+}
+.cme-module-card {
+  border-top: 4px solid #28a745; /* Green accent */
+}
+.free-access-card {
+  border-top: 4px solid #6c757d; /* Grey accent */
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 600px) {
+  .paywall-title {
+    font-size: 1.5rem;
+  }
+  .paywall-subtitle {
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+  }
+  .paywall-option-card {
+    padding: 20px;
+  }
+  .paywall-option-card h2 {
+    font-size: 1.2rem;
+  }
+  .paywall-option-card .price-highlight {
+    font-size: 1.1rem;
+  }
+  .paywall-select-btn, .paywall-continue-guest-btn {
+    font-size: 1rem;
+    padding: 10px;
+  }
+}
+
+/* ===================================== */
+/* == General Pricing Screen Styles == */
+/* ===================================== */
+
+.pricing-screen-general {
+  display: none; /* Hidden by default */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #f8f9fa; /* Consistent light background */
+  z-index: 9700; /* High z-index */
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  display: flex; /* Using flex for main layout */
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Back button styling (re-uses .cme-back-btn if suitable, or define new) */
+/* .cme-back-btn is already defined, ensure it's suitable or create a new one */
+/* Example: #boardReviewPricingBackBtn {} */
+
+.pricing-content-general {
+  width: 100%;
+  max-width: 550px; /* Slightly wider for more content */
+  margin-top: 60px; /* Space for back button */
+  padding-bottom: 30px; /* Space at the bottom */
+}
+
+.pricing-logo-general {
+  width: 130px; /* Adjust as needed */
+  max-width: 35%;
+  margin-bottom: 15px;
+}
+
+.pricing-title-general {
+  font-size: 1.7rem; /* Adjust as needed */
+  font-weight: 600;
+  color: #0C72D3;
+  margin-bottom: 8px;
+}
+
+.pricing-subtitle-general {
+  font-size: 0.95rem;
+  color: #555;
+  margin-bottom: 25px;
+  max-width: 450px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pricing-toggle-general {
+  display: inline-flex;
+  border: 1px solid #0C72D3;
+  border-radius: 50px;
+  overflow: hidden;
+  background-color: #fff;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.toggle-btn-general {
+  padding: 10px 20px; /* Adjust padding */
+  border: none;
+  background-color: transparent;
+  color: #0C72D3;
+  cursor: pointer;
+  font-size: 0.9rem; /* Adjust font size */
+  font-weight: 500;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  border-radius: 0; /* Remove individual radius */
+}
+
+.toggle-btn-general.active {
+  background-color: #0C72D3;
+  color: #fff;
+  border-radius: 50px; /* Apply radius only to active */
+  box-shadow: 0 2px 5px rgba(12, 114, 211, 0.3);
+}
+
+.pricing-plan-content {
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 25px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+  border: 1px solid #e7e7e7;
+}
+
+.price-display-general {
+  font-size: 2.5rem; /* Large price */
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.price-interval-general {
+  font-size: 1rem;
+  font-weight: normal;
+  color: #666;
+  margin-left: 5px;
+}
+
+.price-savings-general {
+  font-size: 0.9rem;
+  color: #28a745; /* Green for savings */
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.feature-list-general {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 25px 0;
+  text-align: left;
+  display: inline-block; /* To center the block of list items */
+}
+
+.feature-list-general li {
+  font-size: 1rem; /* Standard feature text size */
+  color: #444;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.feature-list-general .check-icon { /* Re-use existing check-icon style */
+  color: #28a745;
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+.pricing-checkout-btn-general {
+  /* Re-uses .auth-primary-btn styles, can add specifics if needed */
+  width: 100%;
+  max-width: 320px; /* Max width for checkout button */
+  padding: 14px; /* Generous padding */
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .pricing-content-general {
+    margin-top: 50px; /* Ensure back button doesn't overlap */
+  }
+  .pricing-title-general {
+    font-size: 1.5rem;
+  }
+  .pricing-subtitle-general {
+    font-size: 0.9rem;
+  }
+  .toggle-btn-general {
+    padding: 8px 15px;
+    font-size: 0.85rem;
+  }
+  .price-display-general {
+    font-size: 2rem;
+  }
+  .feature-list-general li {
+    font-size: 0.9rem;
+  }
+  .pricing-checkout-btn-general {
+    font-size: 1rem;
+    padding: 12px;
+  }
+}
+
+/* === CME Claim Modal Evaluation Table Styles === */
+#cmeClaimModal .evaluation-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 0.9rem; /* Adjust as needed */
+  table-layout: fixed; /* Helps with column width consistency */
+}
+
+#cmeClaimModal .evaluation-table th,
+#cmeClaimModal .evaluation-table td {
+  border: 1px solid #ddd;
+  padding: 10px 8px; /* Adjust padding */
+  text-align: center;
+  vertical-align: middle;
+}
+
+#cmeClaimModal .evaluation-table th {
+  background-color: #f2f7ff; /* Light blue background for header */
+  font-weight: 500;
+  color: #333;
+}
+
+/* Style for the outcome description column */
+#cmeClaimModal .evaluation-table td:nth-child(2) {
+  text-align: left;
+  word-wrap: break-word; /* Allow long text to wrap */
+  overflow-wrap: break-word; /* Modern equivalent for word-wrap */
+}
+
+#cmeClaimModal .formGroup h4 { /* Styling for the "DESIRED OUTCOMES" title */
+  font-weight: 600; /* Bolder */
+  color: #0056b3; /* Theme blue */
+}
+
+#cmeClaimModal .formGroup textarea { /* Ensure textareas are styled consistently */
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  min-height: 80px; /* Minimum height for textareas */
+}
+#cmeClaimModal .formGroup textarea:focus {
+ border-color: #0C72D3;
+ box-shadow: 0 0 0 2px rgba(12, 114, 211, 0.2);
+ outline: none;
+}
+
+/* === MOBILE OPTIMIZATIONS FOR EVALUATION TABLE === */
+@media (max-width: 600px) {
+  #cmeClaimModal .evaluation-table {
+    font-size: 0.8rem; /* Slightly smaller font for the table on mobile */
+  }
+
+  #cmeClaimModal .evaluation-table th,
+  #cmeClaimModal .evaluation-table td {
+    padding: 8px 5px; /* Reduced padding in cells for mobile */
+  }
+
+  /* Override inline styles for column widths on mobile using !important */
+  /* This is to ensure these styles take precedence over the inline styles in HTML */
+  #cmeClaimModal .evaluation-table th:nth-child(1), /* # column header */
+  #cmeClaimModal .evaluation-table td:nth-child(1) { /* # column cells */
+    width: 25px !important; 
+  }
+
+  #cmeClaimModal .evaluation-table th:nth-child(3), /* YES column header */
+  #cmeClaimModal .evaluation-table td:nth-child(3), /* YES column cells */
+  #cmeClaimModal .evaluation-table th:nth-child(4), /* NO column header */
+  #cmeClaimModal .evaluation-table td:nth-child(4), /* NO column cells */
+  #cmeClaimModal .evaluation-table th:nth-child(5), /* N/A column header */
+  #cmeClaimModal .evaluation-table td:nth-child(5) { /* N/A column cells */
+    width: 45px !important; 
+  }
+
+  /* The Outcome column (th:nth-child(2) and td:nth-child(2)) 
+     will automatically take the remaining space due to table-layout: fixed; 
+     and the other columns having their widths set.
+     We ensure its text alignment and wrapping properties are maintained.
+  */
+  #cmeClaimModal .evaluation-table th:nth-child(2), /* Outcome column header */
+  #cmeClaimModal .evaluation-table td:nth-child(2) { /* Outcome column cells */
+    text-align: left;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    /* width: auto !important; /* Let it fill remaining space */
+  }
+
+  #cmeClaimModal .evaluation-table input[type="radio"] {
+    transform: scale(1.1); /* Slightly smaller radio buttons if needed, or keep as is */
+  }
+}
+
+#cmeAccreditationModal .modal-body p {
+  margin-bottom: 1em; /* Add some space between paragraphs */
+  line-height: 1.6;   /* Improve readability */
+}
+
+#cmeAccreditationModal .modal-body strong {
+  color: #333; /* Make "Credit Term:" slightly darker or more prominent if needed */
+}
+
+/* --- NEW: Leaderboard Section and Tab Styles --- */
+
+.leaderboard-section {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+.leaderboard-section h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+.your-ranking h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1rem;
+    color: #333;
+    text-align: center;
+}
+
+.time-range-tabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+  background: #f2f7ff;
+  padding: 5px;
+  border-radius: 50px;
+  max-width: 250px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.time-range-tab {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  margin: 0 2px;
+  border-radius: 50px;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.time-range-tab.active {
+  background: #0C72D3;
+  color: white;
+  box-shadow: 0 2px 6px rgba(12, 114, 211, 0.3);
+}
+
+.time-range-tab:hover:not(.active) {
+  background: rgba(12, 114, 211, 0.1);
+  color: #0C72D3;
+}
+
+/* --- UPDATED LEADERBOARD STYLES --- */
+
+/* Main container for the entire view */
+#leaderboardView {
+  max-width: 600px; /* Limit width for better readability */
+  margin: 70px auto 20px auto; /* Top margin for toolbar, auto for centering */
+  padding: 20px;
+  background: transparent; /* Make background transparent */
+  border-radius: 0;
+  box-shadow: none; /* Remove the main card shadow */
+}
+
+#leaderboardView h2 {
+  text-align: center;
+  color: #0056b3;
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+/* Main Tabs Container */
+.leaderboard-main-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* Individual Main Tab Buttons */
+.leaderboard-main-tab {
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  border: 1px solid #0C72D3;
+  border-radius: 8px;
+  background-color: #FFFFFF;
+  color: #0C72D3;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.leaderboard-main-tab.active,
+.leaderboard-main-tab:hover {
+  background-color: #0C72D3;
+  color: #FFFFFF;
+  box-shadow: 0 3px 8px rgba(12, 114, 211, 0.3);
+}
+
+/* Content Area that holds the lists */
+.leaderboard-content-area {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* Sub-tabs (Weekly/All-Time) */
+.time-range-tabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  background: #f2f7ff;
+  padding: 5px;
+  border-radius: 50px;
+  max-width: 250px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.time-range-tab {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  margin: 0 2px;
+  border-radius: 50px;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.time-range-tab.active {
+  background: #0C72D3;
+  color: white;
+  box-shadow: 0 2px 6px rgba(12, 114, 211, 0.3);
+}
+
+/* Your Ranking Section */
+.your-ranking {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eef2f7;
+}
+
+.your-ranking h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  color: #333;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Back button at the bottom */
+.leaderboard-back-btn {
+  display: block;
+  margin: 25px auto 10px auto;
+  padding: 12px 30px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 50px;
+  background: #0C72D3;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(12, 114, 211, 0.3);
+}
+
+.leaderboard-back-btn:hover {
+  background: #0056b3;
+  box-shadow: 0 6px 15px rgba(12, 114, 211, 0.4);
+}
+
+/* General list styles (re-using from previous step) */
+.leaderboard-entry-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leaderboard-entry {
+  background: white;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  padding: 12px 15px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-left: 5px solid transparent;
+}
+
+.leaderboard-entry.current-user {
+  border-left-color: #0C72D3;
+  background-color: #f2f7ff;
 }

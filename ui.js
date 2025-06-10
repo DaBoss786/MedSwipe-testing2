@@ -1,7 +1,9 @@
+import { auth } from './firebase-config.js'; 
+
 // Show leaderboard view
 function showLeaderboard() {
   // Check if user is registered
-  if (window.auth && window.auth.currentUser && window.auth.currentUser.isAnonymous) {
+  if (auth && auth.currentUser && auth.currentUser.isAnonymous) {
     // Show registration benefits modal instead for guest users
     if (typeof window.showRegistrationBenefitsModal === 'function') {
       window.showRegistrationBenefitsModal();
@@ -11,7 +13,7 @@ function showLeaderboard() {
     return;
   }
   
-  // Continue with showing leaderboard for registered users
+  // Hide all other main views
   document.querySelector(".swiper").style.display = "none";
   document.getElementById("bottomToolbar").style.display = "none";
   document.getElementById("iconBar").style.display = "none";
@@ -19,24 +21,18 @@ function showLeaderboard() {
   document.getElementById("mainOptions").style.display = "none";
   document.getElementById("aboutView").style.display = "none";
   document.getElementById("faqView").style.display = "none";
+  const cmeDashboard = document.getElementById("cmeDashboardView");
+  if (cmeDashboard) cmeDashboard.style.display = "none";
+
+  // Show the leaderboard container
   document.getElementById("leaderboardView").style.display = "block";
   
-  // Use the loadOverallData function from window object
-  if (typeof window.loadOverallData === 'function') {
-    window.loadOverallData();
+  // Call the master function from stats.js to build and display the content
+  if (typeof window.initializeLeaderboardView === 'function') {
+    window.initializeLeaderboardView();
   } else {
-    // Fallback message if function is not available
-    document.getElementById("leaderboardView").innerHTML = `
-      <h2>Leaderboard</h2>
-      <p>Leaderboards are loading... Please try again in a moment.</p>
-      <button class="leaderboard-back-btn" id="leaderboardBack">Back</button>
-    `;
-    document.getElementById("leaderboardBack").addEventListener("click", function(){
-      document.getElementById("leaderboardView").style.display = "none";
-      document.getElementById("mainOptions").style.display = "flex";
-    });
-    
-    console.log("loadOverallData function not found");
+    console.error("initializeLeaderboardView function not found. Make sure stats.js is loaded.");
+    document.getElementById("leaderboardView").innerHTML = `<h2>Error</h2><p>Could not load leaderboard content.</p>`;
   }
 }
 
@@ -49,7 +45,8 @@ function showAbout() {
   document.getElementById("leaderboardView").style.display = "none";
   document.getElementById("mainOptions").style.display = "none";
   document.getElementById("faqView").style.display = "none";
-  
+  const cmeDashboard = document.getElementById("cmeDashboardView");
+  if (cmeDashboard) cmeDashboard.style.display = "none";
   document.getElementById("aboutView").innerHTML = `
     <h2>About MedSwipe</h2>
     <p>MedSwipe is a dynamic, swipe-based quiz app designed specifically for medical professionals and learners. Our goal is to improve medical education by offering a casual, engaging alternative to the traditional, regimented board review resources and question banks.</p>
@@ -73,7 +70,8 @@ function showFAQ() {
   document.getElementById("leaderboardView").style.display = "none";
   document.getElementById("aboutView").style.display = "none";
   document.getElementById("mainOptions").style.display = "none";
-  
+  const cmeDashboard = document.getElementById("cmeDashboardView");
+  if (cmeDashboard) cmeDashboard.style.display = "none";
   document.getElementById("faqView").innerHTML = `
     <h2>FAQ</h2>
     <ul>
@@ -122,10 +120,6 @@ function showFAQ() {
         • Weekly Activity: Most questions answered in the current week
       </li>
       <li>
-        <strong>Is MedSwipe Free?</strong><br>
-        For now, MedSwipe is completely free. Our aim is to build an engaged community before we roll out any premium features.
-      </li>
-      <li>
         <strong>How Do I Provide Feedback?</strong><br>
         Use the in‑app feedback button to let us know what you think or if you encounter any issues. Your input is crucial for our continued improvement.
       </li>
@@ -143,3 +137,76 @@ function showFAQ() {
 function showContactModal() {
   document.getElementById("contactModal").style.display = "flex";
 }
+
+// START: MODIFIED function to show the CME Learn More modal
+function showCmeLearnMoreModal(returnPath = 'mainDashboard') { // Added parameter with a default
+  // Hide all other views and modals to ensure a clean slate
+  document.querySelector(".swiper").style.display = "none";
+  document.getElementById("bottomToolbar").style.display = "none";
+  document.getElementById("iconBar").style.display = "none";
+  document.getElementById("performanceView").style.display = "none";
+  document.getElementById("leaderboardView").style.display = "none";
+  document.getElementById("mainOptions").style.display = "none";
+  document.getElementById("aboutView").style.display = "none";
+  document.getElementById("faqView").style.display = "none";
+  const cmeDashboard = document.getElementById("cmeDashboardView");
+  if (cmeDashboard) cmeDashboard.style.display = "none";
+  const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+  if (cmeInfoScreen) cmeInfoScreen.style.display = "none";
+
+  // Show the Learn More Modal
+  const cmeLearnMoreModal = document.getElementById("cmeLearnMoreModal");
+  if (cmeLearnMoreModal) {
+      cmeLearnMoreModal.style.display = "flex";
+      const modalBody = cmeLearnMoreModal.querySelector('.modal-body');
+      if(modalBody) modalBody.scrollTop = 0;
+      console.log("Displayed #cmeLearnMoreModal.");
+
+      // START: New logic for the close button
+      const closeBtn = document.getElementById("closeCmeLearnMoreModal");
+      if (closeBtn) {
+          // Clone and replace the button to remove any old listeners
+          const newCloseBtn = closeBtn.cloneNode(true);
+          closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+
+          // Add a new listener with the correct return logic
+          newCloseBtn.addEventListener("click", function() {
+              cmeLearnMoreModal.style.display = "none"; // Always hide the modal
+
+              if (returnPath === 'cmeInfoScreen') {
+                  // If we came from the info screen, go back there
+                  const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+                  if (cmeInfoScreen) cmeInfoScreen.style.display = "flex";
+              } else {
+                  // Otherwise, go back to the main dashboard
+                  const mainOptions = document.getElementById("mainOptions");
+                  if (mainOptions) mainOptions.style.display = "flex";
+              }
+          });
+      }
+      // END: New logic for the close button
+
+  } else {
+      console.error("CME Learn More Modal (#cmeLearnMoreModal) not found!");
+  }
+}
+// END: MODIFIED function
+
+// Add event listener for the new menu item once the page is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    const cmeInfoMenuItem = document.getElementById("cmeInfoMenuItem");
+    if (cmeInfoMenuItem) {
+        cmeInfoMenuItem.addEventListener("click", function() {
+            // Close the side menu first
+            const sideMenu = document.getElementById("sideMenu");
+            const menuOverlay = document.getElementById("menuOverlay");
+            if (sideMenu) sideMenu.classList.remove("open");
+            if (menuOverlay) menuOverlay.classList.remove("show");
+
+            // Show the modal, it will default to returning to the dashboard
+            showCmeLearnMoreModal();
+        });
+    }
+});
+
+export { showLeaderboard, showAbout, showFAQ, showContactModal, showCmeLearnMoreModal };
