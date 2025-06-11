@@ -1945,6 +1945,17 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
       }
     });
   }
+
+    // CLOSE FEEDBACK MODAL button
+    const closeFeedbackModalBtn = document.getElementById("closeFeedbackModal");
+    if (closeFeedbackModalBtn) {
+      closeFeedbackModalBtn.addEventListener("click", function() {
+        const feedbackModal = document.getElementById("feedbackModal");
+        if (feedbackModal) {
+          feedbackModal.style.display = "none";
+        }
+      });
+    }
   
   // FAVORITE button (bookmark functionality)
   const favoriteButton = document.getElementById("favoriteButton");
