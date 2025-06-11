@@ -767,7 +767,7 @@ exports.generateCmeCertificate = onCall(
           throw new HttpsError("invalid-argument", "tier missing.");
     
         /* Detect mode – anything with tier === cme_credit → payment */
-        const creditPriceId = "price_1RKXlYR9wwfN8hwyGznI4iXS"; // <-- your one-time price
+        const creditPriceId = "price_1RXcdsJDkW3cIYXuKTLAM472"; // <-- your one-time price
         const mode = tier === "cme_credits" || priceId === creditPriceId
           ? "payment"
           : "subscription";
