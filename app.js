@@ -6,7 +6,6 @@ import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
 import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { closeSideMenu, closeUserMenu, shuffleArray, getCurrentQuestionId } from './utils.js';
 import { displayPerformance } from './stats.js';
-import { setUserProperties } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
 
 // Initialize the cloud function handle
 let getLeaderboardDataFunctionApp;
