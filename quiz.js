@@ -1,6 +1,6 @@
 // app.js - TOP OF FILE
 import { shuffleArray, getCurrentQuestionId } from './utils.js';
-import { auth, db, doc, getDoc, analytics, logEvent, collection, getDocs, query, where } from './firebase-config.js'; // Adjust path if needed
+import { auth, db, doc, getDoc, analytics, logEvent, setUserProperties, collection, getDocs, query, where } from './firebase-config.js'; // Adjust path if needed
 import {
   fetchPersistentAnsweredIds, // <<<--- ADD THIS IMPORT
   recordAnswer,               // Needed for regular quizzes
@@ -56,6 +56,22 @@ async function fetchQuestionBank() {
 async function loadQuestions(options = {}) {
   console.log("Loading questions with options:", options);
   window.isOnboardingQuiz = options.isOnboarding || false;
+
+  // ADD THIS: Track quiz start
+  if (analytics && logEvent) {
+    const accessTier = window.authState?.accessTier || 'free_guest';
+    const isGuest = !auth.currentUser || auth.currentUser.isAnonymous;
+    
+    logEvent(analytics, 'quiz_start', {
+      quiz_type: options.quizType || 'regular',
+      category: options.category || 'all_categories',
+      num_questions: options.num || 10,
+      user_tier: accessTier,
+      is_guest: isGuest,
+      board_review_only: options.boardReviewOnly || false,
+      spaced_repetition: options.spacedRepetition || false
+    });
+  }
 
   try {
     const allQuestionsData = await fetchQuestionBank();
@@ -565,9 +581,20 @@ function addOptionListeners() {
           const selected = this.getAttribute('data-option');
           const isCorrect = (selected === correct);
           const timeSpent = Date.now() - questionStartTime;
+          
           if (analytics && logEvent) {
-              logEvent(analytics, 'question_answered', { questionId: qId, isCorrect });
-          }
+            logEvent(analytics, 'question_answered', {
+              question_category: category,
+              is_correct: isCorrect,
+              time_to_answer_seconds: Math.round(timeSpent / 1000),
+              is_cme_eligible: questionSlide.dataset.cmeEligible === "true",
+              is_bookmarked: questionSlide.dataset.bookmarked === "true",
+              question_source: currentQuizType === 'cme' ? 'cme_module' : 'regular_quiz',
+              quiz_position: currentQuestion + 1,
+              user_tier: window.authState?.accessTier || 'free_guest'
+            });
+        }
+
           options.forEach(option => {
               option.disabled = true;
               if (option.getAttribute('data-option') === correct) {
@@ -590,6 +617,22 @@ function addOptionListeners() {
                   currentQuestion++; // Increment counter first
                   if (isCorrect) { score++; }
                   updateProgress(); // Update progress bar/text one last time
+
+                  // ADD THIS: Track quiz completion
+              if (analytics && logEvent) {
+                const finalAccuracy = Math.round((score / totalQuestions) * 100);
+                const totalTimeSpent = Math.round((Date.now() - (questionStartTime - timeSpent)) / 1000);
+                
+                logEvent(analytics, 'quiz_complete', {
+                  quiz_type: currentQuizType,
+                  category: category,
+                  score: score,
+                  total_questions: totalQuestions,
+                  accuracy_percentage: finalAccuracy,
+                  time_spent_seconds: totalTimeSpent,
+                  user_tier: window.authState?.accessTier || 'free_guest'
+                });
+              }
 
                   // --- Record the final answer ---
                   if (currentQuizType === 'cme') { // CME recording (Dedicated CME Module Flow - No Change Here)

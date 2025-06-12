@@ -1,11 +1,12 @@
 // app.js - Top of file
-import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc, addDoc, query, where } from './firebase-config.js'; // Adjust path if needed
+import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc, addDoc, query, where, analytics, logEvent, setUserProperties } from './firebase-config.js'; // Adjust path if needed
 // Import needed functions from user.js
 import { updateUserXP, updateUserMenu, calculateLevelProgress, getLevelInfo, toggleBookmark, saveOnboardingSelections } from './user.v2.js';
 import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
 import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { closeSideMenu, closeUserMenu, shuffleArray, getCurrentQuestionId } from './utils.js';
 import { displayPerformance } from './stats.js';
+import { setUserProperties } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
 
 // Initialize the cloud function handle
 let getLeaderboardDataFunctionApp;
@@ -142,6 +143,13 @@ window.addEventListener('authStateChanged', function(event) {
   window.authState = event.detail; 
   // Log the accessTier received from the event
   console.log('Access Tier from event.detail:', event.detail.accessTier);
+
+if (analytics && event.detail.accessTier) {
+  setUserProperties(analytics, {
+    access_tier: event.detail.accessTier 
+  });
+  console.log(`GA User Property 'access_tier' set to: ${event.detail.accessTier}`);
+}
 
   if (event.detail.user && event.detail.user.isAnonymous && !event.detail.isRegistered) {
     // This condition might need review. If a user logs out, they become anonymous.
@@ -503,6 +511,13 @@ if (experienceContinueBtn && experiencePickScreen && onboardingLoadingScreen) {
     try {
       await saveOnboardingSelections(window.selectedSpecialty, window.selectedExperienceLevel);
       console.log("Successfully saved onboarding selections to Firestore.");
+
+      if (analytics && window.selectedSpecialty) {
+        setUserProperties(analytics, {
+          user_specialty: window.selectedSpecialty
+        });
+        console.log(`GA User Property 'user_specialty' set to: ${window.selectedSpecialty}`);
+      }
 
       experiencePickScreen.style.opacity = '0';
       setTimeout(function() {
@@ -1028,6 +1043,14 @@ function showLoginForm(fromWelcomeScreen = false) {
       try {
         errorElement.textContent = '';
         await window.authFunctions.loginUser(email, password);
+
+        if (analytics) {
+          logEvent(analytics, 'login', {
+              method: 'email_password'
+          });
+          console.log("GA Event: login");
+      }
+
         // Success - close modal and show dashboard
         loginModal.style.display = 'none';
         document.getElementById('mainOptions').style.display = 'flex';
@@ -1226,6 +1249,13 @@ newForm.addEventListener('submit', async function(e) {
       // Pass undefined or null for experience
       await window.authFunctions.registerUser(email, password, username, null);
     }
+
+    if (analytics) {
+      logEvent(analytics, 'sign_up', {
+          method: 'email_password'
+      });
+      console.log("GA Event: sign_up");
+  }
     
     modalElement.style.display = 'none';
 
@@ -1716,6 +1746,14 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
 
       // Check if user is anonymous OR if they are registered but on the "free_guest" tier
       if (isAnonymousUser || accessTier === "free_guest") {
+        // ADD THIS: Track paywall view
+    if (analytics && logEvent) {
+      logEvent(analytics, 'paywall_view', {
+        paywall_type: 'feature_gate',
+        trigger_action: 'leaderboard_access',
+        user_tier: accessTier
+      });
+    }
         console.log("User is anonymous or free_guest. Redirecting to paywall.");
         ensureAllScreensHidden(); // Hide other main screens
         
@@ -1729,6 +1767,14 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
           if (mainOptions) mainOptions.style.display = 'flex';
         }
       } else {
+        // ADD THIS: Track feature usage
+    if (analytics && logEvent) {
+      logEvent(analytics, 'feature_used', {
+        feature_name: 'leaderboard',
+        first_time_use: false, // You could track this if needed
+        user_tier: accessTier
+      });
+    }
         // User has a paying tier, show the leaderboard
         console.log("User has a paying tier. Showing leaderboard.");
         // Ensure other views are hidden before showing leaderboard
@@ -4494,6 +4540,16 @@ async function handleCmeClaimSubmission(event) {
               console.error("Error updating Firestore history with certificate filePath:", updateError);
           }
 
+          // Track CME credit claim
+    if (analytics && logEvent) {
+      logEvent(analytics, 'cme_credit_claimed', {
+          credits_claimed: creditsToClaim,
+          user_profession: certificateDegree,
+          claim_method: 'annual_subscription', // You might want to make this dynamic
+          certificate_generated: true
+      });
+  }
+
           // --- NEW PART: Now, immediately get a temporary signed URL to display ---
           const linkContainer = document.getElementById("claimModalLink");
           try {
@@ -5164,6 +5220,17 @@ if (cmeCheckoutAnnualBtn) {
       `Requesting CME checkout for ${planNameForMeta} (Tier: ${tierForMeta}) with Price ID: ${selectedPriceId}`
     );
 
+    if (analytics) {
+      logEvent(analytics, 'begin_checkout', {
+          currency: 'USD',
+          value: 149.00,
+          item_id: selectedPriceId,
+          item_name: planNameForMeta,
+          tier: tierForMeta
+      });
+      console.log(`GA Event: begin_checkout (item: ${planNameForMeta})`);
+  }
+
     const user = window.authFunctions.getCurrentUser();
     if (!user || user.isAnonymous) {
       alert("Please register or log in fully before purchasing a subscription.");
@@ -5267,6 +5334,18 @@ if (cmeBuyCreditsBtn) {
     console.log(
       `Requesting CME Credits checkout for ${quantity} credits (Tier: ${tierForMeta}) with Price ID: ${selectedPriceId}`
     );
+
+    if (analytics) {
+      logEvent(analytics, 'begin_checkout', {
+          currency: 'USD',
+          value: quantity * 5.00, // Assuming $5 per credit
+          quantity: quantity,
+          item_id: selectedPriceId,
+          item_name: planNameForMeta,
+          tier: tierForMeta
+      });
+      console.log(`GA Event: begin_checkout (item: ${planNameForMeta})`);
+  }
 
     const user = window.authFunctions.getCurrentUser();
     if (!user || user.isAnonymous) {
@@ -5601,6 +5680,21 @@ if (boardReviewPricingBackBtn) {
 
 // Helper function for Board Review Checkout
 async function handleBoardReviewCheckout(priceId, planName, tierName) { // Added tierName
+  if (analytics) {
+    let price = 0;
+    if (priceId === STRIPE_BR_MONTHLY_PRICE_ID) price = 14.99;
+    if (priceId === STRIPE_BR_3MONTH_PRICE_ID) price = 39.99; // Example price
+    if (priceId === STRIPE_BR_ANNUAL_PRICE_ID) price = 99.99; // Example price
+
+    logEvent(analytics, 'begin_checkout', {
+        currency: 'USD',
+        value: price,
+        item_id: priceId,
+        item_name: planName,
+        tier: tierName
+    });
+    console.log(`GA Event: begin_checkout (item: ${planName})`);
+}
   console.log(`Requesting Board Review checkout for ${planName} (Tier: ${tierName}) with Price ID: ${priceId}`);
 
   const user = window.authFunctions.getCurrentUser();
