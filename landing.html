@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MedSwipe – Landing</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome for icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    integrity="sha512-p+1+ZzJxLZwlXk4Qh115EwB3CPMTK/eaeWgV6bZ5v9kyVGWZmnH3KZ0RLKg7bZ0DcCVhAS8DdzmQ+7QyTqYObA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+
+  <!-- Reuse your existing styles -->
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    html { scroll-behavior: smooth; }
+
+    /* Nav */
+    .landing-nav {
+      position: sticky; top: 0; z-index: 1000;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 20px; background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .landing-nav .nav-buttons a {
+      margin-left: 10px; text-decoration: none;
+      padding: 8px 16px; border-radius: 6px; font-weight: 500;
+      color: #fff; background: linear-gradient(135deg, #0C72D3, #66A6FF);
+      display: inline-block;
+    }
+    .landing-nav .nav-buttons a.cta-secondary {
+      background: none; color: #0C72D3; border: 1px solid #0C72D3;
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center; padding: 100px 20px;
+      background: linear-gradient(135deg, #F3FAFF, #E6F0FA);
+    }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 10px; color: #0C72D3; }
+    .hero p  { font-size: 1.2rem; margin-bottom: 20px; color: #333; }
+
+    /* Features */
+    .features {
+      display: grid; gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      padding: 60px 20px;
+    }
+    .feature-item { text-align: center; }
+    .feature-item i { font-size: 1.8rem; color: #0C72D3; margin-bottom: 8px; }
+    .feature-item p { font-size: 0.95rem; color: #333; }
+
+    /* Demo */
+    .demo { text-align: center; padding: 60px 20px; }
+    .demo video, .demo img {
+      max-width: 100%; height: auto; border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Pricing banner */
+    .pricing-banner {
+      text-align: center; padding: 40px 20px; background: #fff;
+    }
+    .pricing-banner p { font-size: 1.1rem; margin-bottom: 16px; }
+    .pricing-banner a { text-decoration: none; padding: 8px 16px; border-radius: 6px;
+      color: #fff; background: linear-gradient(135deg, #0C72D3, #66A6FF);
+      font-weight: 500;
+    }
+
+    /* Testimonials */
+    .social-proof {
+      display: flex; flex-wrap: wrap; justify-content: center;
+      gap: 20px; padding: 40px 20px;
+    }
+    .testimonial {
+      max-width: 300px; background: #fff; padding: 20px;
+      border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .testimonial p { font-size: 0.9rem; color: #333; margin-bottom: 8px; }
+    .testimonial .star { color: #FFC107; }
+
+    /* Footer */
+    footer {
+      background: #fff; padding: 20px; text-align: center;
+      font-size: 0.9rem; color: #666;
+    }
+    footer a {
+      color: #0C72D3; text-decoration: none; margin: 0 8px;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 600px) {
+      .landing-nav { flex-direction: column; align-items: flex-start; }
+      .landing-nav .nav-buttons { margin-top: 10px; width: 100%; display: flex; justify-content: space-between; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="landing-nav">
+    <a href="index.html">
+      <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" style="max-height:40px;">
+    </a>
+    <div class="nav-buttons">
+      <a href="index.html#startLearning">Start Free Trial</a>
+      <a href="index.html" class="cta-secondary">Launch Web App</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <h1>Swipe. Learn. Master ENT.</h1>
+    <p>Board review &amp; CME credits—gamified.</p>
+    <a href="index.html#startLearning">Start 7-Day Free Trial</a>
+  </section>
+
+  <section class="features">
+    <div class="feature-item">
+      <i class="fas fa-question-circle"></i>
+      <p>600+ Board/In-Service Review questions</p>
+    </div>
+    <div class="feature-item">
+      <i class="fas fa-certificate"></i>
+      <p>Up to 24 AMA PRA Category 1 CME credits</p>
+    </div>
+    <div class="feature-item">
+      <i class="fas fa-clock"></i>
+      <p>7-day free trial on paid tiers</p>
+    </div>
+    <div class="feature-item">
+      <i class="fas fa-gamepad"></i>
+      <p>XP &amp; leveling system</p>
+    </div>
+    <div class="feature-item">
+      <i class="fas fa-users"></i>
+      <p>Leaderboards &amp; compete with friends</p>
+    </div>
+    <div class="feature-item">
+      <i class="fas fa-tag"></i>
+      <p>60% cheaper than competitors</p>
+    </div>
+    <div class="feature-item">
+      <i class="fas fa-mobile-alt"></i>
+      <p>Quick, fun swipe interface (mobile-first)</p>
+    </div>
+  </section>
+
+  <section class="demo">
+    <!-- Drop your demo file here: assets/demo.mp4 or assets/demo.gif -->
+    <video width="640" height="360" loop autoplay muted>
+      <source src="assets/demo.mp4" type="video/mp4">
+      Your browser does not support HTML5 video.
+    </video>
+  </section>
+
+  <section class="pricing-banner">
+    <p><strong>Board Review $149/yr · CME Module $179/yr · Free tier available</strong></p>
+    <a href="index.html#startLearning">Start 7-Day Free Trial</a>
+  </section>
+
+  <section class="social-proof">
+    <div class="testimonial">
+      <p>“MedSwipe transformed my study routine—so engaging and effective!”</p>
+      <p><span class="star">★★★★★</span></p>
+    </div>
+    <div class="testimonial">
+      <p>“Love the CME module, easy to earn credits on the go.”</p>
+      <p><span class="star">★★★★☆</span></p>
+    </div>
+    <div class="testimonial">
+      <p>“Best board review tool—fun, fast, and high yield.”</p>
+      <p><span class="star">★★★★★</span></p>
+    </div>
+  </section>
+
+  <footer>
+    <a href="#">Privacy</a> |
+    <a href="#">Terms</a> |
+    <a href="#">Contact</a><br>
+    © 2025 MedSwipe
+  </footer>
+
+</body>
+</html>
