@@ -30,26 +30,16 @@ let appCheck = null;
 
 // Function to initialize App Check for production
 function initializeAppCheckForEnvironment() {
-  // TEMPORARILY DISABLED - App Check is causing 403 errors
-  // TODO: Re-enable after fixing reCAPTCHA configuration
-  console.log('App Check temporarily disabled for troubleshooting');
-  return;
-  
   try {
     const hostname = window.location.hostname;
     
     if (hostname === 'medswipeapp.com') {
-      // TEMPORARY: Enable debug mode to bypass reCAPTCHA issues while troubleshooting
-      if (typeof self !== 'undefined') {
-        self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-      }
-      
-      // Production environment
+      // Production environment with reCAPTCHA Enterprise
       appCheck = initializeAppCheck(app, {
         provider: new ReCaptchaEnterpriseProvider('6Ld2rk8rAAAAAG4CK6ZdeKZASBvvYoYmfj0107Ag'),
         isTokenAutoRefreshEnabled: true
       });
-      console.log('App Check initialized for production (debug mode temporarily enabled)');
+      console.log('App Check initialized for production with reCAPTCHA Enterprise');
     } else {
       console.log('App Check not initialized - only enabled for production domain');
     }
