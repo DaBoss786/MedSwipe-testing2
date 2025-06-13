@@ -5,7 +5,7 @@ import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTi
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, signOut, updateProfile, sendPasswordResetEmail, getIdToken, EmailAuthProvider, linkWithCredential } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-functions.js";
 // Add App Check imports
-import { initializeAppCheck, ReCaptchaV3Provider, getToken } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app-check.js";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app-check.js";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -34,12 +34,17 @@ function initializeAppCheckForEnvironment() {
     const hostname = window.location.hostname;
     
     if (hostname === 'medswipeapp.com') {
+      // TEMPORARY: Enable debug mode to bypass reCAPTCHA issues while troubleshooting
+      if (typeof self !== 'undefined') {
+        self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+      }
+      
       // Production environment
       appCheck = initializeAppCheck(app, {
-        provider: new ReCaptchaV3Provider('6Ld2rk8rAAAAAG4CK6ZdeKZASBvvYoYmfj0107Ag'),
+        provider: new ReCaptchaEnterpriseProvider('6Ld2rk8rAAAAAG4CK6ZdeKZASBvvYoYmfj0107Ag'),
         isTokenAutoRefreshEnabled: true
       });
-      console.log('App Check initialized for production');
+      console.log('App Check initialized for production (debug mode temporarily enabled)');
     } else {
       console.log('App Check not initialized - only enabled for production domain');
     }
