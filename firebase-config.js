@@ -30,6 +30,11 @@ let appCheck = null;
 
 // Function to initialize App Check for production
 function initializeAppCheckForEnvironment() {
+  // TEMPORARILY DISABLED - App Check is causing 403 errors
+  // TODO: Re-enable after fixing reCAPTCHA configuration
+  console.log('App Check temporarily disabled for troubleshooting');
+  return;
+  
   try {
     const hostname = window.location.hostname;
     
