@@ -207,6 +207,8 @@ if (analytics && event.detail.accessTier) {
                     const cmeInfoScreen = document.getElementById("cmeInfoScreen");
                     if (cmeInfoScreen) {
                         cmeInfoScreen.style.display = "flex";
+                        const postRegLoadingScreen = document.getElementById('postRegistrationLoadingScreen');
+                        if (postRegLoadingScreen) postRegLoadingScreen.style.display = 'none';
                     } else {
                         console.error("CME Info Screen not found after registration redirect!");
                         if (newPaywallScreen) newPaywallScreen.style.display = 'flex';
@@ -217,6 +219,8 @@ if (analytics && event.detail.accessTier) {
                     const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
                     if (boardReviewPricingScreen) {
                         boardReviewPricingScreen.style.display = 'flex';
+                        const postRegLoadingScreen = document.getElementById('postRegistrationLoadingScreen');
+                        if (postRegLoadingScreen) postRegLoadingScreen.style.display = 'none';
                         if (typeof updateBoardReviewPricingView === 'function') {
                             updateBoardReviewPricingView('annual');
                         }
@@ -313,6 +317,8 @@ if (analytics && event.detail.accessTier) {
                   const cmeInfoScreen = document.getElementById("cmeInfoScreen");
                   if (cmeInfoScreen) {
                       cmeInfoScreen.style.display = "flex";
+                      const postRegLoadingScreen = document.getElementById('postRegistrationLoadingScreen');
+                      if (postRegLoadingScreen) postRegLoadingScreen.style.display = 'none';
                   } else {
                       console.error("CME Info Screen not found after registration redirect (no splash)!");
                       if (newPaywallScreen) newPaywallScreen.style.display = 'flex';
@@ -323,6 +329,8 @@ if (analytics && event.detail.accessTier) {
                   const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
                   if (boardReviewPricingScreen) {
                       boardReviewPricingScreen.style.display = 'flex';
+                      const postRegLoadingScreen = document.getElementById('postRegistrationLoadingScreen');
+                      if (postRegLoadingScreen) postRegLoadingScreen.style.display = 'none';
                       if (typeof updateBoardReviewPricingView === 'function') {
                           updateBoardReviewPricingView('annual');
                       }
@@ -1257,6 +1265,10 @@ newForm.addEventListener('submit', async function(e) {
   }
     
     modalElement.style.display = 'none';
+    const postRegLoadingScreen = document.getElementById('postRegistrationLoadingScreen');
+    if ((currentNextStep === 'board_review_pricing' || currentNextStep === 'cme_info') && postRegLoadingScreen) {
+      postRegLoadingScreen.style.display = 'flex';
+    }
 
     // Handle redirection based on currentNextStep
     if (currentNextStep === 'board_review_pricing') {
