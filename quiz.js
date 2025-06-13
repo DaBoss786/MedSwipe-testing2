@@ -25,6 +25,29 @@ let sessionStartXP = 0;
 let questionStartTime = 0;
 let currentQuizType = 'regular';
 
+// Audio feedback URLs for correct and incorrect answers
+// Updated per user request - using "ding" sound from freesound
+// https://freesound.org/people/ertfelda/sounds/243701/
+const correctAnswerSoundUrl =
+  'https://freesound.org/people/ertfelda/sounds/243701/';
+const incorrectAnswerSoundUrl =
+  'https://assets.mixkit.co/active_storage/sfx/741/741.wav'; // Negative tone
+
+// Helper function to play feedback sounds
+function playAnswerSound(isCorrect) {
+  if (window.Audio) {
+    try {
+      const sound = new Audio(
+        isCorrect ? correctAnswerSoundUrl : incorrectAnswerSoundUrl
+      );
+      sound.volume = 0.5;
+      sound.play();
+    } catch (e) {
+      console.log('Sound could not be played', e);
+    }
+  }
+}
+
 // Replace the OLD fetchQuestionBank function with this NEW one:
 async function fetchQuestionBank() {
   console.log("Fetching question bank from Firestore...");
