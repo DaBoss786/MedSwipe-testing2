@@ -533,7 +533,7 @@ exports.generateCmeCertificate = onCall(
               // We need to fetch current user data to see if they have an active cme_annual sub
               try {
                 const userDoc = await userRef.get();
-                if (userDoc.exists()) {
+                if (userDoc.exists) {
                     const currentData = userDoc.data();
                     const tempUpdatedData = { ...currentData, ...updates, cmeCreditsAvailable: (currentData.cmeCreditsAvailable || 0) + credits };
                     newAccessTier = determineAccessTier(tempUpdatedData);
