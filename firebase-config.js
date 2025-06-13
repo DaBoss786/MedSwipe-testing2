@@ -24,10 +24,27 @@ const firebaseConfig = {
 
 // Initialize Firebase services
 const app = initializeApp(firebaseConfig);
-initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider("6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag"),
-  isTokenAutoRefreshEnabled: true
+
+// Add this before initializeAppCheck
+function waitForRecaptcha() {
+  return new Promise((resolve) => {
+    if (window.grecaptcha && window.grecaptcha.ready) {
+      window.grecaptcha.ready(() => resolve());
+    } else {
+      setTimeout(() => waitForRecaptcha().then(resolve), 100);
+    }
+  });
+}
+
+// Initialize App Check after reCAPTCHA is ready
+waitForRecaptcha().then(() => {
+  initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider("6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag"),
+    isTokenAutoRefreshEnabled: true
+  });
+  console.log("App Check initialized successfully");
 });
+
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app);
