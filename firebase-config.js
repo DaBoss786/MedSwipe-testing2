@@ -1,3 +1,9 @@
+// 1. Import App Check
+import {
+  initializeAppCheck,
+  ReCaptchaV3Provider
+} from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app-check.js";
+
 // Firebase App, Analytics, Firestore & Auth (Modular)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
 import { getAnalytics, logEvent, setUserProperties } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
@@ -18,6 +24,10 @@ const firebaseConfig = {
 
 // Initialize Firebase services
 const app = initializeApp(firebaseConfig);
+initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider("6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0I07Ag"),
+  isTokenAutoRefreshEnabled: true
+});
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app);
