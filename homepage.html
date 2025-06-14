@@ -6,6 +6,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MedSwipe - Swipe. Learn. Master ENT.</title>
     
+<!-- SEO Meta Tags -->
+<meta name="description" content="MedSwipe - Gamified ENT board review and CME credits. 600+ questions, 24 CME credits, 60% cheaper than competitors. Start your 7-day free trial today.">
+<meta name="keywords" content="ENT board review, CME credits, otolaryngology, medical education, board exam prep, continuing medical education, ENT questions, medical app">
+<meta name="author" content="MedSwipe">
+<meta name="robots" content="index, follow">
+<meta name="language" content="English">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://medswipeapp.com/">
+<meta property="og:title" content="MedSwipe - Swipe. Learn. Master ENT.">
+<meta property="og:description" content="Board review & CME credits—gamified for the modern medical professional. 600+ questions, 24 CME credits, 7-day free trial.">
+<meta property="og:image" content="https://medswipeapp.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="https://medswipeapp.com/">
+<meta property="twitter:title" content="MedSwipe - Swipe. Learn. Master ENT.">
+<meta property="twitter:description" content="Board review & CME credits—gamified for the modern medical professional. 600+ questions, 24 CME credits, 7-day free trial.">
+<meta property="twitter:image" content="https://medswipeapp.com/assets/og-image.png">
+
+<!-- Canonical URL -->
+<link rel="canonical" href="https://medswipeapp.com/">
     <!-- Google Fonts: Roboto with more weights -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
@@ -770,6 +795,59 @@
             }
         }
     </style>
+
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-748P8P634B');
+</script>
+
+<!-- Structured Data -->
+<script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "MedSwipe",
+      "description": "Gamified ENT board review and CME credits platform for medical professionals",
+      "url": "https://medswipeapp.com",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Board Review",
+          "price": "149",
+          "priceCurrency": "USD",
+          "priceValidUntil": "2025-12-31",
+          "availability": "https://schema.org/InStock"
+        },
+        {
+          "@type": "Offer",
+          "name": "CME Module",
+          "price": "179",
+          "priceCurrency": "USD",
+          "priceValidUntil": "2025-12-31",
+          "availability": "https://schema.org/InStock"
+        }
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "5",
+        "reviewCount": "150",
+        "bestRating": "5",
+        "worstRating": "1"
+      },
+      "provider": {
+        "@type": "Organization",
+        "name": "MedSwipe",
+        "url": "https://medswipeapp.com"
+      }
+    }
+    </script>
+    
 </head>
 <body>
     <!-- Navigation -->
@@ -1005,6 +1083,69 @@
                 }
             });
         });
+    </script>
+
+<!-- Enhanced GA4 Event Tracking -->
+<script>
+    // Track button clicks
+    document.addEventListener('DOMContentLoaded', function() {
+        // Track CTA button clicks
+        document.querySelectorAll('.btn-primary').forEach(button => {
+            button.addEventListener('click', function(e) {
+                gtag('event', 'cta_click', {
+                    'button_text': this.textContent.trim(),
+                    'button_location': getButtonLocation(this),
+                    'page_location': window.location.href
+                });
+            });
+        });
+        
+        // Track secondary button clicks
+        document.querySelectorAll('.btn-secondary').forEach(button => {
+            button.addEventListener('click', function(e) {
+                gtag('event', 'secondary_cta_click', {
+                    'button_text': this.textContent.trim(),
+                    'button_location': getButtonLocation(this),
+                    'page_location': window.location.href
+                });
+            });
+        });
+        
+        // Track scroll depth
+        let maxScroll = 0;
+        window.addEventListener('scroll', function() {
+            const scrollPercent = Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100);
+            if (scrollPercent > maxScroll && scrollPercent % 25 === 0) {
+                maxScroll = scrollPercent;
+                gtag('event', 'scroll', {
+                    'percent_scrolled': scrollPercent
+                });
+            }
+        });
+        
+        // Track section views
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    gtag('event', 'section_view', {
+                        'section_name': entry.target.id || entry.target.className
+                    });
+                }
+            });
+        });
+        
+        document.querySelectorAll('section').forEach(section => {
+            observer.observe(section);
+        });
+    });
+    
+    function getButtonLocation(button) {
+        if (button.closest('.navbar')) return 'navbar';
+        if (button.closest('.hero')) return 'hero';
+        if (button.closest('.pricing-section')) return 'pricing';
+        if (button.closest('.footer')) return 'footer';
+        return 'other';
+    }
     </script>
 </body>
 </html>
