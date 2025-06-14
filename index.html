@@ -37,6 +37,11 @@
     #splashScreen, #welcomeScreen, #loginScreen, .main-content {
       transition: opacity 0.1s ease;
     }
+    
+    /* NEW: Hide splash screen by default for potential redirects */
+    .hide-splash #splashScreen {
+      display: none !important;
+    }
   </style>
 
 </head>
@@ -740,6 +745,9 @@
   // Only redirect if explicitly coming to root page and not from landing
   if (!location.hash && !fromLanding) {
     
+    // Hide splash screen immediately for potential redirects
+    document.body.classList.add('hide-splash');
+    
     // Set a flag to track if we should redirect
     let shouldRedirect = true;
     
@@ -748,7 +756,8 @@
       if (!event.detail.isLoading) {
         // Auth is loaded, check if user is registered
         if (event.detail.isRegistered && !event.detail.user?.isAnonymous) {
-          // User is properly logged in, don't redirect
+          // User is properly logged in, show splash screen and don't redirect
+          document.body.classList.remove('hide-splash');
           shouldRedirect = false;
         } else {
           // User is anonymous or not registered, redirect
