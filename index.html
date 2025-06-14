@@ -29,6 +29,23 @@
 
 </head>
 <body>
+  <script>
+    // Check IMMEDIATELY before any content renders
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromLanding = urlParams.get('from') === 'landing';
+    
+    // Quick localStorage check first
+    const hasFirebaseAuth = Object.keys(localStorage).some(key => 
+      key.startsWith('firebase:authUser')
+    );
+    
+    // If no auth and not from landing, redirect immediately
+    if (!location.hash && !hasFirebaseAuth && !fromLanding) {
+      location.replace('homepage.html');
+      // Stop execution to prevent any rendering
+      throw new Error('Redirecting to landing page');
+    }
+  </script>
 
   <!-- Splash Screen Container -->
 <div id="splashScreen" class="splash-screen">
@@ -721,25 +738,6 @@
 <!-- Auth Scripts - Must be loaded after Firebase -->
 <script type="module" src="auth.js"></script>
 <script type="module" src="user-profile.js"></script>
-
-<!-- THEN add the redirect script -->
-<script>
-  const urlParams = new URLSearchParams(window.location.search);
-  const fromLanding = urlParams.get('from') === 'landing';
-  
-  // Wait a moment for Firebase to initialize
-  setTimeout(() => {
-    const hasFirebaseAuth = Object.keys(localStorage).some(key => 
-      key.startsWith('firebase:authUser')
-    );
-    
-    const hasAuthState = window.authState && window.authState.user;
-    
-    if (!location.hash && !hasFirebaseAuth && !hasAuthState && !fromLanding) {
-      location.replace('homepage.html');
-    }
-  }, 500); // Give Firebase 500ms to initialize
-</script>
 
 <!-- Include Swiper JS -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
