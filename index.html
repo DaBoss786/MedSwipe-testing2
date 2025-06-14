@@ -734,28 +734,38 @@
 <script type="module" src="user-profile.js"></script>
 
 <script>
-  console.log('=== DEBUG AUTH STORAGE ===');
-  console.log('All localStorage keys:', Object.keys(localStorage));
-  console.log('All localStorage:', localStorage);
-  console.log('Cookies:', document.cookie);
-  console.log('SessionStorage:', Object.keys(sessionStorage));
-  
-  // Check specifically for Firebase
-  Object.keys(localStorage).forEach(key => {
-    if (key.includes('firebase')) {
-      console.log(`Firebase key: ${key} = `, localStorage.getItem(key));
-    }
-  });
-  
   const urlParams = new URLSearchParams(window.location.search);
   const fromLanding = urlParams.get('from') === 'landing';
-  console.log('URL params - fromLanding:', fromLanding);
-  console.log('location.hash:', location.hash);
   
-  // Don't redirect yet, just log what we find
-  setTimeout(() => {
-    console.log('After 1 second - authState:', window.authState);
-  }, 1000);
+  // Only redirect if explicitly coming to root page and not from landing
+  if (!location.hash && !fromLanding) {
+    
+    // Set a flag to track if we should redirect
+    let shouldRedirect = true;
+    
+    // Listen for the auth state change event
+    window.addEventListener('authStateChanged', function(event) {
+      if (!event.detail.isLoading) {
+        // Auth is loaded, check if user is registered
+        if (event.detail.isRegistered && !event.detail.user?.isAnonymous) {
+          // User is properly logged in, don't redirect
+          shouldRedirect = false;
+        } else {
+          // User is anonymous or not registered, redirect
+          if (shouldRedirect) {
+            location.replace('homepage.html');
+          }
+        }
+      }
+    });
+    
+    // Fallback: if no auth event fires within 1 second, redirect
+    setTimeout(() => {
+      if (shouldRedirect && (!window.authState?.user || window.authState.user.isAnonymous)) {
+        location.replace('homepage.html');
+      }
+    }, 1000);
+  }
 </script>
 
 <!-- Include Swiper JS -->
