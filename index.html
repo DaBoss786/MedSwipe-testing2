@@ -734,37 +734,28 @@
 <script type="module" src="user-profile.js"></script>
 
 <script>
+  console.log('=== DEBUG AUTH STORAGE ===');
+  console.log('All localStorage keys:', Object.keys(localStorage));
+  console.log('All localStorage:', localStorage);
+  console.log('Cookies:', document.cookie);
+  console.log('SessionStorage:', Object.keys(sessionStorage));
+  
+  // Check specifically for Firebase
+  Object.keys(localStorage).forEach(key => {
+    if (key.includes('firebase')) {
+      console.log(`Firebase key: ${key} = `, localStorage.getItem(key));
+    }
+  });
+  
   const urlParams = new URLSearchParams(window.location.search);
   const fromLanding = urlParams.get('from') === 'landing';
+  console.log('URL params - fromLanding:', fromLanding);
+  console.log('location.hash:', location.hash);
   
-  // Quick localStorage check first
-  const hasFirebaseAuth = Object.keys(localStorage).some(key => 
-    key.startsWith('firebase:authUser')
-  );
-  
-  if (!location.hash && !hasFirebaseAuth && !fromLanding) {
-    // Only redirect if there's clearly no Firebase auth data
-    location.replace('homepage.html');
-  } else if (!fromLanding) {
-    // User might be authenticated, wait for proper auth check
-    let authChecked = false;
-    
-    const authCheckTimeout = setTimeout(() => {
-      if (!authChecked && !window.authState?.user) {
-        location.replace('homepage.html');
-      }
-    }, 1000);
-    
-    // Listen for auth state
-    window.addEventListener('authStateChanged', function(event) {
-      authChecked = true;
-      clearTimeout(authCheckTimeout);
-      
-      if (!event.detail.user || event.detail.user.isAnonymous) {
-        location.replace('homepage.html');
-      }
-    }, { once: true });
-  }
+  // Don't redirect yet, just log what we find
+  setTimeout(() => {
+    console.log('After 1 second - authState:', window.authState);
+  }, 1000);
 </script>
 
 <!-- Include Swiper JS -->
