@@ -18,6 +18,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
   <link rel="stylesheet" href="styles.css">
 
   <style>
+    body { background: #fff; }
     html { scroll-behavior: smooth; }
 
     /* Nav */
@@ -39,9 +40,10 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
 
     /* Hero */
     .hero {
-      text-align: center; padding: 100px 20px;
-      background: linear-gradient(135deg, #F3FAFF, #E6F0FA);
-    }
+text-align: center;
+     padding: 80px 20px;
+     background: #fff;
+   }
     .hero h1 { font-size: 2.5rem; margin-bottom: 10px; color: #0C72D3; }
     .hero p  { font-size: 1.2rem; margin-bottom: 20px; color: #333; }
 
@@ -113,8 +115,27 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
   </nav>
 
   <section class="hero">
+    <!-- large logo above the headline -->
+    <img
+      src="MedSwipe Logo gradient.png"
+      alt="MedSwipe Logo"
+      style="display:block; max-width:250px; margin:0 auto 20px;"
+    >
     <h1>Swipe. Learn. Master ENT.</h1>
     <p>Board review &amp; CME credits—gamified.</p>
+    <a href="index.html#startLearning">Start 7-Day Free Trial</a>
+  </section>
+
+  <section class="demo">
+    <!-- Drop your demo file here: assets/demo.mp4 or assets/demo.gif -->
+    <video width="640" height="360" loop autoplay muted>
+      <source src="assets/demo.mp4" type="video/mp4">
+      Your browser does not support HTML5 video.
+    </video>
+  </section>
+
+  <section class="pricing-banner">
+    <p><strong>Board Review $149/yr · CME Module $179/yr · Free tier available</strong></p>
     <a href="index.html#startLearning">Start 7-Day Free Trial</a>
   </section>
 
@@ -150,19 +171,6 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
   </section>
   
 
-  <section class="demo">
-    <!-- Drop your demo file here: assets/demo.mp4 or assets/demo.gif -->
-    <video width="640" height="360" loop autoplay muted>
-      <source src="assets/demo.mp4" type="video/mp4">
-      Your browser does not support HTML5 video.
-    </video>
-  </section>
-
-  <section class="pricing-banner">
-    <p><strong>Board Review $149/yr · CME Module $179/yr · Free tier available</strong></p>
-    <a href="index.html#startLearning">Start 7-Day Free Trial</a>
-  </section>
-
   <section class="social-proof">
     <div class="testimonial">
       <p>“MedSwipe transformed my study routine—so engaging and effective!”</p>
@@ -170,7 +178,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     </div>
     <div class="testimonial">
       <p>“Love the CME module, easy to earn credits on the go.”</p>
-      <p><span class="star">★★★★☆</span></p>
+      <p><span class="star">★★★★★</span></p>
     </div>
     <div class="testimonial">
       <p>“Best board review tool—fun, fast, and high yield.”</p>
