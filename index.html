@@ -734,28 +734,35 @@
 <script type="module" src="user-profile.js"></script>
 
 <script>
-  // Hide everything immediately
-  document.body.classList.add('redirect-checking');
-  
   const urlParams = new URLSearchParams(window.location.search);
   const fromLanding = urlParams.get('from') === 'landing';
   
-  // Shorter timeout since we're hiding content
-  setTimeout(() => {
+  function checkRedirect() {
+    // More comprehensive Firebase auth check
     const hasFirebaseAuth = Object.keys(localStorage).some(key => 
-      key.startsWith('firebase:authUser')
+      key.startsWith('firebase:authUser') && localStorage.getItem(key) !== 'null'
     );
     
-    const hasAuthState = window.authState && window.authState.user;
+    // Check for any Firebase-related auth indicators
+    const hasFirebaseSession = document.cookie.includes('firebase') || 
+                              sessionStorage.getItem('firebase') ||
+                              localStorage.getItem('firebase:host:medswipeapp-default-rtdb.firebaseio.com');
     
-    if (!location.hash && !hasFirebaseAuth && !hasAuthState && !fromLanding) {
-      // Redirect without showing content
+    const shouldRedirect = !location.hash && 
+                          !hasFirebaseAuth && 
+                          !hasFirebaseSession && 
+                          !fromLanding;
+    
+    if (shouldRedirect) {
       location.replace('homepage.html');
-    } else {
-      // User is authenticated, show the app
-      document.body.classList.remove('redirect-checking');
     }
-  }, 200); // Reduced from 500ms
+  }
+  
+  // Check immediately for quick redirect
+  checkRedirect();
+  
+  // Also check after a short delay as backup
+  setTimeout(checkRedirect, 150);
 </script>
 
 <!-- Include Swiper JS -->
