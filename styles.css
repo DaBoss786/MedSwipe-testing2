@@ -2497,10 +2497,35 @@ html, body {
 .welcome-tagline {
   font-size: 1.8rem;
   font-weight: bold;
-  color: #0C72D3;
+  color: #1a1a1a; /* Dark color for "Swipe. Learn." */
   margin-bottom: 50px;
   text-align: center;
   line-height: 1.4;
+  letter-spacing: -0.02em; /* Slight letter spacing like homepage */
+}
+
+/* Gradient styling for "Master ENT" part */
+.welcome-tagline .gradient-text {
+  background: linear-gradient(135deg, #0C72D3 0%, #66A6FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent; /* Fallback for browsers that don't support background-clip */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .welcome-tagline {
+    font-size: 1.5rem;
+    margin-bottom: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .welcome-tagline {
+    font-size: 1.3rem;
+    margin-bottom: 35px;
+  }
 }
 
 .welcome-buttons {
