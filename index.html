@@ -31,14 +31,15 @@
 <body>
 
   <script>
-    // Check if user came from landing page
     const urlParams = new URLSearchParams(window.location.search);
     const fromLanding = urlParams.get('from') === 'landing';
     
-    // Only redirect if: no hash, no user cookie, AND didn't come from landing
-    if (!location.hash && 
-        !document.cookie.includes('ms_user') && 
-        !fromLanding) {
+    // Check Firebase auth - it stores data like 'firebase:authUser:PROJECT-ID'
+    const hasFirebaseAuth = Object.keys(localStorage).some(key => 
+      key.startsWith('firebase:authUser')
+    );
+    
+    if (!location.hash && !hasFirebaseAuth && !fromLanding) {
       location.replace('homepage.html');
     }
   </script>
