@@ -586,8 +586,16 @@
         
         /* Mobile Responsive */
         @media (max-width: 768px) {
+            .navbar {
+                padding: 12px 0;
+            }
+            
             .nav-container {
-                padding: 0 24px;
+                padding: 0 20px;
+            }
+            
+            .logo img {
+                height: 32px;
             }
             
             .nav-buttons {
@@ -595,12 +603,71 @@
             }
             
             .btn {
-                padding: 10px 20px;
-                font-size: 14px;
+                padding: 8px 16px;
+                font-size: 13px;
+                border-radius: 6px;
             }
             
+            .btn i {
+                display: none; /* Hide icons on mobile to save space */
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .navbar {
+                padding: 10px 0;
+            }
+            
+            .nav-container {
+                padding: 0 16px;
+            }
+            
+            .logo img {
+                height: 28px;
+            }
+            
+            .nav-buttons {
+                gap: 6px;
+            }
+            
+            .btn {
+                padding: 6px 12px;
+                font-size: 12px;
+                font-weight: 500;
+                white-space: nowrap;
+            }
+            
+            /* Make buttons even more compact on very small screens */
+            .btn-primary {
+                padding: 8px 14px;
+            }
+            
+            .btn-secondary {
+                padding: 6px 10px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .nav-container {
+                padding: 0 12px;
+            }
+            
+            .logo img {
+                height: 26px;
+            }
+            
+            .btn {
+                padding: 6px 10px;
+                font-size: 11px;
+            }
+            
+            .btn-primary {
+                padding: 7px 12px;
+            }
+        }
+            
             .hero {
-                padding: 140px 24px 80px;
+                padding: 120px 20px 80px;
                 min-height: auto;
             }
             
@@ -613,8 +680,8 @@
             .features-section,
             .pricing-section,
             .social-proof {
-                padding-left: 24px;
-                padding-right: 24px;
+                padding-left: 20px;
+                padding-right: 20px;
             }
             
             .demo-container {
@@ -649,15 +716,11 @@
                 grid-template-columns: 1fr;
                 gap: 40px;
             }
-        }
+        
         
         @media (max-width: 480px) {
-            .nav-container {
-                padding: 0 16px;
-            }
-            
             .hero {
-                padding: 120px 16px 60px;
+                padding: 100px 16px 60px;
             }
             
             .demo-section,
