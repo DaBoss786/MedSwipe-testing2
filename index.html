@@ -30,20 +30,6 @@
 </head>
 <body>
 
-  <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const fromLanding = urlParams.get('from') === 'landing';
-    
-    // Check Firebase auth - it stores data like 'firebase:authUser:PROJECT-ID'
-    const hasFirebaseAuth = Object.keys(localStorage).some(key => 
-      key.startsWith('firebase:authUser')
-    );
-    
-    if (!location.hash && !hasFirebaseAuth && !fromLanding) {
-      location.replace('homepage.html');
-    }
-  </script>
-
   <!-- Splash Screen Container -->
 <div id="splashScreen" class="splash-screen">
   <div class="splash-content">
@@ -735,6 +721,25 @@
 <!-- Auth Scripts - Must be loaded after Firebase -->
 <script type="module" src="auth.js"></script>
 <script type="module" src="user-profile.js"></script>
+
+<!-- THEN add the redirect script -->
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const fromLanding = urlParams.get('from') === 'landing';
+  
+  // Wait a moment for Firebase to initialize
+  setTimeout(() => {
+    const hasFirebaseAuth = Object.keys(localStorage).some(key => 
+      key.startsWith('firebase:authUser')
+    );
+    
+    const hasAuthState = window.authState && window.authState.user;
+    
+    if (!location.hash && !hasFirebaseAuth && !hasAuthState && !fromLanding) {
+      location.replace('homepage.html');
+    }
+  }, 500); // Give Firebase 500ms to initialize
+</script>
 
 <!-- Include Swiper JS -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
