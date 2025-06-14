@@ -27,27 +27,21 @@
 
   <script src="https://www.google.com/recaptcha/enterprise.js?render=6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag"></script>
 
+  <style>
+    .redirect-checking {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    
+    /* Prevent any content from showing during check */
+    #splashScreen, #welcomeScreen, #loginScreen, .main-content {
+      transition: opacity 0.1s ease;
+    }
+  </style>
+
 </head>
 <body>
-  <script>
-    // Check IMMEDIATELY before any content renders
-    const urlParams = new URLSearchParams(window.location.search);
-    const fromLanding = urlParams.get('from') === 'landing';
-    
-    // Quick localStorage check first
-    const hasFirebaseAuth = Object.keys(localStorage).some(key => 
-      key.startsWith('firebase:authUser')
-    );
-    
-    // If no auth and not from landing, redirect immediately
-    if (!location.hash && !hasFirebaseAuth && !fromLanding) {
-      location.replace('homepage.html');
-      // Stop execution to prevent any rendering
-      throw new Error('Redirecting to landing page');
-    }
-  </script>
-
-  <!-- Splash Screen Container -->
+    <!-- Splash Screen Container -->
 <div id="splashScreen" class="splash-screen">
   <div class="splash-content">
     <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="splash-logo">
@@ -738,6 +732,31 @@
 <!-- Auth Scripts - Must be loaded after Firebase -->
 <script type="module" src="auth.js"></script>
 <script type="module" src="user-profile.js"></script>
+
+<script>
+  // Hide everything immediately
+  document.body.classList.add('redirect-checking');
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  const fromLanding = urlParams.get('from') === 'landing';
+  
+  // Shorter timeout since we're hiding content
+  setTimeout(() => {
+    const hasFirebaseAuth = Object.keys(localStorage).some(key => 
+      key.startsWith('firebase:authUser')
+    );
+    
+    const hasAuthState = window.authState && window.authState.user;
+    
+    if (!location.hash && !hasFirebaseAuth && !hasAuthState && !fromLanding) {
+      // Redirect without showing content
+      location.replace('homepage.html');
+    } else {
+      // User is authenticated, show the app
+      document.body.classList.remove('redirect-checking');
+    }
+  }, 200); // Reduced from 500ms
+</script>
 
 <!-- Include Swiper JS -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
