@@ -737,32 +737,34 @@
   const urlParams = new URLSearchParams(window.location.search);
   const fromLanding = urlParams.get('from') === 'landing';
   
-  function checkRedirect() {
-    // More comprehensive Firebase auth check
-    const hasFirebaseAuth = Object.keys(localStorage).some(key => 
-      key.startsWith('firebase:authUser') && localStorage.getItem(key) !== 'null'
-    );
+  // Quick localStorage check first
+  const hasFirebaseAuth = Object.keys(localStorage).some(key => 
+    key.startsWith('firebase:authUser')
+  );
+  
+  if (!location.hash && !hasFirebaseAuth && !fromLanding) {
+    // Only redirect if there's clearly no Firebase auth data
+    location.replace('homepage.html');
+  } else if (!fromLanding) {
+    // User might be authenticated, wait for proper auth check
+    let authChecked = false;
     
-    // Check for any Firebase-related auth indicators
-    const hasFirebaseSession = document.cookie.includes('firebase') || 
-                              sessionStorage.getItem('firebase') ||
-                              localStorage.getItem('firebase:host:medswipeapp-default-rtdb.firebaseio.com');
+    const authCheckTimeout = setTimeout(() => {
+      if (!authChecked && !window.authState?.user) {
+        location.replace('homepage.html');
+      }
+    }, 1000);
     
-    const shouldRedirect = !location.hash && 
-                          !hasFirebaseAuth && 
-                          !hasFirebaseSession && 
-                          !fromLanding;
-    
-    if (shouldRedirect) {
-      location.replace('homepage.html');
-    }
+    // Listen for auth state
+    window.addEventListener('authStateChanged', function(event) {
+      authChecked = true;
+      clearTimeout(authCheckTimeout);
+      
+      if (!event.detail.user || event.detail.user.isAnonymous) {
+        location.replace('homepage.html');
+      }
+    }, { once: true });
   }
-  
-  // Check immediately for quick redirect
-  checkRedirect();
-  
-  // Also check after a short delay as backup
-  setTimeout(checkRedirect, 150);
 </script>
 
 <!-- Include Swiper JS -->
