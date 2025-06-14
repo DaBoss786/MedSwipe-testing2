@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -242,7 +243,6 @@
         .demo-video {
             width: 100%;
             max-width: 800px;
-            aspect-ratio: 16/9;
             border-radius: 16px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             margin: 0 auto;
@@ -253,6 +253,15 @@
             color: #666;
             font-size: 18px;
             border: 1px solid rgba(0, 0, 0, 0.05);
+            /* Remove fixed aspect-ratio for GIF */
+        }
+        
+        .demo-video img {
+            width: 100%;
+            height: auto;
+            border-radius: 16px;
+            object-fit: contain; /* Show full image without cropping */
+            background: transparent;
         }
         
         /* Features Section */
@@ -717,7 +726,6 @@
                 gap: 40px;
             }
         
-        
         @media (max-width: 480px) {
             .hero {
                 padding: 100px 16px 60px;
@@ -805,7 +813,9 @@
                     <h2>See MedSwipe in Action</h2>
                     <p>Experience our intuitive swipe interface and seamless CME credit claiming</p>
                 </div>
-                <img src="demo.gif" alt="MedSwipe Demo - Swipe Interface" class="demo-video" style="height: auto; object-fit: cover; background: #f8f9fa;">
+                <div class="demo-video">
+                <img src="demo.gif" alt="MedSwipe Demo - Swipe Interface">
+                </div>
             </div>
         </div>
     </section>
