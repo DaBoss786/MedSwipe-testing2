@@ -17,6 +17,14 @@ if (functions && httpsCallable) {
   console.error("Firebase Functions or httpsCallable not imported correctly in user.js.");
 }
 
+// Add this to the top of the file with other function references
+let updateUserProfileFunction;
+try {
+  updateUserProfileFunction = httpsCallable(functions, 'updateUserProfile');
+} catch (error) {
+  console.error("Error creating updateUserProfile function reference in user.v2.js:", error);
+}
+
 // Session tracking
 let questionStartTime = 0;
 let sessionStartTime = Date.now();
@@ -736,51 +744,70 @@ async function getBookmarks() {
   return [];
 }
 
-// Toggle a bookmark (add if not present, remove if present)
+// Replace the entire toggleBookmark function
 async function toggleBookmark(questionId) {
   if (!auth || !auth.currentUser) {
     console.log("User not authenticated for toggleBookmark");
     return false;
   }
-  
+
+  // Optimistic UI update
+  const currentSlide = document.querySelector(`.swiper-slide[data-id="${questionId}"]`);
+  const isCurrentlyBookmarked = currentSlide ? currentSlide.dataset.bookmarked === "true" : false;
+  const newBookmarkState = !isCurrentlyBookmarked;
+
+  if (currentSlide) {
+    currentSlide.dataset.bookmarked = newBookmarkState ? "true" : "false";
+  }
+  // This is imported from quiz.js, ensure it's available
+  if (typeof window.updateBookmarkIcon === 'function') {
+      window.updateBookmarkIcon();
+  } else if (typeof updateBookmarkIcon === 'function') {
+      updateBookmarkIcon();
+  }
+
+
   try {
     const uid = auth.currentUser.uid;
     const userDocRef = doc(db, 'users', uid);
-    
-    await runTransaction(db, async (transaction) => {
-      const userDoc = await transaction.get(userDocRef);
-      let data = userDoc.exists() ? userDoc.data() : {};
-      let bookmarks = data.bookmarks || [];
-      
-      // Check if the question is already bookmarked
-      const index = bookmarks.indexOf(questionId);
-      
-      // If not bookmarked, add it
-      if (index === -1) {
-        bookmarks.push(questionId);
-      } 
-      // If already bookmarked, remove it (true toggle functionality)
-      else {
-        bookmarks.splice(index, 1);
-      }
-      
-      transaction.set(userDocRef, { bookmarks: bookmarks }, { merge: true });
-    });
-    
-    // Get the updated bookmarks list
-    const updatedBookmarks = await getBookmarks();
-    const isBookmarked = updatedBookmarks.includes(questionId);
-    
-    // Update the current slide's bookmark attribute
-    const currentSlide = document.querySelector(`.swiper-slide[data-id="${questionId}"]`);
-    if (currentSlide) {
-      currentSlide.dataset.bookmarked = isBookmarked ? "true" : "false";
+
+    // Get current bookmarks from Firestore to ensure we have the latest state
+    const userDoc = await getDoc(userDocRef);
+    if (!userDoc.exists()) {
+        console.error("User doc not found for bookmarking.");
+        return false;
     }
-    
-    return isBookmarked;
+
+    const data = userDoc.data();
+    let bookmarks = data.bookmarks || [];
+    const index = bookmarks.indexOf(questionId);
+
+    if (newBookmarkState) { // If we want to add it
+        if (index === -1) bookmarks.push(questionId);
+    } else { // If we want to remove it
+        if (index > -1) bookmarks.splice(index, 1);
+    }
+
+    // Update through the secure Cloud Function
+    if (updateUserProfileFunction) {
+      await updateUserProfileFunction({ bookmarks: bookmarks });
+      console.log(`Bookmark toggled for ${questionId}. New state: ${newBookmarkState}`);
+    } else {
+      throw new Error("updateUserProfileFunction is not available.");
+    }
+
+    return newBookmarkState;
+
   } catch (error) {
     console.error("Error toggling bookmark:", error);
-    return false;
+    // Revert optimistic UI update on error
+    if (currentSlide) {
+        currentSlide.dataset.bookmarked = isCurrentlyBookmarked ? "true" : "false";
+    }
+    if (typeof window.updateBookmarkIcon === 'function') window.updateBookmarkIcon();
+    else if (typeof updateBookmarkIcon === 'function') updateBookmarkIcon();
+    
+    return isCurrentlyBookmarked;
   }
 }
 

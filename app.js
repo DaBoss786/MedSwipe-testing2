@@ -4339,323 +4339,125 @@ async function prepareClaimModal() {
 // --- End of Step 12b ---
 
 
-// app.js
 
 // --- Replace your entire handleCmeClaimSubmission function with this one ---
 
 async function handleCmeClaimSubmission(event) {
-  event.preventDefault(); // Prevent default form submission
-  console.log("CME Claim Form submitted - processing (Firebase Function Version)...");
+  event.preventDefault();
+  console.log("CME Claim Form submitted - calling Cloud Function...");
 
-  // Get elements needed throughout the function
   const errorDiv = document.getElementById("claimModalError");
   const loadingIndicator = document.getElementById('claimLoadingIndicator');
   const submitButton = document.getElementById('submitCmeClaimBtn');
   const cancelButton = document.getElementById('cancelCmeClaimBtn');
   const form = document.getElementById('cmeClaimForm');
   const creditsInput = document.getElementById('creditsToClaimInput');
-  const cmeClaimModal = document.getElementById("cmeClaimModal");
+  const linkContainer = document.getElementById('claimModalLink');
 
-  // --- Helper function for cleanup ---
-  const cleanup = (enableButtons = true, showLoader = false) => {
-      if (loadingIndicator) loadingIndicator.style.display = showLoader ? 'block' : 'none';
-      if (submitButton) submitButton.disabled = !enableButtons || showLoader;
-      if (cancelButton) cancelButton.disabled = !enableButtons || showLoader;
-      if (submitButton) submitButton.style.display = 'inline-block'; // Or 'block' if they are full width
-      if (cancelButton) cancelButton.style.display = 'inline-block'; // Or 'block'
+  // --- UI Helper ---
+  const setUiState = (state) => {
+      if (state === 'loading') {
+          if (loadingIndicator) loadingIndicator.style.display = 'block';
+          if (submitButton) submitButton.disabled = true;
+          if (cancelButton) cancelButton.disabled = true;
+      } else if (state === 'success') {
+          if (loadingIndicator) loadingIndicator.style.display = 'none';
+          if (submitButton) submitButton.style.display = 'none';
+          if (cancelButton) cancelButton.style.display = 'none';
+          if (linkContainer) linkContainer.style.display = 'block';
+      } else { // 'idle' or 'error'
+          if (loadingIndicator) loadingIndicator.style.display = 'none';
+          if (submitButton) submitButton.disabled = false;
+          if (cancelButton) cancelButton.disabled = false;
+      }
   };
 
   // --- Clear previous errors & Show Loader ---
-  if (errorDiv) {
-      errorDiv.textContent = '';
-      errorDiv.style.color = '';
-      errorDiv.style.border = '';
-      errorDiv.style.backgroundColor = '';
-      errorDiv.style.padding = '';
-      errorDiv.style.borderRadius = '';
-      errorDiv.innerHTML = '';
-  }
-  cleanup(false, true); // Disable buttons, show loader
+  if (errorDiv) errorDiv.innerHTML = '';
+  setUiState('loading');
   if(loadingIndicator) loadingIndicator.querySelector('p').textContent = 'Processing claim...';
 
-  // --- Ensure user is still valid ---
-  if (!auth || !auth.currentUser || auth.currentUser.isAnonymous) {
-      if (errorDiv) errorDiv.textContent = "Authentication error. Please log in again.";
-      cleanup(true, false);
-      return;
-  }
-  const uid = auth.currentUser.uid;
-  const userDocRef = doc(db, 'users', uid);
-  const claimTimestamp = new Date();
-  const claimTimestampISO = claimTimestamp.toISOString();
-
   try {
-      // --- 1. Get Form Data & Validate ---
-      const formData = new FormData(form);
-      const creditsToClaim = parseFloat(creditsInput.value);
-      const certificateFullName = formData.get('certificateFullName')?.trim() || '';
-      const certificateDegree = formData.get('certificateDegree');
+    // --- 1. Get Form Data & Validate on Client ---
+    const formData = new FormData(form);
+    const creditsToClaim = parseFloat(creditsInput.value);
+    const certificateFullName = formData.get('certificateFullName')?.trim() || '';
+    const certificateDegree = formData.get('certificateDegree');
 
-      // --- Extract NEW Evaluation Data ---
-      const evaluationData = {
-          certificateFullName: certificateFullName,
-          certificateDegree: certificateDegree,
-          licenseNumber: formData.get('licenseNumber')?.trim() || '',       // <<< NEW
-          locationCity: formData.get('locationCity')?.trim() || '',         // <<< NEW
-          locationState: formData.get('locationState'),                     // <<< NEW
+    const evaluationData = {
+        licenseNumber: formData.get('licenseNumber')?.trim() || '',
+        locationCity: formData.get('locationCity')?.trim() || '',
+        locationState: formData.get('locationState'),
+        desiredOutcome1: formData.get('desiredOutcome1'),
+        desiredOutcome2: formData.get('desiredOutcome2'),
+        desiredOutcome3: formData.get('desiredOutcome3'),
+        desiredOutcome4: formData.get('desiredOutcome4'),
+        desiredOutcome5: formData.get('desiredOutcome5'),
+        practiceChangesText: formData.get('evalPracticeChangesText')?.trim() || '',
+        commercialBiasExplainText: formData.get('evalCommercialBiasExplainText')?.trim() || '',
+    };
 
-          desiredOutcome1: formData.get('desiredOutcome1'),
-          desiredOutcome2: formData.get('desiredOutcome2'),
-          desiredOutcome3: formData.get('desiredOutcome3'),
-          desiredOutcome4: formData.get('desiredOutcome4'),
-          desiredOutcome5: formData.get('desiredOutcome5'),
+    if (!certificateFullName || !certificateDegree || !evaluationData.licenseNumber || !evaluationData.locationCity || !evaluationData.locationState || !evaluationData.desiredOutcome1 || !evaluationData.desiredOutcome2 || !evaluationData.desiredOutcome3 || !evaluationData.desiredOutcome4 || !evaluationData.desiredOutcome5) {
+        throw new Error("Please fill out all required fields in the form.");
+    }
+    if (isNaN(creditsToClaim) || creditsToClaim <= 0 || creditsToClaim % 0.25 !== 0) {
+        throw new Error("Invalid credits amount. Must be positive and in increments of 0.25.");
+    }
 
-          practiceChangesText: formData.get('evalPracticeChangesText')?.trim() || '',
-          commercialBiasExplainText: formData.get('evalCommercialBiasExplainText')?.trim() || '',
-      };
-      // --- End Evaluation Data Extraction ---
+    // --- 2. Call the Cloud Function ---
+    if (!window.generateCmeCertificateFunction) {
+        throw new Error("Certificate service is not available. Please refresh.");
+    }
+    
+    if(loadingIndicator) loadingIndicator.querySelector('p').textContent = 'Generating certificate...';
+    
+    const result = await window.generateCmeCertificateFunction({
+        certificateFullName,
+        creditsToClaim,
+        certificateDegree,
+        evaluationData // Pass all evaluation data
+    });
 
-      // --- Form Validation ---
-      if (!certificateFullName) throw new Error("Please enter your full name.");
-      if (!certificateDegree) throw new Error("Please select your degree.");
-      if (!evaluationData.licenseNumber) throw new Error("Please enter your license number."); // <<< NEW
-      if (!evaluationData.locationCity) throw new Error("Please enter your city.");             // <<< NEW
-      if (!evaluationData.locationState) throw new Error("Please select your state.");           // <<< NEW
+    if (!result.data.success || !result.data.filePath) {
+        throw new Error(result.data.message || "Certificate generation failed on the server.");
+    }
 
-      if (isNaN(creditsToClaim) || creditsToClaim <= 0 || creditsToClaim % 0.25 !== 0) {
-           throw new Error("Invalid credits amount. Must be positive and in increments of 0.25.");
-      }
+    // --- 3. Get Signed URL for Immediate Download ---
+    if(loadingIndicator) loadingIndicator.querySelector('p').textContent = 'Preparing download link...';
+    const filePath = result.data.filePath;
+    const urlResult = await getCertificateDownloadUrlFunction({ filePath });
 
-      // Validation for Desired Outcomes (1-5)
-      if (!evaluationData.desiredOutcome1 ||
-          !evaluationData.desiredOutcome2 ||
-          !evaluationData.desiredOutcome3 ||
-          !evaluationData.desiredOutcome4 ||
-          !evaluationData.desiredOutcome5) {
-           throw new Error("Please answer all 'Desired Outcomes' questions (1-5).");
-      }
-      // The two textareas are optional, so no specific validation for them being empty.
-      // --- End Validation ---
+    if (!urlResult.data.success || !urlResult.data.downloadUrl) {
+        throw new Error("Certificate was created, but the download link could not be generated.");
+    }
 
+    // --- 4. Display Success and Download Link ---
+    const signedUrl = urlResult.data.downloadUrl;
+    const pdfFileName = filePath.split('/').pop();
+    setUiState('success');
+    if (linkContainer) {
+        linkContainer.innerHTML = `
+            <p style="color: #28a745; font-weight: bold; margin-bottom: 10px;">
+                Your CME certificate is ready!
+            </p>
+            <a href="${signedUrl}" target="_blank" download="${pdfFileName}" class="auth-primary-btn" style="display: inline-block; padding: 10px 15px; text-decoration: none; margin-top: 5px; background-color: #28a745; border: none;">
+                Download Certificate
+            </a>
+            <p style="font-size: 0.8em; color: #666; margin-top: 10px;">(Link opens in a new tab and is valid for 15 minutes.)</p>
+        `;
+    }
 
-      // --- 2. Firestore Transaction (Save Claim Data AND Deduct Credits) ---
-      await runTransaction(db, async (transaction) => {
-          console.log("Starting Firestore transaction for claim...");
-          const userDoc = await transaction.get(userDocRef);
-          if (!userDoc.exists()) {
-              throw new Error("User data not found. Cannot process claim.");
-          }
-
-          const data = userDoc.data();
-          const hasActiveAnnualSub = data.cmeSubscriptionActive === true;
-          const cmeStats = data.cmeStats || { creditsEarned: 0, creditsClaimed: 0 };
-          const availableOneTimeCredits = data.cmeCreditsAvailable || 0;
-
-          console.log(`Transaction Check: hasActiveAnnualSub=${hasActiveAnnualSub}, availableOneTimeCredits=${availableOneTimeCredits}`);
-
-          if (!hasActiveAnnualSub && availableOneTimeCredits < creditsToClaim) {
-              throw new Error(`Insufficient credits within transaction. Available: ${availableOneTimeCredits.toFixed(2)}, Trying to claim: ${creditsToClaim}`);
-          }
-
-          const currentClaimedInStats = parseFloat(cmeStats.creditsClaimed || 0);
-          const newCreditsClaimedInStats = currentClaimedInStats + creditsToClaim;
-          const updatedCmeStats = {
-              ...cmeStats,
-              creditsClaimed: parseFloat(newCreditsClaimedInStats.toFixed(2))
-          };
-
-          const newHistoryEntry = {
-              timestamp: claimTimestamp,
-              creditsClaimed: creditsToClaim,
-              evaluationData: evaluationData, // Store the NEWLY structured evaluation data
-          };
-          const updatedHistory = [...(data.cmeClaimHistory || []), newHistoryEntry];
-
-          let updates = {
-              cmeStats: updatedCmeStats,
-              cmeClaimHistory: updatedHistory
-          };
-
-          if (!hasActiveAnnualSub) {
-              const newAvailableCredits = availableOneTimeCredits - creditsToClaim;
-              if (newAvailableCredits < 0) {
-                  throw new Error("Credit balance calculation resulted in negative value. Transaction aborted.");
-              }
-              updates.cmeCreditsAvailable = newAvailableCredits;
-              console.log(`DEDUCTING ${creditsToClaim} credits from cmeCreditsAvailable for user ${uid}. New balance will be: ${newAvailableCredits}`);
-          } else {
-              console.log(`User ${uid} has active annual sub. Skipping deduction from cmeCreditsAvailable.`);
-          }
-
-          console.log("Applying Firestore updates within transaction:", updates);
-          transaction.set(userDocRef, updates, { merge: true });
-          console.log("Firestore Transaction successful.");
-      });
-      // --- End of Firestore Transaction ---
-
-
-      // --- 3. Call the Cloud Function to Generate PDF ---
-      if(loadingIndicator) loadingIndicator.querySelector('p').textContent = 'Generating certificate...';
-      console.log("Calling Firebase Function 'generateCmeCertificate'...");
-
-      if (!auth.currentUser) {
-        console.error("CRITICAL: auth.currentUser is NULL immediately before function call!");
-        if (errorDiv) { errorDiv.textContent = "Authentication error. Please reload and try again."; }
-        cleanup(true, false);
-        return;
-      } else {
-        console.log(`DEBUG: User confirmed before call. UID: ${auth.currentUser.uid}, Email: ${auth.currentUser.email}, Anonymous: ${auth.currentUser.isAnonymous}`);
-        try {
-            await auth.currentUser.getIdTokenResult(true); // Force token refresh
-            console.log("DEBUG: Forced token refresh successful.");
-        } catch (tokenError) {
-            console.error("DEBUG: Error forcing token refresh:", tokenError);
-        }
-      }
-
-      const result = await generateCmeCertificateFunction({
-          certificateFullName: certificateFullName,
-          creditsToClaim: creditsToClaim,
-          certificateDegree: certificateDegree
-      });
-      console.log("Cloud Function result received:", result);
-      // --- End Cloud Function Call ---
-
-      // --- 4. Handle Cloud Function Response (Update History & Get Immediate Link) ---
-      cleanup(false, false);
-
-      // The result now contains a filePath, not a publicUrl
-      if (result.data.success === true && typeof result.data.filePath === 'string') {
-          const filePath = result.data.filePath;
-          const pdfFileName = filePath.split('/').pop();
-          console.log("Certificate generated successfully. File Path:", filePath);
-
-          // First, update the history in Firestore with the permanent filePath
-          try {
-              console.log("Attempting to update Firestore history with certificate filePath...");
-              const userDoc = await getDoc(userDocRef);
-              if (userDoc.exists()) {
-                  let history = userDoc.data().cmeClaimHistory || [];
-                  const historyIndex = history.findIndex(entry =>
-                      entry.timestamp && typeof entry.timestamp.toDate === 'function' &&
-                      entry.timestamp.toDate().toISOString() === claimTimestampISO
-                  );
-                  if (historyIndex > -1) {
-                      history[historyIndex].filePath = filePath;
-                      history[historyIndex].pdfFileName = pdfFileName;
-                      await updateDoc(userDocRef, { cmeClaimHistory: history });
-                      console.log(`Successfully updated history entry at index ${historyIndex} with filePath.`);
-                  }
-              }
-          } catch (updateError) {
-              console.error("Error updating Firestore history with certificate filePath:", updateError);
-          }
-
-          // Track CME credit claim
-    if (analytics && logEvent) {
-      logEvent(analytics, 'cme_credit_claimed', {
-          credits_claimed: creditsToClaim,
-          user_profession: certificateDegree,
-          claim_method: 'annual_subscription', // You might want to make this dynamic
-          certificate_generated: true
-      });
-  }
-
-          // --- NEW PART: Now, immediately get a temporary signed URL to display ---
-          const linkContainer = document.getElementById("claimModalLink");
-          try {
-              if(loadingIndicator) loadingIndicator.querySelector('p').textContent = 'Preparing download link...';
-              if(loadingIndicator) loadingIndicator.style.display = 'block';
-
-              const urlResult = await getCertificateDownloadUrlFunction({ filePath: filePath });
-              
-              if(loadingIndicator) loadingIndicator.style.display = 'none';
-
-              if (urlResult.data.success && urlResult.data.downloadUrl) {
-                  const signedUrl = urlResult.data.downloadUrl;
-                  // Now display the success message WITH the download button
-                  if (linkContainer) {
-                      linkContainer.innerHTML = `
-                          <p style="color: #28a745; font-weight: bold; margin-bottom: 10px;">
-                             Your CME certificate is ready!
-                          </p>
-                          <a href="${signedUrl}"
-                             target="_blank"
-                             download="${pdfFileName}"
-                             class="auth-primary-btn"
-                             style="display: inline-block; padding: 10px 15px; text-decoration: none; margin-top: 5px; background-color: #28a745; border: none;">
-                            Download Certificate
-                          </a>
-                          <p style="font-size: 0.8em; color: #666; margin-top: 10px;">(Link opens in a new tab and is valid for 15 minutes.)</p>
-                      `;
-                      linkContainer.style.display = 'block';
-                      if (submitButton) submitButton.style.display = 'none';
-                      if (cancelButton) cancelButton.style.display = 'none';
-                  }
-              } else {
-                  throw new Error("Failed to get download URL after certificate creation.");
-              }
-          } catch (urlError) {
-              console.error("Could not get immediate download URL:", urlError);
-              // Fallback to the generic success message if getting the URL fails
-              if (linkContainer) {
-                  linkContainer.innerHTML = `
-                      <p style="color: #28a745; font-weight: bold; margin-bottom: 10px;">
-                        🎉 Success! Your certificate has been generated.
-                      </p>
-                      <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
-                        An error occurred creating an immediate download link, but your certificate is saved and available in your CME Claim History.
-                      </p>
-                  `;
-                  linkContainer.style.display = 'block';
-                  if (submitButton) submitButton.style.display = 'none';
-                  if (cancelButton) cancelButton.style.display = 'none';
-              }
-          }
-          
-      } else {
-          // Handle failure as before
-          console.error("Cloud function failed to return success or valid filePath. Result data:", result.data);
-          throw new Error("Certificate generation failed in the cloud function.");
-      }
-      // --- End Handle Cloud Function Response ---
-
-
-      // --- 5. Refresh Dashboard Data ---
-      if (typeof loadCmeDashboardData === 'function') {
-          console.log("Scheduling dashboard data refresh...");
-          setTimeout(loadCmeDashboardData, 500);
-      }
+    // --- 5. Refresh Dashboard Data ---
+    if (typeof loadCmeDashboardData === 'function') {
+        setTimeout(loadCmeDashboardData, 500);
+    }
 
   } catch (error) {
-      console.error("Error during claim processing:", error);
-      cleanup(true, false);
-
+      console.error("Error during claim submission:", error);
+      setUiState('error');
       if (errorDiv) {
-          let displayMessage = `Claim failed: ${error.message}`;
-          // More specific messages based on new validation
-          if (error.message.includes("select your degree")) {
-               displayMessage = error.message;
-          } else if (error.message.includes("Desired Outcomes")) {
-               displayMessage = error.message;
-          } else if (error.message.includes("Insufficient credits")) {
-               displayMessage = error.message;
-          } else if (error.code && error.details) {
-               displayMessage = `Claim failed: ${error.message} (Details: ${error.details})`;
-          }
-
-          errorDiv.textContent = displayMessage;
-          errorDiv.style.color = '#dc3545';
-          errorDiv.style.border = '1px solid #f5c6cb';
-          errorDiv.style.backgroundColor = '#f8d7da';
-          errorDiv.style.padding = '10px';
-          errorDiv.style.borderRadius = '5px';
-          errorDiv.style.textAlign = 'left';
-      } else {
-          alert(`Claim failed: ${error.message}`);
+          errorDiv.innerHTML = `<p style="color: red;">${error.message}</p>`;
       }
-  } finally {
-       console.log("--- CME Claim Form Submission Handler END ---");
   }
 }
 

@@ -97,79 +97,112 @@ async function getActiveYearId() {
 }
 // --- End Helper Function ---
 
+
 // --------------------------------------------------------------------------
-//  generateCmeCertificate  – landscape PDF with centred accreditation + border
+//  generateCmeCertificate  – MODIFIED TO HANDLE CLAIM LOGIC
 // ---------------------------------------------------------------------------
 exports.generateCmeCertificate = onCall(
   {
-    secrets: [], // Ensure no secrets are listed if none are used by this specific function
+    secrets: [], 
     timeoutSeconds: 120,
     memory: "512MiB",
   },
   async (request) => {
-    /* ───────── 1. Auth check ───────── */
+    /* ───────── 1. Auth & Input Validation ───────── */
     if (!request.auth) {
       logger.error("generateCmeCertificate: Unauthenticated access attempt.");
       throw new HttpsError("unauthenticated", "Please log in.");
     }
     const uid = request.auth.uid;
-    logger.info(`generateCmeCertificate called by UID: ${uid}.`);
-    logger.info("Raw request.data received:", JSON.stringify(request.data)); // Log the entire incoming data object
-
-    /* ───────── 2. Input validation ───────── */
-    // Ensure this destructuring line is exactly as follows:
-    const { certificateFullName, creditsToClaim, certificateDegree } = request.data; 
-
-    // Log the destructured values to confirm
-    logger.info("Destructured values:", {
-        fullName: certificateFullName, // Using different key for clarity in logs
-        credits: creditsToClaim,       // Using different key for clarity in logs
-        degree: certificateDegree      // Using different key for clarity in logs
-    });
-    logger.info("Type of certificateDegree after destructuring:", typeof certificateDegree);
-
+    const { certificateFullName, creditsToClaim, certificateDegree, evaluationData } = request.data;
 
     if (!certificateFullName || typeof certificateFullName !== 'string' || certificateFullName.trim() === "") {
-      logger.error("Validation failed: certificateFullName is invalid.", { certificateFullName });
       throw new HttpsError("invalid-argument", "Please provide a valid full name.");
     }
-    if (typeof creditsToClaim !== "number" || creditsToClaim <= 0 || isNaN(creditsToClaim)) {
-      logger.error("Validation failed: creditsToClaim is invalid.", { creditsToClaim });
-      throw new HttpsError("invalid-argument", "Please provide a valid credits amount.");
+    if (typeof creditsToClaim !== "number" || creditsToClaim <= 0 || creditsToClaim % 0.25 !== 0) {
+      throw new HttpsError("invalid-argument", "Invalid credits amount.");
+    }
+    if (!certificateDegree || typeof certificateDegree !== 'string' || certificateDegree.trim() === "") {
+      throw new HttpsError("invalid-argument", "Please provide a valid degree.");
+    }
+    if (!evaluationData || typeof evaluationData !== 'object') {
+        throw new HttpsError("invalid-argument", "Evaluation data is missing or invalid.");
+    }
+    logger.info(`generateCmeCertificate called by UID: ${uid} for ${creditsToClaim} credits.`);
+
+    const claimTimestamp = admin.firestore.Timestamp.now();
+
+    /* ───────── 2. Firestore Transaction (Claim Logic) ───────── */
+    const userRef = db.collection("users").doc(uid);
+    try {
+        await db.runTransaction(async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) {
+                throw new HttpsError("not-found", "User data not found. Cannot process claim.");
+            }
+
+            const data = userDoc.data();
+            const hasActiveAnnualSub = data.cmeSubscriptionActive === true;
+            const cmeStats = data.cmeStats || { creditsEarned: 0, creditsClaimed: 0 };
+            const availableOneTimeCredits = data.cmeCreditsAvailable || 0;
+
+            // Server-side validation of credits
+            if (!hasActiveAnnualSub && availableOneTimeCredits < creditsToClaim) {
+                throw new HttpsError("failed-precondition", `Insufficient credits. Available: ${availableOneTimeCredits.toFixed(2)}, Trying to claim: ${creditsToClaim}`);
+            }
+
+            const newCreditsClaimed = (parseFloat(cmeStats.creditsClaimed) || 0) + creditsToClaim;
+            const updatedCmeStats = { ...cmeStats, creditsClaimed: parseFloat(newCreditsClaimed.toFixed(2)) };
+
+            const newHistoryEntry = {
+                timestamp: claimTimestamp,
+                creditsClaimed: creditsToClaim,
+                evaluationData: evaluationData, // Store the evaluation data from the client
+                // filePath and pdfFileName will be added after PDF generation
+            };
+            const updatedHistory = [...(data.cmeClaimHistory || []), newHistoryEntry];
+
+            let updates = {
+                cmeStats: updatedCmeStats,
+                cmeClaimHistory: updatedHistory,
+            };
+
+            if (!hasActiveAnnualSub) {
+                updates.cmeCreditsAvailable = admin.firestore.FieldValue.increment(-creditsToClaim);
+            }
+
+            transaction.set(userRef, updates, { merge: true });
+            logger.info(`Successfully processed claim transaction for user ${uid}.`);
+        });
+    } catch (error) {
+        logger.error(`Error in CME claim transaction for user ${uid}:`, error);
+        // Re-throw HttpsError or convert other errors
+        if (error instanceof HttpsError) throw error;
+        throw new HttpsError("internal", "Failed to update your credit balance. Please try again.");
     }
 
-    // This is the critical validation for certificateDegree (around line 120 in your error)
-    // Check if certificateDegree is undefined, null, or an empty string after trimming
-    if (certificateDegree === undefined || certificateDegree === null || typeof certificateDegree !== 'string' || certificateDegree.trim() === "") {
-      logger.error("Validation failed: certificateDegree is invalid or missing.", { certificateDegreeValue: certificateDegree, type: typeof certificateDegree });
-      throw new HttpsError("invalid-argument", "Please provide a valid degree. Received: " + certificateDegree);
-    }
-    
-    logger.info(`Validation passed. Name: ${certificateFullName}, Credits: ${creditsToClaim}, Degree: ${certificateDegree}`);
-
-    /* Round credits to nearest 0.25 */
+    /* ───────── 3. PDF Generation (No changes to this part) ───────── */
     const rounded = Math.round(creditsToClaim * 4) / 4;
     let formattedCredits = rounded.toFixed(2);
     if (formattedCredits.endsWith("00") || formattedCredits.endsWith("50"))
       formattedCredits = rounded.toFixed(1);
 
-    const claimDate = new Date().toLocaleDateString("en-US", {
-      month: "long",
-      day:   "numeric",
-      year:  "numeric",
+    const claimDateStr = claimTimestamp.toDate().toLocaleDateString("en-US", {
+      month: "long", day: "numeric", year: "numeric",
     });
 
-    /* ───────── 3. Create PDF (landscape) & fonts ───────── */
     const pdfDoc = await PDFDocument.create();
-    const page   = pdfDoc.addPage([792, 612]);               // 11×8.5 in landscape
+    const page = pdfDoc.addPage([792, 612]);
     const { width, height } = page.getSize();
-
-    const fontBold    = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const fontItalic  = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
-
-    /* ───────── 4. MedSwipe logo (smaller) ───────── */
-    const CENTER_LOGO_FILENAME = "MedSwipe Logo gradient.png";             // adjust if different
+    const fontItalic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+    
+    // ... (The entire PDF drawing logic remains exactly the same as your original function) ...
+    // ... from `const CENTER_LOGO_FILENAME = ...` down to `... y -= nonMdFooterSize + 2;`
+    // This part is long, so I'm omitting it for brevity, but it should be copied from your original function.
+    // For the sake of a complete file, I will paste the full drawing logic here.
+    const CENTER_LOGO_FILENAME = "MedSwipe Logo gradient.png";
     let centerLogoImg  = null;
     let centerLogoDims = { width: 0, height: 0 };
     try {
@@ -177,20 +210,16 @@ exports.generateCmeCertificate = onCall(
       centerLogoImg = CENTER_LOGO_FILENAME.toLowerCase().endsWith(".png")
         ? await pdfDoc.embedPng(bytes)
         : await pdfDoc.embedJpg(bytes);
-      centerLogoDims = centerLogoImg.scale(45 / centerLogoImg.height); // ≈45 px tall
+      centerLogoDims = centerLogoImg.scale(45 / centerLogoImg.height);
     } catch {
       logger.warn(`Logo ${CENTER_LOGO_FILENAME} not found – falling back to text.`);
     }
-
-    /* ───────── 5. Helper drawing functions ───────── */
     const gray = rgb(0.15, 0.15, 0.15);
-
     const center = (txt, font, size, y, col = gray) => {
       const w = font.widthOfTextAtSize(txt, size);
       page.drawText(txt, { x: (width - w) / 2, y, size, font, color: col });
       return y - size - 6;
     };
-
     const centerMixed = (leftTxt, leftFont, rightTxt, rightFont, size, y) => {
       const leftW  = leftFont .widthOfTextAtSize(leftTxt , size);
       const rightW = rightFont.widthOfTextAtSize(rightTxt, size);
@@ -199,60 +228,41 @@ exports.generateCmeCertificate = onCall(
       page.drawText(rightTxt, { x: xStart+leftW , y, size, font: rightFont, color: gray });
       return y - size - 6;
     };
-
-    /* ───────── 6. Draw decorative border ───────── */
-    const borderM   = 24;                                   // margin
+    const borderM   = 24;
     page.drawRectangle({
-      x: borderM,
-      y: borderM,
-      width:  width  - 2 * borderM,
-      height: height - 2 * borderM,
-      borderWidth: 2,
-      borderColor: rgb(0.45, 0.45, 0.45),
+      x: borderM, y: borderM, width:  width  - 2 * borderM, height: height - 2 * borderM,
+      borderWidth: 2, borderColor: rgb(0.45, 0.45, 0.45),
     });
-
-    /* ───────── 7. Draw certificate content ───────── */
-    let y = height - 90;                                    // start near top
-
-    y = center("CME Consultants", fontBold, 24, y);         // bigger
+    let y = height - 90;
+    y = center("CME Consultants", fontBold, 24, y);
     y = center("in association with", fontRegular, 12, y);
-
     if (centerLogoImg) {
       page.drawImage(centerLogoImg, {
-        x: (width - centerLogoDims.width) / 2,
-        y: y - centerLogoDims.height,
-        width:  centerLogoDims.width,
-        height: centerLogoDims.height,
+        x: (width - centerLogoDims.width) / 2, y: y - centerLogoDims.height,
+        width:  centerLogoDims.width, height: centerLogoDims.height,
       });
       y -= centerLogoDims.height + 20;
     } else {
       y = center("MedSwipe", fontBold, 20, y);
       y -= 20;
     }
-
     y = center("Certifies that:", fontRegular, 14, y);
     y = center(certificateFullName, fontBold, 22, y, rgb(0, 0.3, 0.6));
     y = center("has participated in the enduring material titled", fontRegular, 12, y);
     y = center("“MedSwipe ENT CME Module”", fontBold, 14, y);
     y = center("on", fontRegular, 12, y);
-    y = center(claimDate, fontRegular, 14, y); // Date is drawn here
-
-    // --- START OF CONDITIONAL TEXT BLOCK ---
+    y = center(claimDateStr, fontRegular, 14, y);
     if (certificateDegree === "MD" || certificateDegree === "DO") {
         y = center("and is awarded", fontRegular, 12, y);
-        y = centerMixed(`${formattedCredits} `, fontBold,
-                        "AMA PRA Category 1 Credits™", fontItalic, 14, y);
-        y -= 24; // Space before accreditation statement
-
-        /* Accreditation statement for MD/DO – centred across the page */
+        y = centerMixed(`${formattedCredits} `, fontBold, "AMA PRA Category 1 Credits™", fontItalic, 14, y);
+        y -= 24;
         const accLines = [
           "This activity has been planned and implemented in accordance with the",
           "accreditation requirements and policies of the Accreditation Council for",
           "Continuing Medical Education (ACCME) through the joint providership of",
           "CME Consultants and MedSwipe. CME Consultants is accredited by the ACCME",
           "to provide continuing medical education for physicians.",
-          "", // This creates the space above the block
-          // The next two lines are now structured correctly and will appear as one paragraph
+          "",
           "CME Consultants designates this enduring material for a maximum of 24.0 AMA PRA Category 1 Credits™.",
           "Physicians should claim only the credit commensurate with the extent of their participation in the activity."
         ];
@@ -260,52 +270,21 @@ exports.generateCmeCertificate = onCall(
         accLines.forEach((ln) => {
           if (ln.includes("AMA PRA Category 1 Credits™")) {
             const [pre] = ln.split("AMA PRA Category 1 Credits™");
-            const fullW =
-              fontRegular.widthOfTextAtSize(pre, accSize) +
-              fontItalic .widthOfTextAtSize("AMA PRA Category 1 Credits™", accSize);
+            const fullW = fontRegular.widthOfTextAtSize(pre, accSize) + fontItalic.widthOfTextAtSize("AMA PRA Category 1 Credits™", accSize);
             const xStart = (width - fullW) / 2;
-            page.drawText(pre, {
-              x: xStart,
-              y,
-              size: accSize,
-              font: fontRegular,
-              color: gray,
-            });
-            page.drawText("AMA PRA Category 1 Credits™", {
-              x: xStart + fontRegular.widthOfTextAtSize(pre, accSize),
-              y,
-              size: accSize,
-              font: fontItalic,
-              color: gray,
-            });
+            page.drawText(pre, { x: xStart, y, size: accSize, font: fontRegular, color: gray });
+            page.drawText("AMA PRA Category 1 Credits™", { x: xStart + fontRegular.widthOfTextAtSize(pre, accSize), y, size: accSize, font: fontItalic, color: gray });
           } else {
             const w = fontRegular.widthOfTextAtSize(ln, accSize);
-            page.drawText(ln, {
-              x: (width - w) / 2,
-              y,
-              size: accSize,
-              font: ln.startsWith("CME Consultants designates") ? fontBold : fontRegular,
-              color: gray,
-            });
+            page.drawText(ln, { x: (width - w) / 2, y, size: accSize, font: ln.startsWith("CME Consultants designates") ? fontBold : fontRegular, color: gray });
           }
           y -= accSize + 2;
         });
-
-    } else { // For RN, NP, PA-C, PharmD, Other, etc.
+    } else {
         y = center(`and attended ${formattedCredits} hours of this accredited activity.`, fontRegular, 12, y);
-        y -= 6; // Add a small space
-
-        // This helper function draws the text with a mix of regular and italic fonts
-    y = centerMixed(
-      "(This activity was designated for 24.0 ", // Part 1: Regular text
-      fontRegular,
-      "AMA PRA Category 1 Credits™)",            // Part 2: Italic text
-      fontItalic,
-      10,                                        // Font size
-      y
-    );
-    y -= 18; 
-
+        y -= 6;
+        y = centerMixed("(This activity was designated for 24.0 ", fontRegular, "AMA PRA Category 1 Credits™)", fontItalic, 10, y);
+        y -= 18;
         const nonMdFooterLines = [
             "CME Consultants is accredited by the Accreditation Council for Continuing Medical",
             "Education (ACCME) to provide continuing medical education for physicians."
@@ -313,32 +292,47 @@ exports.generateCmeCertificate = onCall(
         const nonMdFooterSize = 9;
         nonMdFooterLines.forEach((ln) => {
             const w = fontRegular.widthOfTextAtSize(ln, nonMdFooterSize);
-            page.drawText(ln, {
-                x: (width - w) / 2,
-                y,
-                size: nonMdFooterSize,
-                font: fontRegular,
-                color: gray,
-            });
+            page.drawText(ln, { x: (width - w) / 2, y, size: nonMdFooterSize, font: fontRegular, color: gray });
             y -= nonMdFooterSize + 2;
         });
     }
-    // --- END OF CONDITIONAL TEXT BLOCK ---
+    // --- End of PDF drawing logic ---
 
-    // --- Replace the old section with this new one ---
-
-    /* ───────── 8. Save, upload, respond ───────── */
+    /* ───────── 4. Save, Upload, and Update History ───────── */
     const pdfBytes = await pdfDoc.save();
     const safeName = certificateFullName.replace(/[^a-zA-Z0-9]/g, "_");
-    // The path is perfect as is, because it includes the UID for our security rules.
-    const filePath = `cme_certificates/${uid}/${Date.now()}_${safeName}_CME.pdf`; 
-    
+    const filePath = `cme_certificates/${uid}/${Date.now()}_${safeName}_CME.pdf`;
+    const pdfFileName = filePath.split('/').pop();
+
     await bucket.file(filePath).save(Buffer.from(pdfBytes), {
       metadata: { contentType: "application/pdf" },
-      // REMOVED: public: true
     });
+    logger.info(`PDF saved to GCS at: ${filePath}`);
 
-    // Return the file's path, NOT a public URL.
+    // Now, update the history entry we created earlier with the file path
+    try {
+        const userDoc = await userRef.get();
+        if (userDoc.exists()) {
+            let history = userDoc.data().cmeClaimHistory || [];
+            // Find the entry by the exact timestamp
+            const historyIndex = history.findIndex(entry =>
+                entry.timestamp && entry.timestamp.isEqual(claimTimestamp)
+            );
+            if (historyIndex > -1) {
+                history[historyIndex].filePath = filePath;
+                history[historyIndex].pdfFileName = pdfFileName;
+                await userRef.update({ cmeClaimHistory: history });
+                logger.info(`Successfully updated history entry at index ${historyIndex} with filePath.`);
+            } else {
+                 logger.error(`Could not find history entry with timestamp ${claimTimestamp.toDate().toISOString()} to update with filePath.`);
+            }
+        }
+    } catch (updateError) {
+        logger.error("Error updating Firestore history with certificate filePath:", updateError);
+        // The PDF is generated, but the link in history is missing. This is not a fatal error for the user at this point.
+    }
+
+    // Return the file path for the client to request a signed URL
     return { success: true, filePath: filePath };
   }
 );
@@ -1185,6 +1179,55 @@ exports.recordCmeAnswerV2 = onCall(
   }
 );
 // --- End Callable Function recordCmeAnswerV2 ---
+
+// --- Cloud Function for Safe User Profile Updates ---
+exports.updateUserProfile = onCall(
+  {
+    region: "us-central1",
+    memory: "256MiB",
+  },
+  async (request) => {
+    // 1. Authentication check
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Please log in first.");
+    }
+    const uid = request.auth.uid;
+    
+    // 2. Define allowed fields that users can update
+    const allowedFields = [
+      'username',
+      'bookmarks', 
+      'answeredQuestions',
+      'streaks',
+      'specialty',
+      'experienceLevel',
+      'marketingOptIn'
+    ];
+    
+    // 3. Validate input data
+    const updateData = request.data || {};
+    const invalidFields = Object.keys(updateData).filter(field => !allowedFields.includes(field));
+    
+    if (invalidFields.length > 0) {
+      throw new HttpsError("invalid-argument", `Cannot update restricted fields: ${invalidFields.join(', ')}`);
+    }
+    
+    // 4. Add timestamp
+    updateData.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+    
+    // 5. Update user document
+    try {
+      const userRef = admin.firestore().collection('users').doc(uid);
+      await userRef.set(updateData, { merge: true });
+      
+      logger.info(`User profile updated for ${uid}. Fields: ${Object.keys(updateData).join(', ')}`);
+      return { success: true };
+    } catch (error) {
+      logger.error(`Error updating user profile for ${uid}:`, error);
+      throw new HttpsError("internal", "Failed to update profile.");
+    }
+  }
+);
 
 // --- MODIFIED LEADERBOARD CLOUD FUNCTION ---
 exports.getLeaderboardData = onCall(
