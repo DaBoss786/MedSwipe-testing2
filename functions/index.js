@@ -1204,6 +1204,51 @@ exports.initializeNewUser = onDocumentCreated("users/{userId}", async (event) =>
   }
 });
 
+// This function is called by the client when an anonymous user finalizes their registration.
+// It safely updates the user's profile with their chosen username and marketing preference.
+exports.finalizeRegistration = onCall(
+  { region: "us-central1", memory: "256MiB" },
+  async (request) => {
+    // 1. Authentication check
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Please log in to register.");
+    }
+    const uid = request.auth.uid;
+    const email = request.auth.token.email; // Get email from the verified token
+
+    // 2. Input validation
+    const { username, marketingOptIn } = request.data;
+    if (!username || typeof username !== 'string' || username.trim().length < 3) {
+      throw new HttpsError("invalid-argument", "A valid username is required.");
+    }
+    if (typeof marketingOptIn !== 'boolean') {
+      throw new HttpsError("invalid-argument", "A valid marketing preference is required.");
+    }
+
+    logger.info(`Finalizing registration for UID: ${uid} with username: ${username}`);
+
+    // 3. Prepare the data to be updated
+    const updateData = {
+      username: username,
+      email: email, // Trust the email from the auth token
+      isRegistered: true, // Safely set by the backend
+      marketingOptIn: marketingOptIn,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    // 4. Update the user document
+    try {
+      const userRef = db.collection('users').doc(uid);
+      await userRef.update(updateData);
+      logger.info(`Successfully finalized registration for user: ${uid}`);
+      return { success: true, message: "Registration complete!" };
+    } catch (error) {
+      logger.error(`Error finalizing registration for ${uid}:`, error);
+      throw new HttpsError("internal", "Failed to update your profile. Please try again.");
+    }
+  }
+);
+
 // --- Cloud Function for Safe User Profile Updates ---
 exports.updateUserProfile = onCall(
   {

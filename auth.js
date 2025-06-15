@@ -4,7 +4,9 @@
 // --- Import necessary functions directly from firebase-config ---
 import {
   auth,                     // Firebase Auth instance
-  db,                       // Firestore instance
+  db, 
+  functions,
+  httpsCallable,                      // Firestore instance
   doc,
   getDoc,
   setDoc,
@@ -20,6 +22,14 @@ import {
   linkWithCredential
   // --- End added ---
 } from './firebase-config.js';
+
+// Create a reference to the new Cloud Function
+let finalizeRegistrationFunction;
+try {
+    finalizeRegistrationFunction = httpsCallable(functions, 'finalizeRegistration');
+} catch (error) {
+    console.error("Error creating finalizeRegistration function reference:", error);
+}
 
 // ----------------------------------------------------
 // Global reference to the auth state listener
@@ -346,40 +356,31 @@ function getCurrentUser() {
 // ----------------------------------------------------
 // Direct email/password registration (not upgrade)
 async function registerUser(email, password, username) {
+  if (!finalizeRegistrationFunction) {
+    throw new Error('Registration service is not available. Please try again later.');
+  }
   try {
     console.log(`registerUser: creating ${email}`);
+    // Step 1: Create the user in Firebase Auth
     const { user } = await createUserWithEmailAndPassword(auth, email, password);
 
+    // Step 2: Update their Auth profile display name
     await updateProfile(user, { displayName: username });
 
+    // Step 3: Create the "slim" user document in Firestore.
+    // The onCreate trigger will then add the sensitive defaults.
     const userDocRef = doc(db, 'users', user.uid);
-    // Get marketing opt-in value from the checkbox
-const marketingOptInCheckbox = document.getElementById('marketingOptIn');
-const marketingOptIn = marketingOptInCheckbox ? marketingOptInCheckbox.checked : false;
+    await setDoc(userDocRef, {
+        username,
+        email,
+        createdAt: serverTimestamp()
+    });
 
-await setDoc(
-  userDocRef,
-  {
-    username,
-    email,
-    isRegistered: true,
-    marketingOptIn: marketingOptIn,
-    mailerLiteSubscriberId: null,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  },
-  { merge: true }
-);
+    // Step 4: Call the secure Cloud Function to finalize the registration fields.
+    const marketingOptIn = document.getElementById('marketingOptIn')?.checked || false;
+    await finalizeRegistrationFunction({ username, marketingOptIn });
 
-    window.authState.user        = user;
-    window.authState.isRegistered = true;
-
-    window.dispatchEvent(
-      new CustomEvent('authStateChanged', {
-        detail: { ...window.authState, isRegistered: true }
-      })
-    );
-
+    // The onAuthStateChanged listener will handle the rest.
     return user;
   } catch (err) {
     console.error('registerUser error:', err);
@@ -395,41 +396,26 @@ async function upgradeAnonymousUser(email, password, username) {
   if (!anonUser || !anonUser.isAnonymous) {
     throw new Error('No anonymous user to upgrade.');
   }
+  if (!finalizeRegistrationFunction) {
+    throw new Error('Registration service is not available. Please try again later.');
+  }
 
   console.log(`Linking anonymous UID ${anonUser.uid} to ${email}…`);
 
   try {
+    // Step 1: Link the auth credential. This turns the anonymous account into a permanent one.
     const cred = EmailAuthProvider.credential(email, password);
     const { user: upgradedUser } = await linkWithCredential(anonUser, cred);
 
+    // Step 2: Update the user's display name in Firebase Auth itself.
     await updateProfile(upgradedUser, { displayName: username });
 
-    const userDocRef = doc(db, 'users', upgradedUser.uid);
-    // Get marketing opt-in value from the checkbox
-const marketingOptInCheckbox = document.getElementById('marketingOptIn');
-const marketingOptIn = marketingOptInCheckbox ? marketingOptInCheckbox.checked : false;
+    // Step 3: Call the secure Cloud Function to update the Firestore document.
+    const marketingOptIn = document.getElementById('marketingOptIn')?.checked || false;
+    await finalizeRegistrationFunction({ username, marketingOptIn });
 
-await setDoc(
-  userDocRef,
-  {
-    username,
-    email,
-    isRegistered: true,
-    marketingOptIn: marketingOptIn,
-    mailerLiteSubscriberId: null,
-    updatedAt: serverTimestamp()
-  },
-  { merge: true }
-);
-
-    window.authState.user        = upgradedUser;
-    window.authState.isRegistered = true;
-
-    window.dispatchEvent(
-      new CustomEvent('authStateChanged', {
-        detail: { ...window.authState, user: upgradedUser, isRegistered: true }
-      })
-    );
+    // The onAuthStateChanged listener will automatically pick up the new state
+    // (isRegistered: true) from the backend and update the UI.
 
     return upgradedUser;
   } catch (err) {
