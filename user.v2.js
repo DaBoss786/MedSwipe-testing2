@@ -356,5 +356,7 @@ export {
   showLevelUpAnimation,
   hideLevelUpModal,
   recordCmeAnswer,
-  saveOnboardingSelections
+  saveOnboardingSelections,
+  updateSpacedRepetitionData,
+  fetchSpacedRepetitionData
 };

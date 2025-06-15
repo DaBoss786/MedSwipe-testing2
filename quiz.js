@@ -1,7 +1,7 @@
-// quiz.js - Final Corrected Version
+// quiz.js - Final Verified Version
 
 import { auth, db, doc, getDoc, collection, getDocs, query, where, analytics, logEvent } from './firebase-config.js';
-// --- CORRECTED IMPORTS: Only import what is needed from user.v2.js ---
+// --- VERIFIED IMPORTS: These now correctly match the exports from the fixed user.v2.js ---
 import { recordAnswer, getBookmarks, updateSpacedRepetitionData, fetchSpacedRepetitionData, recordCmeAnswer } from './user.v2.js';
 import { shuffleArray, getCurrentQuestionId } from './utils.js';
 import { showLeaderboard } from './ui.js';
