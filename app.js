@@ -2320,27 +2320,24 @@ async function checkAndUpdateStreak() {
     await runTransaction(db, async (transaction) => {
       const userDoc = await transaction.get(userDocRef);
       if (!userDoc.exists()) return;
-      
+    
       const data = userDoc.data();
-      if (!data.streaks || !data.streaks.lastAnsweredDate) return;
+      let streaks = data.streaks || { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
       
       const currentDate = new Date();
-      const lastDate = new Date(data.streaks.lastAnsweredDate);
+      const lastDate = new Date(streaks.lastAnsweredDate);
       
-      // Normalize dates to remove time component
       const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const normalizedCurrent = normalizeDate(currentDate);
       const normalizedLast = normalizeDate(lastDate);
       
-      // Calculate difference in days
       const diffDays = Math.round((normalizedCurrent - normalizedLast) / (1000 * 60 * 60 * 24));
       
-      // If more than 1 day has passed, reset the streak
       if (diffDays > 1) {
         console.log("Streak reset due to inactivity. Days since last activity:", diffDays);
-        data.streaks.currentStreak = 0;
-        // NEW, CORRECTED LINE
-transaction.update(userDocRef, { "streaks.currentStreak": 0 });
+        streaks.currentStreak = 0;
+        // Update the entire 'streaks' object
+        transaction.update(userDocRef, { streaks: streaks });
         
         // Update UI to show reset streak
         const currentStreakElement = document.getElementById("currentStreak");
