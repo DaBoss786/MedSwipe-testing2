@@ -2307,46 +2307,50 @@ window.addEventListener('load', function() {
 });
 
 // Function to check if a user's streak should be reset due to inactivity
+// This is the NEW, FINAL, and CORRECTED checkAndUpdateStreak function
 async function checkAndUpdateStreak() {
-  if (!auth || !auth.currentUser) {
-    console.log("User not authenticated yet");
+  if (!auth || !auth.currentUser || auth.currentUser.isAnonymous) {
+    // console.log("User not authenticated yet for streak check");
     return;
   }
-  
+
   try {
     const uid = auth.currentUser.uid;
     const userDocRef = doc(db, 'users', uid);
     
-    await runTransaction(db, async (transaction) => {
-      const userDoc = await transaction.get(userDocRef);
-      if (!userDoc.exists()) return;
-    
-      const data = userDoc.data();
-      let streaks = data.streaks || { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
+    const userDocSnap = await getDoc(userDocRef);
+    if (!userDocSnap.exists()) return;
+
+    const data = userDocSnap.data();
+    let streaks = data.streaks || { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
+
+    if (!streaks.lastAnsweredDate) return; // No streak to check
+
+    const currentDate = new Date();
+    const lastDate = new Date(streaks.lastAnsweredDate);
+
+    const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const normalizedCurrent = normalizeDate(currentDate);
+    const normalizedLast = normalizeDate(lastDate);
+
+    const diffDays = Math.round((normalizedCurrent - normalizedLast) / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 1) {
+      console.log("Streak reset due to inactivity. Days since last activity:", diffDays);
+      streaks.currentStreak = 0;
+      // Perform a direct update, NOT in a transaction
+      await updateDoc(userDocRef, {
+        streaks: streaks
+      });
       
-      const currentDate = new Date();
-      const lastDate = new Date(streaks.lastAnsweredDate);
-      
-      const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      const normalizedCurrent = normalizeDate(currentDate);
-      const normalizedLast = normalizeDate(lastDate);
-      
-      const diffDays = Math.round((normalizedCurrent - normalizedLast) / (1000 * 60 * 60 * 24));
-      
-      if (diffDays > 1) {
-        console.log("Streak reset due to inactivity. Days since last activity:", diffDays);
-        streaks.currentStreak = 0;
-        // Update the entire 'streaks' object
-        transaction.update(userDocRef, { streaks: streaks });
-        
-        // Update UI to show reset streak
-        const currentStreakElement = document.getElementById("currentStreak");
-        if (currentStreakElement) {
-          currentStreakElement.textContent = "0";
-        }
+      // Update UI to show reset streak
+      const currentStreakElement = document.getElementById("currentStreak");
+      if (currentStreakElement) {
+        currentStreakElement.textContent = "0";
       }
-    });
+    }
   } catch (error) {
+    // We expect a permission error here if something is wrong, but the direct update should work.
     console.error("Error checking streak:", error);
   }
 }
