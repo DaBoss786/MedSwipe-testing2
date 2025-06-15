@@ -1653,3 +1653,48 @@ exports.resetUserProgress = onCall({ region: "us-central1" }, async (request) =>
         throw new HttpsError("internal", "An error occurred while resetting your progress.");
     }
 });
+
+// functions/index.js
+
+// --- NEW: This is the secure function that was missing ---
+exports.updateUserProfile = onCall({ region: "us-central1" }, async (request) => {
+  if (!request.auth) {
+      throw new HttpsError("unauthenticated", "You must be logged in to update your profile.");
+  }
+  const uid = request.auth.uid;
+
+  // Define the list of fields that the client is allowed to change.
+  // This is the core of the security.
+  const allowedFields = [
+      'username',
+      'bookmarks',
+      'specialty',
+      'experienceLevel',
+      'marketingOptIn',
+      'spacedRepetition' // Allow spaced repetition data to be saved
+  ];
+
+  const updateData = request.data || {};
+  const invalidFields = Object.keys(updateData).filter(field => !allowedFields.includes(field));
+
+  if (invalidFields.length > 0) {
+      // If the client tries to change a field not in the list (like 'accessTier'), block it.
+      logger.error(`User ${uid} tried to update restricted fields: ${invalidFields.join(', ')}`);
+      throw new HttpsError("invalid-argument", `Cannot update restricted fields: ${invalidFields.join(', ')}`);
+  }
+
+  // Add a timestamp to the update
+  updateData.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+
+  try {
+      const userRef = db.collection('users').doc(uid);
+      // Use set with merge:true to apply the safe updates
+      await userRef.set(updateData, { merge: true });
+
+      logger.info(`User profile updated for ${uid}. Fields: ${Object.keys(updateData).join(', ')}`);
+      return { success: true };
+  } catch (error) {
+      logger.error(`Error updating user profile for ${uid}:`, error);
+      throw new HttpsError("internal", "Failed to update profile.");
+  }
+});

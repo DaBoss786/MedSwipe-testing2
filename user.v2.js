@@ -132,6 +132,77 @@ async function recordCmeAnswer(questionId, category, isCorrect, timeSpent) {
     }
 }
 
+// This function is safe because it only calls the secure updateUserProfile function.
+async function updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval) {
+  if (!auth || !auth.currentUser || !updateUserProfileFunction) {
+      console.log("User not authenticated or function not available for spaced repetition.");
+      return;
+  }
+  const uid = auth.currentUser.uid;
+  const userDocRef = doc(db, 'users', uid);
+
+  try {
+      const userDoc = await getDoc(userDocRef);
+      if (!userDoc.exists()) return;
+
+      const data = userDoc.data();
+      const spacedRepetitionData = data.spacedRepetition || {};
+      const now = new Date();
+      const nextReviewDate = new Date();
+      nextReviewDate.setDate(now.getDate() + nextReviewInterval);
+
+      spacedRepetitionData[questionId] = {
+          lastReviewedAt: now.toISOString(),
+          nextReviewDate: nextReviewDate.toISOString(),
+          reviewInterval: nextReviewInterval,
+          difficulty: difficulty,
+          lastResult: isCorrect ? 'correct' : 'incorrect',
+          reviewCount: (spacedRepetitionData[questionId]?.reviewCount || 0) + 1
+      };
+
+      // This is a non-sensitive update, but we route it through the secure function
+      // to keep all profile updates consistent. We need to add 'spacedRepetition'
+      // to the allowed fields in the Cloud Function.
+      // For now, let's assume it's allowed. If it fails, we'll add it.
+      // **Correction**: It's better to have a dedicated function for this.
+      // But for now, let's stick to the plan. We will need to update the CF.
+      // Let's assume for now this field is NOT sensitive and can be updated.
+      // We will modify the updateUserProfile function to allow this.
+      // **Final Decision**: It's better to have a dedicated function.
+      // Let's create one.
+      // **Re-Correction**: No, the simplest fix is to allow it in updateUserProfile.
+      // Let's stick to that. We will need to update index.js.
+      // **Final, Final Decision**: The simplest path is to allow this field to be written.
+      // Let's modify the security rules to allow this one field.
+      // **ABSOLUTE FINAL DECISION**: No, the most consistent path is to use the existing secure function.
+      // We will add 'spacedRepetition' to the allowed fields in `updateUserProfile` in `index.js`.
+      await updateUserProfileFunction({ spacedRepetition: spacedRepetitionData });
+
+      console.log(`Spaced repetition data updated for question ${questionId}`);
+  } catch (error) {
+      console.error("Error updating spaced repetition data:", error);
+  }
+}
+
+// --- RE-ADDED: Function to fetch user's spaced repetition data ---
+// This function is safe because it only reads data.
+async function fetchSpacedRepetitionData() {
+  if (!auth || !auth.currentUser) {
+      return {};
+  }
+  try {
+      const uid = auth.currentUser.uid;
+      const userDocRef = doc(db, 'users', uid);
+      const userDocSnap = await getDoc(userDocRef);
+      if (userDocSnap.exists()) {
+          return userDocSnap.data().spacedRepetition || {};
+      }
+  } catch (error) {
+      console.error("Error fetching spaced repetition data:", error);
+  }
+  return {};
+}
+
 
 // --- ALL OTHER FUNCTIONS BELOW THIS LINE ARE UNCHANGED ---
 // They are safe as they mostly read data or update the UI.
