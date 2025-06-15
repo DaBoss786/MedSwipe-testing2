@@ -44,284 +44,55 @@ async function fetchPersistentAnsweredIds() {
 
 // Record answer in Firestore with XP calculation
 async function recordAnswer(questionId, category, isCorrect, timeSpent) {
-  if (!auth || !auth.currentUser) {
-    console.log("User not authenticated, can't record answer");
+  if (!auth || !auth.currentUser || !recordAnswerFunction) {
+    console.log("User not authenticated or function not available, can't record answer");
     return;
   }
-  
-  const uid = auth.currentUser.uid;
-  const userDocRef = doc(db, 'users', uid);
-  
-  try {
-    let levelUp = false;
-    let newLevel = 0;
-    let totalXP = 0;
-    
-    await runTransaction(db, async (transaction) => {
-      const userDoc = await getDoc(userDocRef);
-      let data = userDoc.exists() ? userDoc.data() : {};
-      
-      // Initialize stats if needed
-      if (!data.stats) {
-        data.stats = { 
-          totalAnswered: 0, 
-          totalCorrect: 0, 
-          totalIncorrect: 0, 
-          categories: {}, 
-          totalTimeSpent: 0,
-          xp: 0, // Initialize XP
-          level: 1,  // Initialize level
-          achievements: {}, // Initialize achievements tracking
-          currentCorrectStreak: 0 // Track consecutive correct answers
-        };
-      }
-      
-      // Initialize XP if it doesn't exist
-      if (data.stats.xp === undefined) {
-        data.stats.xp = 0;
-      }
-      
-      // Initialize level if it doesn't exist
-      if (data.stats.level === undefined) {
-        data.stats.level = 1;
-      }
-      
-      // Initialize achievements tracking
-      if (!data.stats.achievements) {
-        data.stats.achievements = {};
-      }
-      
-      // Initialize current correct streak
-      if (data.stats.currentCorrectStreak === undefined) {
-        data.stats.currentCorrectStreak = 0;
-      }
-      
-      if (!data.answeredQuestions) {
-        data.answeredQuestions = {};
-      }
-      if (data.answeredQuestions[questionId]) return;
-      
-      // Track consecutive correct answers
-      if (isCorrect) {
-        data.stats.currentCorrectStreak++;
-      } else {
-        data.stats.currentCorrectStreak = 0;
-      }
-      
-      const currentDate = new Date();
-      const currentTimestamp = currentDate.getTime();
-      const currentFormatted = currentDate.toLocaleString();
-      
-      data.answeredQuestions[questionId] = { 
-        isCorrect, 
-        category, 
-        timestamp: currentTimestamp, 
-        timestampFormatted: currentFormatted, 
-        timeSpent 
-      };
-      
-      // Update basic stats
-      data.stats.totalAnswered++;
-      if (isCorrect) {
-        data.stats.totalCorrect++;
-      } else {
-        data.stats.totalIncorrect++;
-      }
-      data.stats.totalTimeSpent = (data.stats.totalTimeSpent || 0) + timeSpent;
-      
-      // Update category stats
-      if (!data.stats.categories[category]) {
-        data.stats.categories[category] = { answered: 0, correct: 0, incorrect: 0 };
-      }
-      data.stats.categories[category].answered++;
-      if (isCorrect) {
-        data.stats.categories[category].correct++;
-      } else {
-        data.stats.categories[category].incorrect++;
-      }
-      
-      // Calculate base XP for this answer
-      let earnedXP = 1; // Base XP for answering
-      let bonusXP = 0; // Track bonus XP
-      let bonusMessages = []; // Track bonus messages
-      
-      if (isCorrect) {
-        earnedXP += 2; // Additional XP for correct answer
-      }
-      
-      // Update streaks
-      const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      let streaks = data.streaks || { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
-      let streakUpdated = false;
-      
-      if (streaks.lastAnsweredDate) {
-        const lastDate = new Date(streaks.lastAnsweredDate);
-        const normalizedCurrent = normalizeDate(currentDate);
-        const normalizedLast = normalizeDate(lastDate);
-        const diffDays = Math.round((normalizedCurrent - normalizedLast) / (1000 * 60 * 60 * 24));
-        
-        if (diffDays === 1) {
-          streaks.currentStreak += 1;
-          streakUpdated = true;
-        } else if (diffDays > 1) {
-          streaks.currentStreak = 1;
-          streakUpdated = true;
-        }
-        
-        streaks.lastAnsweredDate = currentDate.toISOString();
-        
-        if (streaks.currentStreak > streaks.longestStreak) {
-          streaks.longestStreak = streaks.currentStreak;
-        }
-      } else {
-        streaks.lastAnsweredDate = currentDate.toISOString();
-        streaks.currentStreak = 1;
-        streaks.longestStreak = 1;
-        streakUpdated = true;
-      }
-      
-      data.streaks = streaks;
-      
-      // ===== ACHIEVEMENT BONUSES =====
-      
-      // First correct answer bonus (one-time)
-if (isCorrect && data.stats.totalCorrect === 1 && !data.stats.achievements.firstCorrectAnswer) {
-  bonusXP += 5;
-  bonusMessages.push("First correct answer: +5 XP");
-  data.stats.achievements.firstCorrectAnswer = true;
-}
 
-      // First 10 questions answered bonus (one-time)
-      if (data.stats.totalAnswered === 10 && !data.stats.achievements.first10Questions) {
-        bonusXP += 50;
-        bonusMessages.push("First 10 questions answered: +50 XP");
-        data.stats.achievements.first10Questions = true;
-      }
-      
-      // Using the app for 7 days straight (one-time)
-      if (streaks.currentStreak === 7 && !data.stats.achievements.first7DayStreak) {
-        bonusXP += 50;
-        bonusMessages.push("7-day streak achieved: +50 XP");
-        data.stats.achievements.first7DayStreak = true;
-      }
-      
-      // First 5 correct in a row (one-time)
-      if (data.stats.currentCorrectStreak === 5 && !data.stats.achievements.first5Correct) {
-        bonusXP += 20;
-        bonusMessages.push("First 5 correct in a row: +20 XP");
-        data.stats.achievements.first5Correct = true;
-      }
-      
-      // ===== STREAK BONUSES =====
-      
-      // Current day streak bonuses
-      if (streakUpdated) {
-        // Only award these when the streak increments
-        if (streaks.currentStreak === 3) {
-          bonusXP += 5;
-          bonusMessages.push("3-day streak: +5 XP");
-        } else if (streaks.currentStreak === 7) {
-          bonusXP += 15;
-          bonusMessages.push("7-day streak: +15 XP");
-        } else if (streaks.currentStreak === 14) {
-          bonusXP += 30;
-          bonusMessages.push("14-day streak: +30 XP");
-        } else if (streaks.currentStreak === 30) {
-          bonusXP += 75;
-          bonusMessages.push("30-day streak: +75 XP");
-        } else if (streaks.currentStreak === 60) {
-          bonusXP += 150;
-          bonusMessages.push("60-day streak: +150 XP");
-        } else if (streaks.currentStreak === 100) {
-          bonusXP += 500;
-          bonusMessages.push("100-day streak: +500 XP");
-        }
-      }
-      
-      // ===== CORRECT ANSWER MILESTONE BONUSES =====
-      
-      // Correct answer count milestones
-      if (isCorrect) {
-        if (data.stats.totalCorrect === 10) {
-          bonusXP += 10;
-          bonusMessages.push("10 correct answers: +10 XP");
-        } else if (data.stats.totalCorrect === 25) {
-          bonusXP += 25;
-          bonusMessages.push("25 correct answers: +25 XP");
-        } else if (data.stats.totalCorrect === 50) {
-          bonusXP += 75;
-          bonusMessages.push("50 correct answers: +75 XP");
-        }
-      }
-      
-      // ===== CONSECUTIVE CORRECT ANSWER BONUSES =====
-      
-      // Correct answers in a row
-      if (data.stats.currentCorrectStreak === 5) {
-        bonusXP += 10;
-        bonusMessages.push("5 correct in a row: +10 XP");
-      } else if (data.stats.currentCorrectStreak === 10) {
-        bonusXP += 25;
-        bonusMessages.push("10 correct in a row: +25 XP");
-      } else if (data.stats.currentCorrectStreak === 20) {
-        bonusXP += 75;
-        bonusMessages.push("20 correct in a row: +75 XP");
-      }
-      
-      // Add the earned XP to user's total
-      const totalEarnedXP = earnedXP + bonusXP;
-      data.stats.xp += totalEarnedXP;
-      totalXP = data.stats.xp;
-      
-      // Store any earned bonus messages
-      if (bonusMessages.length > 0) {
-        data.stats.lastBonusMessages = bonusMessages;
-      } else {
-        data.stats.lastBonusMessages = null;
-      }
-      
-      // Get old level for comparison
-      const oldLevel = data.stats.level;
-      
-      // Update level based on XP
-      newLevel = calculateLevel(data.stats.xp);
-      data.stats.level = newLevel;
-      
-      // Check if level increased
-      if (newLevel > oldLevel) {
-        levelUp = true;
-      }
-      
-      transaction.set(userDocRef, data, { merge: true });
-    });
-    
-    console.log("Recorded answer for", questionId);
-    
-    // Update user information after recording answer
-    updateUserXP();
-    updateUserMenu();
-    
-    // Update the dashboard if it exists
-    if (typeof initializeDashboard === 'function') {
-      initializeDashboard();
-    }
-    
-    // Show level-up animation if level increased
-    if (levelUp) {
-      setTimeout(() => {
-        showLevelUpAnimation(newLevel, totalXP);
-      }, 1000);
-    }
-    
-  } catch (error) {
-    console.error("Error recording answer:", error);
+  console.log("Optimistically updating UI...");
+  if (typeof window.updateUserXP === 'function') {
+    window.updateUserXP();
   }
-  // Check if registration prompt should be shown (for guest users)
-if (auth && auth.currentUser && auth.currentUser.isAnonymous) {
-  if (typeof window.checkRegistrationPrompt === 'function') {
+
+  try {
+    console.log(`Calling 'recordAnswer' Cloud Function for QID: ${questionId.substring(0, 50)}...`);
+    const result = await recordAnswerFunction({
+      questionId,
+      category,
+      isCorrect,
+      timeSpent
+    });
+
+    const data = result.data;
+    if (data && data.success) {
+      console.log("Server successfully recorded answer.", data);
+      if (typeof window.updateUserXP === 'function') window.updateUserXP();
+      if (typeof window.updateUserMenu === 'function') window.updateUserMenu();
+      if (typeof window.initializeDashboard === 'function') window.initializeDashboard();
+
+      if (data.levelUp) {
+        setTimeout(() => {
+          showLevelUpAnimation(data.newLevel, data.totalXP);
+        }, 1000);
+      }
+    } else {
+      console.error("Server returned an error while recording answer:", data);
+    }
+
+  } catch (error) {
+    console.error("Error calling 'recordAnswer' Cloud Function:", error);
+    alert(`An error occurred: ${error.message}`);
+  }
+
+  if (window.authState.accessTier === "cme_annual" || window.authState.accessTier === "cme_credits_only") {
+    if (typeof recordCmeAnswer === 'function') {
+      recordCmeAnswer(questionId, category, isCorrect, timeSpent);
+    }
+  }
+
+  if (auth.currentUser.isAnonymous && typeof window.checkRegistrationPrompt === 'function') {
     window.checkRegistrationPrompt();
   }
-}
 }
 
 // Calculate level based on XP thresholds

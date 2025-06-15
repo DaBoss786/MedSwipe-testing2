@@ -1435,3 +1435,161 @@ exports.syncUsersToMailerLiteDaily = onSchedule(
     }
   }
 );
+
+exports.upgradeAnonymousAccount = onCall({ region: "us-central1", memory: "256MiB" }, async (request) => {
+    if (!request.auth) {
+        throw new HttpsError("unauthenticated", "Authentication is required to upgrade an account.");
+    }
+    const uid = request.auth.uid;
+    const { email, username, marketingOptIn } = request.data;
+
+    if (!email || !username) {
+        throw new HttpsError("invalid-argument", "Email and username are required.");
+    }
+
+    logger.info(`Attempting to upgrade user ${uid} with email ${email}`);
+
+    try {
+        const userRef = db.collection("users").doc(uid);
+        await userRef.update({
+            isRegistered: true,
+            email: email,
+            username: username,
+            marketingOptIn: marketingOptIn === true,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        await admin.auth().updateUser(uid, {
+            displayName: username,
+            email: email
+        });
+
+        logger.info(`Successfully upgraded user ${uid} to a permanent account.`);
+        return { success: true };
+
+    } catch (error) {
+        logger.error(`Failed to upgrade account for UID ${uid}:`, error);
+        if (error.code === 'auth/email-already-exists') {
+            throw new HttpsError('already-exists', 'This email address is already in use by another account.');
+        }
+        throw new HttpsError("internal", "An error occurred while upgrading your account.");
+    }
+});
+
+exports.recordAnswer = onCall({ region: "us-central1", memory: "512MiB" }, async (request) => {
+    if (!request.auth) {
+        throw new HttpsError("unauthenticated", "You must be logged in to record an answer.");
+    }
+    const uid = request.auth.uid;
+    const { questionId, category, isCorrect, timeSpent } = request.data;
+
+    if (!questionId || typeof isCorrect !== 'boolean') {
+        throw new HttpsError("invalid-argument", "Missing required data: questionId and isCorrect.");
+    }
+
+    const userRef = db.collection("users").doc(uid);
+    const questionStatsRef = db.collection("questionStats").doc(questionId);
+
+    let levelUp = false;
+    let newLevel = 0;
+    let totalXP = 0;
+    let earnedXP = 0;
+
+    try {
+        await db.runTransaction(async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) {
+                throw new HttpsError("not-found", "User document does not exist.");
+            }
+
+            let data = userDoc.data();
+
+            if (!data.stats) data.stats = { xp: 0, level: 1, totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0, achievements: {}, currentCorrectStreak: 0 };
+            if (!data.streaks) data.streaks = { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
+            if (!data.answeredQuestions) data.answeredQuestions = {};
+            if (data.answeredQuestions[questionId]) {
+                logger.info(`User ${uid} already answered question ${questionId}. No action taken.`);
+                return;
+            }
+
+            let baseXP = 1;
+            if (isCorrect) baseXP += 2;
+
+            let bonusXP = 0;
+            if (isCorrect && data.stats.totalCorrect === 9) {
+                bonusXP += 10;
+            }
+
+            earnedXP = baseXP + bonusXP;
+            data.stats.xp += earnedXP;
+            totalXP = data.stats.xp;
+
+            data.stats.totalAnswered++;
+            data.stats.totalCorrect += isCorrect ? 1 : 0;
+            data.stats.totalIncorrect += isCorrect ? 0 : 1;
+            data.stats.currentCorrectStreak = isCorrect ? (data.stats.currentCorrectStreak || 0) + 1 : 0;
+            data.stats.totalTimeSpent = (data.stats.totalTimeSpent || 0) + (timeSpent || 0);
+
+            if (category) {
+                if (!data.stats.categories[category]) data.stats.categories[category] = { answered: 0, correct: 0 };
+                data.stats.categories[category].answered++;
+                if (isCorrect) data.stats.categories[category].correct++;
+            }
+
+            const currentDate = new Date();
+            const normalizeDate = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            if (data.streaks.lastAnsweredDate) {
+                const lastDate = data.streaks.lastAnsweredDate.toDate();
+                const diffDays = Math.round((normalizeDate(currentDate) - normalizeDate(lastDate)) / (1000 * 60 * 60 * 24));
+                if (diffDays === 1) data.streaks.currentStreak++;
+                else if (diffDays > 1) data.streaks.currentStreak = 1;
+            } else {
+                data.streaks.currentStreak = 1;
+            }
+            data.streaks.lastAnsweredDate = admin.firestore.Timestamp.fromDate(currentDate);
+            if (data.streaks.currentStreak > (data.streaks.longestStreak || 0)) {
+                data.streaks.longestStreak = data.streaks.currentStreak;
+            }
+
+            const oldLevel = data.stats.level;
+            const levelThresholds = [0, 30, 75, 150, 250, 400, 600, 850, 1150, 1500, 2000, 2750, 3750, 5000, 6500];
+            let calculatedLevel = 1;
+            for (let i = 1; i < levelThresholds.length; i++) {
+                if (data.stats.xp >= levelThresholds[i]) calculatedLevel = i + 1;
+                else break;
+            }
+            newLevel = calculatedLevel;
+            data.stats.level = newLevel;
+            if (newLevel > oldLevel) {
+                levelUp = true;
+            }
+
+            data.answeredQuestions[questionId] = {
+                isCorrect,
+                timestamp: admin.firestore.FieldValue.serverTimestamp()
+            };
+
+            transaction.set(userRef, data);
+
+            const statsDoc = await transaction.get(questionStatsRef);
+            let qStatsData = statsDoc.exists() ? statsDoc.data() : { totalAttempts: 0, correctAttempts: 0 };
+            qStatsData.totalAttempts = (qStatsData.totalAttempts || 0) + 1;
+            qStatsData.correctAttempts = (qStatsData.correctAttempts || 0) + (isCorrect ? 1 : 0);
+            transaction.set(questionStatsRef, qStatsData);
+        });
+
+        logger.info(`Successfully recorded answer for user ${uid}. XP Earned: ${earnedXP}. Level up: ${levelUp}`);
+        return {
+            success: true,
+            xpEarned: earnedXP,
+            totalXP: totalXP,
+            levelUp: levelUp,
+            newLevel: newLevel
+        };
+
+    } catch (error) {
+        logger.error(`Error recording answer for user ${uid}:`, error);
+        if (error instanceof HttpsError) throw error;
+        throw new HttpsError("internal", "An error occurred while recording your answer.");
+    }
+});

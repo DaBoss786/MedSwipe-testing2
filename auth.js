@@ -390,7 +390,6 @@ await setDoc(
 // Upgrade currently anonymous user to permanent account
 async function upgradeAnonymousUser(email, password, username) {
   const anonUser = auth.currentUser;
-
   if (!anonUser || !anonUser.isAnonymous) {
     throw new Error('No anonymous user to upgrade.');
   }
@@ -401,35 +400,20 @@ async function upgradeAnonymousUser(email, password, username) {
     const cred = EmailAuthProvider.credential(email, password);
     const { user: upgradedUser } = await linkWithCredential(anonUser, cred);
 
-    await updateProfile(upgradedUser, { displayName: username });
+    if (!upgradeAnonymousAccountFunction) {
+        throw new Error("Account upgrade service is not available.");
+    }
 
-    const userDocRef = doc(db, 'users', upgradedUser.uid);
-    // Get marketing opt-in value from the checkbox
-const marketingOptInCheckbox = document.getElementById('marketingOptIn');
-const marketingOptIn = marketingOptInCheckbox ? marketingOptInCheckbox.checked : false;
+    const marketingOptInCheckbox = document.getElementById('marketingOptIn');
+    const marketingOptIn = marketingOptInCheckbox ? marketingOptInCheckbox.checked : false;
 
-await setDoc(
-  userDocRef,
-  {
-    username,
-    email,
-    isRegistered: true,
-    marketingOptIn: marketingOptIn,
-    mailerLiteSubscriberId: null,
-    updatedAt: serverTimestamp()
-  },
-  { merge: true }
-);
+    await upgradeAnonymousAccountFunction({
+        email: email,
+        username: username,
+        marketingOptIn: marketingOptIn
+    });
 
-    window.authState.user        = upgradedUser;
-    window.authState.isRegistered = true;
-
-    window.dispatchEvent(
-      new CustomEvent('authStateChanged', {
-        detail: { ...window.authState, user: upgradedUser, isRegistered: true }
-      })
-    );
-
+    console.log("Successfully called upgrade function. Firestore doc updated on server.");
     return upgradedUser;
   } catch (err) {
     console.error('upgradeAnonymousUser error:', err);
