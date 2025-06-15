@@ -1,7 +1,7 @@
 // app.js - TOP OF FILE
 import { shuffleArray, getCurrentQuestionId } from './utils.js';
 import { auth, db, doc, getDoc, analytics, logEvent, collection, getDocs, query, where } from './firebase-config.js'; // Adjust path if needed
-import { recordAnswer, getBookmarks, updateSpacedRepetitionData, fetchSpacedRepetitionData, recordCmeAnswer } from './user.v2.js';
+import { recordAnswer, getBookmarks, recordCmeAnswer } from './user.v2.js';
 import { showLeaderboard } from './ui.js'; 
 
 // Quiz management variables
