@@ -1249,49 +1249,86 @@ newForm.addEventListener('submit', async function(e) {
   if (errorElement) errorElement.textContent = '';
 
   try {
-    if (window.authState.user && window.authState.user.isAnonymous) {
-      // Pass undefined or null for experience, as it's handled by onboarding
-      await window.authFunctions.upgradeAnonymousUser(email, password, username, null);
-    } else {
-      // Pass undefined or null for experience
-      await window.authFunctions.registerUser(email, password, username, null);
-    }
-
-    if (analytics) {
-      logEvent(analytics, 'sign_up', {
-          method: 'email_password'
-      });
-      console.log("GA Event: sign_up");
-  }
-    
+    // Show the loading screen immediately after hiding the modal
     modalElement.style.display = 'none';
     const postRegLoadingScreen = document.getElementById('postRegistrationLoadingScreen');
-    if ((currentNextStep === 'board_review_pricing' || currentNextStep === 'cme_info') && postRegLoadingScreen) {
-      postRegLoadingScreen.style.display = 'flex';
+    if (postRegLoadingScreen) {
+        postRegLoadingScreen.style.display = 'flex';
     }
 
-    // Handle redirection based on currentNextStep
-    if (currentNextStep === 'board_review_pricing') {
-      sessionStorage.setItem('pendingRedirectAfterRegistration', 'board_review_pricing');
-      // The authStateChanged listener will handle the actual redirect
-    } else if (currentNextStep === 'cme_pricing') {
-      sessionStorage.setItem('pendingRedirectAfterRegistration', 'cme_pricing');
-    } else if (currentNextStep === 'cme_info') {
-      sessionStorage.setItem('pendingRedirectAfterRegistration', 'cme_info');
+    // Step 1: Call the appropriate registration function and WAIT for it to complete.
+    // This now includes the call to the 'finalizeRegistration' Cloud Function.
+    if (window.authState.user && window.authState.user.isAnonymous) {
+        await window.authFunctions.upgradeAnonymousUser(email, password, username);
     } else {
-      // Default to dashboard or main options if no specific redirect
-      const mainOptions = document.getElementById('mainOptions');
-      if (mainOptions) mainOptions.style.display = 'flex';
+        await window.authFunctions.registerUser(email, password, username);
     }
-    // The authStateChanged listener in app.js should now pick up the isRegistered=true
-    // and pendingRedirect to show the correct screen.
-    // ensureEventListenersAttached(); // May not be needed if authStateChanged handles UI fully
-  } catch (error) {
-    console.error("Full registration error object:", error); // <<<--- ADD THIS LINE
-    console.error("Error code:", error.code);                 // <<<--- ADD THIS LINE
-    console.error("Error message:", error.message);           // <<<--- ADD THIS LINE
+
+    // Log GA event after successful registration
+    if (analytics) {
+        logEvent(analytics, 'sign_up', { method: 'email_password' });
+        console.log("GA Event: sign_up");
+    }
+
+    // Step 2: Manually handle the redirect now that we know the backend is finished.
+    // We add a small delay for a smoother user experience.
+    setTimeout(() => {
+        if (postRegLoadingScreen) {
+            postRegLoadingScreen.style.display = 'none';
+        }
+
+        // Hide all other screens to be safe
+        ensureAllScreensHidden();
+
+        switch (currentNextStep) {
+            case 'board_review_pricing':
+                console.log('Registration complete. Manually redirecting to Board Review Pricing.');
+                const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
+                if (boardReviewPricingScreen) {
+                    boardReviewPricingScreen.style.display = 'flex';
+                    if (typeof updateBoardReviewPricingView === 'function') {
+                        updateBoardReviewPricingView('annual');
+                    }
+                }
+                break;
+            case 'cme_pricing':
+                console.log('Registration complete. Manually redirecting to CME Pricing.');
+                const cmePricingScreen = document.getElementById("cmePricingScreen");
+                if (cmePricingScreen) {
+                    cmePricingScreen.style.display = 'flex';
+                }
+                break;
+            case 'cme_info':
+                console.log('Registration complete. Manually redirecting to CME Info.');
+                const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+                if (cmeInfoScreen) {
+                    cmeInfoScreen.style.display = "flex";
+                }
+                break;
+            default:
+                console.log('Registration complete. Manually redirecting to main dashboard.');
+                const mainOptions = document.getElementById('mainOptions');
+                if (mainOptions) {
+                    mainOptions.style.display = 'flex';
+                }
+                break;
+        }
+    }, 1000); // 1-second delay to show "Finalizing..."
+
+} catch (error) {
+    console.error("Full registration error object:", error);
+    console.error("Error code:", error.code);
+    console.error("Error message:", error.message);
     if (errorElement) errorElement.textContent = getAuthErrorMessage(error);
-  }
+
+    // Hide loading screen on error
+    const postRegLoadingScreen = document.getElementById('postRegistrationLoadingScreen');
+    if (postRegLoadingScreen) {
+        postRegLoadingScreen.style.display = 'none';
+    }
+    // Show the modal again so the user can correct their input
+    modalElement.style.display = 'flex';
+}
 });
 }
 
