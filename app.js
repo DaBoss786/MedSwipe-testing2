@@ -9,11 +9,15 @@ import { displayPerformance } from './stats.js';
 
 // Initialize the cloud function handle
 let getLeaderboardDataFunctionApp;
+let resetUserProgressFunction; // --- NEW ---
 try {
   getLeaderboardDataFunctionApp = httpsCallable(functions, 'getLeaderboardData');
+  resetUserProgressFunction = httpsCallable(functions, 'resetUserProgress'); // --- NEW ---
   console.log("✅ getLeaderboardDataFunctionApp initialized");
+  console.log("✅ resetUserProgressFunction initialized");
 } catch (err) {
   console.error("❌ Error initializing getLeaderboardDataFunctionApp:", err);
+  console.error("❌ Error initializing resetUserProgressFunction:", err);
 }
 
 // --- End Callable Function Reference ---
@@ -1487,39 +1491,43 @@ if (manageSubBtn) {
   if (resetProgressUser) {
     resetProgressUser.addEventListener("click", async function(e) {
       e.preventDefault();
-      const confirmReset = confirm("Are you sure you want to reset all progress?");
+      const confirmReset = confirm("Are you sure you want to reset your quiz progress? This will not affect your XP, level, or claimed CME credits.");
       if (!confirmReset) return;
-      
-      if (!auth || !auth.currentUser) {
-        alert("User not authenticated. Please try again later.");
-        return;
+
+      // --- MODIFIED: Call the Cloud Function ---
+      if (!resetUserProgressFunction) {
+          alert("Error: The reset service is currently unavailable. Please try again later.");
+          return;
       }
-      
-      const uid = auth.currentUser.uid;
-      const userDocRef = doc(db, 'users', uid);
+
       try {
-        await runTransaction(db, async (transaction) => {
-          const userDoc = await transaction.get(userDocRef);
-          if (userDoc.exists()) {
-            let data = userDoc.data();
-            data.answeredQuestions = {};
-            data.stats = { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0 };
-            data.streaks = { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
-            transaction.set(userDocRef, data, { merge: true });
-          }
-        });
-        alert("Progress has been reset!");
-        if (typeof updateUserCompositeScore === 'function') {
-          updateUserCompositeScore();
-        }
-        window.updateUserMenu();
+          // Disable the button to prevent multiple clicks
+          this.style.pointerEvents = 'none';
+          this.style.opacity = '0.5';
+
+          await resetUserProgressFunction();
+
+          alert("Your quiz progress has been reset!");
+
+          // Re-enable the button
+          this.style.pointerEvents = 'auto';
+          this.style.opacity = '1';
+
+          // Refresh the UI
+          if (typeof window.updateUserXP === 'function') window.updateUserXP();
+          if (typeof window.updateUserMenu === 'function') window.updateUserMenu();
+          if (typeof window.initializeDashboard === 'function') window.initializeDashboard();
+
       } catch (error) {
-        console.error("Error resetting progress:", error);
-        alert("There was an error resetting your progress.");
+          console.error("Error calling resetUserProgress function:", error);
+          alert(`There was an error resetting your progress: ${error.message}`);
+          this.style.pointerEvents = 'auto';
+          this.style.opacity = '1';
       }
+
       closeUserMenu();
       const cmeDashboard = document.getElementById("cmeDashboardView");
-if (cmeDashboard) cmeDashboard.style.display = "none";
+      if (cmeDashboard) cmeDashboard.style.display = "none";
     });
   }
 

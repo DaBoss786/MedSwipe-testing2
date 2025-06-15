@@ -1,15 +1,7 @@
 // app.js - TOP OF FILE
 import { shuffleArray, getCurrentQuestionId } from './utils.js';
 import { auth, db, doc, getDoc, analytics, logEvent, collection, getDocs, query, where } from './firebase-config.js'; // Adjust path if needed
-import {
-  fetchPersistentAnsweredIds, // <<<--- ADD THIS IMPORT
-  recordAnswer,               // Needed for regular quizzes
-  recordCmeAnswer,            // Needed for CME quizzes
-  updateQuestionStats,        // Needed for regular quizzes
-  getBookmarks,               // Needed for bookmark filtering
-  updateSpacedRepetitionData  // Needed for difficulty buttons
-  // Add any other functions from user.js called within quiz.js
-} from './user.v2.js';
+import { recordAnswer, getBookmarks, updateSpacedRepetitionData, fetchSpacedRepetitionData, recordCmeAnswer } from './user.v2.js';
 import { showLeaderboard } from './ui.js'; 
 
 // Quiz management variables

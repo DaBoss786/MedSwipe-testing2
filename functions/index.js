@@ -1593,3 +1593,63 @@ exports.recordAnswer = onCall({ region: "us-central1", memory: "512MiB" }, async
         throw new HttpsError("internal", "An error occurred while recording your answer.");
     }
 });
+
+// --- NEW: Secure Function to Reset User Progress ---
+exports.resetUserProgress = onCall({ region: "us-central1" }, async (request) => {
+    if (!request.auth) {
+        throw new HttpsError("unauthenticated", "You must be logged in to reset progress.");
+    }
+    const uid = request.auth.uid;
+    const userRef = db.collection("users").doc(uid);
+
+    logger.info(`User ${uid} is resetting their progress.`);
+
+    try {
+        await db.runTransaction(async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) {
+                throw new HttpsError("not-found", "User document not found.");
+            }
+            const existingData = userDoc.data();
+
+            // Preserve essential stats like XP, Level, and Achievements
+            const preservedStats = {
+              xp: existingData.stats?.xp || 0,
+              level: existingData.stats?.level || 1,
+              achievements: existingData.stats?.achievements || {}
+            };
+
+            // Define the fields to be reset
+            const updates = {
+                answeredQuestions: {},
+                stats: {
+                    ...preservedStats, // Keep the preserved stats
+                    // Reset the rest
+                    totalAnswered: 0,
+                    totalCorrect: 0,
+                    totalIncorrect: 0,
+                    categories: {},
+                    totalTimeSpent: 0,
+                    currentCorrectStreak: 0
+                },
+                streaks: {
+                    lastAnsweredDate: null,
+                    currentStreak: 0,
+                    longestStreak: existingData.streaks?.longestStreak || 0 // Keep longest streak
+                },
+                // Also reset CME-related answer logs
+                cmeAnsweredQuestions: {},
+                // DO NOT reset cmeStats, as that is tied to real-world claims
+            };
+            transaction.update(userRef, updates);
+        });
+
+        logger.info(`Successfully reset progress for user ${uid}.`);
+        return { success: true };
+
+    } catch (error) {
+        logger.error(`Failed to reset progress for user ${uid}:`, error);
+        if (error instanceof HttpsError) throw error;
+        throw new HttpsError("internal", "An error occurred while resetting your progress.");
+    }
+});

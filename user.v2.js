@@ -1,5 +1,5 @@
 // user.v2.js
-import { auth, db, doc, getDoc, runTransaction, serverTimestamp, functions, httpsCallable, setDoc } from './firebase-config.js';
+import { auth, db, doc, getDoc, serverTimestamp, functions, httpsCallable, setDoc } from './firebase-config.js';
 
 // --- MODIFIED & CORRECTED: All required function references are now defined here ---
 let recordAnswerFunction;         // For the main game stats
