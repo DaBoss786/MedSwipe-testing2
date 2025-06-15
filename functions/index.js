@@ -4,6 +4,7 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onRequest } = require("firebase-functions/v2/https"); // For webhook
 const { logger } = require("firebase-functions/v2"); // <<<< KEEP THIS ONE (or one like it)
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore"); 
 
 // --- Other Imports ---
 const admin = require("firebase-admin");
@@ -1169,6 +1170,40 @@ exports.recordCmeAnswerV2 = onCall(
 );
 // --- End Callable Function recordCmeAnswerV2 ---
 
+exports.initializeNewUser = onDocumentCreated("users/{userId}", async (event) => {
+  const userDocRef = event.data.ref;
+  const user = event.data.data();
+  const uid = event.params.userId;
+
+  logger.info(`Initializing new user document for UID: ${uid}`);
+
+  // Determine if the user is registered based on whether an email exists.
+  const isRegistered = !!user.email;
+
+  const defaultSensitiveData = {
+    isRegistered: isRegistered,
+    accessTier: "free_guest",
+    boardReviewActive: false,
+    boardReviewSubscriptionEndDate: null,
+    cmeSubscriptionActive: false,
+    cmeSubscriptionEndDate: null,
+    cmeCreditsAvailable: 0,
+    stripeCustomerId: null,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  };
+
+  try {
+    // Use .update() here. It will not overwrite existing fields from the client
+    // like username, createdAt, etc. It only adds the new default fields.
+    await userDocRef.update(defaultSensitiveData);
+    logger.info(`Successfully initialized sensitive fields for user: ${uid}`);
+    return null;
+  } catch (error) {
+    logger.error(`Error initializing user ${uid}:`, error);
+    return null;
+  }
+});
+
 // --- Cloud Function for Safe User Profile Updates ---
 exports.updateUserProfile = onCall(
   {
@@ -1185,12 +1220,11 @@ exports.updateUserProfile = onCall(
     // 2. Define allowed fields that users can update
     const allowedFields = [
       'username',
-      'bookmarks', 
+      'bookmarks',
       'answeredQuestions',
       'streaks',
       'specialty',
       'experienceLevel',
-      'marketingOptIn'
     ];
     
     // 3. Validate input data

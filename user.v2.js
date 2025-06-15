@@ -1189,18 +1189,18 @@ async function saveOnboardingSelections(specialty, experienceLevel) {
       // and some essential defaults. auth.js will later merge/update if needed.
       console.log(`User doc for ${uid} (anonymous) not found during onboarding save. Creating with onboarding data.`);
       const defaultGuestUsername = `Guest${Math.floor(Math.random() * 9000) + 1000}`; // Simple guest name
-      await setDoc(userDocRef, {
-        ...dataToSave,
-        username: defaultGuestUsername, // Provide a default username
-        email: null, // Explicitly null for anonymous
-        createdAt: serverTimestamp(),
-        isRegistered: false, // Explicitly false for anonymous
-        accessTier: "free_guest", // Default tier
-        // Initialize other essential structures if not handled by auth.js immediately
-        stats: { xp: 0, level: 1, totalAnswered: 0, totalCorrect: 0 },
-        bookmarks: [],
-        cmeStats: { creditsEarned: 0, creditsClaimed: 0, totalAnswered: 0, totalCorrect: 0 },
-      });
+      // SLIM WRITE: Only write non-sensitive fields. The backend will add defaults.
+await setDoc(userDocRef, {
+  ...dataToSave,
+  username: defaultGuestUsername,
+  email: null,
+  createdAt: serverTimestamp(),
+  // --- SENSITIVE FIELDS REMOVED ---
+  // isRegistered, accessTier, etc., will be set by a Cloud Function.
+  stats: { xp: 0, level: 1, totalAnswered: 0, totalCorrect: 0 },
+  bookmarks: [],
+  cmeStats: { creditsEarned: 0, creditsClaimed: 0, totalAnswered: 0, totalCorrect: 0 },
+});
       console.log("New user document created with onboarding selections for UID:", uid);
     } else {
       // Document exists, merge the new data

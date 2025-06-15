@@ -104,17 +104,18 @@ function initAuth() {
 
       if (isNewUserDocument) {
         console.log(`User doc for ${user.uid} not found, creating with defaults...`);
+        // SLIM WRITE: Only write non-sensitive fields. The backend will add defaults for sensitive fields.
         userDataForWrite = {
           username: user.isAnonymous
             ? generateGuestUsername()
             : (user.displayName || user.email || `User_${user.uid.substring(0, 5)}`),
           email: user.email || null,
           createdAt: serverTimestamp(),
-          isRegistered: currentAuthIsRegistered,
-          accessTier: "free_guest", // Default for new doc
-          specialty: "ENT", // <<< NEW: Default specialty for brand new users
-          experienceLevel: null, // Will be set by onboarding if they go through it
-
+          // --- SENSITIVE FIELDS REMOVED ---
+          // isRegistered, accessTier, boardReviewActive, etc., will be set by a Cloud Function.
+          specialty: "ENT",
+          experienceLevel: null,
+      
           // Default stats scaffold
           stats: {
             totalAnswered: 0,
