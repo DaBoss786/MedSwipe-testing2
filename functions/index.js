@@ -101,6 +101,7 @@ async function getActiveYearId() {
 // --------------------------------------------------------------------------
 //  generateCmeCertificate  – MODIFIED TO HANDLE CLAIM LOGIC
 // ---------------------------------------------------------------------------
+
 exports.generateCmeCertificate = onCall(
   {
     secrets: [], 
@@ -137,7 +138,7 @@ exports.generateCmeCertificate = onCall(
     try {
         await db.runTransaction(async (transaction) => {
             const userDoc = await transaction.get(userRef);
-            if (!userDoc.exists()) {
+            if (!userDoc.exists) { // <<< FIX #1
                 throw new HttpsError("not-found", "User data not found. Cannot process claim.");
             }
 
@@ -146,7 +147,6 @@ exports.generateCmeCertificate = onCall(
             const cmeStats = data.cmeStats || { creditsEarned: 0, creditsClaimed: 0 };
             const availableOneTimeCredits = data.cmeCreditsAvailable || 0;
 
-            // Server-side validation of credits
             if (!hasActiveAnnualSub && availableOneTimeCredits < creditsToClaim) {
                 throw new HttpsError("failed-precondition", `Insufficient credits. Available: ${availableOneTimeCredits.toFixed(2)}, Trying to claim: ${creditsToClaim}`);
             }
@@ -157,8 +157,7 @@ exports.generateCmeCertificate = onCall(
             const newHistoryEntry = {
                 timestamp: claimTimestamp,
                 creditsClaimed: creditsToClaim,
-                evaluationData: evaluationData, // Store the evaluation data from the client
-                // filePath and pdfFileName will be added after PDF generation
+                evaluationData: evaluationData,
             };
             const updatedHistory = [...(data.cmeClaimHistory || []), newHistoryEntry];
 
@@ -176,7 +175,6 @@ exports.generateCmeCertificate = onCall(
         });
     } catch (error) {
         logger.error(`Error in CME claim transaction for user ${uid}:`, error);
-        // Re-throw HttpsError or convert other errors
         if (error instanceof HttpsError) throw error;
         throw new HttpsError("internal", "Failed to update your credit balance. Please try again.");
     }
@@ -198,10 +196,6 @@ exports.generateCmeCertificate = onCall(
     const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontItalic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
     
-    // ... (The entire PDF drawing logic remains exactly the same as your original function) ...
-    // ... from `const CENTER_LOGO_FILENAME = ...` down to `... y -= nonMdFooterSize + 2;`
-    // This part is long, so I'm omitting it for brevity, but it should be copied from your original function.
-    // For the sake of a complete file, I will paste the full drawing logic here.
     const CENTER_LOGO_FILENAME = "MedSwipe Logo gradient.png";
     let centerLogoImg  = null;
     let centerLogoDims = { width: 0, height: 0 };
@@ -296,7 +290,6 @@ exports.generateCmeCertificate = onCall(
             y -= nonMdFooterSize + 2;
         });
     }
-    // --- End of PDF drawing logic ---
 
     /* ───────── 4. Save, Upload, and Update History ───────── */
     const pdfBytes = await pdfDoc.save();
@@ -309,12 +302,10 @@ exports.generateCmeCertificate = onCall(
     });
     logger.info(`PDF saved to GCS at: ${filePath}`);
 
-    // Now, update the history entry we created earlier with the file path
     try {
         const userDoc = await userRef.get();
-        if (userDoc.exists()) {
+        if (userDoc.exists) { // <<< FIX #2
             let history = userDoc.data().cmeClaimHistory || [];
-            // Find the entry by the exact timestamp
             const historyIndex = history.findIndex(entry =>
                 entry.timestamp && entry.timestamp.isEqual(claimTimestamp)
             );
@@ -329,10 +320,8 @@ exports.generateCmeCertificate = onCall(
         }
     } catch (updateError) {
         logger.error("Error updating Firestore history with certificate filePath:", updateError);
-        // The PDF is generated, but the link in history is missing. This is not a fatal error for the user at this point.
     }
 
-    // Return the file path for the client to request a signed URL
     return { success: true, filePath: filePath };
   }
 );

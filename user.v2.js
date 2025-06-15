@@ -300,7 +300,11 @@ if (isCorrect && data.stats.totalCorrect === 1 && !data.stats.achievements.first
         levelUp = true;
       }
       
-      transaction.set(userDocRef, data, { merge: true });
+      transaction.update(userDocRef, {
+        answeredQuestions: data.answeredQuestions,
+        stats: data.stats,
+        streaks: data.streaks
+    });
     });
     
     console.log("Recorded answer for", questionId);
@@ -703,12 +707,12 @@ async function getOrGenerateUsername() {
     username = userDocSnap.data().username;
   } else {
     username = generateRandomName();
-    await runTransaction(db, async (transaction) => {
-      const docSnap = await transaction.get(userDocRef);
-      let data = docSnap.exists() ? docSnap.data() : {};
-      data.username = username;
-      transaction.set(userDocRef, data, { merge: true });
-    });
+    // in user.v2.js -> getOrGenerateUsername
+await runTransaction(db, async (transaction) => {
+  // We don't need to get the document first if we are only setting one field.
+  // The transaction ensures this is an atomic operation.
+  transaction.update(userDocRef, { username: username });
+});
   }
   return username;
 }
@@ -984,7 +988,10 @@ async function updateSpacedRepetitionData(questionId, isCorrect, difficulty, nex
       };
       
       // Update the user document
-      transaction.set(userDocRef, data, { merge: true });
+      // Inside the runTransaction block...
+transaction.update(userDocRef, {
+  spacedRepetition: data.spacedRepetition
+});
     });
     
     console.log(`Spaced repetition data updated for question ${questionId}`);

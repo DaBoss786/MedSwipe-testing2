@@ -1542,11 +1542,35 @@ if (manageSubBtn) {
         await runTransaction(db, async (transaction) => {
           const userDoc = await transaction.get(userDocRef);
           if (userDoc.exists()) {
-            let data = userDoc.data();
-            data.answeredQuestions = {};
-            data.stats = { totalAnswered: 0, totalCorrect: 0, totalIncorrect: 0, categories: {}, totalTimeSpent: 0 };
-            data.streaks = { lastAnsweredDate: null, currentStreak: 0, longestStreak: 0 };
-            transaction.set(userDocRef, data, { merge: true });
+            const existingData = userDoc.data();
+            
+            // Preserve XP, Level, and Achievements from the existing stats
+            const preservedStats = {
+              xp: existingData.stats?.xp || 0,
+              level: existingData.stats?.level || 1,
+              achievements: existingData.stats?.achievements || {}
+            };
+        
+            // Update the document with reset fields, but include the preserved stats
+            transaction.update(userDocRef, {
+              answeredQuestions: {},
+              stats: { 
+                // Start with the preserved values
+                ...preservedStats,
+                // Then add the reset values
+                totalAnswered: 0, 
+                totalCorrect: 0, 
+                totalIncorrect: 0, 
+                categories: {}, 
+                totalTimeSpent: 0,
+                currentCorrectStreak: 0
+              },
+              streaks: { 
+                lastAnsweredDate: null, 
+                currentStreak: 0, 
+                longestStreak: 0 
+              }
+            });
           }
         });
         alert("Progress has been reset!");
@@ -2315,7 +2339,8 @@ async function checkAndUpdateStreak() {
       if (diffDays > 1) {
         console.log("Streak reset due to inactivity. Days since last activity:", diffDays);
         data.streaks.currentStreak = 0;
-        transaction.set(userDocRef, data, { merge: true });
+        // NEW, CORRECTED LINE
+transaction.update(userDocRef, { "streaks.currentStreak": 0 });
         
         // Update UI to show reset streak
         const currentStreakElement = document.getElementById("currentStreak");
