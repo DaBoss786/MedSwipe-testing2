@@ -1333,12 +1333,34 @@ newForm.addEventListener('submit', async function(e) {
 }
 
 if (goToLoginBtn) {
-const newGoToLoginBtn = goToLoginBtn.cloneNode(true);
-goToLoginBtn.parentNode.replaceChild(newGoToLoginBtn, goToLoginBtn);
-newGoToLoginBtn.addEventListener('click', function() {
-  modalElement.style.display = 'none';
-  if (typeof showLoginForm === 'function') showLoginForm(); // showLoginForm is in app.js
-});
+  // To prevent multiple listeners, we clone and replace the button. This is a good practice.
+  const newGoToLoginBtn = goToLoginBtn.cloneNode(true);
+  goToLoginBtn.parentNode.replaceChild(newGoToLoginBtn, goToLoginBtn);
+
+  // Add the event listener to the new button
+  newGoToLoginBtn.addEventListener('click', function() {
+      console.log("'I Already Have an Account' button clicked inside registration modal.");
+      
+      // Hide the registration modal
+      if (modalElement) {
+          modalElement.style.display = 'none';
+      } else {
+          // Fallback if the modal reference is lost
+          const regModal = document.getElementById('registerModal');
+          if (regModal) regModal.style.display = 'none';
+      }
+
+      // Show the login form
+      if (typeof showLoginForm === 'function') {
+          showLoginForm();
+      } else {
+          console.error("showLoginForm function is not available to be called.");
+          alert("Error opening login form. Please close this and try again.");
+      }
+  });
+  console.log("Event listener attached to 'I Already Have an Account' button.");
+} else {
+  console.error("'goToLoginBtn' not found within the registration modal content.");
 }
 
 if (closeRegisterBtn) {

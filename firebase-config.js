@@ -84,12 +84,3 @@ export {
   query,
   where
 };
-
-// --- TEMPORARY CODE FOR TESTING IN CONSOLE ---
-// This makes the 'db', 'doc', and 'updateDoc' variables available globally for testing.
-// You can remove this section after you have finished testing.
-console.log("Making db, doc, and updateDoc available for testing...");
-window.db = db;
-window.doc = doc;
-window.updateDoc = updateDoc;
-// --- END OF TEMPORARY CODE ---
