@@ -32,15 +32,17 @@ function waitForRecaptcha() {
     
     function checkRecaptcha() {
       attempts++;
-      if (window.grecaptcha && window.grecaptcha.enterprise) {
-        window.grecaptcha.enterprise.ready(() => {
-          console.log("ReCAPTCHA Enterprise is ready");
+      console.log(`Checking for ReCAPTCHA... attempt ${attempts}`);
+      
+      if (window.grecaptcha && window.grecaptcha.ready) {
+        window.grecaptcha.ready(() => {
+          console.log("ReCAPTCHA is ready!");
           resolve();
         });
       } else if (attempts < maxAttempts) {
         setTimeout(checkRecaptcha, 100);
       } else {
-        reject(new Error("ReCAPTCHA Enterprise failed to load"));
+        reject(new Error("ReCAPTCHA failed to load after 5 seconds"));
       }
     }
     
@@ -51,19 +53,29 @@ function waitForRecaptcha() {
 // Initialize App Check after reCAPTCHA is ready
 waitForRecaptcha()
   .then(() => {
-    const appCheck = initializeAppCheck(app, {
-      provider: new ReCaptchaEnterpriseProvider("6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag"),
-      isTokenAutoRefreshEnabled: true
-    });
-    console.log("App Check initialized successfully");
+    console.log("Starting App Check initialization...");
     
-    // Force a token fetch to test
-    appCheck.getToken(true).then((token) => {
-      console.log("App Check token obtained:", token ? "Yes" : "No");
-    });
+    try {
+      const appCheck = initializeAppCheck(app, {
+        provider: new ReCaptchaEnterpriseProvider("6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag"),
+        isTokenAutoRefreshEnabled: true
+      });
+      
+      console.log("App Check initialized successfully!");
+      
+      // Force get a token to verify it's working
+      return appCheck.getToken(true);
+    } catch (error) {
+      console.error("Error during App Check initialization:", error);
+      throw error;
+    }
+  })
+  .then((tokenResponse) => {
+    console.log("App Check token obtained:", tokenResponse.token ? "SUCCESS" : "FAILED");
   })
   .catch((error) => {
     console.error("Failed to initialize App Check:", error);
+    alert("App Check initialization failed. Some features may not work properly.");
   });
 
 const analytics = getAnalytics(app);
@@ -73,6 +85,8 @@ const functionsInstance = getFunctions(app); // Renamed to avoid conflicts
 
 console.log("Firebase initialized successfully");
 console.log("Firebase Functions Client SDK initialized");
+console.log("Checking for ReCAPTCHA:", window.grecaptcha ? "Found" : "Not found");
+console.log("Firebase App Check available:", typeof initializeAppCheck !== 'undefined' ? "Yes" : "No");
 
 // Export initialized services for other modules to import
 export { 
