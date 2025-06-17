@@ -27,35 +27,15 @@ const app = initializeApp(firebaseConfig);
 function waitForRecaptcha() {
   return new Promise((resolve, reject) => {
     let attempts = 0;
-    const maxAttempts = 50; // 5 seconds max wait
-    
-    function checkRecaptcha() {
-      attempts++;
-      console.log(`Checking for ReCAPTCHA... attempt ${attempts}`);
-      
-      // Check for ReCAPTCHA Enterprise specifically
+    const checkRecaptcha = () => {
       if (window.grecaptcha && window.grecaptcha.enterprise) {
-        console.log("ReCAPTCHA Enterprise object found!");
-        // Enterprise doesn't use .ready(), it's immediately available
         resolve();
-      } else if (window.grecaptcha && window.grecaptcha.ready) {
-        // Fallback for regular ReCAPTCHA
-        window.grecaptcha.ready(() => {
-          console.log("ReCAPTCHA is ready!");
-          resolve();
-        });
-      } else if (attempts < maxAttempts) {
+      } else if (++attempts < 50) {
         setTimeout(checkRecaptcha, 100);
       } else {
-        // Let's see what we actually have
-        console.log("ReCAPTCHA check failed. window.grecaptcha:", window.grecaptcha);
-        if (window.grecaptcha) {
-          console.log("Available methods:", Object.keys(window.grecaptcha));
-        }
-        reject(new Error("ReCAPTCHA failed to load after 5 seconds"));
+        reject(new Error("ReCAPTCHA timeout"));
       }
-    }
-    
+    };
     checkRecaptcha();
   });
 }
@@ -63,27 +43,12 @@ function waitForRecaptcha() {
 // Initialize App Check after reCAPTCHA is ready
 waitForRecaptcha()
   .then(() => {
-    console.log("Starting App Check initialization...");
-    
-    try {
-      // Just initialize App Check without trying to get a token
-      initializeAppCheck(app, {
-        provider: new ReCaptchaEnterpriseProvider("6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag"),
-        isTokenAutoRefreshEnabled: true
-      });
-      
-      console.log("App Check initialized successfully!");
-      console.log("App Check will automatically attach tokens to Firebase requests");
-      
-    } catch (error) {
-      console.error("Error during App Check initialization:", error);
-      throw error;
-    }
+    initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider("6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag"),
+      isTokenAutoRefreshEnabled: true
+    });
   })
-  .catch((error) => {
-    console.error("Failed to initialize App Check:", error);
-    console.warn("App Check initialization failed. The app will continue but some features may not work properly.");
-  });
+  .catch(error => console.error("App Check init failed:", error));
 
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
