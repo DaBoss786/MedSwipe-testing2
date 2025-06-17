@@ -24,7 +24,6 @@ const firebaseConfig = {
 // Initialize Firebase services
 const app = initializeApp(firebaseConfig);
 
-// Add this before initializeAppCheck
 function waitForRecaptcha() {
   return new Promise((resolve, reject) => {
     let attempts = 0;
@@ -34,7 +33,13 @@ function waitForRecaptcha() {
       attempts++;
       console.log(`Checking for ReCAPTCHA... attempt ${attempts}`);
       
-      if (window.grecaptcha && window.grecaptcha.ready) {
+      // Check for ReCAPTCHA Enterprise specifically
+      if (window.grecaptcha && window.grecaptcha.enterprise) {
+        console.log("ReCAPTCHA Enterprise object found!");
+        // Enterprise doesn't use .ready(), it's immediately available
+        resolve();
+      } else if (window.grecaptcha && window.grecaptcha.ready) {
+        // Fallback for regular ReCAPTCHA
         window.grecaptcha.ready(() => {
           console.log("ReCAPTCHA is ready!");
           resolve();
@@ -42,6 +47,11 @@ function waitForRecaptcha() {
       } else if (attempts < maxAttempts) {
         setTimeout(checkRecaptcha, 100);
       } else {
+        // Let's see what we actually have
+        console.log("ReCAPTCHA check failed. window.grecaptcha:", window.grecaptcha);
+        if (window.grecaptcha) {
+          console.log("Available methods:", Object.keys(window.grecaptcha));
+        }
         reject(new Error("ReCAPTCHA failed to load after 5 seconds"));
       }
     }
