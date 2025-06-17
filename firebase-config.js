@@ -1,6 +1,8 @@
 import {
   initializeAppCheck,
-  ReCaptchaEnterpriseProvider
+  ReCaptchaEnterpriseProvider,
+  getAppCheck,
+  getToken
 } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app-check.js";
 
 // Firebase App, Analytics, Firestore & Auth (Modular)
@@ -66,15 +68,21 @@ waitForRecaptcha()
     console.log("Starting App Check initialization...");
     
     try {
-      const appCheck = initializeAppCheck(app, {
+      // initializeAppCheck doesn't return the appCheck instance, it initializes globally
+      initializeAppCheck(app, {
         provider: new ReCaptchaEnterpriseProvider("6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag"),
         isTokenAutoRefreshEnabled: true
       });
       
       console.log("App Check initialized successfully!");
       
-      // Force get a token to verify it's working
-      return appCheck.getToken(true);
+      // Import getToken function to test
+      return import("https://www.gstatic.com/firebasejs/11.3.1/firebase-app-check.js")
+        .then(({ getAppCheck, getToken }) => {
+          const appCheckInstance = getAppCheck(app);
+          console.log("Getting App Check token...");
+          return getToken(appCheckInstance, true);
+        });
     } catch (error) {
       console.error("Error during App Check initialization:", error);
       throw error;
@@ -82,10 +90,14 @@ waitForRecaptcha()
   })
   .then((tokenResponse) => {
     console.log("App Check token obtained:", tokenResponse.token ? "SUCCESS" : "FAILED");
+    if (tokenResponse.token) {
+      console.log("Token expires at:", new Date(tokenResponse.expireTimeMillis));
+    }
   })
   .catch((error) => {
     console.error("Failed to initialize App Check:", error);
-    alert("App Check initialization failed. Some features may not work properly.");
+    // Remove the alert for production
+    console.warn("App Check initialization failed. The app will continue but some features may not work properly.");
   });
 
 const analytics = getAnalytics(app);
