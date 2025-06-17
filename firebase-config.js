@@ -26,23 +26,45 @@ const app = initializeApp(firebaseConfig);
 
 // Add this before initializeAppCheck
 function waitForRecaptcha() {
-  return new Promise((resolve) => {
-    if (window.grecaptcha && window.grecaptcha.ready) {
-      window.grecaptcha.ready(() => resolve());
-    } else {
-      setTimeout(() => waitForRecaptcha().then(resolve), 100);
+  return new Promise((resolve, reject) => {
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds max wait
+    
+    function checkRecaptcha() {
+      attempts++;
+      if (window.grecaptcha && window.grecaptcha.enterprise) {
+        window.grecaptcha.enterprise.ready(() => {
+          console.log("ReCAPTCHA Enterprise is ready");
+          resolve();
+        });
+      } else if (attempts < maxAttempts) {
+        setTimeout(checkRecaptcha, 100);
+      } else {
+        reject(new Error("ReCAPTCHA Enterprise failed to load"));
+      }
     }
+    
+    checkRecaptcha();
   });
 }
 
 // Initialize App Check after reCAPTCHA is ready
-waitForRecaptcha().then(() => {
-  initializeAppCheck(app, {
-    provider: new ReCaptchaEnterpriseProvider("6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag"),
-    isTokenAutoRefreshEnabled: true
+waitForRecaptcha()
+  .then(() => {
+    const appCheck = initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider("6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag"),
+      isTokenAutoRefreshEnabled: true
+    });
+    console.log("App Check initialized successfully");
+    
+    // Force a token fetch to test
+    appCheck.getToken(true).then((token) => {
+      console.log("App Check token obtained:", token ? "Yes" : "No");
+    });
+  })
+  .catch((error) => {
+    console.error("Failed to initialize App Check:", error);
   });
-  console.log("App Check initialized successfully");
-});
 
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
