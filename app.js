@@ -4141,31 +4141,6 @@ function showRegistrationBenefitsModal() {
   }
 }
 
-// Counter for tracking questions answered by guest users
-window.guestQuestionsAnswered = 0;
-
-// Function to check if registration prompt should be shown
-function checkRegistrationPrompt() {
-  // Only show prompts for anonymous users
-  if (!auth || !auth.currentUser || !auth.currentUser.isAnonymous) {
-    return;
-  }
-  
-  // Increment the counter
-  window.guestQuestionsAnswered = (window.guestQuestionsAnswered || 0) + 1;
-  
-  // Show registration prompt after every 7-8 questions
-  if (window.guestQuestionsAnswered % 7 === 0) {
-    // Wait a moment before showing the prompt
-    setTimeout(() => {
-      showRegistrationBenefitsModal();
-    }, 1500);
-  }
-}
-
-// Make functions globally available
-window.showRegistrationBenefitsModal = showRegistrationBenefitsModal;
-window.checkRegistrationPrompt = checkRegistrationPrompt;
 
 // Direct fix for the "Continue as Guest" button in the registration benefits modal
 document.addEventListener('DOMContentLoaded', function() {

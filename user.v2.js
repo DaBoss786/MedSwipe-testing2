@@ -328,12 +328,6 @@ if (isCorrect && data.stats.totalCorrect === 1 && !data.stats.achievements.first
   } catch (error) {
     console.error("Error recording answer:", error);
   }
-  // Check if registration prompt should be shown (for guest users)
-if (auth && auth.currentUser && auth.currentUser.isAnonymous) {
-  if (typeof window.checkRegistrationPrompt === 'function') {
-    window.checkRegistrationPrompt();
-  }
-}
 }
 
 // Calculate level based on XP thresholds
