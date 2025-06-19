@@ -5331,15 +5331,16 @@ html, body {
   background: linear-gradient(to bottom right, #F3FAFF, #E6F0FA);
 }
 
-/* Make the card inside the slide take up the full available height */
 .swiper-slide .card {
   width: 100%;
-  height: 100%; /* This makes the card fill the slide vertically */
   max-height: 100%;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  justify-content: center; /* Center the content *inside* the card */
+  justify-content: center;
+  /* FIX: Add margin auto to center the card vertically if its content is short */
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 /* Make the question and explanation text large and readable */
