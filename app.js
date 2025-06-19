@@ -5069,13 +5069,13 @@ if (payPerCreditTabBtn && annualContent && payPerCreditContent) {
 
 
 // --- Add your Stripe Price IDs (Test Mode) ---
-const STRIPE_ANNUAL_PRICE_ID = 'price_1RXcMOJDkW3cIYXuu4xEKrm4'; // Replace with your actual Annual Price ID (price_...)
+const STRIPE_ANNUAL_PRICE_ID = 'price_1RFkDtR9wwfN8hwye6csyxWu'; // Replace with your actual Annual Price ID (price_...)
 // New unit-price for credits:
-const STRIPE_CREDIT_PRICE_ID = 'price_1RXcdsJDkW3cIYXuKTLAM472'; // ← paste your new Price ID
+const STRIPE_CREDIT_PRICE_ID = 'price_1RKXlYR9wwfN8hwyGznI4iXS'; // ← paste your new Price ID
 // --- NEW Board Review Price IDs ---
-const STRIPE_BR_MONTHLY_PRICE_ID = 'price_1RXcRSJDkW3cIYXuS6n0pM0t'; // <<< PASTE YOUR ID HERE
-const STRIPE_BR_3MONTH_PRICE_ID = 'price_1RXcPbJDkW3cIYXusuhRQzqx';   // <<< PASTE YOUR ID HERE
-const STRIPE_BR_ANNUAL_PRICE_ID = 'price_1RXcOnJDkW3cIYXusyl4eKpH';    // <<< PASTE YOUR ID HERE
+const STRIPE_BR_MONTHLY_PRICE_ID = 'price_1RQiFiR9wwfN8hwyGhlAd29R'; // <<< PASTE YOUR ID HERE
+const STRIPE_BR_3MONTH_PRICE_ID = 'price_1RQiFiR9wwfN8hwyfe3FD3VK';   // <<< PASTE YOUR ID HERE
+const STRIPE_BR_ANNUAL_PRICE_ID = 'price_1RQiFiR9wwfN8hwy4PrQYwvj';    // <<< PASTE YOUR ID HERE
 
 // ---
 
