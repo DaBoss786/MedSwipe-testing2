@@ -5300,51 +5300,58 @@ html, body {
 }
 
 /* ======================================================== */
-/* == REVISED STYLES FOR VERTICAL QUIZ WITH TOOLBARS == */
+/* == FINAL STYLES FOR VERTICAL QUIZ WITH TOOLBARS (v3) == */
 /* ======================================================== */
 
 /* Make the swiper container fit perfectly between the toolbars */
 .swiper {
   width: 100%;
-  position: fixed; /* Keep it fixed */
-  top: 50px;       /* Start it exactly 50px from the top (the height of your top toolbar) */
-  bottom: 50px;    /* End it exactly 50px from the bottom (the height of your bottom toolbar) */
+  position: fixed;
+  top: 50px;
+  bottom: 50px;
   left: 0;
   right: 0;
-  margin-top: 0;   /* We no longer need margin-top */
-  height: auto;    /* Let the top/bottom properties define the height */
+  margin-top: 0;
+  height: auto;
   z-index: 1400;
 }
 
-/* Style each slide to fill the swiper container */
+/* Style each slide to also be a full-screen card */
 .swiper-slide {
   display: flex;
   flex-direction: column;
-  justify-content: center; /* Center content vertically */
-  align-items: center;    /* Center content horizontally */
-  padding: 20px; /* Normal padding is fine now */
+  /* FIX FOR MOBILE LAYOUT BUG: Align content to the top, not the center */
+  justify-content: flex-start; 
+  align-items: center;
+  /* Add some padding at the top so the card isn't stuck to the toolbar */
+  padding: 20px; 
   box-sizing: border-box;
   text-align: center;
   height: 100%;
-  background: linear-gradient(to bottom right, #F3FAFF, #E6F0FA); /* Match body background */
+  background: linear-gradient(to bottom right, #F3FAFF, #E6F0FA);
 }
 
-/* Keep the card inside the slide from getting too tall */
+/* Make the card inside the slide take up the full available height */
 .swiper-slide .card {
-  max-height: 95%;
-  overflow-y: auto; /* Allow the card itself to scroll if content is long */
+  width: 100%;
+  height: 100%; /* This makes the card fill the slide vertically */
+  max-height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Center the content *inside* the card */
 }
 
 /* Make the question and explanation text large and readable */
 .question-slide .question, .explanation-slide .explanation {
-  font-size: 1.5rem; /* Much larger font */
+  font-size: 1.5rem;
   line-height: 1.4;
   margin-bottom: 30px;
-  max-width: 600px; /* Keep text from getting too wide on desktop */
+  max-width: 600px;
 }
 
 .explanation-slide .explanation {
-  font-size: 1.1rem; /* Explanation text can be slightly smaller */
+  font-size: 1.1rem;
   text-align: left;
 }
 
@@ -5366,21 +5373,22 @@ html, body {
 
 /* Styles for when an answer is selected */
 .answer-btn.correct {
-  background-color: #28a745; /* Green */
-  border-color: #28a745;
-  color: white;
+  background-color: #28a745 !important; /* Green */
+  border-color: #28a745 !important;
+  color: white !important;
 }
 
 .answer-btn.incorrect {
-  background-color: #dc3545; /* Red */
-  border-color: #dc3545;
-  color: white;
+  background-color: #dc3545 !important; /* Red */
+  border-color: #dc3545 !important;
+  color: white !important;
 }
 
-/* This highlights the correct answer even if the user was wrong */
+/* FIX FOR REVEAL ANSWER BUG: Make this style more powerful */
 .answer-btn.reveal-correct {
-  border-color: #28a745;
-  box-shadow: 0 0 10px rgba(40, 167, 69, 0.7);
+  background-color: #e9f7ef !important; /* A light green background */
+  border-color: #28a745 !important;     /* A strong green border */
+  color: #155724 !important;            /* Dark green text */
 }
 
 /* The "Swipe Up" prompt - NO LONGER NEEDED, so we hide it */
@@ -5390,16 +5398,16 @@ html, body {
 
 /* Reposition the icon bar (favorite/feedback) to be above the bottom toolbar */
 #iconBar {
-  top: auto; /* Remove fixed top positioning */
-  bottom: 60px; /* Position it 10px above the 50px bottom toolbar */
+  top: auto;
+  bottom: 60px;
   right: 20px;
   left: auto;
-  width: auto; /* Let it size to its content */
-  flex-direction: column; /* Stack icons vertically */
+  width: auto;
+  flex-direction: column;
   gap: 15px;
-  background: transparent; /* No background */
-  box-shadow: none; /* No shadow */
-  z-index: 1450; /* Above the swiper slides */
+  background: transparent;
+  box-shadow: none;
+  z-index: 1450;
 }
 
 #iconBar button {
@@ -5413,6 +5421,6 @@ html, body {
 
 /* Ensure the bottom toolbar is visible during the quiz */
 #bottomToolbar {
-  display: flex !important; /* Use !important to ensure it overrides other display:none rules */
-  z-index: 1500; /* Make sure it's on top of the swiper */
+  display: flex !important;
+  z-index: 1500;
 }
