@@ -5298,3 +5298,120 @@ html, body {
   border-left-color: #0C72D3;
   background-color: #f2f7ff;
 }
+
+/* ======================================================== */
+/* == REVISED STYLES FOR VERTICAL QUIZ WITH TOOLBARS == */
+/* ======================================================== */
+
+/* Make the swiper container fit perfectly between the toolbars */
+.swiper {
+  width: 100%;
+  /* Calculate the height: 100% of viewport height MINUS top toolbar (50px) MINUS bottom toolbar (50px) */
+  height: calc(100vh - 100px); 
+  margin-top: 50px; /* Push it down below the top toolbar */
+  position: fixed; /* Keep it fixed in place */
+  top: 0;
+  left: 0;
+  z-index: 1400; /* Below toolbars but above other content */
+}
+
+/* Style each slide to fill the swiper container */
+.swiper-slide {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Center content vertically */
+  align-items: center;    /* Center content horizontally */
+  padding: 20px; /* Normal padding is fine now */
+  box-sizing: border-box;
+  text-align: center;
+  height: 100%;
+  background: linear-gradient(to bottom right, #F3FAFF, #E6F0FA); /* Match body background */
+}
+
+/* Keep the card inside the slide from getting too tall */
+.swiper-slide .card {
+  max-height: 95%;
+  overflow-y: auto; /* Allow the card itself to scroll if content is long */
+}
+
+/* Make the question and explanation text large and readable */
+.question-slide .question, .explanation-slide .explanation {
+  font-size: 1.5rem; /* Much larger font */
+  line-height: 1.4;
+  margin-bottom: 30px;
+  max-width: 600px; /* Keep text from getting too wide on desktop */
+}
+
+.explanation-slide .explanation {
+  font-size: 1.1rem; /* Explanation text can be slightly smaller */
+  text-align: left;
+}
+
+/* Style the answer buttons for the new layout */
+.answer-btn {
+  display: block;
+  width: 100%;
+  max-width: 450px;
+  padding: 15px;
+  margin: 10px auto;
+  font-size: 1.1rem;
+  border: 2px solid #007BFF;
+  background-color: #fff;
+  color: #007BFF;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Styles for when an answer is selected */
+.answer-btn.correct {
+  background-color: #28a745; /* Green */
+  border-color: #28a745;
+  color: white;
+}
+
+.answer-btn.incorrect {
+  background-color: #dc3545; /* Red */
+  border-color: #dc3545;
+  color: white;
+}
+
+/* This highlights the correct answer even if the user was wrong */
+.answer-btn.reveal-correct {
+  border-color: #28a745;
+  box-shadow: 0 0 10px rgba(40, 167, 69, 0.7);
+}
+
+/* The "Swipe Up" prompt - NO LONGER NEEDED, so we hide it */
+.swipe-prompt {
+  display: none;
+}
+
+/* Reposition the icon bar (favorite/feedback) to be above the bottom toolbar */
+#iconBar {
+  top: auto; /* Remove fixed top positioning */
+  bottom: 60px; /* Position it 10px above the 50px bottom toolbar */
+  right: 20px;
+  left: auto;
+  width: auto; /* Let it size to its content */
+  flex-direction: column; /* Stack icons vertically */
+  gap: 15px;
+  background: transparent; /* No background */
+  box-shadow: none; /* No shadow */
+  z-index: 1450; /* Above the swiper slides */
+}
+
+#iconBar button {
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(5px);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* Ensure the bottom toolbar is visible during the quiz */
+#bottomToolbar {
+  display: flex !important; /* Use !important to ensure it overrides other display:none rules */
+  z-index: 1500; /* Make sure it's on top of the swiper */
+}

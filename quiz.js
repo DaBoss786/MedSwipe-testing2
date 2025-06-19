@@ -413,129 +413,116 @@ async function loadQuestionsWithSpacedRepetition(options, allQuestions, answered
   }
 }
 
-// Initialize the quiz with the selected questions
+// FINAL and CORRECT initializeQuiz function
 async function initializeQuiz(questions, quizType = 'regular') {
-    console.log(`Initializing quiz. Type: ${quizType}, Questions: ${questions.length}`); // Log quiz type
-  currentQuizType = quizType; 
+  console.log(`Initializing quiz. Type: ${quizType}, Questions: ${questions.length}`);
+  currentQuizType = quizType;
   questionStartTime = Date.now();
-  // Get starting XP before the quiz begins
-  try {
-    const isOnboardingQuiz = window.isOnboardingQuiz || false;
-    console.log("Initializing quiz, isOnboarding:", isOnboardingQuiz);
-    if (auth && auth.currentUser) {
-      const uid = auth.currentUser.uid;
-      const userDocRef = doc(db, 'users', uid);
-      const userDocSnap = await getDoc(userDocRef);
-      
-      if (userDocSnap.exists()) {
-        const data = userDocSnap.data();
-        sessionStartXP = data.stats?.xp || 0;
-        console.log("Quiz starting XP:", sessionStartXP);
-      }
-    }
-  } catch (error) {
-    console.error("Error getting starting XP:", error);
-    sessionStartXP = 0;
-  }
-  
+
+  // Reset quiz state
   currentQuestion = 0;
   score = 0;
   totalQuestions = questions.length;
   answeredIds = [];
-  updateProgress();
+  updateProgress(); // Call this to reset the progress bar and text to 0
   
-  // Get bookmarks to show the filled star for bookmarked questions
-  const bookmarks = await getBookmarks();
-  
-  const quizSlides = document.getElementById("quizSlides");
-  quizSlides.innerHTML = "";
-  questions.forEach(question => {
-    const questionSlide = document.createElement("div");
-    questionSlide.className = "swiper-slide";
-    const qId = question["Question"].trim();
-    questionSlide.dataset.id = qId;
-    questionSlide.dataset.correct = question["Correct Answer"].trim();
-    questionSlide.dataset.explanation = question["Explanation"];
-    questionSlide.dataset.category = question["Category"] || "Uncategorized";
-    questionSlide.dataset.bookmarked = bookmarks.includes(qId) ? "true" : "false";
-    const cmeEligibleValue = question["CME Eligible"];
-  const isCME = typeof cmeEligibleValue === 'boolean' ? cmeEligibleValue : (cmeEligibleValue && String(cmeEligibleValue).trim().toLowerCase() === 'yes');
-  
-  questionSlide.dataset.cmeEligible = isCME ? "true" : "false";
-
-    questionSlide.innerHTML = `
-      <div class="card">
-        ${isCME ? '<div class="cme-tag">CME Eligible</div>' : ''}
-        <div class="question">${question["Question"]}</div>
-        ${question["Image URL"] && question["Image URL"].trim() !== ""
-          ? `<img src="${question["Image URL"].trim()}" class="question-image">`
-          : "" }
-        <div class="options">
-          ${question["Option A"] && question["Option A"].trim() !== ""
-            ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>`
-            : "" }
-          ${question["Option B"] && question["Option B"].trim() !== ""
-            ? `<button class="option-btn" data-option="B">B. ${question["Option B"]}</button>`
-            : "" }
-          ${question["Option C"] && question["Option C"].trim() !== ""
-            ? `<button class="option-btn" data-option="C">C. ${question["Option C"]}</button>`
-            : "" }
-          ${question["Option D"] && question["Option D"].trim() !== ""
-            ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>`
-            : "" }
-          ${question["Option E"] && question["Option E"] !== ""
-            ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>`
-            : "" }
-        </div>
-        <div class="swipe-hint" style="display:none;">Swipe up for explanation</div>
-      </div>
-    `;
-    quizSlides.appendChild(questionSlide);
-    const answerSlide = document.createElement("div");
-    answerSlide.className = "swiper-slide";
-    answerSlide.innerHTML = `
-      <div class="card">
-        <div class="answer"></div>
-        <p class="swipe-next-hint">Swipe up for next question</p>
-      </div>
-    `;
-    quizSlides.appendChild(answerSlide);
-  });
-
-  window.mySwiper = new Swiper('.swiper', {
-    direction: 'vertical',
-    loop: false,
-    mousewheel: true,
-    touchReleaseOnEdges: true
-  });
-
-  window.mySwiper.on('slideChangeTransitionEnd', function() {
-    const activeIndex = window.mySwiper.activeIndex;
-    const previousIndex = window.mySwiper.previousIndex;
-    if (activeIndex % 2 === 0) {
-      questionStartTime = Date.now();
-      console.log("New question slide. questionStartTime updated to:", questionStartTime);
-      updateBookmarkIcon();
-    }
-    if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
-      const prevSlide = window.mySwiper.slides[activeIndex - 1];
-      const card = prevSlide.querySelector('.card');
-      if (!card.classList.contains('answered')) {
-        window.mySwiper.slideNext();
+  // Get user's starting XP
+  sessionStartXP = 0; // Reset for new quiz
+  if (auth && auth.currentUser) {
+      try {
+          const userDocRef = doc(db, 'users', auth.currentUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+              sessionStartXP = userDocSnap.data().stats?.xp || 0;
+          }
+      } catch (error) {
+          console.error("Error getting starting XP:", error);
       }
-    }
+  }
+  console.log("Quiz starting XP:", sessionStartXP);
+
+  const bookmarks = await getBookmarks();
+  const quizSlides = document.getElementById("quizSlides");
+  quizSlides.innerHTML = ""; // Clear old slides
+
+  // Create a pair of slides (Question + Explanation) for each question
+  questions.forEach(question => {
+      const qId = question["Question"].trim();
+      const isBookmarked = bookmarks.includes(qId);
+      const cmeEligibleValue = question["CME Eligible"];
+      const isCME = typeof cmeEligibleValue === 'boolean' ? cmeEligibleValue : (cmeEligibleValue && String(cmeEligibleValue).trim().toLowerCase() === 'yes');
+
+      // --- 1. Create the Question Slide ---
+      const questionSlide = document.createElement("div");
+      questionSlide.className = "swiper-slide question-slide";
+      questionSlide.dataset.id = qId;
+      questionSlide.dataset.correct = question["Correct Answer"].trim();
+      questionSlide.dataset.explanation = question["Explanation"];
+      questionSlide.dataset.category = question["Category"] || "Uncategorized";
+      questionSlide.dataset.bookmarked = isBookmarked ? "true" : "false";
+      questionSlide.dataset.cmeEligible = isCME ? "true" : "false";
+
+      questionSlide.innerHTML = `
+          <div class="card">
+              ${isCME ? '<div class="cme-tag">CME Eligible</div>' : ''}
+              <div class="question">${question["Question"]}</div>
+              ${question["Image URL"] ? `<img src="${question["Image URL"].trim()}" class="question-image">` : ""}
+              <div class="options">
+                  ${question["Option A"] ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>` : ""}
+                  ${question["Option B"] ? `<button class="option-btn" data-option="B">B. ${question["Option B"]}</button>` : ""}
+                  ${question["Option C"] ? `<button class="option-btn" data-option="C">C. ${question["Option C"]}</button>` : ""}
+                  ${question["Option D"] ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>` : ""}
+                  ${question["Option E"] ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>` : ""}
+              </div>
+          </div>
+          <!-- The swipe prompt is now removed from HTML and handled by the persistent bottom bar -->
+      `;
+      quizSlides.appendChild(questionSlide);
+
+      // --- 2. Create the Explanation Slide ---
+      const answerSlide = document.createElement("div");
+      answerSlide.className = "swiper-slide explanation-slide";
+      answerSlide.innerHTML = `
+          <div class="card">
+              <div class="answer"></div>
+          </div>
+      `;
+      quizSlides.appendChild(answerSlide);
+  });
+
+  // Destroy any existing Swiper instance to prevent errors
+  if (window.mySwiper && typeof window.mySwiper.destroy === 'function') {
+      window.mySwiper.destroy(true, true);
+  }
+
+  // --- 3. Initialize the new Swiper with Vertical settings ---
+  window.mySwiper = new Swiper('.swiper', {
+      direction: 'vertical',
+      loop: false,
+      allowTouchMove: false, // **IMPORTANT: Lock swiping by default**
+      mousewheel: true,
+      touchReleaseOnEdges: true,
+      on: {
+          slideChange: function () {
+              if (this.activeIndex % 2 === 0) {
+                  console.log("New question slide. Locking swipe.");
+                  this.allowTouchMove = false; // Re-lock the swiper
+                  updateBookmarkIcon();
+                  questionStartTime = Date.now();
+              }
+          },
+      },
   });
 
   addOptionListeners();
-  
-  // Set the initial bookmark icon state for the first question
   updateBookmarkIcon();
 
+  // Show the quiz and hide other views
   document.querySelector(".swiper").style.display = "block";
-  document.getElementById("bottomToolbar").style.display = "flex";
+  document.getElementById("iconBar").style.display = "flex";
+  document.getElementById("bottomToolbar").style.display = "flex"; // **THIS IS THE KEY CHANGE**
   document.getElementById("mainOptions").style.display = "none";
   document.getElementById("performanceView").style.display = "none";
-  document.getElementById("iconBar").style.display = "flex";
   document.getElementById("aboutView").style.display = "none";
   document.getElementById("faqView").style.display = "none";
 }
