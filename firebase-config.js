@@ -1,7 +1,3 @@
-import {
-  initializeAppCheck,
-  ReCaptchaEnterpriseProvider
-} from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app-check.js";
 
 // Firebase App, Analytics, Firestore & Auth (Modular)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
@@ -12,43 +8,17 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
-  authDomain: "medswipe-648ee.firebaseapp.com",
-  projectId: "medswipe-648ee",
-  storageBucket: "medswipe-648ee.firebasestorage.app",
-  messagingSenderId: "288366122490",
-  appId: "1:288366122490:web:1c150c48c8aed4e27f0043",
-  measurementId: "G-748P8P634B"
+  apiKey: "AIzaSyAK2_9t_toM9HbYhkKBOk25uSzemrWwJIw",
+  authDomain: "medswipe-testing.firebaseapp.com",
+  projectId: "medswipe-testing",
+  storageBucket: "medswipe-testing.firebasestorage.app",
+  messagingSenderId: "278044870445",
+  appId: "1:278044870445:web:d4d2b39b411bd442aa75a4",
+  measurementId: "G-YP85WBMM0S"
 };
 
 // Initialize Firebase services
 const app = initializeApp(firebaseConfig);
-
-function waitForRecaptcha() {
-  return new Promise((resolve, reject) => {
-    let attempts = 0;
-    const checkRecaptcha = () => {
-      if (window.grecaptcha && window.grecaptcha.enterprise) {
-        resolve();
-      } else if (++attempts < 50) {
-        setTimeout(checkRecaptcha, 100);
-      } else {
-        reject(new Error("ReCAPTCHA timeout"));
-      }
-    };
-    checkRecaptcha();
-  });
-}
-
-// Initialize App Check after reCAPTCHA is ready
-waitForRecaptcha()
-  .then(() => {
-    initializeAppCheck(app, {
-      provider: new ReCaptchaEnterpriseProvider("6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag"),
-      isTokenAutoRefreshEnabled: true
-    });
-  })
-  .catch(error => console.error("App Check init failed:", error));
 
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
