@@ -5306,13 +5306,14 @@ html, body {
 /* Make the swiper container fit perfectly between the toolbars */
 .swiper {
   width: 100%;
-  /* Calculate the height: 100% of viewport height MINUS top toolbar (50px) MINUS bottom toolbar (50px) */
-  height: calc(100vh - 100px); 
-  margin-top: 50px; /* Push it down below the top toolbar */
-  position: fixed; /* Keep it fixed in place */
-  top: 0;
+  position: fixed; /* Keep it fixed */
+  top: 50px;       /* Start it exactly 50px from the top (the height of your top toolbar) */
+  bottom: 50px;    /* End it exactly 50px from the bottom (the height of your bottom toolbar) */
   left: 0;
-  z-index: 1400; /* Below toolbars but above other content */
+  right: 0;
+  margin-top: 0;   /* We no longer need margin-top */
+  height: auto;    /* Let the top/bottom properties define the height */
+  z-index: 1400;
 }
 
 /* Style each slide to fill the swiper container */
