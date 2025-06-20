@@ -733,12 +733,9 @@ html, body {
 
 .swipe-hint {
   font-size: 0.85rem;
-  margin-top: 8px;
+  margin-top: 10px;
   color: #666;
-  display: block !important; /* Force visible */
-  text-align: center; /* Center the text */
-  padding: 5px; /* Add some padding */
-  background-color: #f0f0f0; /* Temporary background to see if element exists */
+  text-align: center;
 }
 
 .answer {
