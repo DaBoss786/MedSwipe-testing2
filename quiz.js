@@ -669,9 +669,14 @@ function addOptionListeners() {
           });
           if (!isCorrect) { this.classList.add('incorrect'); }
           const hint = card.querySelector('.swipe-hint');
+          console.log("Found hint element:", hint); // Debug log
           if (hint) { 
+            console.log("Updating hint text"); // Debug log
             hint.textContent = 'Swipe up for explanation';
-            hint.style.color = '#28a745'; // Optional: make it green when unlocked
+            hint.style.color = '#28a745';
+            hint.style.display = 'block'; // Force it to be visible
+          } else {
+            console.log("Hint element not found!"); // Debug log
           }
           const answerSlide = questionSlide.nextElementSibling;
 
