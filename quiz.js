@@ -464,7 +464,7 @@ async function initializeQuiz(questions, quizType = 'regular') {
   questionSlide.dataset.cmeEligible = isCME ? "true" : "false";
 
     questionSlide.innerHTML = `
-      <div class="card quiz-locked">
+      <div class="card">
         ${isCME ? '<div class="cme-tag">CME Eligible</div>' : ''}
         <div class="question">${question["Question"]}</div>
         ${question["Image URL"] && question["Image URL"].trim() !== ""
@@ -487,8 +487,6 @@ async function initializeQuiz(questions, quizType = 'regular') {
             ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>`
             : "" }
         </div>
-        </div>
-        <p class="answer-hint">Select an answer to continue</p>
         <div class="swipe-hint" style="display:none;">Swipe up for explanation</div>
       </div>
     `;
@@ -633,14 +631,7 @@ function addOptionListeners() {
           if (card.classList.contains('answered')) return;
           card.classList.add('answered');
           // Unlock swiping now that question is answered
-          card.classList.remove('quiz-locked');
-          card.classList.add('quiz-unlocked');
           
-          // Hide the answer hint
-          const answerHint = card.querySelector('.answer-hint');
-          if (answerHint) {
-            answerHint.style.display = 'none';
-          }
           if (window.mySwiper) {
             window.mySwiper.allowSlideNext = true;
             console.log("Unlocked swiping after answer selection");
