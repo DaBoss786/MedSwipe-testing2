@@ -487,7 +487,7 @@ async function initializeQuiz(questions, quizType = 'regular') {
             ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>`
             : "" }
         </div>
-        <div class="swipe-hint" style="display:none;">Swipe up for explanation</div>
+        <div class="swipe-hint">Select an answer to continue</div>
       </div>
     `;
     quizSlides.appendChild(questionSlide);
@@ -669,7 +669,10 @@ function addOptionListeners() {
           });
           if (!isCorrect) { this.classList.add('incorrect'); }
           const hint = card.querySelector('.swipe-hint');
-          if (hint) { hint.style.display = 'block'; }
+          if (hint) { 
+            hint.textContent = 'Swipe up for explanation';
+            hint.style.color = '#28a745'; // Optional: make it green when unlocked
+          }
           const answerSlide = questionSlide.nextElementSibling;
 
           if (answerSlide) {
