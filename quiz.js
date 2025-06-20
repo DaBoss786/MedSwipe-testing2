@@ -511,47 +511,6 @@ async function initializeQuiz(questions, quizType = 'regular') {
     allowSlidePrev: true   // Allow going back
   });
 
-  // Add feedback for locked swipe attempts
-  window.mySwiper.on('touchStart', function() {
-    const activeIndex = window.mySwiper.activeIndex || 0;
-    
-    // Only check on question slides (even index)
-    if (activeIndex % 2 === 0 && !window.mySwiper.allowSlideNext) {
-      const currentSlide = window.mySwiper.slides[activeIndex];
-      if (currentSlide) {
-        const card = currentSlide.querySelector('.card');
-        if (card && !card.classList.contains('answered')) {
-          // Add bounce animation
-          card.classList.add('swipe-locked-bounce');
-          setTimeout(() => {
-            card.classList.remove('swipe-locked-bounce');
-          }, 300);
-          
-          // Optional: Show a message
-          showLockedMessage(card);
-        }
-      }
-    }
-  });
-  
-  // Also handle mouse wheel attempts
-  window.mySwiper.on('scroll', function(event) {
-    const activeIndex = window.mySwiper.activeIndex || 0;
-    
-    if (activeIndex % 2 === 0 && !window.mySwiper.allowSlideNext && event.deltaY > 0) {
-      const currentSlide = window.mySwiper.slides[activeIndex];
-      if (currentSlide) {
-        const card = currentSlide.querySelector('.card');
-        if (card && !card.classList.contains('answered')) {
-          card.classList.add('swipe-locked-bounce');
-          setTimeout(() => {
-            card.classList.remove('swipe-locked-bounce');
-          }, 300);
-        }
-      }
-    }
-  });
-
   // Function to lock/unlock swiping
   function updateSwipePermissions() {
     const activeIndex = window.mySwiper.activeIndex;
