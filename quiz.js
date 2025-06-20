@@ -507,7 +507,7 @@ async function initializeQuiz(questions, quizType = 'regular') {
     loop: false,
     mousewheel: true,
     touchReleaseOnEdges: true,
-    allowSlideNext: true,  // We'll control this dynamically
+    allowSlideNext: false,  // Start locked
     allowSlidePrev: true   // Allow going back
   });
 
@@ -532,8 +532,40 @@ async function initializeQuiz(questions, quizType = 'regular') {
     }
   }
 
-  // Initialize swipe permissions for the first slide
-  updateSwipePermissions();
+  // Function to lock/unlock swiping
+  function updateSwipePermissions() {
+    // Safety check - make sure mySwiper exists and has slides
+    if (!window.mySwiper || !window.mySwiper.slides || window.mySwiper.slides.length === 0) {
+      console.log("Swiper not ready yet, skipping permission update");
+      return;
+    }
+    
+    const activeIndex = window.mySwiper.activeIndex || 0;
+    
+    // If we're on a question slide (even index)
+    if (activeIndex % 2 === 0) {
+      const currentSlide = window.mySwiper.slides[activeIndex];
+      if (!currentSlide) {
+        console.log("Current slide not found");
+        return;
+      }
+      
+      const card = currentSlide.querySelector('.card');
+      
+      // Check if question has been answered
+      if (card && card.classList.contains('answered')) {
+        window.mySwiper.allowSlideNext = true;  // Allow swiping to answer
+        console.log("Unlocked swiping - question answered");
+      } else {
+        window.mySwiper.allowSlideNext = false; // Lock swiping until answered
+        console.log("Locked swiping - question not answered");
+      }
+    } else {
+      // On answer slides (odd index), always allow swiping
+      window.mySwiper.allowSlideNext = true;
+      console.log("Unlocked swiping - on answer slide");
+    }
+  }
 
   window.mySwiper.on('slideChangeTransitionEnd', function() {
     const activeIndex = window.mySwiper.activeIndex;
@@ -549,6 +581,11 @@ async function initializeQuiz(questions, quizType = 'regular') {
   });
 
   addOptionListeners();
+
+  // Set initial permissions after a small delay to ensure Swiper is fully initialized
+  setTimeout(() => {
+    updateSwipePermissions();
+  }, 100);
   
   // Set the initial bookmark icon state for the first question
   updateBookmarkIcon();
@@ -594,6 +631,10 @@ function addOptionListeners() {
           if (card.classList.contains('answered')) return;
           card.classList.add('answered');
           // Unlock swiping now that question is answered
+          if (window.mySwiper) {
+            window.mySwiper.allowSlideNext = true;
+            console.log("Unlocked swiping after answer selection");
+          }
           window.mySwiper.allowSlideNext = true;
           const questionSlide = card.closest('.swiper-slide');
           const qId = questionSlide.dataset.id;
