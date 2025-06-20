@@ -5298,3 +5298,35 @@ html, body {
   border-left-color: #0C72D3;
   background-color: #f2f7ff;
 }
+
+/* Bounce animation for locked swipe attempt */
+@keyframes bounceBack {
+  0% { transform: translateY(0); }
+  25% { transform: translateY(-20px); }
+  100% { transform: translateY(0); }
+}
+
+.swipe-locked-bounce {
+  animation: bounceBack 0.3s ease-out;
+}
+
+/* Optional: Add a subtle message that appears */
+.swipe-locked-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.swipe-locked-message.show {
+  opacity: 1;
+}
