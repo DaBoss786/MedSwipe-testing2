@@ -513,22 +513,44 @@ async function initializeQuiz(questions, quizType = 'regular') {
 
   // Function to lock/unlock swiping
   function updateSwipePermissions() {
-    const activeIndex = window.mySwiper.activeIndex;
+    // Safety check - make sure mySwiper exists and has slides
+    if (!window.mySwiper || !window.mySwiper.slides || window.mySwiper.slides.length === 0) {
+      console.log("Swiper not ready yet, skipping permission update");
+      return;
+    }
+    
+    const activeIndex = window.mySwiper.activeIndex || 0;
+    const totalSlides = window.mySwiper.slides.length;
+    
+    // Lock swiping on the last explanation slide and summary slide
+    if (activeIndex >= totalSlides - 2) {
+      window.mySwiper.allowSlideNext = false;
+      console.log("Locked swiping - on final slides");
+      return;
+    }
     
     // If we're on a question slide (even index)
     if (activeIndex % 2 === 0) {
       const currentSlide = window.mySwiper.slides[activeIndex];
+      if (!currentSlide) {
+        console.log("Current slide not found");
+        return;
+      }
+      
       const card = currentSlide.querySelector('.card');
       
       // Check if question has been answered
       if (card && card.classList.contains('answered')) {
         window.mySwiper.allowSlideNext = true;  // Allow swiping to answer
+        console.log("Unlocked swiping - question answered");
       } else {
         window.mySwiper.allowSlideNext = false; // Lock swiping until answered
+        console.log("Locked swiping - question not answered");
       }
     } else {
       // On answer slides (odd index), always allow swiping
       window.mySwiper.allowSlideNext = true;
+      console.log("Unlocked swiping - on answer slide");
     }
   }
 
@@ -569,6 +591,7 @@ async function initializeQuiz(questions, quizType = 'regular') {
 
   window.mySwiper.on('slideChangeTransitionEnd', function() {
     const activeIndex = window.mySwiper.activeIndex;
+    const totalSlides = window.mySwiper.slides.length;
     
     if (activeIndex % 2 === 0) {
       questionStartTime = Date.now();
@@ -576,8 +599,15 @@ async function initializeQuiz(questions, quizType = 'regular') {
       updateBookmarkIcon();
     }
     
-    // Update swipe permissions for the new slide
-    updateSwipePermissions();
+    // Check if we're on the last explanation slide (second to last slide)
+    // or the summary slide (last slide)
+    if (activeIndex >= totalSlides - 2) {
+      window.mySwiper.allowSlideNext = false;
+      console.log("Locked swiping - on final slides");
+    } else {
+      // Update swipe permissions for other slides normally
+      updateSwipePermissions();
+    }
   });
 
 // Variables to track swipe attempts
@@ -1149,14 +1179,9 @@ function showSummary() {
   `;
   
   document.getElementById("quizSlides").appendChild(summarySlide);
-
-// Update swipe permissions after adding the summary slide
-setTimeout(() => {
-  updateSwipePermissions();
-}, 100);
-
   window.mySwiper.update();
   window.mySwiper.slideTo(window.mySwiper.slides.length - 1);
+  window.mySwiper.allowSlideNext = false;
   
   // Add event listener for the "Start New Quiz" button
   const startNewQuizButton = document.getElementById("startNewQuizButton");
