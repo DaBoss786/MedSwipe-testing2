@@ -580,66 +580,23 @@ async function initializeQuiz(questions, quizType = 'regular') {
     updateSwipePermissions();
   });
 
-  // Add this code to your quiz.js file, inside the initializeQuiz function
-// Place it after the Swiper initialization but before the final bracket
-
-// Add swipe attempt detection
-window.mySwiper.on('slideChangeTransitionStart', function() {
-  const activeIndex = window.mySwiper.activeIndex;
-  const currentSlide = window.mySwiper.slides[activeIndex];
-  
-  // Check if we're on a question slide (even index) and it hasn't been answered
-  if (activeIndex % 2 === 0) {
-    const card = currentSlide.querySelector('.card');
-    
-    if (card && !card.classList.contains('answered')) {
-      // User tried to swipe before answering - trigger the warning animation
-      const swipeHint = card.querySelector('.swipe-hint');
-      if (swipeHint) {
-        // Remove any existing animation classes
-        swipeHint.classList.remove('bounce-warning', 'reset');
-        
-        // Force a reflow to ensure the class removal takes effect
-        swipeHint.offsetHeight;
-        
-        // Add the bounce animation class
-        swipeHint.classList.add('bounce-warning');
-        
-        // Remove the animation class after it completes and reset color
-        setTimeout(() => {
-          swipeHint.classList.remove('bounce-warning');
-          swipeHint.classList.add('reset');
-          
-          // Remove reset class after a brief moment
-          setTimeout(() => {
-            swipeHint.classList.remove('reset');
-          }, 100);
-        }, 600); // Match the animation duration
-      }
-      
-      // Prevent the slide change by immediately going back
-      setTimeout(() => {
-        window.mySwiper.slideTo(activeIndex, 0); // Go back immediately
-      }, 0);
-    }
-  }
-});
-
-// Also add touch/mouse event detection for more responsive feedback
+// Variables to track swipe attempts
 let touchStartY = 0;
 let touchStartTime = 0;
+let isSwipeAttempting = false;
 
 window.mySwiper.on('touchStart', function(swiper, event) {
   touchStartY = event.touches ? event.touches[0].clientY : event.clientY;
   touchStartTime = Date.now();
+  isSwipeAttempting = false;
 });
 
 window.mySwiper.on('touchMove', function(swiper, event) {
   const activeIndex = window.mySwiper.activeIndex;
-  const currentSlide = window.mySwiper.slides[activeIndex];
   
   // Only check on question slides (even index)
   if (activeIndex % 2 === 0) {
+    const currentSlide = window.mySwiper.slides[activeIndex];
     const card = currentSlide.querySelector('.card');
     
     if (card && !card.classList.contains('answered')) {
@@ -647,10 +604,12 @@ window.mySwiper.on('touchMove', function(swiper, event) {
       const deltaY = touchStartY - currentY;
       const timeDelta = Date.now() - touchStartTime;
       
-      // If user is swiping up significantly and quickly
-      if (deltaY > 30 && timeDelta < 500) {
+      // If user is swiping up significantly (at least 50px) and hasn't triggered animation yet
+      if (deltaY > 50 && timeDelta > 100 && !isSwipeAttempting) {
+        isSwipeAttempting = true; // Prevent multiple triggers
+        
         const swipeHint = card.querySelector('.swipe-hint');
-        if (swipeHint && !swipeHint.classList.contains('bounce-warning')) {
+        if (swipeHint) {
           // Trigger the animation
           swipeHint.classList.remove('bounce-warning', 'reset');
           swipeHint.offsetHeight; // Force reflow
@@ -668,6 +627,11 @@ window.mySwiper.on('touchMove', function(swiper, event) {
       }
     }
   }
+});
+
+// Reset the swipe attempt flag when touch ends
+window.mySwiper.on('touchEnd', function() {
+  isSwipeAttempting = false;
 });
 
   addOptionListeners();
