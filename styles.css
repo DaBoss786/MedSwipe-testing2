@@ -5298,3 +5298,43 @@ html, body {
   border-left-color: #0C72D3;
   background-color: #f2f7ff;
 }
+
+/* Add this CSS to your styles.css file */
+
+/* Animation for when user tries to swipe before answering */
+@keyframes hintBounce {
+  0% { 
+    transform: translateY(0); 
+    color: #666; 
+  }
+  25% { 
+    transform: translateY(-8px); 
+    color: #dc3545; 
+  }
+  50% { 
+    transform: translateY(0); 
+    color: #dc3545; 
+  }
+  75% { 
+    transform: translateY(-4px); 
+    color: #dc3545; 
+  }
+  100% { 
+    transform: translateY(0); 
+    color: #dc3545; 
+  }
+}
+
+/* Class to apply the bounce animation */
+.swipe-hint.bounce-warning {
+  animation: hintBounce 0.6s ease-in-out;
+  color: #dc3545 !important; /* Red color */
+  font-weight: 600; /* Make it slightly bolder */
+}
+
+/* Reset animation after it completes */
+.swipe-hint.bounce-warning.reset {
+  animation: none;
+  color: #666; /* Back to original color */
+  font-weight: normal;
+}
