@@ -1149,6 +1149,12 @@ function showSummary() {
   `;
   
   document.getElementById("quizSlides").appendChild(summarySlide);
+
+// Update swipe permissions after adding the summary slide
+setTimeout(() => {
+  updateSwipePermissions();
+}, 100);
+
   window.mySwiper.update();
   window.mySwiper.slideTo(window.mySwiper.slides.length - 1);
   
