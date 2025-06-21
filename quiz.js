@@ -511,46 +511,85 @@ async function initializeQuiz(questions, quizType = 'regular') {
     allowSlidePrev: true   // Allow going back
   });
 
+  // Add listener for when user tries to swipe before answering
+  window.mySwiper.on('touchStart', function() {
+    // Check if we're on a question slide (even index) and it hasn't been answered
+    const activeIndex = window.mySwiper.activeIndex;
+    if (activeIndex % 2 === 0) { // Question slide
+      const currentSlide = window.mySwiper.slides[activeIndex];
+      const card = currentSlide.querySelector('.card');
+      
+      if (card && !card.classList.contains('answered')) {
+        // Find the hint element and animate it
+        const hint = card.querySelector('.swipe-hint');
+        if (hint) {
+          // Remove classes to reset animation
+          hint.classList.remove('bounce-warning', 'reset');
+          
+          // Force reflow to restart animation
+          void hint.offsetWidth;
+          
+          // Add the bounce animation class
+          hint.classList.add('bounce-warning');
+          
+          // Remove the animation class after it completes
+          setTimeout(() => {
+            hint.classList.remove('bounce-warning');
+            hint.classList.add('reset');
+          }, 600); // Match the animation duration
+        }
+      }
+    }
+  });
+
+  // Also add for mouse wheel attempts
+  window.mySwiper.on('scroll', function(event) {
+    const activeIndex = window.mySwiper.activeIndex;
+    if (activeIndex % 2 === 0) { // Question slide
+      const currentSlide = window.mySwiper.slides[activeIndex];
+      const card = currentSlide.querySelector('.card');
+      
+      if (card && !card.classList.contains('answered') && !window.mySwiper.allowSlideNext) {
+        // Find the hint element and animate it
+        const hint = card.querySelector('.swipe-hint');
+        if (hint) {
+          // Remove classes to reset animation
+          hint.classList.remove('bounce-warning', 'reset');
+          
+          // Force reflow to restart animation
+          void hint.offsetWidth;
+          
+          // Add the bounce animation class
+          hint.classList.add('bounce-warning');
+          
+          // Remove the animation class after it completes
+          setTimeout(() => {
+            hint.classList.remove('bounce-warning');
+            hint.classList.add('reset');
+          }, 600); // Match the animation duration
+        }
+      }
+    }
+  });
+
   // Function to lock/unlock swiping
   function updateSwipePermissions() {
-    // Safety check - make sure mySwiper exists and has slides
-    if (!window.mySwiper || !window.mySwiper.slides || window.mySwiper.slides.length === 0) {
-      console.log("Swiper not ready yet, skipping permission update");
-      return;
-    }
-    
-    const activeIndex = window.mySwiper.activeIndex || 0;
-    const totalSlides = window.mySwiper.slides.length;
-    
-    // Lock swiping on the last explanation slide and summary slide
-    if (activeIndex >= totalSlides - 2) {
-      window.mySwiper.allowSlideNext = false;
-      console.log("Locked swiping - on final slides");
-      return;
-    }
+    const activeIndex = window.mySwiper.activeIndex;
     
     // If we're on a question slide (even index)
     if (activeIndex % 2 === 0) {
       const currentSlide = window.mySwiper.slides[activeIndex];
-      if (!currentSlide) {
-        console.log("Current slide not found");
-        return;
-      }
-      
       const card = currentSlide.querySelector('.card');
       
       // Check if question has been answered
       if (card && card.classList.contains('answered')) {
         window.mySwiper.allowSlideNext = true;  // Allow swiping to answer
-        console.log("Unlocked swiping - question answered");
       } else {
         window.mySwiper.allowSlideNext = false; // Lock swiping until answered
-        console.log("Locked swiping - question not answered");
       }
     } else {
       // On answer slides (odd index), always allow swiping
       window.mySwiper.allowSlideNext = true;
-      console.log("Unlocked swiping - on answer slide");
     }
   }
 
@@ -591,7 +630,6 @@ async function initializeQuiz(questions, quizType = 'regular') {
 
   window.mySwiper.on('slideChangeTransitionEnd', function() {
     const activeIndex = window.mySwiper.activeIndex;
-    const totalSlides = window.mySwiper.slides.length;
     
     if (activeIndex % 2 === 0) {
       questionStartTime = Date.now();
@@ -599,70 +637,9 @@ async function initializeQuiz(questions, quizType = 'regular') {
       updateBookmarkIcon();
     }
     
-    // Check if we're on the last explanation slide (second to last slide)
-    // or the summary slide (last slide)
-    if (activeIndex >= totalSlides - 2) {
-      window.mySwiper.allowSlideNext = false;
-      console.log("Locked swiping - on final slides");
-    } else {
-      // Update swipe permissions for other slides normally
-      updateSwipePermissions();
-    }
+    // Update swipe permissions for the new slide
+    updateSwipePermissions();
   });
-
-// Variables to track swipe attempts
-let touchStartY = 0;
-let touchStartTime = 0;
-let isSwipeAttempting = false;
-
-window.mySwiper.on('touchStart', function(swiper, event) {
-  touchStartY = event.touches ? event.touches[0].clientY : event.clientY;
-  touchStartTime = Date.now();
-  isSwipeAttempting = false;
-});
-
-window.mySwiper.on('touchMove', function(swiper, event) {
-  const activeIndex = window.mySwiper.activeIndex;
-  
-  // Only check on question slides (even index)
-  if (activeIndex % 2 === 0) {
-    const currentSlide = window.mySwiper.slides[activeIndex];
-    const card = currentSlide.querySelector('.card');
-    
-    if (card && !card.classList.contains('answered')) {
-      const currentY = event.touches ? event.touches[0].clientY : event.clientY;
-      const deltaY = touchStartY - currentY;
-      const timeDelta = Date.now() - touchStartTime;
-      
-      // If user is swiping up significantly (at least 50px) and hasn't triggered animation yet
-      if (deltaY > 50 && timeDelta > 100 && !isSwipeAttempting) {
-        isSwipeAttempting = true; // Prevent multiple triggers
-        
-        const swipeHint = card.querySelector('.swipe-hint');
-        if (swipeHint) {
-          // Trigger the animation
-          swipeHint.classList.remove('bounce-warning', 'reset');
-          swipeHint.offsetHeight; // Force reflow
-          swipeHint.classList.add('bounce-warning');
-          
-          // Reset after animation
-          setTimeout(() => {
-            swipeHint.classList.remove('bounce-warning');
-            swipeHint.classList.add('reset');
-            setTimeout(() => {
-              swipeHint.classList.remove('reset');
-            }, 100);
-          }, 600);
-        }
-      }
-    }
-  }
-});
-
-// Reset the swipe attempt flag when touch ends
-window.mySwiper.on('touchEnd', function() {
-  isSwipeAttempting = false;
-});
 
   addOptionListeners();
 
@@ -1181,7 +1158,6 @@ function showSummary() {
   document.getElementById("quizSlides").appendChild(summarySlide);
   window.mySwiper.update();
   window.mySwiper.slideTo(window.mySwiper.slides.length - 1);
-  window.mySwiper.allowSlideNext = false;
   
   // Add event listener for the "Start New Quiz" button
   const startNewQuizButton = document.getElementById("startNewQuizButton");
