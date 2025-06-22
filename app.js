@@ -1783,6 +1783,7 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
   if (startNewQuiz) {
     startNewQuiz.addEventListener("click", function() {
       closeSideMenu();
+      document.body.classList.remove('scroll-lock'); // ADD THIS LINE
       window.filterMode = "all";
       
       const swiperElement = document.querySelector(".swiper");
@@ -1824,6 +1825,7 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
 
     newLeaderboardItem.addEventListener("click", function() {
       closeSideMenu(); // Close the menu first
+      document.body.classList.remove('scroll-lock'); // ADD THIS LINE
 
       // Ensure authState and user are available
       if (!window.authState || !window.authState.user) {
@@ -1921,7 +1923,7 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
   if (contactItem) {
     contactItem.addEventListener("click", function() {
       closeSideMenu();
-      
+      document.body.classList.remove('scroll-lock'); // ADD THIS LINE      
       const swiperElement = document.querySelector(".swiper");
       if (swiperElement) swiperElement.style.display = "none";
       
