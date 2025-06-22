@@ -589,6 +589,7 @@ async function initializeQuiz(questions, quizType = 'regular') {
   updateBookmarkIcon();
 
   document.querySelector(".swiper").style.display = "block";
+  document.body.classList.add('quiz-active');
   document.getElementById("bottomToolbar").style.display = "flex";
   document.getElementById("mainOptions").style.display = "none";
   document.getElementById("performanceView").style.display = "none";
@@ -783,6 +784,7 @@ function addOptionListeners() {
                           returnButton.style.padding = "10px 15px";
                           lastCard.appendChild(returnButton);
                           returnButton.addEventListener('click', function() {
+                            document.body.classList.remove('quiz-active');
                               console.log("Return to CME Dashboard button clicked.");
                               const swiperElement = document.querySelector(".swiper");
                               const bottomToolbar = document.getElementById("bottomToolbar");
@@ -812,6 +814,7 @@ function addOptionListeners() {
                           continueButton.style.margin = "20px auto";
                           lastCard.appendChild(continueButton);
                           continueButton.addEventListener('click', function() {
+                            document.body.classList.remove('quiz-active');
                               console.log("Onboarding continue button clicked.");
                               const swiperElement = document.querySelector(".swiper");
                               const bottomToolbar = document.getElementById("bottomToolbar");
@@ -1103,6 +1106,7 @@ function showSummary() {
     const newStartNewQuizButton = startNewQuizButton.cloneNode(true);
     startNewQuizButton.parentNode.replaceChild(newStartNewQuizButton, startNewQuizButton);
     newStartNewQuizButton.addEventListener("click", function() {
+      document.body.classList.remove('quiz-active');
         window.filterMode = "all"; // Assuming filterMode is a global or appropriately scoped variable
         document.getElementById("aboutView").style.display = "none";
         document.getElementById("faqView").style.display = "none";

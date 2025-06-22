@@ -5298,3 +5298,15 @@ html, body {
   border-left-color: #0C72D3;
   background-color: #f2f7ff;
 }
+
+/* --- CSS FIX FOR QUIZ SCROLLING --- */
+
+/* This class will be added via JavaScript to lock the page scroll */
+body.quiz-active {
+  overflow: hidden; /* This is the most important rule! */
+}
+
+/* Ensure the swiper container takes up the full height */
+.swiper {
+  height: 100%;
+}
