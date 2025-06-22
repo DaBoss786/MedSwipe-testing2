@@ -502,7 +502,6 @@ async function initializeQuiz(questions, quizType = 'regular') {
     quizSlides.appendChild(answerSlide);
   });
 
-
   window.mySwiper = new Swiper('.swiper', {
     direction: 'vertical',
     loop: false,
@@ -512,49 +511,59 @@ async function initializeQuiz(questions, quizType = 'regular') {
     allowSlidePrev: true   // Allow going back
   });
 
-// Function to lock/unlock swiping
-function updateSwipePermissions() {
-  // Safety check - make sure mySwiper exists and has slides
-  if (!window.mySwiper || !window.mySwiper.slides || window.mySwiper.slides.length === 0) {
-    console.log("Swiper not ready yet, skipping permission update");
-    return;
-  }
-  
-  const activeIndex = window.mySwiper.activeIndex || 0;
-  const totalSlides = window.mySwiper.slides.length;
-  
-  // If we're on a question slide (even index)
-  if (activeIndex % 2 === 0) {
-    const currentSlide = window.mySwiper.slides[activeIndex];
-    if (!currentSlide) {
-      console.log("Current slide not found");
+// --- START OF NEW, CORRECTED CODE ---
+  // Function to lock/unlock swiping
+  function updateSwipePermissions() {
+    // Safety check - make sure mySwiper exists and has slides
+    if (!window.mySwiper || !window.mySwiper.slides || window.mySwiper.slides.length === 0) {
+      console.log("Swiper not ready yet, skipping permission update");
       return;
     }
     
-    const card = currentSlide.querySelector('.card');
+    const activeIndex = window.mySwiper.activeIndex || 0;
     
-    // Check if question has been answered
-    if (card && card.classList.contains('answered')) {
-      window.mySwiper.allowSlideNext = true;  // Allow swiping to answer
-      console.log("Unlocked swiping - question answered");
+    // Always allow swiping up (previous), unless we decide otherwise later.
+    window.mySwiper.allowSlidePrev = true;
+
+    // --- LOGIC FOR SWIPING DOWN (NEXT) ---
+
+    // If we're on a question slide (even index)
+    if (activeIndex % 2 === 0) {
+      const currentSlide = window.mySwiper.slides[activeIndex];
+      if (!currentSlide) {
+        console.log("Current slide not found");
+        return;
+      }
+      
+      const card = currentSlide.querySelector('.card');
+      
+      // Check if question has been answered to allow swiping to the explanation
+      if (card && card.classList.contains('answered')) {
+        window.mySwiper.allowSlideNext = true;
+        console.log("Unlocked swiping NEXT - question answered");
+      } else {
+        window.mySwiper.allowSlideNext = false; // Lock swiping until answered
+        console.log("Locked swiping NEXT - question not answered");
+      }
     } else {
-      window.mySwiper.allowSlideNext = false; // Lock swiping until answered
-      console.log("Locked swiping - question not answered");
-    }
-  } else {
-    // On answer slides (odd index)
-    // Check if this is the last answer slide before summary
-    if (activeIndex === totalSlides - 2) {  // Changed from totalSlides - 1
-      // This is the last explanation slide before summary
-      window.mySwiper.allowSlideNext = false;
-      console.log("Locked swiping - on final explanation slide");
-    } else {
-      // Regular answer slides - allow swiping
-      window.mySwiper.allowSlideNext = true;
-      console.log("Unlocked swiping - on answer slide");
+      // This is an answer/explanation slide (odd index)
+      
+      // Check if this is the VERY LAST explanation slide in the quiz
+      // The index is (totalQuestions * 2) - 1
+      const isLastExplanationSlide = activeIndex === (totalQuestions * 2) - 1;
+
+      if (isLastExplanationSlide) {
+        // If it's the last one, PREVENT swiping down (to a non-existent slide)
+        window.mySwiper.allowSlideNext = false;
+        console.log("Locked swiping NEXT - on FINAL explanation slide.");
+      } else {
+        // For all other explanation slides, ALLOW swiping down to the next question
+        window.mySwiper.allowSlideNext = true;
+        console.log("Unlocked swiping NEXT - on regular explanation slide.");
+      }
     }
   }
-}
+// --- END OF NEW, CORRECTED CODE ---
 
   window.mySwiper.on('slideChangeTransitionEnd', function() {
     const activeIndex = window.mySwiper.activeIndex;
@@ -1086,10 +1095,6 @@ function showSummary() {
   document.getElementById("quizSlides").appendChild(summarySlide);
   window.mySwiper.update();
   window.mySwiper.slideTo(window.mySwiper.slides.length - 1);
-
-    // Force allow this specific navigation
-    window.mySwiper.allowSlideNext = true;
-    window.mySwiper.slideNext();
   
   // Add event listener for the "Start New Quiz" button
   const startNewQuizButton = document.getElementById("startNewQuizButton");
