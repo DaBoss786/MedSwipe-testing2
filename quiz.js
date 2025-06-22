@@ -512,71 +512,46 @@ async function initializeQuiz(questions, quizType = 'regular') {
     allowSlidePrev: true   // Allow going back
   });
 
-  // Add aggressive touch event handling for last slide
-  window.mySwiper.on('touchStart', function(swiper, event) {
-    const activeIndex = swiper.activeIndex;
-    const totalSlides = swiper.slides.length;
-    
-    // If on the last slide, prevent upward touch completely
-    if (activeIndex === totalSlides - 1) {
-      swiper.touchEventsData.startY = event.touches[0].clientY;
-    }
-  });
-
-  window.mySwiper.on('touchMove', function(swiper, event) {
-    const activeIndex = swiper.activeIndex;
-    const totalSlides = swiper.slides.length;
-    
-    // If on the last slide
-    if (activeIndex === totalSlides - 1) {
-      const currentY = event.touches[0].clientY;
-      const startY = swiper.touchEventsData.startY;
-      
-      // If trying to swipe up (negative difference), prevent it
-      if (currentY < startY) {
-        event.preventDefault();
-        event.stopPropagation();
-        return false;
-      }
-    }
-  });
-
 // Function to lock/unlock swiping
 function updateSwipePermissions() {
-  const activeIndex = window.mySwiper.activeIndex;
+  // Safety check - make sure mySwiper exists and has slides
+  if (!window.mySwiper || !window.mySwiper.slides || window.mySwiper.slides.length === 0) {
+    console.log("Swiper not ready yet, skipping permission update");
+    return;
+  }
+  
+  const activeIndex = window.mySwiper.activeIndex || 0;
   const totalSlides = window.mySwiper.slides.length;
   
   // If we're on a question slide (even index)
   if (activeIndex % 2 === 0) {
     const currentSlide = window.mySwiper.slides[activeIndex];
+    if (!currentSlide) {
+      console.log("Current slide not found");
+      return;
+    }
+    
     const card = currentSlide.querySelector('.card');
     
     // Check if question has been answered
     if (card && card.classList.contains('answered')) {
       window.mySwiper.allowSlideNext = true;  // Allow swiping to answer
+      console.log("Unlocked swiping - question answered");
     } else {
       window.mySwiper.allowSlideNext = false; // Lock swiping until answered
+      console.log("Locked swiping - question not answered");
     }
-    // Enable touch movement for question slides
-    window.mySwiper.allowTouchMove = true;
   } else {
     // On answer slides (odd index)
-    // Check if this is the last answer slide (last slide in the quiz)
-    if (activeIndex === totalSlides - 1) {
-      // This is the last slide - lock ALL forward movement
+    // Check if this is the last answer slide before summary
+    if (activeIndex === totalSlides - 2) {  // Changed from totalSlides - 1
+      // This is the last explanation slide before summary
       window.mySwiper.allowSlideNext = false;
-      // Disable touch/mouse movement to prevent partial swipes
-      window.mySwiper.allowTouchMove = function(swiper, event) {
-        // Only allow backward swipes
-        const startY = event.touches ? event.touches[0].clientY : event.clientY;
-        const currentY = swiper.touches.currentY;
-        return currentY > startY; // Allow only downward swipes (going back)
-      };
-      console.log("Locked all forward movement on final answer slide");
+      console.log("Locked swiping - on final explanation slide");
     } else {
       // Regular answer slides - allow swiping
       window.mySwiper.allowSlideNext = true;
-      window.mySwiper.allowTouchMove = true;
+      console.log("Unlocked swiping - on answer slide");
     }
   }
 }
@@ -1111,6 +1086,10 @@ function showSummary() {
   document.getElementById("quizSlides").appendChild(summarySlide);
   window.mySwiper.update();
   window.mySwiper.slideTo(window.mySwiper.slides.length - 1);
+
+    // Force allow this specific navigation
+    window.mySwiper.allowSlideNext = true;
+    window.mySwiper.slideNext();
   
   // Add event listener for the "Start New Quiz" button
   const startNewQuizButton = document.getElementById("startNewQuizButton");
