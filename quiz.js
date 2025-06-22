@@ -1148,6 +1148,7 @@ function showSummary() {
         const newLeaderboardButton = leaderboardButton.cloneNode(true);
         leaderboardButton.parentNode.replaceChild(newLeaderboardButton, leaderboardButton);
         newLeaderboardButton.addEventListener("click", function() {
+          document.body.classList.remove('scroll-lock');
             document.getElementById("aboutView").style.display = "none";
             document.getElementById("faqView").style.display = "none";
             document.querySelector(".swiper").style.display = "none";

@@ -1488,6 +1488,7 @@ if (cmeAccuracyCircleValue) {
   if (performanceItemUser) {
     performanceItemUser.addEventListener("click", function() {
       closeUserMenu();
+      document.body.classList.remove('scroll-lock');
       const cmeDashboard = document.getElementById("cmeDashboardView");
 if (cmeDashboard) cmeDashboard.style.display = "none";
       window.displayPerformance(); 
@@ -1500,6 +1501,7 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
     bookmarksFilterUser.addEventListener("click", function(e) {
       e.preventDefault();
       closeUserMenu();
+      document.body.classList.remove('scroll-lock');
       const cmeDashboard = document.getElementById("cmeDashboardView");
 if (cmeDashboard) cmeDashboard.style.display = "none";
       
@@ -1587,6 +1589,7 @@ if (manageSubBtn) {
   if (resetProgressUser) {
     resetProgressUser.addEventListener("click", async function(e) {
       e.preventDefault();
+      document.body.classList.remove('scroll-lock');
       const confirmReset = confirm("Are you sure you want to reset all progress?");
       if (!confirmReset) return;
       
@@ -1651,6 +1654,7 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
 if (logoutUserBtn) {
     logoutUserBtn.addEventListener("click", async function(e) {
         e.preventDefault();
+        document.body.classList.remove('scroll-lock');
         console.log("Log Out button clicked.");
         if (typeof closeUserMenu === 'function') {
             closeUserMenu();
@@ -1891,6 +1895,7 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
   if (faqItem) {
     faqItem.addEventListener("click", function() {
       closeSideMenu();
+      document.body.classList.remove('scroll-lock');
       const cmeDashboard = document.getElementById("cmeDashboardView");
 if (cmeDashboard) cmeDashboard.style.display = "none";
       showFAQ();
@@ -1903,6 +1908,7 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
   if (aboutItem) {
     aboutItem.addEventListener("click", function() {
       closeSideMenu();
+      document.body.classList.remove('scroll-lock');
       const cmeDashboard = document.getElementById("cmeDashboardView");
 if (cmeDashboard) cmeDashboard.style.display = "none";
       showAbout();
@@ -4873,6 +4879,7 @@ function showCmeInfoScreen() {
   if (cmeInfoScreen) {
       cmeInfoScreen.style.display = "flex"; // Use 'flex' because of the CSS styling we added
       console.log("Displayed #cmeInfoScreen.");
+      document.body.classList.remove('scroll-lock');
   } else {
       console.error("CME Info Screen (#cmeInfoScreen) not found!");
   }
