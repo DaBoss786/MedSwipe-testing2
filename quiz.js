@@ -502,14 +502,43 @@ async function initializeQuiz(questions, quizType = 'regular') {
     quizSlides.appendChild(answerSlide);
   });
 
+
   window.mySwiper = new Swiper('.swiper', {
     direction: 'vertical',
     loop: false,
     mousewheel: true,
     touchReleaseOnEdges: true,
     allowSlideNext: false,  // Start locked
-    allowSlidePrev: true,   // Allow going back
-    allowTouchMove: true    // We'll control this dynamically
+    allowSlidePrev: true   // Allow going back
+  });
+
+  // Add aggressive touch event handling for last slide
+  window.mySwiper.on('touchStart', function(swiper, event) {
+    const activeIndex = swiper.activeIndex;
+    const totalSlides = swiper.slides.length;
+    
+    // If on the last slide, prevent upward touch completely
+    if (activeIndex === totalSlides - 1) {
+      swiper.touchEventsData.startY = event.touches[0].clientY;
+    }
+  });
+
+  window.mySwiper.on('touchMove', function(swiper, event) {
+    const activeIndex = swiper.activeIndex;
+    const totalSlides = swiper.slides.length;
+    
+    // If on the last slide
+    if (activeIndex === totalSlides - 1) {
+      const currentY = event.touches[0].clientY;
+      const startY = swiper.touchEventsData.startY;
+      
+      // If trying to swipe up (negative difference), prevent it
+      if (currentY < startY) {
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      }
+    }
   });
 
 // Function to lock/unlock swiping
