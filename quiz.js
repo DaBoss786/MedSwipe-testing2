@@ -418,6 +418,7 @@ async function initializeQuiz(questions, quizType = 'regular') {
     console.log(`Initializing quiz. Type: ${quizType}, Questions: ${questions.length}`); // Log quiz type
   currentQuizType = quizType; 
   questionStartTime = Date.now();
+  document.body.classList.remove('scroll-lock');
   // Get starting XP before the quiz begins
   try {
     const isOnboardingQuiz = window.isOnboardingQuiz || false;
@@ -570,11 +571,13 @@ async function initializeQuiz(questions, quizType = 'regular') {
   // --- START OF NEW CODE ---
   window.mySwiper.on('slideChangeTransitionEnd', function() {
     const activeIndex = window.mySwiper.activeIndex;
-
+  
     // --- NEW: DYNAMIC SCROLL LOCK LOGIC ---
-    const finalExplanationSlideIndex = (totalQuestions * 2) - 1;
-    // The summary slide is added later, its index will be one greater than the final explanation slide.
-    const summarySlideIndex = totalQuestions * 2; 
+    // Use the actual number of slides in the swiper instead of calculated values
+    const totalSlides = window.mySwiper.slides.length;
+    // Check if this is one of the last two slides (final explanation and summary)
+    const isLastExplanationSlide = activeIndex === totalSlides - 2;
+    const isSummarySlide = activeIndex === totalSlides - 1;
 
     // Check if the current slide is one of the slides we want to lock
     if (activeIndex === finalExplanationSlideIndex || activeIndex === summarySlideIndex) {
