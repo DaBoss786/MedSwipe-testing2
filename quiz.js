@@ -511,105 +511,35 @@ async function initializeQuiz(questions, quizType = 'regular') {
     allowSlidePrev: true   // Allow going back
   });
 
-// Add listener for when user tries to swipe before answering
-window.mySwiper.on('slideNextTransitionStart', function() {
-  // If slide transition starts but we shouldn't allow it, prevent it
+// Function to lock/unlock swiping
+function updateSwipePermissions() {
   const activeIndex = window.mySwiper.activeIndex;
-  if (activeIndex % 2 === 0) { // Question slide
+  const totalSlides = window.mySwiper.slides.length;
+  
+  // If we're on a question slide (even index)
+  if (activeIndex % 2 === 0) {
     const currentSlide = window.mySwiper.slides[activeIndex];
     const card = currentSlide.querySelector('.card');
     
-    if (card && !card.classList.contains('answered')) {
-      // Prevent the slide transition
-      window.mySwiper.slideTo(activeIndex);
-      
-      // Find the hint element and animate it
-      const hint = card.querySelector('.swipe-hint');
-      if (hint && hint.textContent === 'Select an answer to continue') {
-        // Remove classes to reset animation
-        hint.classList.remove('bounce-warning', 'reset');
-        
-        // Force reflow to restart animation
-        void hint.offsetWidth;
-        
-        // Add the bounce animation class
-        hint.classList.add('bounce-warning');
-        
-        // Remove the animation class after it completes
-        setTimeout(() => {
-          hint.classList.remove('bounce-warning');
-          hint.classList.add('reset');
-        }, 600); // Match the animation duration
-      }
-    }
-  }
-});
-
-// Handle touch/drag attempts when locked
-let touchStartY = 0;
-let isSwiping = false;
-
-window.mySwiper.on('touchStart', function(swiper, event) {
-  touchStartY = event.touches ? event.touches[0].clientY : event.clientY;
-  isSwiping = false;
-});
-
-window.mySwiper.on('touchMove', function(swiper, event) {
-  const currentY = event.touches ? event.touches[0].clientY : event.clientY;
-  const diff = touchStartY - currentY;
-  
-  // Only trigger if swiping up and haven't triggered yet this swipe
-  if (diff > 10 && !isSwiping && !window.mySwiper.allowSlideNext) {
-    isSwiping = true;
-    
-    const activeIndex = window.mySwiper.activeIndex;
-    if (activeIndex % 2 === 0) { // Question slide
-      const currentSlide = window.mySwiper.slides[activeIndex];
-      const card = currentSlide.querySelector('.card');
-      
-      if (card && !card.classList.contains('answered')) {
-        const hint = card.querySelector('.swipe-hint');
-        if (hint && hint.textContent === 'Select an answer to continue') {
-          // Remove classes to reset animation
-          hint.classList.remove('bounce-warning', 'reset');
-          
-          // Force reflow to restart animation
-          void hint.offsetWidth;
-          
-          // Add the bounce animation class
-          hint.classList.add('bounce-warning');
-          
-          // Remove the animation class after it completes
-          setTimeout(() => {
-            hint.classList.remove('bounce-warning');
-            hint.classList.add('reset');
-          }, 600); // Match the animation duration
-        }
-      }
-    }
-  }
-});
-
-  // Function to lock/unlock swiping
-  function updateSwipePermissions() {
-    const activeIndex = window.mySwiper.activeIndex;
-    
-    // If we're on a question slide (even index)
-    if (activeIndex % 2 === 0) {
-      const currentSlide = window.mySwiper.slides[activeIndex];
-      const card = currentSlide.querySelector('.card');
-      
-      // Check if question has been answered
-      if (card && card.classList.contains('answered')) {
-        window.mySwiper.allowSlideNext = true;  // Allow swiping to answer
-      } else {
-        window.mySwiper.allowSlideNext = false; // Lock swiping until answered
-      }
+    // Check if question has been answered
+    if (card && card.classList.contains('answered')) {
+      window.mySwiper.allowSlideNext = true;  // Allow swiping to answer
     } else {
-      // On answer slides (odd index), always allow swiping
+      window.mySwiper.allowSlideNext = false; // Lock swiping until answered
+    }
+  } else {
+    // On answer slides (odd index)
+    // Check if this is the last answer slide (last slide in the quiz)
+    if (activeIndex === totalSlides - 1) {
+      // This is the last slide - lock forward swiping completely
+      window.mySwiper.allowSlideNext = false;
+      console.log("Locked swiping on final answer slide");
+    } else {
+      // Regular answer slides - allow swiping
       window.mySwiper.allowSlideNext = true;
     }
   }
+}
 
   // Function to lock/unlock swiping
   function updateSwipePermissions() {
