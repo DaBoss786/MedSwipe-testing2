@@ -5299,11 +5299,11 @@ html, body {
   background-color: #f2f7ff;
 }
 
-/* --- CSS FIX FOR QUIZ SCROLLING --- */
+/* --- CSS FOR DYNAMIC QUIZ SCROLL LOCK --- */
 
-/* This class will be added via JavaScript to lock the page scroll */
-body.quiz-active {
-  overflow: hidden; /* This is the most important rule! */
+/* This class will be added via JavaScript ONLY to slides that should not scroll */
+body.scroll-lock {
+  overflow: hidden;
 }
 
 /* Ensure the swiper container takes up the full height */

@@ -511,7 +511,27 @@ async function initializeQuiz(questions, quizType = 'regular') {
     allowSlidePrev: true   // Allow going back
   });
 
-// --- START OF NEW, CORRECTED CODE ---
+  // Function to lock/unlock swiping
+  function updateSwipePermissions() {
+    const activeIndex = window.mySwiper.activeIndex;
+    
+    // If we're on a question slide (even index)
+    if (activeIndex % 2 === 0) {
+      const currentSlide = window.mySwiper.slides[activeIndex];
+      const card = currentSlide.querySelector('.card');
+      
+      // Check if question has been answered
+      if (card && card.classList.contains('answered')) {
+        window.mySwiper.allowSlideNext = true;  // Allow swiping to answer
+      } else {
+        window.mySwiper.allowSlideNext = false; // Lock swiping until answered
+      }
+    } else {
+      // On answer slides (odd index), always allow swiping
+      window.mySwiper.allowSlideNext = true;
+    }
+  }
+
   // Function to lock/unlock swiping
   function updateSwipePermissions() {
     // Safety check - make sure mySwiper exists and has slides
@@ -522,11 +542,6 @@ async function initializeQuiz(questions, quizType = 'regular') {
     
     const activeIndex = window.mySwiper.activeIndex || 0;
     
-    // Always allow swiping up (previous), unless we decide otherwise later.
-    window.mySwiper.allowSlidePrev = true;
-
-    // --- LOGIC FOR SWIPING DOWN (NEXT) ---
-
     // If we're on a question slide (even index)
     if (activeIndex % 2 === 0) {
       const currentSlide = window.mySwiper.slides[activeIndex];
@@ -537,36 +552,39 @@ async function initializeQuiz(questions, quizType = 'regular') {
       
       const card = currentSlide.querySelector('.card');
       
-      // Check if question has been answered to allow swiping to the explanation
+      // Check if question has been answered
       if (card && card.classList.contains('answered')) {
-        window.mySwiper.allowSlideNext = true;
-        console.log("Unlocked swiping NEXT - question answered");
+        window.mySwiper.allowSlideNext = true;  // Allow swiping to answer
+        console.log("Unlocked swiping - question answered");
       } else {
         window.mySwiper.allowSlideNext = false; // Lock swiping until answered
-        console.log("Locked swiping NEXT - question not answered");
+        console.log("Locked swiping - question not answered");
       }
     } else {
-      // This is an answer/explanation slide (odd index)
-      
-      // Check if this is the VERY LAST explanation slide in the quiz
-      // The index is (totalQuestions * 2) - 1
-      const isLastExplanationSlide = activeIndex === (totalQuestions * 2) - 1;
-
-      if (isLastExplanationSlide) {
-        // If it's the last one, PREVENT swiping down (to a non-existent slide)
-        window.mySwiper.allowSlideNext = false;
-        console.log("Locked swiping NEXT - on FINAL explanation slide.");
-      } else {
-        // For all other explanation slides, ALLOW swiping down to the next question
-        window.mySwiper.allowSlideNext = true;
-        console.log("Unlocked swiping NEXT - on regular explanation slide.");
-      }
+      // On answer slides (odd index), always allow swiping
+      window.mySwiper.allowSlideNext = true;
+      console.log("Unlocked swiping - on answer slide");
     }
   }
-// --- END OF NEW, CORRECTED CODE ---
 
+  // --- START OF NEW CODE ---
   window.mySwiper.on('slideChangeTransitionEnd', function() {
     const activeIndex = window.mySwiper.activeIndex;
+
+    // --- NEW: DYNAMIC SCROLL LOCK LOGIC ---
+    const finalExplanationSlideIndex = (totalQuestions * 2) - 1;
+    // The summary slide is added later, its index will be one greater than the final explanation slide.
+    const summarySlideIndex = totalQuestions * 2; 
+
+    // Check if the current slide is one of the slides we want to lock
+    if (activeIndex === finalExplanationSlideIndex || activeIndex === summarySlideIndex) {
+      document.body.classList.add('scroll-lock');
+      console.log(`Page scroll LOCKED on slide index: ${activeIndex}`);
+    } else {
+      document.body.classList.remove('scroll-lock');
+      console.log(`Page scroll UNLOCKED on slide index: ${activeIndex}`);
+    }
+    // --- END OF NEW LOGIC ---
     
     if (activeIndex % 2 === 0) {
       questionStartTime = Date.now();
@@ -577,6 +595,7 @@ async function initializeQuiz(questions, quizType = 'regular') {
     // Update swipe permissions for the new slide
     updateSwipePermissions();
   });
+// --- END OF NEW CODE ---
 
   addOptionListeners();
 
@@ -589,7 +608,6 @@ async function initializeQuiz(questions, quizType = 'regular') {
   updateBookmarkIcon();
 
   document.querySelector(".swiper").style.display = "block";
-  document.body.classList.add('quiz-active');
   document.getElementById("bottomToolbar").style.display = "flex";
   document.getElementById("mainOptions").style.display = "none";
   document.getElementById("performanceView").style.display = "none";
@@ -784,7 +802,7 @@ function addOptionListeners() {
                           returnButton.style.padding = "10px 15px";
                           lastCard.appendChild(returnButton);
                           returnButton.addEventListener('click', function() {
-                            document.body.classList.remove('quiz-active');
+                            document.body.classList.remove('scroll-lock');
                               console.log("Return to CME Dashboard button clicked.");
                               const swiperElement = document.querySelector(".swiper");
                               const bottomToolbar = document.getElementById("bottomToolbar");
@@ -814,7 +832,7 @@ function addOptionListeners() {
                           continueButton.style.margin = "20px auto";
                           lastCard.appendChild(continueButton);
                           continueButton.addEventListener('click', function() {
-                            document.body.classList.remove('quiz-active');
+                            document.body.classList.remove('scroll-lock');
                               console.log("Onboarding continue button clicked.");
                               const swiperElement = document.querySelector(".swiper");
                               const bottomToolbar = document.getElementById("bottomToolbar");
@@ -1106,7 +1124,7 @@ function showSummary() {
     const newStartNewQuizButton = startNewQuizButton.cloneNode(true);
     startNewQuizButton.parentNode.replaceChild(newStartNewQuizButton, startNewQuizButton);
     newStartNewQuizButton.addEventListener("click", function() {
-      document.body.classList.remove('quiz-active');
+      document.body.classList.remove('scroll-lock');
         window.filterMode = "all"; // Assuming filterMode is a global or appropriately scoped variable
         document.getElementById("aboutView").style.display = "none";
         document.getElementById("faqView").style.display = "none";

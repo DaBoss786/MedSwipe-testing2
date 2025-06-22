@@ -1980,6 +1980,7 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
     logoClick.addEventListener("click", function() {
       closeSideMenu();
       closeUserMenu();
+      document.body.classList.remove('scroll-lock');
       
       const aboutView = document.getElementById("aboutView");
       if (aboutView) aboutView.style.display = "none";
