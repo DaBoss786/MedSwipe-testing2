@@ -418,7 +418,11 @@ async function initializeQuiz(questions, quizType = 'regular') {
     console.log(`Initializing quiz. Type: ${quizType}, Questions: ${questions.length}`); // Log quiz type
   currentQuizType = quizType; 
   questionStartTime = Date.now();
+  // Reset scroll lock and swiper permissions when starting new quiz
   document.body.classList.remove('scroll-lock');
+  if (window.mySwiper) {
+    window.mySwiper.destroy(true, true);
+  }
   // Get starting XP before the quiz begins
   try {
     const isOnboardingQuiz = window.isOnboardingQuiz || false;
@@ -568,36 +572,29 @@ async function initializeQuiz(questions, quizType = 'regular') {
     }
   }
 
-  // --- START OF NEW CODE ---
-  window.mySwiper.on('slideChangeTransitionEnd', function() {
-    const activeIndex = window.mySwiper.activeIndex;
+// --- START OF NEW CODE ---
+window.mySwiper.on('slideChangeTransitionEnd', function() {
+  const activeIndex = window.mySwiper.activeIndex;
+  const totalSlides = window.mySwiper.slides.length;
   
-    // --- NEW: DYNAMIC SCROLL LOCK LOGIC ---
-    // Use the actual number of slides in the swiper instead of calculated values
-    const totalSlides = window.mySwiper.slides.length;
-    // Check if this is one of the last two slides (final explanation and summary)
-    const isLastExplanationSlide = activeIndex === totalSlides - 2;
-    const isSummarySlide = activeIndex === totalSlides - 1;
-
-    // Check if the current slide is one of the slides we want to lock
-    if (activeIndex === finalExplanationSlideIndex || activeIndex === summarySlideIndex) {
-      document.body.classList.add('scroll-lock');
-      console.log(`Page scroll LOCKED on slide index: ${activeIndex}`);
-    } else {
-      document.body.classList.remove('scroll-lock');
-      console.log(`Page scroll UNLOCKED on slide index: ${activeIndex}`);
-    }
-    // --- END OF NEW LOGIC ---
-    
-    if (activeIndex % 2 === 0) {
-      questionStartTime = Date.now();
-      console.log("New question slide. questionStartTime updated to:", questionStartTime);
-      updateBookmarkIcon();
-    }
-    
-    // Update swipe permissions for the new slide
-    updateSwipePermissions();
-  });
+  // Check if we're on the last explanation slide or summary slide
+  if (activeIndex >= totalSlides - 2 && totalSlides > 2) {
+    document.body.classList.add('scroll-lock');
+    console.log(`Page scroll LOCKED on slide index: ${activeIndex}`);
+  } else {
+    document.body.classList.remove('scroll-lock');
+    console.log(`Page scroll UNLOCKED on slide index: ${activeIndex}`);
+  }
+  
+  if (activeIndex % 2 === 0) {
+    questionStartTime = Date.now();
+    console.log("New question slide. questionStartTime updated to:", questionStartTime);
+    updateBookmarkIcon();
+  }
+  
+  // Update swipe permissions for the new slide
+  updateSwipePermissions();
+});
 // --- END OF NEW CODE ---
 
   addOptionListeners();
