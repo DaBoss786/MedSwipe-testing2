@@ -140,7 +140,7 @@
         }
         
         /* Hero Section */
-        /* Swipe-themed hero animation with up/down movement */
+        /* Simple, clean hero animation */
 
 .hero h1 {
     font-size: clamp(3.5rem, 8vw, 7rem);
@@ -149,291 +149,51 @@
     margin-bottom: 24px;
     letter-spacing: -0.04em;
     line-height: 1.1;
-    position: relative;
-    overflow: hidden;
 }
 
-/* Card-like containers for each word */
-.hero h1 .word-card {
+/* Simple word-by-word reveal */
+.hero h1 .word {
     display: inline-block;
-    position: relative;
-    margin: 0 8px;
-    transform: translateY(120px);
     opacity: 0;
-    animation: swipeUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    transform: translateY(30px);
+    animation: fadeUpSimple 0.6s ease forwards;
 }
 
-.hero h1 .word-card:nth-child(1) { animation-delay: 0.3s; }
-.hero h1 .word-card:nth-child(2) { animation-delay: 0.6s; }
-.hero h1 .word-card:nth-child(3) { animation-delay: 0.9s; }
-.hero h1 .word-card:nth-child(4) { animation-delay: 1.2s; }
+.hero h1 .word:nth-child(1) { animation-delay: 0.2s; }
+.hero h1 .word:nth-child(2) { animation-delay: 0.4s; }
+.hero h1 .word:nth-child(3) { animation-delay: 0.6s; }
+.hero h1 .word:nth-child(4) { animation-delay: 0.8s; }
 
-/* Card background effect */
-.hero h1 .word-card::before {
-    content: '';
-    position: absolute;
-    top: -10px;
-    left: -15px;
-    right: -15px;
-    bottom: -10px;
-    background: linear-gradient(135deg, rgba(12, 114, 211, 0.05), rgba(102, 166, 255, 0.05));
-    border-radius: 16px;
-    border: 1px solid rgba(12, 114, 211, 0.1);
-    opacity: 0;
-    transform: scale(0.9);
-    transition: all 0.3s ease;
-    z-index: -1;
-}
-
-.hero h1 .word-card:hover::before {
-    opacity: 1;
-    transform: scale(1);
-    box-shadow: 0 8px 25px rgba(12, 114, 211, 0.15);
-}
-
-/* Enhanced gradient for Master ENT */
-.hero h1 .gradient-text {
-    background: linear-gradient(135deg, #0C72D3 0%, #66A6FF 50%, #8A2BE2 100%);
-    background-size: 300% 300%;
+/* Keep your original gradient for Master ENT */
+.hero h1 span {
+    background: linear-gradient(135deg, #0C72D3 0%, #66A6FF 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    animation: gradientFlow 4s ease-in-out infinite;
 }
 
-/* Swipe gesture indicator */
-.hero::after {
-    content: '';
-    position: absolute;
-    right: 10%;
-    top: 50%;
-    width: 2px;
-    height: 60px;
-    background: linear-gradient(to bottom, transparent, #0C72D3, transparent);
-    opacity: 0;
-    animation: swipeIndicator 2s ease-in-out 2s infinite;
-}
-
-/* Phone/card stack effect in background */
-.hero::before {
-    content: '';
-    position: absolute;
-    top: 20%;
-    right: 5%;
-    width: 60px;
-    height: 100px;
-    background: linear-gradient(135deg, rgba(12, 114, 211, 0.1), rgba(102, 166, 255, 0.1));
-    border-radius: 12px;
-    border: 1px solid rgba(12, 114, 211, 0.2);
-    opacity: 0;
-    animation: cardStack 3s ease-in-out 1.5s infinite;
-    z-index: -1;
-}
-
-/* Multiple cards effect */
-.hero {
-    position: relative;
-}
-
-.hero .floating-cards {
-    position: absolute;
-    top: 15%;
-    right: 8%;
-    width: 50px;
-    height: 80px;
-    z-index: -1;
-}
-
-.hero .floating-cards::before,
-.hero .floating-cards::after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, rgba(12, 114, 211, 0.08), rgba(102, 166, 255, 0.08));
-    border-radius: 10px;
-    border: 1px solid rgba(12, 114, 211, 0.15);
-}
-
-.hero .floating-cards::before {
-    transform: rotate(-5deg) translateY(0px);
-    animation: floatCard1 4s ease-in-out 2s infinite;
-}
-
-.hero .floating-cards::after {
-    transform: rotate(5deg) translateY(10px);
-    animation: floatCard2 4s ease-in-out 2.5s infinite;
-}
-
-/* Keyframe animations */
-@keyframes swipeUp {
-    0% {
-        transform: translateY(120px) rotateX(45deg);
+/* Simple slide up animation */
+@keyframes fadeUpSimple {
+    from {
         opacity: 0;
-        filter: blur(8px);
+        transform: translateY(30px);
     }
-    30% {
-        opacity: 0.7;
-        filter: blur(4px);
-    }
-    70% {
-        transform: translateY(-10px) rotateX(-5deg);
-        opacity: 0.9;
-        filter: blur(1px);
-    }
-    100% {
-        transform: translateY(0px) rotateX(0deg);
+    to {
         opacity: 1;
-        filter: blur(0px);
+        transform: translateY(0);
     }
 }
 
-@keyframes gradientFlow {
-    0%, 100% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-}
-
-@keyframes swipeIndicator {
-    0%, 100% {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    50% {
-        opacity: 0.6;
-        transform: translateY(20px);
-    }
-}
-
-@keyframes cardStack {
-    0%, 100% {
-        opacity: 0.3;
-        transform: translateY(0px) scale(1);
-    }
-    50% {
-        opacity: 0.7;
-        transform: translateY(-30px) scale(1.05);
-    }
-}
-
-@keyframes floatCard1 {
-    0%, 100% {
-        transform: rotate(-5deg) translateY(0px);
-        opacity: 0.4;
-    }
-    50% {
-        transform: rotate(-8deg) translateY(-20px);
-        opacity: 0.8;
-    }
-}
-
-@keyframes floatCard2 {
-    0%, 100% {
-        transform: rotate(5deg) translateY(10px);
-        opacity: 0.4;
-    }
-    50% {
-        transform: rotate(8deg) translateY(-10px);
-        opacity: 0.8;
-    }
-}
-
-/* Interactive swipe hint */
-.hero .swipe-hint {
-    position: absolute;
-    bottom: 20%;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    opacity: 0;
-    animation: swipeHintAppear 1s ease 3s forwards;
-}
-
-.hero .swipe-hint .swipe-icon {
-    width: 24px;
-    height: 24px;
-    border: 2px solid rgba(12, 114, 211, 0.6);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 8px;
-    animation: swipeHintPulse 2s ease-in-out infinite;
-}
-
-.hero .swipe-hint .swipe-icon::before {
-    content: '↕';
-    color: #0C72D3;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.hero .swipe-hint span {
-    font-size: 12px;
-    color: #666;
-    font-weight: 500;
-}
-
-@keyframes swipeHintAppear {
-    to { opacity: 1; }
-}
-
-@keyframes swipeHintPulse {
-    0%, 100% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(12, 114, 211, 0.4);
-    }
-    50% {
-        transform: scale(1.1);
-        box-shadow: 0 0 0 10px rgba(12, 114, 211, 0);
-    }
-}
-
-/* Mobile optimizations */
-@media (max-width: 768px) {
-    .hero h1 .word-card {
-        margin: 0 4px;
-        transform: translateY(80px);
-    }
-    
-    .hero::after,
-    .hero::before,
-    .hero .floating-cards {
-        display: none;
-    }
-    
-    .hero .swipe-hint {
-        bottom: 15%;
-    }
-}
-
-/* Reduced motion */
+/* Reduced motion fallback */
 @media (prefers-reduced-motion: reduce) {
-    .hero h1 .word-card {
-        animation: fadeInSimple 0.6s ease forwards;
-    }
-    
-    .hero h1 .gradient-text {
-        animation: none;
-        background: linear-gradient(135deg, #0C72D3 0%, #66A6FF 100%);
-    }
-    
-    .hero::after,
-    .hero::before,
-    .hero .floating-cards,
-    .hero .swipe-hint {
-        display: none;
+    .hero h1 .word {
+        animation: fadeInOnly 0.4s ease forwards;
     }
 }
 
-@keyframes fadeInSimple {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+@keyframes fadeInOnly {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
         
         /* Demo Section */
@@ -1087,21 +847,14 @@
 
     <!-- Hero Section -->
     <section class="hero">
-        <!-- Replace your existing hero h1 and add these elements: -->
+        <!-- Replace your existing hero h1 with this: -->
 
 <h1>
-    <span class="word-card">Swipe.</span>
-    <span class="word-card">Learn.</span><br>
-    <span class="word-card"><span class="gradient-text">Master</span></span>
-    <span class="word-card"><span class="gradient-text">ENT.</span></span>
+    <span class="word">Swipe.</span>
+    <span class="word">Learn.</span><br>
+    <span class="word"><span>Master</span></span>
+    <span class="word"><span>ENT.</span></span>
 </h1>
-
-<!-- Add these new elements after your existing hero paragraph -->
-<div class="floating-cards"></div>
-<div class="swipe-hint">
-    <div class="swipe-icon"></div>
-    <span>Swipe to learn</span>
-</div>
     </section>
 
     <!-- Demo Section -->
