@@ -701,35 +701,84 @@ html, body {
   gap: 8px;
 }
 
+/* Corrected Option Button and Peer Stat Styles */
+
 .option-btn {
-  padding: 6px;
+  position: relative; /* Crucial for containing the absolute positioned bar */
+  overflow: hidden;   /* Hides any part of the bar that goes outside the rounded corners */
+  padding: 6px 15px;
   border: 1px solid #0056b3;
   background: #fff;
   color: #0056b3;
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.95rem;
-  transition: background 0.3s ease;
-  position: relative;
+  transition: all 0.3s ease;
+  text-align: left;
 }
 
-.option-btn:hover {
-  background: #0056b3;
-  color: #fff;
+/* This is the text span we added in the HTML */
+.option-text {
+  position: relative; /* Make sure text is in the normal flow */
+  z-index: 2;         /* Set z-index to 2 to ensure it's ON TOP of the bar */
 }
+
+/* This is the background bar we create with JS */
+.peer-stat-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0%; /* Starts at 0 width */
+  z-index: 1; /* Set z-index to 1 to be BEHIND the text */
+  transition: width 0.8s cubic-bezier(.4,1.4,.6,1);
+  opacity: 0.3; /* Make the bar semi-transparent like the image */
+  pointer-events: none;
+}
+
+/* Colors for the background bar */
+.bar-correct {
+  background-color: #28a745; /* Green */
+}
+.bar-incorrect {
+  background-color: #dc3545; /* Red */
+}
+.bar-neutral {
+  background-color: #e0e0e0; /* Gray */
+}
+
+/* --- MODIFIED .correct and .incorrect classes --- */
+/* They NO LONGER set a background color. They only style the border and text. */
 
 .option-btn.correct {
-  background-color: #28a745;
-  color: #fff;
+  border-color: #28a745;
+  color: #28a745; /* Make text green */
+  font-weight: bold;
+  background-color: #fff; /* IMPORTANT: Ensure background remains white */
 }
 
 .option-btn.incorrect {
-  background-color: #dc3545;
-  color: #fff;
+  border-color: #dc3545;
+  color: #dc3545; /* Make text red */
+  font-weight: bold;
+  background-color: #fff; /* IMPORTANT: Ensure background remains white */
 }
 
 .option-btn:disabled {
   cursor: not-allowed;
+}
+
+/* Percentage text style */
+.peer-percentage {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: bold;
+  font-size: 0.9em;
+  color: #666;
+  z-index: 3;
+  pointer-events: none;
 }
 
 .swipe-hint {

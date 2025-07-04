@@ -478,19 +478,19 @@ async function initializeQuiz(questions, quizType = 'regular') {
           : "" }
         <div class="options">
           ${question["Option A"] && question["Option A"].trim() !== ""
-            ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>`
+            ? `<button class="option-btn" data-option="A"><span class="option-text">A. ${question["Option A"]}</span></button>`
             : "" }
           ${question["Option B"] && question["Option B"].trim() !== ""
-            ? `<button class="option-btn" data-option="B">B. ${question["Option B"]}</button>`
+            ? `<button class="option-btn" data-option="B"><span class="option-text">B. ${question["Option B"]}</span></button>`
             : "" }
           ${question["Option C"] && question["Option C"].trim() !== ""
-            ? `<button class="option-btn" data-option="C">C. ${question["Option C"]}</button>`
+            ? `<button class="option-btn" data-option="C"><span class="option-text">C. ${question["Option C"]}</span></button>`
             : "" }
           ${question["Option D"] && question["Option D"].trim() !== ""
-            ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>`
+            ? `<button class="option-btn" data-option="D"><span class="option-text">D. ${question["Option D"]}</span></button>`
             : "" }
           ${question["Option E"] && question["Option E"] !== ""
-            ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>`
+            ? `<button class="option-btn" data-option="E"><span class="option-text">E. ${question["Option E"]}</span></button>`
             : "" }
         </div>
         <div class="swipe-hint">Select an answer to continue</div>
@@ -686,73 +686,56 @@ function addOptionListeners() {
               option.disabled = true;
               const optionLetter = option.getAttribute('data-option');
               
+              // Add the .correct or .incorrect class. We will modify the CSS
+              // so these classes no longer set a solid background.
               if (optionLetter === correct) {
                   option.classList.add('correct');
               }
               if (optionLetter === selected && !isCorrect) {
                   option.classList.add('incorrect');
               }
-              
-              // Get peer statistics and update the display
+
+              // Add peer percentage display
               const peerStats = await getPeerStats(qId);
 
               if (peerStats && peerStats.totalResponses > 0) {
                   const choiceCount = peerStats[`choice${optionLetter}`] || 0;
                   const percentage = Math.round((choiceCount / peerStats.totalResponses) * 100);
-                  
-                  // Add background bar and percentage text
-                  option.style.position = 'relative';
-                  option.style.overflow = 'hidden';
-                  
-                  // Create background bar
+
+                  // Create the background bar element
                   const backgroundBar = document.createElement('div');
-                  backgroundBar.style.position = 'absolute';
-                  backgroundBar.style.top = '0';
-                  backgroundBar.style.left = '0';
-                  backgroundBar.style.height = '100%';
-                  backgroundBar.style.width = percentage + '%';
-                  backgroundBar.style.zIndex = '1';
-                  backgroundBar.style.transition = 'width 0.8s ease-out';
-                  
+                  backgroundBar.className = 'peer-stat-bar';
+                  backgroundBar.style.width = percentage + '%'; // Set width based on percentage
+
+                  // Set the bar's color
                   if (optionLetter === correct) {
-                      backgroundBar.style.backgroundColor = 'rgba(40, 167, 69, 0.25)';
+                      backgroundBar.classList.add('bar-correct');
                   } else if (optionLetter === selected) {
-                      backgroundBar.style.backgroundColor = 'rgba(220, 53, 69, 0.25)';
+                      backgroundBar.classList.add('bar-incorrect');
                   } else {
-                      backgroundBar.style.backgroundColor = 'rgba(108, 117, 125, 0.15)';
+                      backgroundBar.classList.add('bar-neutral');
                   }
                   
-                  option.appendChild(backgroundBar);
-                  
-                  // Add percentage text
-                  const percentageSpan = document.createElement('span');
-                  percentageSpan.className = 'peer-percentage';
-                  percentageSpan.textContent = `${percentage}%`;
-                  percentageSpan.style.position = 'absolute';
-                  percentageSpan.style.right = '15px';
-                  percentageSpan.style.top = '50%';
-                  percentageSpan.style.transform = 'translateY(-50%)';
-                  percentageSpan.style.fontWeight = 'bold';
-                  percentageSpan.style.fontSize = '0.9em';
-                  percentageSpan.style.zIndex = '2';
-                  
-                  if (optionLetter === correct || optionLetter === selected) {
-                      percentageSpan.style.color = 'white';
+                  // Add the bar to the button
+                  option.prepend(backgroundBar); // Use prepend to add it behind the text
+
+                  // Add percentage text (optional, if you want to show the %)
+                  let percentSpan = option.querySelector('.peer-percentage');
+                  if (!percentSpan) {
+                    percentSpan = document.createElement('span');
+                    percentSpan.className = 'peer-percentage';
+                    percentSpan.textContent = `${percentage}%`;
+                    percentSpan.style.position = 'absolute';
+                    percentSpan.style.right = '15px';
+                    percentSpan.style.top = '50%';
+                    percentSpan.style.transform = 'translateY(-50%)';
+                    percentSpan.style.fontWeight = 'bold';
+                    percentSpan.style.fontSize = '0.9em';
+                    percentSpan.style.zIndex = '3';
+                    percentSpan.style.pointerEvents = 'none';
+                    option.appendChild(percentSpan);
                   } else {
-                      percentageSpan.style.color = '#666';
-                  }
-                  
-                  option.appendChild(percentageSpan);
-                  
-                  // Make sure original text stays on top
-                  const originalContent = option.childNodes[0];
-                  if (originalContent) {
-                      const textWrapper = document.createElement('span');
-                      textWrapper.style.position = 'relative';
-                      textWrapper.style.zIndex = '2';
-                      textWrapper.textContent = originalContent.textContent;
-                      option.insertBefore(textWrapper, option.firstChild);
-                      option.removeChild(originalContent);
+                    percentSpan.textContent = `${percentage}%`;
                   }
               }
           });
