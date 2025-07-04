@@ -664,19 +664,6 @@ function addOptionListeners() {
           const selected = this.getAttribute('data-option');
           const isCorrect = (selected === correct);
           const timeSpent = Date.now() - questionStartTime;
-
-          // Play sound feedback
-          try {
-            if (isCorrect) {
-              const correctSound = document.getElementById('correctSound');
-              if (correctSound) correctSound.play();
-            } else {
-              const incorrectSound = document.getElementById('incorrectSound');
-              if (incorrectSound) incorrectSound.play();
-            }
-          } catch (error) {
-            console.log('Audio playback failed:', error);
-          }
           
           if (analytics && logEvent) {
             logEvent(analytics, 'question_answered', {
