@@ -710,6 +710,7 @@ html, body {
   cursor: pointer;
   font-size: 0.95rem;
   transition: background 0.3s ease;
+  position: relative;
 }
 
 .option-btn:hover {
@@ -5309,4 +5310,29 @@ body.scroll-lock {
 /* Ensure the swiper container takes up the full height */
 .swiper {
   height: 100%;
+}
+
+/* Peer Statistics Styles */
+.option-btn {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.peer-percentage {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: bold;
+  font-size: 0.9em;
+  color: #666;
+  z-index: 2;
+}
+
+.option-btn.correct .peer-percentage {
+  color: white;
+}
+
+.option-btn.incorrect .peer-percentage {
+  color: white;
 }

@@ -7,7 +7,8 @@ import {
   recordCmeAnswer,            // Needed for CME quizzes
   updateQuestionStats,        // Needed for regular quizzes
   getBookmarks,               // Needed for bookmark filtering
-  updateSpacedRepetitionData  // Needed for difficulty buttons
+  updateSpacedRepetitionData,  // Needed for difficulty buttons
+  recordChoiceSelection // NEW: For peer statistics
   // Add any other functions from user.js called within quiz.js
 } from './user.v2.js';
 import { showLeaderboard } from './ui.js'; 
@@ -665,6 +666,9 @@ function addOptionListeners() {
           const isCorrect = (selected === correct);
           const timeSpent = Date.now() - questionStartTime;
           
+          // Record which specific choice was selected for statistics
+          await recordChoiceSelection(qId, selected);
+
           if (analytics && logEvent) {
             logEvent(analytics, 'question_answered', {
               question_category: category,
@@ -678,10 +682,78 @@ function addOptionListeners() {
             });
         }
 
-          options.forEach(option => {
+          options.forEach(async option => {
               option.disabled = true;
-              if (option.getAttribute('data-option') === correct) {
+              const optionLetter = option.getAttribute('data-option');
+              
+              if (optionLetter === correct) {
                   option.classList.add('correct');
+              }
+              if (optionLetter === selected && !isCorrect) {
+                  option.classList.add('incorrect');
+              }
+              
+              // Get peer statistics and update the display
+              const peerStats = await getPeerStats(qId);
+
+              if (peerStats && peerStats.totalResponses > 0) {
+                  const choiceCount = peerStats[`choice${optionLetter}`] || 0;
+                  const percentage = Math.round((choiceCount / peerStats.totalResponses) * 100);
+                  
+                  // Add background bar and percentage text
+                  option.style.position = 'relative';
+                  option.style.overflow = 'hidden';
+                  
+                  // Create background bar
+                  const backgroundBar = document.createElement('div');
+                  backgroundBar.style.position = 'absolute';
+                  backgroundBar.style.top = '0';
+                  backgroundBar.style.left = '0';
+                  backgroundBar.style.height = '100%';
+                  backgroundBar.style.width = percentage + '%';
+                  backgroundBar.style.zIndex = '1';
+                  backgroundBar.style.transition = 'width 0.8s ease-out';
+                  
+                  if (optionLetter === correct) {
+                      backgroundBar.style.backgroundColor = 'rgba(40, 167, 69, 0.25)';
+                  } else if (optionLetter === selected) {
+                      backgroundBar.style.backgroundColor = 'rgba(220, 53, 69, 0.25)';
+                  } else {
+                      backgroundBar.style.backgroundColor = 'rgba(108, 117, 125, 0.15)';
+                  }
+                  
+                  option.appendChild(backgroundBar);
+                  
+                  // Add percentage text
+                  const percentageSpan = document.createElement('span');
+                  percentageSpan.className = 'peer-percentage';
+                  percentageSpan.textContent = `${percentage}%`;
+                  percentageSpan.style.position = 'absolute';
+                  percentageSpan.style.right = '15px';
+                  percentageSpan.style.top = '50%';
+                  percentageSpan.style.transform = 'translateY(-50%)';
+                  percentageSpan.style.fontWeight = 'bold';
+                  percentageSpan.style.fontSize = '0.9em';
+                  percentageSpan.style.zIndex = '2';
+                  
+                  if (optionLetter === correct || optionLetter === selected) {
+                      percentageSpan.style.color = 'white';
+                  } else {
+                      percentageSpan.style.color = '#666';
+                  }
+                  
+                  option.appendChild(percentageSpan);
+                  
+                  // Make sure original text stays on top
+                  const originalContent = option.childNodes[0];
+                  if (originalContent) {
+                      const textWrapper = document.createElement('span');
+                      textWrapper.style.position = 'relative';
+                      textWrapper.style.zIndex = '2';
+                      textWrapper.textContent = originalContent.textContent;
+                      option.insertBefore(textWrapper, option.firstChild);
+                      option.removeChild(originalContent);
+                  }
               }
           });
           if (!isCorrect) { this.classList.add('incorrect'); }
@@ -1309,3 +1381,19 @@ export {
   prepareSummary, // Likely internal
   showSummary // Likely internal
 };
+
+// Function to get peer statistics for a question
+async function getPeerStats(questionId) {
+  try {
+    const choiceStatsRef = doc(db, 'choiceStats', questionId);
+    const statsDoc = await getDoc(choiceStatsRef);
+    
+    if (statsDoc.exists()) {
+      return statsDoc.data();
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching peer stats:", error);
+    return null;
+  }
+}
