@@ -477,7 +477,7 @@ async function initializeQuiz(questions, quizType = 'regular') {
           ? `<img src="${question["Image URL"].trim()}" class="question-image">`
           : "" }
         <div class="options">
-          ${question["Option A"] && question["Option A"].trim() !== ""
+                    ${question["Option A"] && question["Option A"].trim() !== ""
             ? `<button class="option-btn" data-option="A"><span class="option-text">A. ${question["Option A"]}</span></button>`
             : "" }
           ${question["Option B"] && question["Option B"].trim() !== ""
@@ -682,63 +682,47 @@ function addOptionListeners() {
             });
         }
 
-          options.forEach(async option => {
-              option.disabled = true;
-              const optionLetter = option.getAttribute('data-option');
-              
-              // Add the .correct or .incorrect class. We will modify the CSS
-              // so these classes no longer set a solid background.
-              if (optionLetter === correct) {
-                  option.classList.add('correct');
-              }
-              if (optionLetter === selected && !isCorrect) {
-                  option.classList.add('incorrect');
-              }
+                    // Get peer statistics and update the display
+                    const peerStats = await getPeerStats(qId);
 
-              // Add peer percentage display
-              const peerStats = await getPeerStats(qId);
-
-              if (peerStats && peerStats.totalResponses > 0) {
-                  const choiceCount = peerStats[`choice${optionLetter}`] || 0;
-                  const percentage = Math.round((choiceCount / peerStats.totalResponses) * 100);
-
-                  // Create the background bar element
-                  const backgroundBar = document.createElement('div');
-                  backgroundBar.className = 'peer-stat-bar';
-                  backgroundBar.style.width = percentage + '%'; // Set width based on percentage
-
-                  // Set the bar's color
-                  if (optionLetter === correct) {
-                      backgroundBar.classList.add('bar-correct');
-                  } else if (optionLetter === selected) {
-                      backgroundBar.classList.add('bar-incorrect');
-                  } else {
-                      backgroundBar.classList.add('bar-neutral');
-                  }
-                  
-                  // Add the bar to the button
-                  option.prepend(backgroundBar); // Use prepend to add it behind the text
-
-                  // Add percentage text (optional, if you want to show the %)
-                  let percentSpan = option.querySelector('.peer-percentage');
-                  if (!percentSpan) {
-                    percentSpan = document.createElement('span');
-                    percentSpan.className = 'peer-percentage';
-                    percentSpan.textContent = `${percentage}%`;
-                    percentSpan.style.position = 'absolute';
-                    percentSpan.style.right = '15px';
-                    percentSpan.style.top = '50%';
-                    percentSpan.style.transform = 'translateY(-50%)';
-                    percentSpan.style.fontWeight = 'bold';
-                    percentSpan.style.fontSize = '0.9em';
-                    percentSpan.style.zIndex = '3';
-                    percentSpan.style.pointerEvents = 'none';
-                    option.appendChild(percentSpan);
-                  } else {
-                    percentSpan.textContent = `${percentage}%`;
-                  }
-              }
-          });
+                    options.forEach(option => {
+                        option.disabled = true;
+                        const optionLetter = option.getAttribute('data-option');
+          
+                        // Add the .correct or .incorrect class for styling the border and text
+                        if (optionLetter === correct) {
+                            option.classList.add('correct');
+                        }
+                        if (optionLetter === selected && !isCorrect) {
+                            option.classList.add('incorrect');
+                        }
+          
+                        // Add peer percentage display if stats are available
+                        if (peerStats && peerStats.totalResponses > 0) {
+                            const choiceCount = peerStats[`choice${optionLetter}`] || 0;
+                            const percentage = Math.round((choiceCount / peerStats.totalResponses) * 100);
+          
+                            // 1. Create and add the background bar
+                            const backgroundBar = document.createElement('div');
+                            backgroundBar.className = 'peer-stat-bar';
+                            backgroundBar.style.width = percentage + '%';
+          
+                            if (optionLetter === correct) {
+                                backgroundBar.classList.add('bar-correct');
+                            } else if (optionLetter === selected) {
+                                backgroundBar.classList.add('bar-incorrect');
+                            } else {
+                                backgroundBar.classList.add('bar-neutral');
+                            }
+                            option.prepend(backgroundBar); // Adds the bar behind the text
+          
+                            // 2. Create and add the percentage text
+                            const percentageSpan = document.createElement('span');
+                            percentageSpan.className = 'peer-percentage';
+                            percentageSpan.textContent = `${percentage}%`;
+                            option.appendChild(percentageSpan); // Adds the percentage to the button
+                        }
+                    });
           if (!isCorrect) { this.classList.add('incorrect'); }
           const hint = card.querySelector('.swipe-hint');
           console.log("Found hint element:", hint); // Debug log

@@ -701,11 +701,11 @@ html, body {
   gap: 8px;
 }
 
-/* Corrected Option Button and Peer Stat Styles */
+/* Final Corrected Option Button and Peer Stat Styles */
 
 .option-btn {
-  position: relative; /* Crucial for containing the absolute positioned bar */
-  overflow: hidden;   /* Hides any part of the bar that goes outside the rounded corners */
+  position: relative; /* For containing all child elements */
+  overflow: hidden;   /* Hides bar overflow */
   padding: 6px 15px;
   border: 1px solid #0056b3;
   background: #fff;
@@ -714,13 +714,13 @@ html, body {
   cursor: pointer;
   font-size: 0.95rem;
   transition: all 0.3s ease;
-  text-align: left;
+  text-align: center; /* This centers the .option-text span */
 }
 
-/* This is the text span we added in the HTML */
+/* This is the main text span from Step 1 */
 .option-text {
-  position: relative; /* Make sure text is in the normal flow */
-  z-index: 2;         /* Set z-index to 2 to ensure it's ON TOP of the bar */
+  position: relative;
+  z-index: 2; /* Ensure it's ON TOP of the bar */
 }
 
 /* This is the background bar we create with JS */
@@ -730,55 +730,47 @@ html, body {
   left: 0;
   height: 100%;
   width: 0%; /* Starts at 0 width */
-  z-index: 1; /* Set z-index to 1 to be BEHIND the text */
-  transition: width 0.8s cubic-bezier(.4,1.4,.6,1);
-  opacity: 0.3; /* Make the bar semi-transparent like the image */
-  pointer-events: none;
+  z-index: 1; /* BEHIND the text */
+  transition: width 0.8s ease-out;
+  opacity: 0.3; /* Semi-transparent like the image */
 }
 
 /* Colors for the background bar */
-.bar-correct {
-  background-color: #28a745; /* Green */
-}
-.bar-incorrect {
-  background-color: #dc3545; /* Red */
-}
-.bar-neutral {
-  background-color: #e0e0e0; /* Gray */
+.bar-correct { background-color: #28a745; } /* Green */
+.bar-incorrect { background-color: #dc3545; } /* Red */
+.bar-neutral { background-color: #e0e0e0; } /* Gray */
+
+/* This is the percentage text span we create with JS */
+.peer-percentage {
+  position: absolute;
+  right: 15px; /* Pinned to the right edge */
+  top: 50%;
+  transform: translateY(-50%); /* Centered vertically */
+  font-weight: bold;
+  font-size: 0.9em;
+  color: #6c757d; /* A consistent, visible gray color */
+  z-index: 2; /* On top of the bar */
 }
 
 /* --- MODIFIED .correct and .incorrect classes --- */
-/* They NO LONGER set a background color. They only style the border and text. */
+/* They only style the border and text, NOT the background. */
 
 .option-btn.correct {
   border-color: #28a745;
-  color: #28a745; /* Make text green */
+  color: #28a745;
   font-weight: bold;
-  background-color: #fff; /* IMPORTANT: Ensure background remains white */
+  background-color: #fff; /* IMPORTANT: Keep background white */
 }
 
 .option-btn.incorrect {
   border-color: #dc3545;
-  color: #dc3545; /* Make text red */
+  color: #dc3545;
   font-weight: bold;
-  background-color: #fff; /* IMPORTANT: Ensure background remains white */
+  background-color: #fff; /* IMPORTANT: Keep background white */
 }
 
 .option-btn:disabled {
   cursor: not-allowed;
-}
-
-/* Percentage text style */
-.peer-percentage {
-  position: absolute;
-  right: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-weight: bold;
-  font-size: 0.9em;
-  color: #666;
-  z-index: 3;
-  pointer-events: none;
 }
 
 .swipe-hint {
