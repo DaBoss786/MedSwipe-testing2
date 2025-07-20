@@ -5369,11 +5369,3 @@ body.scroll-lock {
   color: #666;
   z-index: 2;
 }
-
-.option-btn.correct .peer-percentage {
-  color: white;
-}
-
-.option-btn.incorrect .peer-percentage {
-  color: white;
-}
